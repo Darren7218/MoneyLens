@@ -1,0 +1,23 @@
+PASS Render home
+PASS Render transactions
+PASS Render inbox
+PASS Render plan
+PASS Render accounts
+PASS Render settings
+PASS Split form saves through Java ledger
+PASS Shared expense records own share
+PASS Repayment clears receivable
+PASS Budget rollover form saves
+PASS Subscription schedule saves
+PASS Rule and favorite forms save
+PASS Reminder preference booleans save
+PASS Paste produces review draft
+PASS Installment purchase and repayment plan saves
+PASS Statement comparison requires explicit confirmation
+PASS Cashflow and reserve report renders
+PASS Source and tag filters apply
+PASS Foreign purchase with fee saves exact decimal rate
+PASS Rule change undo works from UI
+PASS Dark theme class applied
+PASS No DOM runtime exceptions
+RESULT: 22 DOM and Java bridge checks passed (no browser layout/device test)

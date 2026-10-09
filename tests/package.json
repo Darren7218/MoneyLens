@@ -1,0 +1,1 @@
+{"private":true,"description":"Optional DOM integration test dependencies","devDependencies":{"jsdom":"24.1.3"}}

@@ -1,0 +1,53 @@
+PASS Exact minor units
+PASS Reject invalid money
+PASS Expense balances
+PASS Transfer has no spending
+PASS Reject self transfer
+PASS Refund reduces expense
+PASS Credit repayment is not spending
+PASS Card opening balance is debt
+PASS Repeated save is idempotent
+PASS Draft confirmation cannot double post
+PASS Ignored draft cannot be confirmed
+PASS Edit preserves old version without double total
+PASS Void is idempotent; explicit undo
+PASS Monthly bill clamps then returns to anchor day
+PASS Reject invalid or tampered backup ledger
+PASS Randomized ledger totals
+PASS Parse payment
+PASS Multiple amounts require manual choice
+PASS Reject OTP, promotions, failed and pending
+PASS Ignore plain balance
+PASS Recognize transfer
+PASS Backup round trip and tamper rejection
+RESULT: 22 tests passed
+PASS Schema 1 migration preserves transactions
+PASS Split expense and split refund match exact sen
+PASS Unbalanced split rejected
+PASS Shared payment only spends own share; repayment is not income
+PASS Cannot remove shared purchase while repayment exists
+PASS Installments distribute remainder without double expense
+PASS Salary cycle handles day 31 and leap years
+PASS Budget rollover preserves previous limits
+PASS Monthly and yearly calendar schedules
+PASS Match existing bill without posting again
+PASS Edit bill payment without advancing schedule twice
+PASS Reconciliation uses equity, not income
+PASS Rule priority and source constraint
+PASS Stale draft revision rejected
+PASS CSV quoted delimiters, newline and escaped quote
+PASS CSV preview exact amount and invalid row
+PASS CSV strong dedup and import undo preserve corrected record
+PASS Equal amount from different CSV is a suggestion, not a hard duplicate
+PASS OCR total beats subtotal and change; zero ignored
+PASS OCR ambiguous totals require review
+PASS OCR Chinese total and empty image
+PASS Encrypted archive includes receipt, rules and schema migration
+PASS Archive rejects traversal and missing referenced receipt
+PASS Scheduled backup key format restores with original password
+PASS Available estimate reserves debt once
+PASS Subscription suggestion requires three matching regular payments
+PASS Void and undo latest bill payment reopen and close occurrence
+PASS Rule changes can be undone
+PASS Foreign fee has a separate expense posting and decimal rate
+RESULT: 29 extended tests passed

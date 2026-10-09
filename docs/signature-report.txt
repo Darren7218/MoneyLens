@@ -1,0 +1,17 @@
+Verifies
+Verified using v1 scheme (JAR signing): false
+Verified using v2 scheme (APK Signature Scheme v2): true
+Verified using v3 scheme (APK Signature Scheme v3): false
+Verified using v3.1 scheme (APK Signature Scheme v3.1): false
+Verified using v4 scheme (APK Signature Scheme v4): false
+Verified for SourceStamp: false
+Number of signers: 1
+Signer #1 certificate DN: CN=MoneyLens Personal Preview
+Signer #1 certificate SHA-256 digest: 558cca0f0b3362e810cf5a4efae6849d983e4fc981d9c2ce7e261aaae0cf2799
+Signer #1 certificate SHA-1 digest: e19af993f46969eb2a9a73bd6b91ff9bc508af1e
+Signer #1 certificate MD5 digest: f29c8e0b07dd2308fdba85009cdf32eb
+Signer #1 key algorithm: RSA
+Signer #1 key size (bits): 3072
+Signer #1 public key SHA-256 digest: 08929495325ceae0131544fd7066b45fb40c0b36a08af0122fb6e9e471e2c5cc
+Signer #1 public key SHA-1 digest: ab3c94dbc018aac6adc0ec2f53b1573e23df0d5f
+Signer #1 public key MD5 digest: cc83ed5f7935730d85f301f58dcfdc42
