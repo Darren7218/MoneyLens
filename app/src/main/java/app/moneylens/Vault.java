@@ -48,16 +48,15 @@ public final class Vault {
   public static synchronized boolean alertExists(Context c,String id)throws Exception{JSONArray a=read(c).getJSONArray("alerts");for(int i=0;i<a.length();i++)if(a.getJSONObject(i).getString("id").equals(id))return true;return false;}
   public static synchronized void markAlert(Context c,String id)throws Exception{JSONObject s=read(c);JSONArray a=s.getJSONArray("alerts");a.put(new JSONObject().put("id",id));while(a.length()>2000)a.remove(0);write(c,s);}
   public static synchronized JSONObject capture(Context c,String pkg,String label,String key,String text)throws Exception{
-    JSONObject s=read(c);boolean selected=false;JSONArray sources=s.getJSONArray("sources");for(int i=0;i<sources.length();i++)if(sources.getJSONObject(i).getString("package").equals(pkg))selected=true;if(!selected)return null;
-    JSONObject d=PaymentParser.parse(text,label);if(d==null)return null;
-    String digest=hex(MessageDigest.getInstance("SHA-256").digest((pkg+"|"+key+"|"+text).getBytes(StandardCharsets.UTF_8)));
-    JSONArray seen=s.getJSONArray("seen");long now=System.currentTimeMillis();
-    for(int i=seen.length()-1;i>=0;i--){JSONObject row=seen.getJSONObject(i);if(now-row.optLong("time")>30L*86400000)seen.remove(i);else if(row.optString("hash").equals(digest))return null;}
-    JSONArray drafts=s.getJSONArray("drafts");int pending=0;for(int i=0;i<drafts.length();i++)if(drafts.getJSONObject(i).optString("state").equals("review"))pending++;
-    if(pending>=500)throw new IllegalStateException("Review your Inbox before capturing more payments.");
-    while(drafts.length()>=1000){int remove=-1;for(int i=0;i<drafts.length();i++)if(!drafts.getJSONObject(i).optString("state").equals("review")){remove=i;break;}if(remove<0)break;drafts.remove(remove);}
-    for(int i=drafts.length()-1;i>=0;i--){JSONObject other=drafts.getJSONObject(i);if(d.optLong("amount")>0&&other.optLong("amount")==d.optLong("amount")&&now-other.optLong("created")<300000)d.put("reason",d.getString("reason")+" A similar recent amount exists; check for a duplicate.");}
-    d.put("package",pkg);Finance.suggest(s,d);drafts.put(d);seen.put(new JSONObject().put("hash",digest).put("time",now));while(seen.length()>5000)seen.remove(0);s.put("lastCapture",now).put("revision",s.optLong("revision")+1);write(c,s);return d;
+    return capture(c,pkg,label,key,text,0L);
   }
-  public static String hex(byte[] b){StringBuilder s=new StringBuilder();for(byte x:b)s.append(String.format("%02x",x));return s.toString();}
+  public static synchronized JSONObject capture(Context c,String pkg,String label,String key,String text,long postTime)throws Exception{
+    JSONObject s=read(c);
+    JSONObject d=Extras.captureState(s,pkg,label,key,text,postTime,System.currentTimeMillis());
+    if(d==null)return null;
+    write(c,s);
+    try{MoneyWidget.refresh(c);}catch(Exception ignored){}
+    return d;
+  }
+  public static String hex(byte[] b){return Extras.hex(b);}
 }

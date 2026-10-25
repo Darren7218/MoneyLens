@@ -31,7 +31,7 @@ public final class CoreTests {
     test("Reject invalid or tampered backup ledger",()->{JSONObject s=Ledger.initial();Ledger.apply(s,"transaction",tx("expense","10"));s.getJSONArray("transactions").getJSONObject(0).getJSONArray("postings").getJSONObject(1).put("amount",999);rejects(()->Ledger.validate(s));});
     test("Randomized ledger totals",()->{Random r=new Random(7);JSONObject s=Ledger.initial();long expected=0;for(int i=0;i<150;i++){long n=1+r.nextInt(100000);String kind=r.nextBoolean()?"expense":"refund";Ledger.apply(s,"transaction",tx(kind,new java.math.BigDecimal(n).movePointLeft(2).toPlainString()));expected+=kind.equals("expense")?n:-n;}eq(spending(s),expected);eq(balance(s,"cash"),-expected);});
     test("Parse payment",()->{JSONObject d=PaymentParser.parse("Payment of RM18.90 to ABC Cafe successful","Wallet");eq(d.getLong("amount"),1890);yes(d.getString("merchant").equals("ABC Cafe"));});
-    test("Multiple amounts require manual choice",()->eq(PaymentParser.parse("Paid RM18.90. Balance RM300.00","Bank").getLong("amount"),0));
+    test("Multiple amounts with balance resolves primary amount",()->eq(PaymentParser.parse("Paid RM18.90. Balance RM300.00","Bank").getLong("amount"),1890));
     test("Reject OTP, promotions, failed and pending",()->{for(String t:new String[]{"OTP for payment RM10 is 123456","Payment RM10 failed","Payment RM10 pending","RM10 voucher for your next payment","Secure2u authorise payment RM10"})yes(PaymentParser.parse(t,"Bank")==null);});
     test("Ignore plain balance",()->yes(PaymentParser.parse("Your balance is RM300.00","Bank")==null));
     test("Recognize transfer",()->yes(PaymentParser.parse("Transfer RM100 to wallet successful","Bank").getString("kind").equals("transfer")));

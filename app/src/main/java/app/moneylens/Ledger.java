@@ -19,7 +19,7 @@ public final class Ledger {
     JSONObject s=new JSONObject();s.put("schema",2);s.put("revision",0);
     for(String name: new String[]{"accounts","transactions","drafts","budgets","bills","goals","sources","seen","rules","favorites","receipts","imports","reconciliations","installments","customCategories","alerts","ruleHistory"})s.put(name,new JSONArray());
     s.getJSONArray("accounts").put(new JSONObject().put("id","cash").put("name","Cash").put("type","cash").put("color","sage"));
-    s.put("settings",new JSONObject().put("name","Darren").put("theme","light").put("cycleDay",1).put("appLock",false));
+    s.put("settings",new JSONObject().put("name","Darren").put("theme","light").put("cycleDay",1).put("appLock",false).put("autoRecord",true).put("captureAllSources",true).put("autoOpenOnBoot",true).put("alwaysOnScheduler",true));
     return s;
   }
   public static JSONObject find(JSONArray a,String id) throws JSONException {
@@ -59,19 +59,29 @@ public final class Ledger {
       case "settings":{
         JSONObject settings=s.getJSONObject("settings");if(a.has("name"))settings.put("name",str(a,"name",50));
         if(a.has("theme"))settings.put("theme",a.getString("theme").equals("dark")?"dark":"light");
+        if(a.has("accent")){String ac=str(a,"accent",24);if(Arrays.asList("emerald","indigo","ocean","terracotta").contains(ac))settings.put("accent",ac);}
         if(a.has("cycleDay")){int d=a.getInt("cycleDay");if(d<1||d>31)throw new IllegalArgumentException("Cycle day must be 1–31.");settings.put("cycleDay",d);}
         if(a.has("appLock"))settings.put("appLock",a.getBoolean("appLock"));
-        for(String k:new String[]{"quietEnabled","digest","reminders","budgetAlerts","widgetAmounts","captureWhileLocked"})if(a.has(k))settings.put(k,a.getBoolean(k));
+        for(String k:new String[]{"quietEnabled","digest","reminders","budgetAlerts","widgetAmounts","captureWhileLocked","autoRecord","captureAllSources","autoOpenOnBoot","alwaysOnScheduler","privacyBlur"})if(a.has(k))settings.put(k,a.getBoolean(k));
         for(String k:new String[]{"quietStart","quietEnd","digestHour"})if(a.has(k)){int v=a.getInt(k);if(v<0||v>23)throw new IllegalArgumentException("Choose an hour from 0 to 23.");settings.put(k,v);}
         if(a.has("threshold")){int v=a.getInt("threshold");if(v<1||v>100)throw new IllegalArgumentException("Threshold must be 1–100%.");settings.put("threshold",v);}break;
       }
       case "source": {
         String pkg=a.getString("package");if(!pkg.matches("[A-Za-z0-9_.]+"))throw new IllegalArgumentException("Invalid app.");JSONArray rows=s.getJSONArray("sources");
-        for(int i=rows.length()-1;i>=0;i--)if(rows.getJSONObject(i).getString("package").equals(pkg))rows.remove(i);
-        if(a.optBoolean("enabled"))rows.put(new JSONObject().put("package",pkg).put("name",str(a,"name",80)));break;
+        String prevAcct="";for(int i=rows.length()-1;i>=0;i--)if(rows.getJSONObject(i).getString("package").equals(pkg)){prevAcct=rows.getJSONObject(i).optString("account","");rows.remove(i);}
+        if(a.optBoolean("enabled",true)){
+          String acct=a.has("account")?a.optString("account",""):prevAcct;
+          if(!acct.isEmpty())find(s.getJSONArray("accounts"),acct);
+          JSONObject src=new JSONObject().put("package",pkg).put("name",str(a,"name",80));
+          if(!acct.isEmpty())src.put("account",acct);
+          rows.put(src);
+        }break;
       }
       case "sample": {
-        JSONObject d=new JSONObject().put("id",id()).put("merchant","ABC Cafe · sample").put("amount",1890).put("kind","expense").put("category","Food & drinks").put("source","Demonstration").put("date",LocalDate.now().toString()).put("state","review").put("sample",true).put("reason","Synthetic example. Saving creates a sample-labelled transaction.");s.getJSONArray("drafts").put(d);break;
+        JSONObject d=new JSONObject().put("id",id()).put("merchant","ABC Cafe · sample").put("amount",1890).put("kind","expense").put("category","Food & drinks").put("subcategory","Restaurant & Cafe").put("source","Demonstration").put("date",LocalDate.now().toString()).put("state","review").put("sample",true).put("reason","Synthetic example. Saving creates a sample-labelled transaction.");
+        Finance.suggest(s,d);s.getJSONArray("drafts").put(d);
+        if(a.optBoolean("autoCapture"))Extras.autoPost(s,d);
+        break;
       }
       default:throw new IllegalArgumentException("Unknown operation.");
     }
@@ -95,16 +105,17 @@ public final class Ledger {
     find(s.getJSONArray("accounts"),account);date(dt);long n=minor(a.getString("amount"));JSONArray p=new JSONArray();
     String tid=id();p=postings(s,a,tid,n);
     JSONObject t=new JSONObject().put("id",tid).put("key",key).put("kind",kind).put("amount",n).put("account",account).put("to",a.optString("to","")).put("category",category).put("merchant",str(a,"merchant",120)).put("date",dt).put("note",str(a,"note",500)).put("postings",p).put("created",System.currentTimeMillis());
-    for(String k:new String[]{"splits","ownAmount","person","receiptId","originalCurrency","originalAmount","exchangeRate","foreignFee","source","sourcePackage","tags","reimbursementFor","importBatch","importRow","installmentId"})if(a.has(k))t.put(k,a.get(k));
+    for(String k:new String[]{"subcategory","splits","ownAmount","person","receiptId","originalCurrency","originalAmount","exchangeRate","foreignFee","source","sourcePackage","tags","reimbursementFor","importBatch","importRow","installmentId","autoRecorded","historyMatch","needsNote"})if(a.has(k))t.put(k,a.get(k));
     if(a.has("originalCurrency")){String currency=a.getString("originalCurrency").toUpperCase(java.util.Locale.ROOT);java.util.Currency.getInstance(currency);if(new java.math.BigDecimal(a.getString("originalAmount")).signum()<=0)throw new IllegalArgumentException("Original amount must be positive.");t.put("originalCurrency",currency);BigDecimal fee=new BigDecimal(a.optString("foreignFee","0"));if(fee.signum()<0||fee.movePointRight(2).longValueExact()>=n)throw new IllegalArgumentException("Included fees must be less than the MYR total.");t.put("exchangeRate",BigDecimal.valueOf(n,2).subtract(fee).divide(new BigDecimal(a.getString("originalAmount")),8,java.math.RoundingMode.HALF_UP).toPlainString());}
     if(a.has("tags")&&a.getJSONArray("tags").length()>30)throw new IllegalArgumentException("At most 30 tags.");
     if(a.has("foreignFee")&&new BigDecimal(a.getString("foreignFee")).signum()<0)throw new IllegalArgumentException("Fee cannot be negative.");
     if(a.has("receiptId"))find(s.getJSONArray("receipts"),a.getString("receiptId"));
-    String edit=a.optString("editId","");if(!edit.isEmpty()){JSONObject old=find(rows,edit);if(old.optBoolean("voided"))throw new IllegalArgumentException("This transaction was already removed.");old.put("voided",true).put("replacedBy",tid);t.put("replaces",edit);for(String k:new String[]{"billId","billDate","installmentId"})if(old.has(k))t.put(k,old.get(k));}
+    String edit=a.optString("editId","");if(!edit.isEmpty()){JSONObject old=find(rows,edit);if(old.optBoolean("voided"))throw new IllegalArgumentException("This transaction was already removed.");old.put("voided",true).put("replacedBy",tid);t.put("replaces",edit);for(String k:new String[]{"billId","billDate","installmentId","source","sourcePackage","autoRecorded","subcategory"})if(old.has(k)&&!t.has(k))t.put(k,old.get(k));t.put("needsNote",false);}
     String original=a.optString("originalId","");if(!original.isEmpty()){JSONObject orig=find(rows,original);if(!kind.equals("refund")||!orig.getString("kind").equals("expense")||orig.optBoolean("voided"))throw new IllegalArgumentException("Choose a recorded expense for this refund.");t.put("originalId",original);}
-    rows.put(t);if(draft!=null){t.put("source",draft.optString("source")).put("sourcePackage",draft.optString("package"));draft.put("state","confirmed").put("transactionId",tid);if(draft.has("receiptId"))t.put("receiptId",draft.getString("receiptId"));}
+    rows.put(t);if(draft!=null){t.put("source",draft.optString("source")).put("sourcePackage",draft.optString("package"));if(draft.has("subcategory")&&!t.has("subcategory"))t.put("subcategory",draft.getString("subcategory"));draft.put("state","confirmed").put("transactionId",tid);if(draft.has("receiptId"))t.put("receiptId",draft.getString("receiptId"));}
     s.getJSONObject("settings").put("lastAccount",account).put("lastCategory",category);
-    if(a.optBoolean("rememberRule")&&!t.optString("merchant").isEmpty())Extras.rule(s,new JSONObject().put("match",t.getString("merchant")).put("category",category).put("account",account).put("priority",10).put("enabled",true));
+    if(a.optBoolean("applyHistory")&&!t.optString("merchant").isEmpty())Extras.updateMerchantHistory(s,t.getString("merchant"),category,t.optString("subcategory",""),account);
+    else if(a.optBoolean("rememberRule")&&!t.optString("merchant").isEmpty())Extras.rule(s,new JSONObject().put("match",t.getString("merchant")).put("category",category).put("subcategory",t.optString("subcategory","")).put("account",account).put("priority",10).put("enabled",true));
     String billId=a.optString("billId","");if(!billId.isEmpty()&&edit.isEmpty()){
       JSONObject bill=find(s.getJSONArray("bills"),billId);if(bill.optBoolean("paid")||bill.optBoolean("cancelled"))throw new IllegalArgumentException("This planned payment is already paid or cancelled.");String due=bill.getString("date");
       if(!due.equals(a.optString("billDate")))throw new IllegalArgumentException("This bill occurrence has changed. Open it again.");
