@@ -39,25 +39,29 @@ public final class Finance {
   if(prof==null)prof=new JSONObject();
   String yearPrefix=String.valueOf(year);
   long ledMedical=0,ledLifestyle=0,ledSports=0,ledEducation=0,ledLifeIns=0,ledMedIns=0,ledSspnPrs=0,ledZakat=0,ledPcb=0;
-  JSONArray tx=s.getJSONArray("transactions");
+  JSONArray tx=s.getJSONArray("transactions"),claimableItems=new JSONArray();
   for(int i=0;i<tx.length();i++){
    JSONObject t=tx.getJSONObject(i);
    if(t.optBoolean("voided")||!t.optString("kind").equals("expense")||!t.optString("date","").startsWith(yearPrefix))continue;
    long amt=t.getLong("amount");
    String cat=t.optString("category",""),sub=t.optString("subcategory",""),low=(cat+" "+sub+" "+t.optString("merchant","")+" "+t.optString("note","")).toLowerCase(Locale.ROOT);
+   String bucket="";
    if(cat.startsWith("Health")||low.contains("clinic")||low.contains("hospital")||low.contains("medical")||low.contains("pharmacy")||low.contains("dental")){
-    if(low.contains("gym")||low.contains("sport")||low.contains("fitness")||low.contains("badminton")||low.contains("futsal"))ledSports+=amt;
-    else ledMedical+=amt;
-   }else if(low.contains("gym")||low.contains("sport")||low.contains("decathlon"))ledSports+=amt;
-   if(cat.equals("Education")||low.contains("tuition")||low.contains("university")||low.contains("upskill")||low.contains("course"))ledEducation+=amt;
-   if(low.contains("unifi")||low.contains("time fibre")||low.contains("maxis")||low.contains("celcom")||low.contains("digi")||low.contains("yes 5g")||low.contains("umobile")||low.contains("book")||low.contains("popular")||low.contains("kinokuniya")||low.contains("laptop")||low.contains("smartphone")||sub.contains("Internet")||sub.contains("Mobile")||sub.contains("Books")||sub.contains("Electronics"))ledLifestyle+=amt;
+    if(low.contains("gym")||low.contains("sport")||low.contains("fitness")||low.contains("badminton")||low.contains("futsal")){ledSports+=amt;bucket="Sports & Gym";}
+    else{ledMedical+=amt;bucket="Medical & Health";}
+   }else if(low.contains("gym")||low.contains("sport")||low.contains("decathlon")){ledSports+=amt;bucket="Sports & Gym";}
+   if(cat.equals("Education")||low.contains("tuition")||low.contains("university")||low.contains("upskill")||low.contains("course")){ledEducation+=amt;if(bucket.isEmpty())bucket="Education";}
+   if(low.contains("unifi")||low.contains("time fibre")||low.contains("maxis")||low.contains("celcom")||low.contains("digi")||low.contains("yes 5g")||low.contains("umobile")||low.contains("book")||low.contains("popular")||low.contains("kinokuniya")||low.contains("laptop")||low.contains("smartphone")||sub.contains("Internet")||sub.contains("Mobile")||sub.contains("Books")||sub.contains("Electronics")){ledLifestyle+=amt;if(bucket.isEmpty())bucket="Lifestyle (Tech / Books / WiFi)";}
    if(cat.equals("Insurance & Takaful")||low.contains("takaful")||low.contains("prudential")||low.contains("great eastern")||low.contains("aia")||low.contains("allianz")||low.contains("etiqa")){
-    if(sub.contains("Medical")||sub.contains("Education")||low.contains("medical card")||low.contains("health"))ledMedIns+=amt;
-    else ledLifeIns+=amt;
+    if(sub.contains("Medical")||sub.contains("Education")||low.contains("medical card")||low.contains("health")){ledMedIns+=amt;if(bucket.isEmpty())bucket="Medical & Edu Insurance";}
+    else{ledLifeIns+=amt;if(bucket.isEmpty())bucket="Life Insurance / Takaful";}
    }
-   if(low.contains("sspn")||low.contains("prs")||low.contains("ev charging"))ledSspnPrs+=amt;
-   if(low.contains("zakat")||low.contains("fitrah"))ledZakat+=amt;
-   if(low.contains("lhdn")||low.contains("pcb")||low.contains("cp38")||sub.contains("LHDN"))ledPcb+=amt;
+   if(low.contains("sspn")||low.contains("prs")||low.contains("ev charging")){ledSspnPrs+=amt;if(bucket.isEmpty())bucket="SSPN / PRS / EV";}
+   if(low.contains("zakat")||low.contains("fitrah")){ledZakat+=amt;if(bucket.isEmpty())bucket="Zakat / Fitrah Rebate";}
+   if(low.contains("lhdn")||low.contains("pcb")||low.contains("cp38")||sub.contains("LHDN")){ledPcb+=amt;if(bucket.isEmpty())bucket="LHDN / PCB Paid";}
+   if(!bucket.isEmpty()&&claimableItems.length()<50){
+    claimableItems.put(new JSONObject().put("id",t.optString("id")).put("date",t.optString("date")).put("merchant",t.optString("merchant",cat)).put("category",cat).put("subcategory",sub).put("bucket",bucket).put("amount",amt));
+   }
   }
   double baseMonthly=prof.optDouble("monthlyBaseSalary",0);
   double annualBonus=prof.optDouble("annualBonus",0);
@@ -108,6 +112,12 @@ public final class Finance {
   long annualPcbSen=monthlyPcb>0?Math.round(monthlyPcb*12.0*100.0):ledPcb;
   long pcbDiffSen=netTaxSen-annualPcbSen;
   double effectiveRate=grossSen>0?(netTaxSen*100.0/grossSen):0.0;
+  long mGrossSen=Math.round(baseMonthly*100.0);
+  long mEpfSen=Math.round(mGrossSen*(epfRate/100.0));
+  long mSocsoSen=Math.round(socsoSen/12.0);
+  long mPcbSen=monthlyPcb>0?Math.round(monthlyPcb*100.0):monthlyTaxSen;
+  long mTakeHomeSen=Math.max(0L,mGrossSen-mEpfSen-mSocsoSen-mPcbSen);
+  JSONObject monthlyPaycheck=new JSONObject().put("grossMonthly",mGrossSen).put("epfMonthly",mEpfSen).put("socsoMonthly",mSocsoSen).put("pcbMonthly",mPcbSen).put("netTakeHomeMonthly",mTakeHomeSen);
   JSONObject ledgerDetected=new JSONObject().put("medical",ledMedical).put("lifestyle",ledLifestyle).put("sports",ledSports).put("education",ledEducation).put("lifeInsurance",ledLifeIns).put("medicalInsurance",ledMedIns).put("sspnPrs",ledSspnPrs).put("zakat",ledZakat).put("pcb",ledPcb);
   return new JSONObject()
    .put("year",year)
@@ -123,7 +133,9 @@ public final class Finance {
    .put("pcbDifference",pcbDiffSen)
    .put("effectiveRate",BigDecimal.valueOf(effectiveRate).setScale(2,RoundingMode.HALF_UP).toPlainString())
    .put("brackets",brackets)
-   .put("ledgerDetected",ledgerDetected);
+   .put("ledgerDetected",ledgerDetected)
+   .put("claimableItems",claimableItems)
+   .put("monthlyPaycheck",monthlyPaycheck);
  }
  public static JSONArray subscriptions(JSONObject s)throws Exception{
   Map<String,List<JSONObject>> groups=new LinkedHashMap<>();JSONArray tx=s.getJSONArray("transactions"),out=new JSONArray();for(int i=0;i<tx.length();i++){JSONObject t=tx.getJSONObject(i);if(t.optBoolean("voided")||!t.getString("kind").equals("expense")||t.optString("merchant").trim().isEmpty())continue;String k=t.getString("merchant").toLowerCase(Locale.ROOT)+"|"+t.getString("account");groups.computeIfAbsent(k,x->new ArrayList<>()).add(t);}
@@ -193,13 +205,32 @@ public final class Finance {
   for(int i=0;i<accounts.length();i++)if(id.equals(accounts.getJSONObject(i).optString("id")))return true;
   return false;
  }
- private static String matchAccountByName(JSONArray accounts,String label,String pkg)throws JSONException{
-  String hay=(label+" "+pkg).toLowerCase(Locale.ROOT);
-  boolean isTng=hay.contains("tng")||hay.contains("touch");
+ public static String matchAccountByName(JSONArray accounts,String label,String pkg)throws JSONException{
+  if(accounts==null)return "";
+  String hay=(String.valueOf(label)+" "+String.valueOf(pkg)).toLowerCase(Locale.ROOT);
+  String[][] aliases={
+   {"tng","touch","ewallet"},
+   {"maybank","mae","m2u"},
+   {"cimb","octo"},
+   {"public bank","pbe","pb engage"},
+   {"rhb"},
+   {"hong leong","hlb"},
+   {"ambank","amonline"},
+   {"bank islam","bimb"},
+   {"gxbank","gx bank"},
+   {"grab","grabpay"},
+   {"shopee","spaylater","shopeepay"},
+   {"boost"}
+  };
   for(int i=0;i<accounts.length();i++){
    JSONObject a=accounts.getJSONObject(i);String name=a.optString("name","").toLowerCase(Locale.ROOT).trim();
    if(name.isEmpty())continue;
-   if(hay.contains(name)||(isTng&&(name.contains("tng")||name.contains("touch"))))return a.getString("id");
+   if(hay.contains(name))return a.getString("id");
+   for(String[] group:aliases){
+    boolean srcHas=false,acctHas=false;
+    for(String k:group){if(hay.contains(k))srcHas=true;if(name.contains(k))acctHas=true;}
+    if(srcHas&&acctHas)return a.getString("id");
+   }
   }
   return "";
  }

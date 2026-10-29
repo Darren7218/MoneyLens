@@ -1,8 +1,12 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:padding="16dp" android:background="#263822">
-<TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="MoneyLens" android:textColor="#f5f7ed" android:textSize="20sp" android:textStyle="bold" />
-<TextView android:id="@+id/widget_status" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Private. Offline. Yours." android:textColor="#c9d8af" android:textSize="12sp" android:layout_marginTop="6dp" />
-<LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:gravity="center_vertical">
-<Button android:id="@+id/widget_add" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="+ Expense" android:textSize="12sp" />
-<Button android:id="@+id/widget_inbox" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="Inbox" android:textSize="12sp" />
-<Button android:id="@+id/widget_scan" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="Scan" android:textSize="12sp" />
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:padding="14dp" android:background="#0d4a2d">
+<LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+<TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="MoneyLens" android:textColor="#f5f8f5" android:textSize="17sp" android:textStyle="bold" />
+<TextView android:id="@+id/widget_due" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="On-device vault" android:textColor="#c9ebd7" android:textSize="11sp" />
+</LinearLayout>
+<TextView android:id="@+id/widget_status" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Private · Offline · Auto-Capture" android:textColor="#e6f5ec" android:textSize="13sp" android:textStyle="bold" android:layout_marginTop="4dp" />
+<LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:gravity="center_vertical" android:layout_marginTop="6dp">
+<Button android:id="@+id/widget_add" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="+ Expense" android:textSize="11sp" />
+<Button android:id="@+id/widget_inbox" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="Inbox" android:textSize="11sp" />
+<Button android:id="@+id/widget_scan" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="Scan" android:textSize="11sp" />
+<Button android:id="@+id/widget_plan" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="Plan" android:textSize="11sp" />
 </LinearLayout></LinearLayout>

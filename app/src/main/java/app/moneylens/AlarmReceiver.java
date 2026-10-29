@@ -8,13 +8,14 @@ import java.time.*;
 
 /**
  * Exact AlarmManager broadcast receiver for BNPL, PTPTN, and recurring bill reminders,
- * plus automatic restart of KeepAliveService and CaptureService.
+ * 1-tap Mark Paid, Snooze, Dismiss, and automatic restart of KeepAliveService & CaptureService.
  */
 public final class AlarmReceiver extends BroadcastReceiver {
   public static final String ACTION_CHECK_REMINDERS = "app.moneylens.ACTION_CHECK_REMINDERS";
   public static final String ACTION_RESTART_SERVICE = "app.moneylens.ACTION_RESTART_SERVICE";
   public static final String ACTION_SNOOZE_BILL = "app.moneylens.ACTION_SNOOZE_BILL";
   public static final String ACTION_DISMISS_BILL = "app.moneylens.ACTION_DISMISS_BILL";
+  public static final String ACTION_PAY_BILL = "app.moneylens.ACTION_PAY_BILL";
 
   @Override public void onReceive(Context c, Intent i) {
     String action = i == null ? "" : String.valueOf(i.getAction());
@@ -26,7 +27,19 @@ public final class AlarmReceiver extends BroadcastReceiver {
     PendingResult pending = goAsync();
     new Thread(() -> {
       try {
-        if (ACTION_SNOOZE_BILL.equals(action)) {
+        if (ACTION_PAY_BILL.equals(action)) {
+          String billId = i.getStringExtra("billId");
+          int notifId = i.getIntExtra("notifId", 0);
+          if (billId != null && !billId.isEmpty()) {
+            Vault.command(c, "payBillAuto", new JSONObject().put("id", billId));
+            MoneyWidget.refresh(c);
+            MainActivity.notifyCaptured();
+          }
+          if (notifId != 0) {
+            NotificationManager nm = c.getSystemService(NotificationManager.class);
+            if (nm != null) nm.cancel(notifId);
+          }
+        } else if (ACTION_SNOOZE_BILL.equals(action)) {
           String billId = i.getStringExtra("billId");
           int notifId = i.getIntExtra("notifId", 0);
           if (billId != null && !billId.isEmpty()) {

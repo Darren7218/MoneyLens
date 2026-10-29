@@ -73,11 +73,14 @@ public final class Automation {
    String prefix="bnpl".equals(rType)?"BNPL Due Reminder":"ptptn".equals(rType)?"PTPTN Repayment Reminder":"credit".equals(rType)?"Credit Card Due Reminder":"Payment Due Reminder";
    String status=daysDiff<0?("OVERDUE by "+Math.abs(daysDiff)+" day(s)"):daysDiff==0?"Due TODAY":("Due in "+daysDiff+" day(s) ("+dueStr+")");
    String title=(isTest?"[Test] ":"")+prefix+" · "+name;
-   String body=amtStr+" · "+status+". Pay before due date to avoid late fees.";
+   String body=amtStr+" · "+status+". Tap 'Mark Paid' to record in 1 tap or pay via your bank/TNG.";
    int notifId=Math.abs(("rem_notif:"+id).hashCode());
 
    Intent open=new Intent(c,MainActivity.class).putExtra("screen","plan").setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);
    PendingIntent pOpen=PendingIntent.getActivity(c,notifId,open,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
+
+   Intent payNow=new Intent(c,AlarmReceiver.class).setAction(AlarmReceiver.ACTION_PAY_BILL).putExtra("billId",id).putExtra("notifId",notifId);
+   PendingIntent pPayNow=PendingIntent.getBroadcast(c,notifId+3,payNow,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
 
    Intent snooze=new Intent(c,AlarmReceiver.class).setAction(AlarmReceiver.ACTION_SNOOZE_BILL).putExtra("billId",id).putExtra("notifId",notifId);
    PendingIntent pSnooze=PendingIntent.getBroadcast(c,notifId+1,snooze,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
@@ -93,7 +96,7 @@ public final class Automation {
     .setContentIntent(pOpen)
     .setVisibility(Notification.VISIBILITY_PUBLIC)
     .setAutoCancel(true)
-    .addAction(new Notification.Action.Builder(null,"Record Payment",pOpen).build())
+    .addAction(new Notification.Action.Builder(null,"Mark Paid",pPayNow).build())
     .addAction(new Notification.Action.Builder(null,"Snooze 1h",pSnooze).build())
     .addAction(new Notification.Action.Builder(null,"Dismiss cycle",pDismiss).build())
     .build();
@@ -117,7 +120,7 @@ public final class Automation {
  public static void configure(Context c,Uri uri,char[] password)throws Exception{byte[] salt=Crypto.random(16),key=Crypto.derive(password,salt).getEncoded();JSONObject cfg=new JSONObject().put("uri",uri.toString()).put("salt",android.util.Base64.encodeToString(salt,2)).put("key",android.util.Base64.encodeToString(key,2));Vault.writeSecret(c,"auto-backup",cfg.toString().getBytes(StandardCharsets.UTF_8));Arrays.fill(key,(byte)0);c.getSharedPreferences("health",0).edit().putBoolean("autoBackup",true).apply();autoBackup(c,true);}
  public static void autoBackup(Context c,boolean force)throws Exception{
   android.content.SharedPreferences health=c.getSharedPreferences("health",0);if(!health.getBoolean("autoBackup",false))return;if(!force&&System.currentTimeMillis()-health.getLong("backupSuccess",0)<24*3600000L)return;
-  Uri dest=null;try{JSONObject cfg=new JSONObject(new String(Vault.readSecret(c,"auto-backup"),StandardCharsets.UTF_8));Uri tree=Uri.parse(cfg.getString("uri")),parent=DocumentsContract.buildDocumentUriUsingTree(tree,DocumentsContract.getTreeDocumentId(tree));byte[] bytes=Crypto.backupWithKey(Vault.backupPlain(c),android.util.Base64.decode(cfg.getString("salt"),2),android.util.Base64.decode(cfg.getString("key"),2));dest=DocumentsContract.createDocument(c.getContentResolver(),parent,"application/octet-stream","MoneyLens-auto-"+System.currentTimeMillis()+".moneylens");if(dest==null)throw new IOException();try(OutputStream out=c.getContentResolver().openOutputStream(dest,"w")){if(out==null)throw new IOException();out.write(bytes);out.flush();}health.edit().putLong("backupSuccess",System.currentTimeMillis()).putString("backupError","").apply();
-  }catch(Exception e){if(dest!=null)try{DocumentsContract.deleteDocument(c.getContentResolver(),dest);}catch(Exception ignored){}health.edit().putString("backupError","Backup folder is unavailable or full. Choose the folder again or make a manual backup.").apply();if(force)throw e;}
+  Uri dest=null;try{JSONObject cfg=new JSONObject(new String(Vault.readSecret(c,"auto-backup"),StandardCharsets.UTF_8));Uri tree=Uri.parse(cfg.getString("uri")),parent=DocumentsContract.buildDocumentUriUsingTree(tree,DocumentsContract.getTreeDocumentId(tree));byte[] bytes=Crypto.backupWithKey(Vault.backupPlain(c),android.util.Base64.decode(cfg.getString("salt"),2),android.util.Base64.decode(cfg.getString("key"),2));dest=DocumentsContract.createDocument(c.getContentResolver(),parent,"application/octet-stream","MoneyLens-auto-"+System.currentTimeMillis()+".moneylens");if(dest==null)throw new IOException();try(OutputStream out=c.getContentResolver().openOutputStream(dest,"w")){if(out==null)throw new IOException();out.write(bytes);out.flush();}health.edit().putLong("backupSuccess",System.currentTimeMillis()).putString("backupError","").apply();}catch(Exception e){if(dest!=null)try{DocumentsContract.deleteDocument(c.getContentResolver(),dest);}catch(Exception ignored){}health.edit().putString("backupError","Daily backup could not be written. Choose the backup folder again in Settings.").apply();}
  }
+ public static void disableBackup(Context c){new File(c.getNoBackupFilesDir(),"auto-backup").delete();c.getSharedPreferences("health",0).edit().putBoolean("autoBackup",false).putString("backupError","").apply();}
 }

@@ -11,6 +11,7 @@ import java.util.concurrent.*;
 
 public final class CaptureService extends NotificationListenerService {
   public static volatile boolean connected=false;
+  public static final String KEY_REMOTE_NOTE="moneylens_remote_note";
   private final ExecutorService queue=new ThreadPoolExecutor(1,1,0L,TimeUnit.MILLISECONDS,new ArrayBlockingQueue<>(100));
   private BroadcastReceiver unlockReceiver;
   @Override public void onListenerConnected(){
@@ -85,13 +86,19 @@ public final class CaptureService extends NotificationListenerService {
     NotificationManager nm=c.getSystemService(NotificationManager.class);if(!nm.areNotificationsEnabled())return;nm.createNotificationChannel(new NotificationChannel("payments","Payment suggestions",NotificationManager.IMPORTANCE_DEFAULT));
     String id=d.getString("id");int code=promptId(id);
     if(d.optBoolean("autoRecorded")){
-      String txId=d.optString("transactionId",""),amt=BigDecimal.valueOf(d.optLong("amount"),2).toPlainString(),merchant=d.optString("merchant","Payment"),cat=d.optString("category","Miscellaneous"),sub=d.optString("subcategory","");
+      String txId=d.optString("transactionId",""),amt=BigDecimal.valueOf(d.optLong("amount"),2).toPlainString(),merchant=d.optString("merchant","Payment"),cat=d.optString("category","Miscellaneous"),sub=d.optString("subcategory",""),matchedBill=d.optString("matchedBillName","");
       String catLabel=sub.isEmpty()?cat:(cat+" › "+sub);
+      if(!matchedBill.isEmpty())catLabel+=" · Linked to "+matchedBill;
       Intent editIntent=new Intent(c,MainActivity.class).putExtra("screen","inbox").putExtra("editNoteId",txId).setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);
       PendingIntent editPi=PendingIntent.getActivity(c,code,editIntent,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
+      Intent noteIntent=new Intent(c,IgnoreReceiver.class).setAction("note."+id).putExtra("id",id).putExtra("noteTxId",txId);
+      int mutFlag=Build.VERSION.SDK_INT>=31?PendingIntent.FLAG_MUTABLE:0;
+      PendingIntent notePi=PendingIntent.getBroadcast(c,code+1,noteIntent,PendingIntent.FLAG_UPDATE_CURRENT|mutFlag);
+      RemoteInput remoteInput=new RemoteInput.Builder(KEY_REMOTE_NOTE).setLabel("Type purpose / note (e.g. Toll to office)").build();
+      Notification.Action inlineNoteAction=new Notification.Action.Builder(null,"Add Note",notePi).addRemoteInput(remoteInput).build();
       Intent undoIntent=new Intent(c,IgnoreReceiver.class).setAction("undo."+id).putExtra("id",id).putExtra("voidTxId",txId);
       PendingIntent undoPi=PendingIntent.getBroadcast(c,code,undoIntent,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
-      Notification n=new Notification.Builder(c,"payments").setSmallIcon(R.drawable.ic_notification).setContentTitle("Recorded RM "+amt+" · "+merchant).setContentText(catLabel+(d.optBoolean("needsNote")?" · Tap to edit or remove":" · Auto-saved")).setContentIntent(editPi).setAutoCancel(true).setVisibility(Notification.VISIBILITY_PRIVATE).addAction(new Notification.Action.Builder(null,"Edit purpose",editPi).build()).addAction(new Notification.Action.Builder(null,"Remove",undoPi).build()).build();
+      Notification n=new Notification.Builder(c,"payments").setSmallIcon(R.drawable.ic_notification).setContentTitle("Recorded RM "+amt+" · "+merchant).setContentText(catLabel+(d.optBoolean("needsNote")?" · Tap to edit or Add Note":" · Auto-saved")).setContentIntent(editPi).setAutoCancel(true).setVisibility(Notification.VISIBILITY_PRIVATE).addAction(inlineNoteAction).addAction(new Notification.Action.Builder(null,"Edit Category",editPi).build()).addAction(new Notification.Action.Builder(null,"Remove",undoPi).build()).build();
       try{nm.notify(code,n);Vault.markPrompt(c,id);}catch(SecurityException ignored){}
       return;
     }

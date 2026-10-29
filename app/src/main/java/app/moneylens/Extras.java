@@ -1,6 +1,7 @@
 package app.moneylens;
 import org.json.*;
 import java.time.*;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.math.BigDecimal;
 
@@ -70,6 +71,27 @@ public final class Extras {
    case "dismissBillCycle":{
     JSONObject b=Ledger.find(s.getJSONArray("bills"),a.getString("id"));
     b.put("dismissedCycle",b.getString("date"));
+    return true;
+   }
+   case "payBillAuto":{
+    JSONObject bill=Ledger.find(s.getJSONArray("bills"),a.getString("id"));
+    if(bill.optBoolean("paid")||bill.optBoolean("cancelled"))return true;
+    String due=bill.getString("date");
+    String acct=resolveAccount(s,bill.optString("account",""),"","");
+    String kind=bill.optString("kind","expense");
+    JSONObject txArgs=new JSONObject()
+     .put("key","autopay:"+bill.getString("id")+":"+due)
+     .put("kind",kind)
+     .put("amount",BigDecimal.valueOf(bill.getLong("amount"),2).toPlainString())
+     .put("account",acct)
+     .put("category",bill.optString("category","Bills & utilities"))
+     .put("merchant",bill.getString("name"))
+     .put("date",LocalDate.now().toString())
+     .put("billId",bill.getString("id"))
+     .put("billDate",due);
+    if(!bill.optString("subcategory").isEmpty())txArgs.put("subcategory",bill.getString("subcategory"));
+    if(!bill.optString("to").isEmpty())txArgs.put("to",bill.getString("to"));
+    Ledger.post(s,txArgs);
     return true;
    }
    case "deleteExtra":{String table=a.getString("table");if(!Arrays.asList("rules","favorites","customCategories").contains(table))throw new IllegalArgumentException("Invalid item.");if(table.equals("rules"))rememberRules(s);JSONArray rows=s.getJSONArray(table);for(int i=rows.length()-1;i>=0;i--)if(rows.getJSONObject(i).getString("id").equals(a.getString("id")))rows.remove(i);return true;}
@@ -171,17 +193,62 @@ public final class Extras {
  public static void autoPost(JSONObject s,JSONObject d)throws Exception{
   long amt=d.optLong("amount")>0?d.optLong("amount"):d.optLong("primaryAmount",0);
   if(!s.getJSONObject("settings").optBoolean("autoRecord",true)||amt<=0)return;
-  String acct=resolveAccount(s,d.optString("account",""));
+  String acct=resolveAccount(s,d.optString("account",""),d.optString("source",""),d.optString("package",""));
   String kind=d.optString("kind","expense");
   String to=d.optString("to","");
   if(kind.equals("transfer")&&(to.isEmpty()||to.equals(acct)))kind="expense";
   String cat=d.optString("category","Miscellaneous");if(cat.isEmpty()||cat.equals("Other"))cat="Miscellaneous";
+  String sub=d.optString("subcategory","");
+  String dt=d.optString("date",LocalDate.now().toString());
+  String merchant=d.optString("merchant","Detected payment");
   d.put("amount",amt).put("account",acct).put("category",cat).put("kind",kind);
-  JSONObject txArgs=new JSONObject().put("key","auto:"+d.getString("id")).put("draftId",d.getString("id")).put("draftRevision",d.optInt("revision",1)).put("kind",kind).put("amount",BigDecimal.valueOf(amt,2).toPlainString()).put("account",acct).put("category",cat).put("merchant",d.optString("merchant","Detected payment")).put("date",d.optString("date",LocalDate.now().toString())).put("note",d.optString("note","")).put("autoRecorded",true).put("historyMatch",d.optString("historyMatch","none")).put("needsNote",d.optBoolean("needsNote",true));
-  if(!d.optString("subcategory").isEmpty())txArgs.put("subcategory",d.getString("subcategory"));
+  JSONObject txArgs=new JSONObject().put("key","auto:"+d.getString("id")).put("draftId",d.getString("id")).put("draftRevision",d.optInt("revision",1)).put("kind",kind).put("amount",BigDecimal.valueOf(amt,2).toPlainString()).put("account",acct).put("category",cat).put("merchant",merchant).put("date",dt).put("note",d.optString("note","")).put("autoRecorded",true).put("historyMatch",d.optString("historyMatch","none")).put("needsNote",d.optBoolean("needsNote",true));
+  if(!sub.isEmpty())txArgs.put("subcategory",sub);
   if(kind.equals("transfer"))txArgs.put("to",to);
+  JSONObject matchedBill=findMatchingBill(s,kind,amt,merchant,cat,sub,dt);
+  if(matchedBill!=null){
+   txArgs.put("billId",matchedBill.getString("id")).put("billDate",matchedBill.getString("date")).put("needsNote",false);
+   d.put("matchedBillId",matchedBill.getString("id")).put("matchedBillName",matchedBill.getString("name")).put("needsNote",false);
+  }
   Ledger.post(s,txArgs);
   d.put("autoRecorded",true);
+ }
+ static JSONObject findMatchingBill(JSONObject s,String kind,long amt,String merchant,String category,String subcategory,String dateStr){
+  if(!"expense".equals(kind))return null;
+  try{
+   JSONArray bills=s.optJSONArray("bills");
+   if(bills==null||bills.length()==0)return null;
+   LocalDate txDate=LocalDate.parse(dateStr);
+   String mLow=String.valueOf(merchant).toLowerCase(Locale.ROOT).trim();
+   String subLow=String.valueOf(subcategory).toLowerCase(Locale.ROOT).trim();
+   JSONObject best=null;int bestScore=0;
+   for(int i=0;i<bills.length();i++){
+    JSONObject b=bills.getJSONObject(i);
+    if(b.optBoolean("paid")||b.optBoolean("cancelled")||!"expense".equals(b.optString("kind","expense")))continue;
+    LocalDate due=LocalDate.parse(b.getString("date"));
+    long daysDiff=Math.abs(ChronoUnit.DAYS.between(txDate,due));
+    if(daysDiff>20)continue;
+    String bName=b.optString("name","").toLowerCase(Locale.ROOT).trim();
+    String bSub=b.optString("subcategory","").toLowerCase(Locale.ROOT).trim();
+    String rType=b.optString("reminderType","bill");
+    int score=0;
+    if(!bName.isEmpty()&&!mLow.isEmpty()&&!mLow.equals("detected payment")&&(mLow.contains(bName)||bName.contains(mLow))){
+     score+=50;
+    }
+    for(String kw:new String[]{"ptptn","spaylater","grabpaylater","atome","tnb","tenaga nasional","unifi","air selangor","syabas","indah water","maxis","celcom","digi","astro","netflix"}){
+     if((mLow.contains(kw)||subLow.contains(kw))&&(bName.contains(kw)||bSub.contains(kw))){score+=60;break;}
+    }
+    if(score==0&&!subLow.isEmpty()&&subLow.equals(bSub)&&("ptptn".equals(rType)||subLow.contains("ptptn")||subLow.contains("electricity")||subLow.contains("water")||subLow.contains("internet"))){
+     score+=40;
+    }
+    if(score>0){
+     if(b.optLong("amount")==amt)score+=30;
+     score-=Math.min(15,(int)daysDiff);
+     if(score>bestScore){bestScore=score;best=b;}
+    }
+   }
+   return best;
+  }catch(Exception e){return null;}
  }
  public static JSONObject captureState(JSONObject s,String pkg,String label,String key,String text,long now)throws Exception{
   return captureState(s,pkg,label,key,text,now,now);
@@ -214,9 +281,11 @@ public final class Extras {
   seen.put(new JSONObject().put("hash",instanceDigest).put("contentHash",contentDigest).put("time",now));while(seen.length()>5000)seen.remove(0);
   s.put("lastCapture",now).put("revision",s.optLong("revision")+1);Ledger.validate(s);return d;
  }
- private static String resolveAccount(JSONObject s,String preferred)throws JSONException{
+ private static String resolveAccount(JSONObject s,String preferred,String sourceLabel,String pkg)throws JSONException{
   JSONArray accounts=s.getJSONArray("accounts");
   if(!preferred.isEmpty())for(int i=0;i<accounts.length();i++)if(preferred.equals(accounts.getJSONObject(i).optString("id")))return preferred;
+  String byName=Finance.matchAccountByName(accounts,sourceLabel,pkg);
+  if(!byName.isEmpty())return byName;
   String last=s.getJSONObject("settings").optString("lastAccount","");
   if(!last.isEmpty())for(int i=0;i<accounts.length();i++)if(last.equals(accounts.getJSONObject(i).optString("id")))return last;
   return accounts.getJSONObject(0).getString("id");

@@ -673,3 +673,31 @@ body.dark .switch { background: #364037; }
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+/* Interactive Monthly Spending Calendar Heatmap (Cashew / Paisa inspired) */
+.cal-dow-row, .cal-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;
+}
+.cal-dow-row { margin: 10px 0 6px; text-align: center; font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+.cal-cell {
+  min-height: 46px; border-radius: 12px; padding: 5px 4px;
+  border: 1px solid var(--line); background: var(--surface-elev);
+  display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+  font-size: 11px; font-weight: 600; color: var(--ink);
+  cursor: pointer; transition: transform 0.12s ease, border-color 0.15s ease;
+}
+.cal-cell.empty-cell { background: transparent; border-color: transparent; cursor: default; }
+.cal-cell small { font-size: 9px; font-weight: 700; color: var(--muted); line-height: 1; }
+.cal-cell.lvl-1 { background: color-mix(in srgb, var(--accent-soft) 45%, var(--surface)); }
+.cal-cell.lvl-2 { background: color-mix(in srgb, var(--accent-soft) 80%, var(--surface)); }
+.cal-cell.lvl-3 { background: color-mix(in srgb, var(--accent) 26%, var(--surface)); }
+.cal-cell.lvl-4 { background: color-mix(in srgb, var(--accent) 44%, var(--surface)); }
+.cal-cell.selected { border: 2px solid var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); transform: translateY(-1px); }
+.cat-filter-strip { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0 10px; scrollbar-width: none; }
+.cat-filter-strip::-webkit-scrollbar { display: none; }
+.paycheck-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 12px 0; }
+@media (max-width: 500px) {
+  .cal-cell { min-height: 42px; padding: 4px 2px; }
+  .cal-cell small { font-size: 8px; }
+  .paycheck-grid { grid-template-columns: 1fr; }
+}
