@@ -15,7 +15,11 @@ import java.util.*;
 /** Durable background scheduling, exact BNPL/PTPTN reminder checks, and encrypted auto-backup. */
 public final class Automation {
  public static void schedule(Context c){
-  try{c.getSystemService(JobScheduler.class).schedule(new JobInfo.Builder(2107,new ComponentName(c,MoneyJob.class)).setPeriodic(15*60*1000L).setPersisted(true).build());}catch(Exception ignored){}
+  try{
+   long period=4*60*60*1000L;
+   long flex=30*60*1000L;
+   c.getSystemService(JobScheduler.class).schedule(new JobInfo.Builder(2107,new ComponentName(c,MoneyJob.class)).setPeriodic(period,flex).setPersisted(true).build());
+  }catch(Exception ignored){}
   KeepAliveService.ensureRunning(c);
   AlarmReceiver.scheduleNext(c);
  }
@@ -24,8 +28,19 @@ public final class Automation {
  static void alert(Context c,String id,String title,String body,String screen)throws Exception{if(!Vault.alertExists(c,id)&&notify(c,id,title,body,screen))Vault.markAlert(c,id);}
 
  public static void checkDueReminders(Context c)throws Exception{
-  JSONObject s=Vault.read(c),prefs=s.getJSONObject("settings");
+  if(Vault.hasMeta(c)){
+   if(!Vault.fastBool(c,"reminders",true)||Vault.fastInt(c,"activeBillsCount",0)==0)return;
+   if(Vault.fastBool(c,"quietEnabled",false)){
+    int h=LocalTime.now().getHour(),start=Vault.fastInt(c,"quietStart",22),end=Vault.fastInt(c,"quietEnd",8);
+    if(start==end||(start<end?h>=start&&h<end:h>=start||h<end))return;
+   }
+  }
+  checkDueReminders(c,Vault.read(c));
+ }
+ public static void checkDueReminders(Context c,JSONObject s)throws Exception{
+  JSONObject prefs=s.getJSONObject("settings");
   if(!prefs.optBoolean("reminders",true)||quiet(prefs))return;
+  boolean ms="ms".equals(prefs.optString("lang","en"));
   LocalDate today=LocalDate.now();
   LocalTime nowTime=LocalTime.now();
   long nowMs=System.currentTimeMillis();
@@ -48,7 +63,7 @@ public final class Automation {
    if(snoozeUntil==0&&nowTime.isBefore(LocalTime.of(hh,mm)))continue;
    String alertKey=snoozeUntil>0?("rem-snooze:"+b.getString("id")+":"+snoozeUntil):("rem:"+b.getString("id")+":"+dueStr+":"+today+":"+rt);
    if(!Vault.alertExists(c,alertKey)){
-    if(fireReminderNotification(c,b,false)){
+    if(fireReminderNotification(c,b,false,ms)){
      Vault.markAlert(c,alertKey);
      if(snoozeUntil>0){
       Vault.command(c,"snoozeBill",new JSONObject().put("id",b.getString("id")).put("durationMs",0L));
@@ -60,7 +75,9 @@ public final class Automation {
 
  public static boolean fireReminderNotification(Context c,JSONObject b,boolean isTest){
   boolean ms=false;
-  try{ms="ms".equals(Vault.read(c).getJSONObject("settings").optString("lang","en"));}catch(Exception ignored){}
+  try{
+   ms=Vault.hasMeta(c)?"ms".equals(c.getApplicationContext().getSharedPreferences("vault-meta",0).getString("lang","en")):"ms".equals(Vault.read(c).getJSONObject("settings").optString("lang","en"));
+  }catch(Exception ignored){}
   return fireReminderNotification(c,b,isTest,ms);
  }
  public static boolean fireReminderNotification(Context c,JSONObject b,boolean isTest,boolean ms){
@@ -115,8 +132,9 @@ public final class Automation {
  }
 
  public static void run(Context c)throws Exception{
-  checkDueReminders(c);
-  JSONObject s=Vault.read(c),prefs=s.getJSONObject("settings");LocalDate now=LocalDate.now();boolean ms="ms".equals(prefs.optString("lang","en"));if(!quiet(prefs)){
+  JSONObject s=Vault.read(c),prefs=s.getJSONObject("settings");
+  checkDueReminders(c,s);
+  LocalDate now=LocalDate.now();boolean ms="ms".equals(prefs.optString("lang","en"));if(!quiet(prefs)){
    JSONArray drafts=s.getJSONArray("drafts");int count=0;for(int i=0;i<drafts.length();i++)if(drafts.getJSONObject(i).optString("state").equals("review"))count++;
    if(prefs.optBoolean("digest")){if(count>0&&LocalTime.now().getHour()>=prefs.optInt("digestHour",19))alert(c,"digest:"+now,ms?"Semakan MoneyLens anda":"Your MoneyLens check-in",ms?(count+" cadangan menunggu semakan anda."):(count+" suggestions are waiting for your review."),"inbox");}
    else for(int i=0;i<drafts.length();i++){JSONObject d=drafts.getJSONObject(i);if(d.optString("state").equals("review")&&!d.optBoolean("prompted"))CaptureService.showPrompt(c,d);}
@@ -124,8 +142,8 @@ public final class Automation {
    if(prefs.optBoolean("budgetAlerts",true)){JSONObject r=Finance.report(s,now);JSONArray b=r.getJSONArray("budgets");int threshold=prefs.optInt("threshold",80);for(int i=0;i<b.length();i++){JSONObject row=b.getJSONObject(i);if(row.getLong("available")>0&&row.getLong("spent")*100>=row.getLong("available")*threshold)alert(c,"budget:"+row.getString("id")+":"+row.getString("start")+":"+threshold,ms?"Semakan bajet":"Budget check-in",ms?"Kategori telah mencapai ambang amaran anda. Buka Rancang untuk butiran.":"A category has reached your alert threshold. Open Plan for details.","plan");}}
    if(prefs.optBoolean("weeklyBudgetNudge",false)){JSONObject nudge=Finance.weeklyBudgetNudge(s,now);if(nudge!=null)alert(c,nudge.getString("key"),nudge.getString("title"),nudge.getString("body"),"plan");}
   }
-  autoBackup(c,false);MoneyWidget.refresh(c);
-  AlarmReceiver.scheduleNext(c);
+  autoBackup(c,false);MoneyWidget.refresh(c,s);
+  AlarmReceiver.scheduleNext(c,s);
  }
  public static void configure(Context c,Uri uri,char[] password)throws Exception{byte[] salt=Crypto.random(16),key=Crypto.derive(password,salt).getEncoded();JSONObject cfg=new JSONObject().put("uri",uri.toString()).put("salt",android.util.Base64.encodeToString(salt,2)).put("key",android.util.Base64.encodeToString(key,2));Vault.writeSecret(c,"auto-backup",cfg.toString().getBytes(StandardCharsets.UTF_8));Arrays.fill(key,(byte)0);c.getSharedPreferences("health",0).edit().putBoolean("autoBackup",true).apply();autoBackup(c,true);}
  public static void autoBackup(Context c,boolean force)throws Exception{

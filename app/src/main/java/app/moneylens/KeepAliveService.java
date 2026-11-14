@@ -15,22 +15,40 @@ public final class KeepAliveService extends Service {
   private static final int FG_ID = 2109;
   private static final String CHANNEL_ID = "scheduler_keepalive";
   private final Handler handler = new Handler(Looper.getMainLooper());
-  private final Runnable heartbeat = new Runnable() {
+  private boolean startupSynced = false;
+  private final Runnable watchdog = new Runnable() {
     @Override public void run() {
       try {
+        SharedPreferences prefs = getSharedPreferences("health", 0);
+        if (!prefs.getBoolean("alwaysOnScheduler", true)) {
+          stopSelf();
+          return;
+        }
+        boolean eco = !Vault.hasMeta(KeepAliveService.this) || Vault.fastBool(KeepAliveService.this, "ecoCapture", true);
         if (!CaptureService.connected) {
           NotificationListenerService.requestRebind(new ComponentName(KeepAliveService.this, CaptureService.class));
+          // Retry listener rebind gently every 5 minutes only while disconnected.
+          handler.postDelayed(this, 5 * 60_000L);
+          return;
         }
-        new Thread(() -> {
-          try {
-            Automation.checkDueReminders(KeepAliveService.this);
-            AlarmReceiver.scheduleNext(KeepAliveService.this);
-          } catch (Exception ignored) {}
-        }).start();
+        if (!eco) {
+          syncRemindersAsync();
+          handler.postDelayed(this, 15 * 60_000L);
+        }
+        // In Eco Mode when CaptureService is connected, sleep at 0% CPU until OS/Alarm triggers.
       } catch (Exception ignored) {}
-      handler.postDelayed(this, 60_000L);
     }
   };
+
+  private void syncRemindersAsync() {
+    new Thread(() -> {
+      try {
+        Vault.configureClassifierLazy(KeepAliveService.this);
+        Automation.checkDueReminders(KeepAliveService.this);
+        AlarmReceiver.scheduleNext(KeepAliveService.this);
+      } catch (Exception ignored) {}
+    }, "ml-scheduler-sync").start();
+  }
 
   public static void ensureRunning(Context c) {
     try {
@@ -52,14 +70,23 @@ public final class KeepAliveService extends Service {
     super.onCreate();
     running = true;
     startForegroundQuiet();
-    handler.post(heartbeat);
   }
 
   @Override public int onStartCommand(Intent intent, int flags, int startId) {
+    SharedPreferences prefs = getSharedPreferences("health", 0);
+    if (!prefs.getBoolean("alwaysOnScheduler", true)) {
+      running = false;
+      stopSelf();
+      return START_NOT_STICKY;
+    }
     running = true;
     startForegroundQuiet();
-    handler.removeCallbacks(heartbeat);
-    handler.post(heartbeat);
+    handler.removeCallbacks(watchdog);
+    if (!startupSynced) {
+      startupSynced = true;
+      syncRemindersAsync();
+    }
+    handler.post(watchdog);
     return START_STICKY;
   }
 
@@ -72,12 +99,15 @@ public final class KeepAliveService extends Service {
         ch.setShowBadge(false);
         nm.createNotificationChannel(ch);
       }
+      boolean eco = !Vault.hasMeta(this) || Vault.fastBool(this, "ecoCapture", true);
       Intent open = new Intent(this, MainActivity.class).setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
       PendingIntent pi = PendingIntent.getActivity(this, 2109, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
       Notification n = new Notification.Builder(this, CHANNEL_ID)
         .setSmallIcon(R.drawable.ic_notification)
-        .setContentTitle("MoneyLens Task Scheduler Active")
-        .setContentText("Auto-capture & BNPL/PTPTN reminders running")
+        .setContentTitle(eco ? "MoneyLens Eco Scheduler" : "MoneyLens Task Scheduler Active")
+        .setContentText(eco ? "Low-power auto-capture & exact bill alarms" : "Auto-capture & BNPL/PTPTN reminders running")
+        .setOnlyAlertOnce(true)
+        .setVisibility(Notification.VISIBILITY_SECRET)
         .setContentIntent(pi)
         .setOngoing(true)
         .build();
@@ -91,12 +121,14 @@ public final class KeepAliveService extends Service {
 
   @Override public void onTaskRemoved(Intent rootIntent) {
     super.onTaskRemoved(rootIntent);
-    scheduleImmediateRestart(this);
+    if (getSharedPreferences("health", 0).getBoolean("alwaysOnScheduler", true)) {
+      scheduleImmediateRestart(this);
+    }
   }
 
   @Override public void onDestroy() {
     running = false;
-    handler.removeCallbacks(heartbeat);
+    handler.removeCallbacks(watchdog);
     if (getSharedPreferences("health", 0).getBoolean("alwaysOnScheduler", true)) {
       scheduleImmediateRestart(this);
     }

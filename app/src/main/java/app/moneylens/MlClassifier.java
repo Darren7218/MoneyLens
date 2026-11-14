@@ -91,6 +91,7 @@ public final class MlClassifier {
 
   private static volatile Model activeModel = null;
   private static volatile boolean autoLoadAttempted = false;
+  private static volatile java.util.function.Supplier<InputStream> streamSupplier = null;
 
   private MlClassifier() {}
 
@@ -98,9 +99,22 @@ public final class MlClassifier {
     return activeModel != null;
   }
 
+  /** Registers an optional lazy model stream provider (used by Android assets without eagerly consuming RAM). */
+  public static synchronized void setStreamSupplier(java.util.function.Supplier<InputStream> supplier) {
+    streamSupplier = supplier;
+    if (activeModel == null) autoLoadAttempted = false;
+  }
+
+  /** Frees the active in-memory model while keeping lazy reload capability intact. */
+  public static synchronized void trim() {
+    activeModel = null;
+    autoLoadAttempted = false;
+  }
+
   public static synchronized void clear() {
     activeModel = null;
     autoLoadAttempted = false;
+    streamSupplier = null;
   }
 
   public static synchronized boolean loadFromStream(InputStream in) {
@@ -111,16 +125,17 @@ public final class MlClassifier {
       int hdrRead = pb.read(hdr);
       if (hdrRead > 0) pb.unread(hdr, 0, hdrRead);
       boolean isGzip = hdrRead == 2 && (hdr[0] & 0xFF) == 0x1F && (hdr[1] & 0xFF) == 0x8B;
+      String json;
       try (InputStream src = isGzip ? new GZIPInputStream(pb) : pb) {
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        ByteArrayOutputStream buf = new ByteArrayOutputStream(65536);
         byte[] chunk = new byte[8192];
         int n;
         while ((n = src.read(chunk)) >= 0) buf.write(chunk, 0, n);
-        String json = new String(buf.toByteArray(), StandardCharsets.UTF_8);
-        activeModel = parseModel(json);
-        autoLoadAttempted = true;
-        return activeModel != null;
+        json = buf.toString(StandardCharsets.UTF_8.name());
       }
+      activeModel = parseModel(json);
+      autoLoadAttempted = true;
+      return activeModel != null;
     } catch (Exception ignored) {
       return false;
     }
@@ -138,6 +153,12 @@ public final class MlClassifier {
   private static synchronized void ensureLoaded() {
     if (activeModel != null || autoLoadAttempted) return;
     autoLoadAttempted = true;
+    java.util.function.Supplier<InputStream> supplier = streamSupplier;
+    if (supplier != null) {
+      try (InputStream supplied = supplier.get()) {
+        if (supplied != null && loadFromStream(supplied)) return;
+      } catch (Exception ignored) {}
+    }
     for (String res : new String[]{"/moneylens_classifier.json.gz", "/moneylens_classifier.json"}) {
       try (InputStream cp = MlClassifier.class.getResourceAsStream(res)) {
         if (cp != null && loadFromStream(cp)) return;

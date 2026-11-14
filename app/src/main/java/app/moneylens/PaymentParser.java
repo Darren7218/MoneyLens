@@ -71,10 +71,10 @@ public final class PaymentParser {
     long amount=totalFound?totalMatch:(primaryFound?primary:firstIncluded);
     if(amount<=0)return null;
 
-    boolean outgoingCue=low.matches("(?s).*\\b(for\\s+your\\s+(?:[a-z0-9\\s]{0,30}?\\b)?(?:purchase|investment|sspn|prs|loan|repayment)|your\\s+purchase|purchase\\s+at|from\\s+fpx\\s+to|paid\\s+amount|payment\\s+for|payment\\s+method|payment\\s+to|paid\\s+to|order\\s+(?:id|no)|item|qty|invoice)\\b.*");
-    String kind=low.contains("refund")?"refund":(!outgoingCue&&low.matches("(?s).*\\b(credited|received|diterima)\\b.*"))?"income":"expense";
+    boolean outgoingCue=P_OUTGOING_CUE.matcher(low).find();
+    String kind=low.contains("refund")?"refund":(!outgoingCue&&P_INCOME_CUE.matcher(low).find())?"income":"expense";
     String reason=count==1?"Recorded from a notification. Check the account, amount and type.":"Several amounts were found; MoneyLens used RM "+java.math.BigDecimal.valueOf(amount,2).toPlainString()+" as the payment. Edit it if that is wrong.";
-    if(!kind.equals("income")&&low.matches("(?s).*\\b(transfer(?:red|ring)?|top.?up|reload|reloaded|withdrawal)\\b.*")&&!low.matches("(?s).*\\b(duitnow\\s+qr|fpx|jompay|paid|purchase|spent|sale)\\b.*")){
+    if(!kind.equals("income")&&P_TRANSFER_CUE.matcher(low).find()&&!P_NON_TRANSFER_CUE.matcher(low).find()){
       kind="transfer";reason="This may be a transfer between your own accounts. Choose both accounts.";
     }
 
@@ -105,14 +105,12 @@ public final class PaymentParser {
         String ln=lines[i].trim();
         if(ln.isEmpty()||ln.endsWith(":"))continue;
         String lowLn=ln.toLowerCase(Locale.ROOT);
-        if(lowLn.matches("^(?:notifikasi|notis|nota(?:\\s+pembayaran)?|makluman|berita(?:\\s+bayaran)?|pengesahan|amaran|alert|notice|notification|bayar(?:\\s+dengan|\\s+menggunakan)?|bayaran|pembayaran|transaksi|payment|transaction|kad\\s+kredit|carta\\s+kredit|credit\\s+card|no\\.?\\s*kad|item|barang|produk|harga|perkhidmatan|penyertaan|angsuran|terima\\s+kasih|thank\\s+you|sila\\s+semak).*"))continue;
-        if(lowLn.matches("^(?:rm|myr)?\\s*[0-9,]+(?:\\.[0-9]{1,2})?\\s*$"))continue;
-        if(lowLn.matches("^(?:tarikh|date|time|masa|kod\\b|code|ref\\b|reference|rujukan|txn|transaction|order|invoice|barang|item|baki|tunai|cash|balance|cukai|sst|gst|service|subtotal|jumlah|total|contact|hotline|tel|hp|phone|no\\.|lot\\b|jalan\\b|jln\\b|lorong\\b|unit\\b|level\\b|[0-9]+,\\s*(?:jalan|jln|lorong)|[0-9]{1,2}(?:st|nd|rd|th)?[\\s/-]+(?:[0-9]{1,2}|[a-z]{3,10})[\\s/-]+20[0-9]{2}|20[0-9]{2}-[0-9]{2}-[0-9]{2}).*"))continue;
+        if(P_LINE_SKIP1.matcher(lowLn).matches()||P_LINE_SKIP2.matcher(lowLn).matches()||P_LINE_SKIP3.matcher(lowLn).matches())continue;
         String c=cleanMerchant(ln);
         if(validMerchant(c)){merchant=c;break;}
       }
     }
-    if(merchant.isEmpty()&&low.matches("(?s).*\\b(toll|paydirect|rfid)\\b.*"))merchant="TNG Toll";
+    if(merchant.isEmpty()&&P_TOLL_CUE.matcher(low).find())merchant="TNG Toll";
     if(merchant.isEmpty())merchant="Detected payment";
 
     String[] cs=kind.equals("income")?new String[]{"Other income",""}:classify(merchant,source,low);
@@ -122,8 +120,8 @@ public final class PaymentParser {
       d.put("originalCurrency",origCur).put("originalAmount",origAmt).put("exchangeRate",java.math.BigDecimal.valueOf(amount,2).divide(new java.math.BigDecimal(origAmt),8,java.math.RoundingMode.HALF_UP).toPlainString());
     }
     if(kind.equals("transfer")){
-      if(low.matches("(?s).*\\b(top.?up|reload|reloaded)\\b.*"))d.put("reload",true);
-      Matcher w=Pattern.compile("(?i)\\b(tng|touch\\s*'?n\\s*go|grabpay|boost|shopeepay|bigpay|mae|gxbank)\\b").matcher(core);
+      if(P_RELOAD_CUE.matcher(low).find())d.put("reload",true);
+      Matcher w=P_WALLET_HINT.matcher(core);
       if(w.find())d.put("transferHint",w.group(1));
     }
     return d;
@@ -189,8 +187,45 @@ public final class PaymentParser {
     return s;
   }
 
+  private static final java.util.concurrent.ConcurrentHashMap<String, Pattern> HAS_PATTERNS=new java.util.concurrent.ConcurrentHashMap<>();
+  private static final Pattern P_OUTGOING_CUE=Pattern.compile("\\b(for\\s+your\\s+(?:[a-z0-9\\s]{0,30}?\\b)?(?:purchase|investment|sspn|prs|loan|repayment)|your\\s+purchase|purchase\\s+at|from\\s+fpx\\s+to|paid\\s+amount|payment\\s+for|payment\\s+method|payment\\s+to|paid\\s+to|order\\s+(?:id|no)|item|qty|invoice)\\b");
+  private static final Pattern P_INCOME_CUE=Pattern.compile("\\b(credited|received|diterima)\\b");
+  private static final Pattern P_TRANSFER_CUE=Pattern.compile("\\b(transfer(?:red|ring)?|top.?up|reload|reloaded|withdrawal)\\b");
+  private static final Pattern P_NON_TRANSFER_CUE=Pattern.compile("\\b(duitnow\\s+qr|fpx|jompay|paid|purchase|spent|sale)\\b");
+  private static final Pattern P_LINE_SKIP1=Pattern.compile("^(?:notifikasi|notis|nota(?:\\s+pembayaran)?|makluman|berita(?:\\s+bayaran)?|pengesahan|amaran|alert|notice|notification|bayar(?:\\s+dengan|\\s+menggunakan)?|bayaran|pembayaran|transaksi|payment|transaction|kad\\s+kredit|carta\\s+kredit|credit\\s+card|no\\.?\\s*kad|item|barang|produk|harga|perkhidmatan|penyertaan|angsuran|terima\\s+kasih|thank\\s+you|sila\\s+semak).*");
+  private static final Pattern P_LINE_SKIP2=Pattern.compile("^(?:rm|myr)?\\s*[0-9,]+(?:\\.[0-9]{1,2})?\\s*$");
+  private static final Pattern P_LINE_SKIP3=Pattern.compile("^(?:tarikh|date|time|masa|kod\\b|code|ref\\b|reference|rujukan|txn|transaction|order|invoice|barang|item|baki|tunai|cash|balance|cukai|sst|gst|service|subtotal|jumlah|total|contact|hotline|tel|hp|phone|no\\.|lot\\b|jalan\\b|jln\\b|lorong\\b|unit\\b|level\\b|[0-9]+,\\s*(?:jalan|jln|lorong)|[0-9]{1,2}(?:st|nd|rd|th)?[\\s/-]+(?:[0-9]{1,2}|[a-z]{3,10})[\\s/-]+20[0-9]{2}|20[0-9]{2}-[0-9]{2}-[0-9]{2}).*");
+  private static final Pattern P_TOLL_CUE=Pattern.compile("\\b(toll|paydirect|rfid)\\b");
+  private static final Pattern P_RELOAD_CUE=Pattern.compile("\\b(top.?up|reload|reloaded)\\b");
+  private static final Pattern P_WALLET_HINT=Pattern.compile("(?i)\\b(tng|touch\\s*'?n\\s*go|grabpay|boost|shopeepay|bigpay|mae|gxbank)\\b");
+  private static final Pattern FAST_LIKELY_CURRENCY=Pattern.compile("(?i)(?:\\b(?:rm|myr|sgd|usd|eur|gbp|aud|cny|hkd|thb|twd|jpy|krw|idr|vnd)[.:\\s]*[0-9]|[0-9.,]+\\s*(?:rm|myr|sgd|usd|eur|gbp|aud|cny|hkd|thb|twd|jpy|krw|idr|vnd)\\b|\\$[0-9])");
+  private static final Pattern FAST_LIKELY_CUE=Pattern.compile("(?i)\\b(?:paid|pay|payment|bayar|bayaran|pembayaran|spent|berbelanja|purchase|pembelian|debited|credited|received|diterima|charged|transferred|transfer|pindahan|duitnow|fpx|jompay|qr\\s*pay|top.?up|reload|reloaded|tambah\\s+nilai|refund|pulangan|transaksi|transaction|resit|receipt|invois|invoice|jumlah|total|subtotal|amount|amaun|cukai|tax|toll|tol|rfid|paydirect|spaylater|atome|grab|tng|mae|fave|boost|setel|bigpay|gx|ptptn|bnpl|bil|bill)\\b");
+  private static final Pattern FAST_LIKELY_OTP=Pattern.compile("(?i)\\b(?:tac|otp|pac|one[- ]time\\s+password|verification\\s+code|kod\\s+pengesahan|passcode)\\b");
+
+  /** Ultra-fast zero-allocation pre-filter that drops non-payment noise before decrypting Vault or loading ML. */
+  public static boolean isLikelyPayment(String text){
+    if(text==null)return false;
+    int len=text.length();
+    if(len<4)return false;
+    boolean hasDigit=false;
+    for(int i=0;i<len;i++){
+      char c=text.charAt(i);
+      if(c>='0'&&c<='9'){hasDigit=true;break;}
+    }
+    if(!hasDigit)return false;
+    if(FAST_LIKELY_CURRENCY.matcher(text).find())return true;
+    return !FAST_LIKELY_OTP.matcher(text).find()&&FAST_LIKELY_CUE.matcher(text).find();
+  }
+
   static boolean has(String hay,String alternatives){
-    return Pattern.compile("(?<![\\p{L}0-9])(?:"+alternatives+")(?![\\p{L}0-9])").matcher(hay).find();
+    if(hay==null||hay.isEmpty())return false;
+    Pattern p=HAS_PATTERNS.get(alternatives);
+    if(p==null){
+      p=Pattern.compile("(?<![\\p{L}0-9])(?:"+alternatives+")(?![\\p{L}0-9])");
+      Pattern prev=HAS_PATTERNS.putIfAbsent(alternatives,p);
+      if(prev!=null)p=prev;
+    }
+    return p.matcher(hay).find();
   }
 
   /** Rule-only Malaysian merchant classifier (used during receipt header scoring and as stage-1 of classify). */

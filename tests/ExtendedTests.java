@@ -296,6 +296,30 @@ public final class ExtendedTests {
    JSONObject rNoisy=ReceiptParser.parse("HDRLH6 JB TYPX HOTTLS\nTVEEL APYBL (RM)\n200.50\nSUBTOTAL: RM 195.00\n15 AUG 2026");
    yes(rNoisy.getLong("amount")==20050&&rNoisy.getString("date").equals("2026-08-15"));
   });
+  test("phase8 eco notification prefilter, cached rules, ml lazy trim and ecoCapture setting",()->{
+   JSONObject s=Ledger.initial();
+   yes(s.getJSONObject("settings").getBoolean("ecoCapture"));
+   Ledger.apply(s,"settings",new JSONObject().put("ecoCapture",false));
+   yes(!s.getJSONObject("settings").getBoolean("ecoCapture"));
+
+   yes(PaymentParser.isLikelyPayment("You paid RM 14.90 to 99 Speedmart"));
+   yes(PaymentParser.isLikelyPayment("You spent SGD 25.00 (RM 82.50) at Changi Airport"));
+   yes(PaymentParser.isLikelyPayment("Bayaran berjaya 15.00 ke Restoran Pelita"));
+   yes(!PaymentParser.isLikelyPayment(null));
+   yes(!PaymentParser.isLikelyPayment("abc"));
+   yes(!PaymentParser.isLikelyPayment("Downloading 45% (12 MB / 30 MB)"));
+   yes(!PaymentParser.isLikelyPayment("Your Maybank2u TAC is 482910"));
+   yes(!PaymentParser.isLikelyPayment("Login OTP: 918273"));
+   yes(!PaymentParser.isLikelyPayment("3 new messages from Ali"));
+   yes(!PaymentParser.isLikelyPayment("Battery 15% remaining"));
+
+   MlClassifier.Prediction p1=MlClassifier.predict("Klinik Kesihatan","Rawatan");
+   yes(p1!=null&&MlClassifier.isLoaded());
+   MlClassifier.trim();
+   yes(!MlClassifier.isLoaded());
+   MlClassifier.Prediction p2=MlClassifier.predict("Klinik Kesihatan","Rawatan");
+   yes(p2!=null&&MlClassifier.isLoaded()&&p1.category.equals(p2.category)&&Math.abs(p1.probability-p2.probability)<1e-9);
+  });
   System.out.println("RESULT: "+passed+" extended tests passed");
  }
 }

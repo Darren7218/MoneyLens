@@ -74,44 +74,90 @@ public final class AlarmReceiver extends BroadcastReceiver {
     try {
       AlarmManager am = c.getSystemService(AlarmManager.class);
       if (am == null) return;
+      if (Vault.hasMeta(c) && (!Vault.fastBool(c, "reminders", true) || Vault.fastInt(c, "activeBillsCount", 0) == 0)) {
+        cancelReminderAlarm(c, am);
+        return;
+      }
+      scheduleNext(c, Vault.read(c));
+    } catch (Exception ignored) {}
+  }
+
+  public static void scheduleNext(Context c, JSONObject s) {
+    try {
+      AlarmManager am = c.getSystemService(AlarmManager.class);
+      if (am == null || s == null) return;
+      JSONObject settings = s.optJSONObject("settings");
+      if (settings != null && !settings.optBoolean("reminders", true)) {
+        cancelReminderAlarm(c, am);
+        return;
+      }
       long nowMs = System.currentTimeMillis();
-      long nextTriggerMs = nowMs + 15 * 60_000L;
-      try {
-        JSONObject s = Vault.read(c);
-        JSONArray bills = s.optJSONArray("bills");
-        LocalDate today = LocalDate.now();
-        ZoneId zone = ZoneId.systemDefault();
-        if (bills != null) {
-          for (int i = 0; i < bills.length(); i++) {
-            JSONObject b = bills.getJSONObject(i);
-            if (b.optBoolean("paid") || b.optBoolean("cancelled")) continue;
+      long nextTriggerMs = Long.MAX_VALUE;
+      JSONArray bills = s.optJSONArray("bills");
+      LocalDate today = LocalDate.now();
+      ZoneId zone = ZoneId.systemDefault();
+      if (bills != null) {
+        for (int i = 0; i < bills.length(); i++) {
+          JSONObject b = bills.getJSONObject(i);
+          if (b.optBoolean("paid") || b.optBoolean("cancelled")) continue;
+          String dueStr = b.optString("date", "");
+          if (!dueStr.isEmpty() && !dueStr.equals(b.optString("dismissedCycle", ""))) {
             long snooze = b.optLong("snoozeUntil", 0);
             if (snooze > nowMs && snooze < nextTriggerMs) {
               nextTriggerMs = snooze;
             }
-            String rt = b.optString("remindTime", "09:00");
-            String[] parts = rt.split(":");
-            int hh = parts.length == 2 ? Integer.parseInt(parts[0]) : 9;
-            int mm = parts.length == 2 ? Integer.parseInt(parts[1]) : 0;
-            ZonedDateTime candidate = ZonedDateTime.of(today, LocalTime.of(hh, mm), zone);
-            long candMs = candidate.toInstant().toEpochMilli();
-            if (candMs <= nowMs) {
-              candMs = candidate.plusDays(1).toInstant().toEpochMilli();
-            }
-            if (candMs > nowMs && candMs < nextTriggerMs) {
-              nextTriggerMs = candMs;
-            }
+            try {
+              LocalDate due = LocalDate.parse(dueStr);
+              int daysBefore = b.optInt("remindDaysBefore", 3);
+              LocalDate warnStart = due.minusDays(daysBefore);
+              LocalDate firstDay = warnStart.isAfter(today) ? warnStart : today;
+              String rt = b.optString("remindTime", "09:00");
+              String[] parts = rt.split(":");
+              int hh = parts.length == 2 ? Integer.parseInt(parts[0]) : 9;
+              int mm = parts.length == 2 ? Integer.parseInt(parts[1]) : 0;
+              ZonedDateTime candidate = ZonedDateTime.of(firstDay, LocalTime.of(hh, mm), zone);
+              long candMs = candidate.toInstant().toEpochMilli();
+              if (candMs <= nowMs) {
+                candMs = candidate.plusDays(1).toInstant().toEpochMilli();
+              }
+              if (candMs > nowMs && candMs < nextTriggerMs) {
+                nextTriggerMs = candMs;
+              }
+            } catch (Exception ignored) {}
+          }
+          String cancel = b.optString("cancelDate", "");
+          if (!cancel.isEmpty()) {
+            try {
+              LocalDate cDay = LocalDate.parse(cancel).minusDays(2);
+              LocalDate firstDay = cDay.isAfter(today) ? cDay : today;
+              long candMs = ZonedDateTime.of(firstDay, LocalTime.of(9, 0), zone).toInstant().toEpochMilli();
+              if (candMs <= nowMs) candMs = ZonedDateTime.of(firstDay.plusDays(1), LocalTime.of(9, 0), zone).toInstant().toEpochMilli();
+              if (candMs > nowMs && candMs < nextTriggerMs) nextTriggerMs = candMs;
+            } catch (Exception ignored) {}
           }
         }
-      } catch (Exception ignored) {}
+      }
 
+      if (nextTriggerMs == Long.MAX_VALUE) {
+        cancelReminderAlarm(c, am);
+        return;
+      }
+      long fireAt = Math.max(nowMs + 5_000L, nextTriggerMs);
       Intent intent = new Intent(c, AlarmReceiver.class).setAction(ACTION_CHECK_REMINDERS);
       PendingIntent pi = PendingIntent.getBroadcast(c, 2111, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
       try {
-        am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, nextTriggerMs, pi);
+        am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, fireAt, pi);
       } catch (SecurityException se) {
-        am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, nextTriggerMs, pi);
+        am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, fireAt, pi);
       }
+    } catch (Exception ignored) {}
+  }
+
+  private static void cancelReminderAlarm(Context c, AlarmManager am) {
+    try {
+      Intent intent = new Intent(c, AlarmReceiver.class).setAction(ACTION_CHECK_REMINDERS);
+      PendingIntent existing = PendingIntent.getBroadcast(c, 2111, intent, PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE);
+      if (existing != null) am.cancel(existing);
     } catch (Exception ignored) {}
   }
 }

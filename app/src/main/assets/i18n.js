@@ -462,7 +462,11 @@ const I18N_MS={
   'SSPN / PRS / EV Charging':'SSPN / PRS / Pengecasan EV',
   'Medical & Health Checkup':'Perubatan & Pemeriksaan Kesihatan',
   'Self Education & Upskilling':'Pendidikan Sendiri & Kemahiran',
-  'Life Insurance / Family Takaful':'Insurans Hayat / Takaful Keluarga'
+  'Life Insurance / Family Takaful':'Insurans Hayat / Takaful Keluarga',
+  'Low-power notification engine (Eco Mode)':'Enjin notifikasi jimat kuasa (Mod Eko)',
+  'Pre-filter non-payment alerts, cache rules & sleep at 0% CPU between bills':'Tapis awal amaran bukan bayaran, cache peraturan & tidur pada 0% CPU antara bil',
+  'Eco notification engine enabled.':'Enjin notifikasi Mod Eko diaktifkan.',
+  'Eco notification engine disabled.':'Enjin notifikasi Mod Eko dimatikan.'
 };
 function currentLang(){return (typeof state!=='undefined'&&state?.settings?.lang==='ms')?'ms':'en'}
 function appLocale(){return currentLang()==='ms'?'ms-MY':'en-MY'}

@@ -17,13 +17,76 @@ public final class Vault {
     if(!k.containsAlias("moneylens-v1")){KeyGenerator gen=KeyGenerator.getInstance("AES","AndroidKeyStore");gen.init(new KeyGenParameterSpec.Builder("moneylens-v1",KeyProperties.PURPOSE_ENCRYPT|KeyProperties.PURPOSE_DECRYPT).setBlockModes(KeyProperties.BLOCK_MODE_GCM).setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE).build());gen.generateKey();}
     return (SecretKey)k.getKey("moneylens-v1",null);
   }
+  private static String cachedPlain=null;
+  private static long cachedMtime=-1L;
+  private static long cachedLen=-1L;
+  public static synchronized void trimCache(){
+    cachedPlain=null;cachedMtime=-1L;cachedLen=-1L;
+    MlClassifier.trim();
+  }
+  private static void syncMeta(Context c,JSONObject s){
+    try{
+      JSONObject st=s.optJSONObject("settings");if(st==null)st=new JSONObject();
+      JSONArray bills=s.optJSONArray("bills");int activeBills=0;
+      if(bills!=null)for(int i=0;i<bills.length();i++){JSONObject b=bills.getJSONObject(i);if(!b.optBoolean("paid")&&!b.optBoolean("cancelled"))activeBills++;}
+      JSONArray sources=s.optJSONArray("sources");java.util.Set<String> pkgs=new java.util.HashSet<>();
+      if(sources!=null)for(int i=0;i<sources.length();i++){String p=sources.getJSONObject(i).optString("package","");if(!p.isEmpty())pkgs.add(p);}
+      c.getApplicationContext().getSharedPreferences("vault-meta",0).edit()
+        .putBoolean("ready",true)
+        .putBoolean("captureWhileLocked",st.optBoolean("captureWhileLocked",true))
+        .putBoolean("captureAllSources",st.optBoolean("captureAllSources",true))
+        .putBoolean("alwaysOnScheduler",st.optBoolean("alwaysOnScheduler",true))
+        .putBoolean("ecoCapture",st.optBoolean("ecoCapture",true))
+        .putBoolean("autoOpenOnBoot",st.optBoolean("autoOpenOnBoot",true))
+        .putBoolean("reminders",st.optBoolean("reminders",true))
+        .putBoolean("quietEnabled",st.optBoolean("quietEnabled",false))
+        .putInt("quietStart",st.optInt("quietStart",22))
+        .putInt("quietEnd",st.optInt("quietEnd",8))
+        .putBoolean("appLock",st.optBoolean("appLock",false))
+        .putBoolean("privacyBlur",st.optBoolean("privacyBlur",false))
+        .putInt("lockTimeoutSec",st.optInt("lockTimeoutSec",0))
+        .putString("lang",st.optString("lang","en"))
+        .putInt("activeBillsCount",activeBills)
+        .putStringSet("sources",pkgs)
+        .apply();
+    }catch(Exception ignored){}
+  }
+  public static boolean hasMeta(Context c){return c.getApplicationContext().getSharedPreferences("vault-meta",0).getBoolean("ready",false);}
+  public static boolean fastBool(Context c,String key,boolean def){return c.getApplicationContext().getSharedPreferences("vault-meta",0).getBoolean(key,def);}
+  public static int fastInt(Context c,String key,int def){return c.getApplicationContext().getSharedPreferences("vault-meta",0).getInt(key,def);}
+  public static boolean fastIsChatPkg(String pkg){return pkg!=null&&pkg.matches("(?i).*(whatsapp|telegram|discord|messaging|mms|google\\.android\\.gm|facebook\\.orca|instagram|tencent\\.mm|line\\.android|viber|signal).*");}
+  public static String fastPreFilterCapture(Context c,String pkg,boolean visibleUnlocked,boolean isTest){
+    if(isTest)return null;
+    android.content.SharedPreferences p=c.getApplicationContext().getSharedPreferences("vault-meta",0);
+    if(!p.getBoolean("ready",false))return null;
+    if(!p.getBoolean("captureWhileLocked",true)&&!visibleUnlocked)return "locked";
+    java.util.Set<String> srcs=p.getStringSet("sources",null);
+    boolean selected=srcs!=null&&pkg!=null&&srcs.contains(pkg);
+    boolean allowAll=p.getBoolean("captureAllSources",true);
+    if(!selected&&(!allowAll||fastIsChatPkg(pkg)))return "filtered";
+    return null;
+  }
   public static synchronized JSONObject read(Context c)throws Exception{
-    AtomicFile f=file(c);if(!f.getBaseFile().exists()&&!new File(f.getBaseFile()+".bak").exists())return Ledger.initial();
-    byte[] plain=Crypto.open(f.readFully(),key(),AAD);JSONObject state=new JSONObject(new String(plain,StandardCharsets.UTF_8));Ledger.migrate(state);return state;
+    AtomicFile f=file(c);File base=f.getBaseFile();
+    if(!base.exists()&&!new File(base+".bak").exists()){JSONObject init=Ledger.initial();syncMeta(c,init);return init;}
+    long mtime=base.lastModified(),len=base.length();
+    if(cachedPlain!=null&&mtime==cachedMtime&&len==cachedLen){
+      return new JSONObject(cachedPlain);
+    }
+    byte[] plain=Crypto.open(f.readFully(),key(),AAD);
+    String str=new String(plain,StandardCharsets.UTF_8);
+    JSONObject state=new JSONObject(str);
+    Ledger.migrate(state);
+    cachedPlain=state.toString();cachedMtime=base.lastModified();cachedLen=base.length();
+    syncMeta(c,state);
+    return state;
   }
   private static void write(Context c,JSONObject s)throws Exception{
-    byte[] plain=s.toString().getBytes(StandardCharsets.UTF_8);if(plain.length>50_000_000)throw new IllegalStateException("The vault has reached this 50 MB limit. Export a backup before continuing.");byte[] bytes=Crypto.seal(plain,key(),AAD);AtomicFile f=file(c);FileOutputStream out=null;
+    String outStr=s.toString();
+    byte[] plain=outStr.getBytes(StandardCharsets.UTF_8);if(plain.length>50_000_000)throw new IllegalStateException("The vault has reached this 50 MB limit. Export a backup before continuing.");byte[] bytes=Crypto.seal(plain,key(),AAD);AtomicFile f=file(c);FileOutputStream out=null;
     try{out=f.startWrite();out.write(bytes);f.finishWrite(out);}catch(Exception e){if(out!=null)f.failWrite(out);throw e;}
+    File base=f.getBaseFile();cachedPlain=outStr;cachedMtime=base.lastModified();cachedLen=base.length();
+    syncMeta(c,s);
   }
   public static synchronized JSONObject command(Context c,String action,JSONObject args)throws Exception{
     JSONObject s=Ledger.apply(read(c),action,args);write(c,s);return s;
@@ -66,7 +129,7 @@ public final class Vault {
     boolean selected=isTest;JSONArray sources=s.getJSONArray("sources");
     for(int i=0;i<sources.length();i++){JSONObject src=sources.getJSONObject(i);if(src.getString("package").equals(pkg)){selected=true;label=src.optString("name",label);break;}}
     boolean allowAll=settings.optBoolean("captureAllSources",true);
-    boolean isChatApp=!isTest&&pkg!=null&&pkg.matches("(?i).*(whatsapp|telegram|discord|messaging|mms|google\\.android\\.gm|facebook\\.orca|instagram|tencent\\.mm|line\\.android|viber|signal).*");
+    boolean isChatApp=!isTest&&fastIsChatPkg(pkg);
     if(!selected&&(!allowAll||isChatApp))return new JSONObject().put("status","filtered");
     if(!selected){
       try{android.content.pm.PackageManager pm=c.getPackageManager();CharSequence appLabel=pm.getApplicationLabel(pm.getApplicationInfo(pkg,0));if(appLabel!=null&&appLabel.length()>0)label=appLabel.toString();}catch(Exception ignored){}
@@ -80,8 +143,21 @@ public final class Vault {
     return new JSONObject().put("status","captured").put("draft",d).put("settings",settings).put("shouldPrompt",prompt);
   }
   public static String hex(byte[] b){return Extras.hex(b);}
+  /** Registers lazy on-demand loading for the ML classifier so app launch and idle filtering use zero ML RAM. */
+  public static void configureClassifierLazy(Context c){
+    if(c==null)return;
+    final Context app=c.getApplicationContext();
+    MlClassifier.setStreamSupplier(()->{
+      for(String asset:new String[]{"moneylens_classifier.json.gz","moneylens_classifier.json"}){
+        try{return app.getAssets().open(asset);}catch(Exception ignored){}
+      }
+      return null;
+    });
+  }
   public static void initClassifier(Context c){
-    if(c==null||MlClassifier.isLoaded())return;
+    if(c==null)return;
+    configureClassifierLazy(c);
+    if(MlClassifier.isLoaded())return;
     for(String asset:new String[]{"moneylens_classifier.json.gz","moneylens_classifier.json"}){
       try(InputStream in=c.getAssets().open(asset)){if(MlClassifier.loadFromStream(in))return;}catch(Exception ignored){}
     }
