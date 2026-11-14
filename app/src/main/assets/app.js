@@ -37,7 +37,7 @@ window.nativeRefresh=async(screen,editNoteId)=>{
     else if(screen==='scan')scanDialog();
     else if(screen==='favorites')showFavorites();
   }catch(e){
-    if(!state)$('#app').innerHTML=`<div class="loading">${icon('shield')}<h2>${esc(tr('Unlock MoneyLens'))}</h2><p>${esc(e.message)}</p><button class="btn" data-action="retry">${esc(tr('Try again'))}</button></div>`;
+    if(!state)$('#app').innerHTML=`<div class="loading">${icon('lock')}<h2>${esc(tr('Unlock MoneyLens'))}</h2><p>${esc(e.message)}</p><button class="btn" data-action="retry">${icon('shield')}${esc(tr('Unlock with Fingerprint'))}</button></div>`;
     else toast(e.message);
   }
 };
@@ -54,7 +54,7 @@ function header(){
   const sub={home:tr('YOUR MONEY, A LITTLE CLEARER'),transactions:tr('THE EVERYDAY PICTURE'),inbox:tr('AUTO-RECORDED · 1-TAP REMOVE OR EDIT'),plan:tr('MAKE ROOM FOR WHAT MATTERS'),accounts:tr('EVERYTHING IN ONE PLACE'),settings:tr('SETTINGS & PRIVACY')};
   const curAccent=state.settings.accent||'emerald';
   const dots=['emerald','indigo','ocean','terracotta'].map(a=>`<button type="button" class="theme-dot ${curAccent===a?'active':''}" data-action="setAccent" data-accent="${a}" title="Theme: ${a}" aria-label="Accent ${a}"></button>`).join('');
-  return `<header class="topbar flex between"><div><p class="eyebrow">${esc(sub[page])}</p><h1>${esc(titles[page])}${page==='home'?'<span class="muted">.</span>':''}</h1></div><div class="flex"><div class="theme-dots" title="Switch accent palette">${dots}</div><button class="round" data-action="toggleBlur" aria-label="${esc(tr('Toggle privacy blur'))}" title="${esc(tr('Hide or show balances'))}">${icon(state.settings.privacyBlur?'eyeOff':'eye')}</button><button class="btn desktop-add" data-action="add">${icon('plus')}${esc(tr('Add transaction'))}</button><button class="round" data-page="${page==='settings'?'home':'settings'}" aria-label="${esc(tr(page==='settings'?'Home':'Settings'))}">${icon(page==='settings'?'home':'settings')}</button></div></header>`;
+  return `<header class="topbar flex between"><div><p class="eyebrow">${esc(sub[page])}</p><h1>${esc(titles[page])}${page==='home'?'<span class="muted">.</span>':''}</h1></div><div class="flex"><div class="theme-dots" title="Switch accent palette">${dots}</div>${state.settings.appLock?`<button class="round" data-action="lockNow" aria-label="${esc(tr('Lock app'))}" title="${esc(tr('Lock now'))}">${icon('lock')}</button>`:''}<button class="round" data-action="toggleBlur" aria-label="${esc(tr('Toggle privacy blur'))}" title="${esc(tr('Hide or show balances'))}">${icon(state.settings.privacyBlur?'eyeOff':'eye')}</button><button class="btn desktop-add" data-action="add">${icon('plus')}${esc(tr('Add transaction'))}</button><button class="round" data-page="${page==='settings'?'home':'settings'}" aria-label="${esc(tr(page==='settings'?'Home':'Settings'))}">${icon(page==='settings'?'home':'settings')}</button></div></header>`;
 }
 
 function cyclePicker(){

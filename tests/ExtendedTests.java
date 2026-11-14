@@ -234,6 +234,35 @@ public final class ExtendedTests {
    JSONArray prevCimb=CsvImport.preview(cimbCsv,new JSONObject(inspCimb.getJSONObject("autoMap").toString()).put("account",acctId),s);
    yes(prevCimb.getJSONObject(0).getString("date").equals("2026-11-14"));yes(prevCimb.getJSONObject(0).getString("kind").equals("expense"));
   });
+  test("phase6 biometric lockTimeoutSec and parser precision v2.2",()->{
+   JSONObject s=Ledger.initial();
+   yes(s.getJSONObject("settings").getInt("lockTimeoutSec")==0);
+   for(int valid:new int[]{0,60,300,900}){
+    Ledger.apply(s,"settings",new JSONObject().put("appLock",true).put("lockTimeoutSec",valid));
+    yes(s.getJSONObject("settings").getBoolean("appLock"));
+    yes(s.getJSONObject("settings").getInt("lockTimeoutSec")==valid);
+   }
+   boolean rejected=false;
+   try{
+    Ledger.apply(s,"settings",new JSONObject().put("lockTimeoutSec",45));
+   }catch(IllegalArgumentException e){rejected=true;}
+   yes(rejected);
+
+   String rotiNotif="Pembayaran telah berjaya!\n\n-\nRM 15.00\n-\nKopi O\n-\nRM 3.00\n-\nCukai Perkhidmatan (6%)\n-\nRM 1.08\nTotal: RM 19.08\n\nPeniaga:\nKedai Roti Canai";
+   JSONObject pRoti=PaymentParser.parse(rotiNotif,"com.touchngo.ewallet");
+   yes(pRoti!=null&&pRoti.getLong("amount")==1908&&pRoti.getString("merchant").equals("Kedai Roti Canai")&&pRoti.getString("category").equals("Food & drinks"));
+
+   String prsNotif="Bayaran berjaya kepada Klinik Simpanan Persaraan PRS, Seremban 70300 sebanyak RM 250.00";
+   JSONObject pPrs=PaymentParser.parse(prsNotif,"my.com.maybank2u.m2umobile");
+   yes(pPrs!=null&&pPrs.getString("merchant").equals("Klinik Simpanan Persaraan PRS")&&pPrs.getString("category").equals("Investments & savings")&&pPrs.getString("subcategory").equals("PRS (Private Retirement Scheme)"));
+
+   JSONObject pSpeed=PaymentParser.parse("You paid RM 14.90 to 99 Spe3dmart","com.touchngo.ewallet");
+   yes(pSpeed!=null&&pSpeed.getString("category").equals("Groceries"));
+
+   String postTaxReceipt="Rcv:R78901 12 Oct 2026\nNASI KANDAR PELITA\nJumlah Perlu Dibayar RM 22.00\nCukai Perkhidmatan (6%) RM 1.32\nTunai RM 30.00\nBaki RM 6.68";
+   JSONObject rPost=ReceiptParser.parse(postTaxReceipt);
+   yes(rPost.getString("merchant").equals("NASI KANDAR PELITA")&&rPost.getLong("amount")==2332);
+  });
   System.out.println("RESULT: "+passed+" extended tests passed");
  }
 }

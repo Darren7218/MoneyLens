@@ -10,17 +10,18 @@ public final class PaymentParser {
   private static final Pattern AMOUNT=Pattern.compile("(?i)(?:RM|MYR)[\\s\\u00A0]*"+NUM);
   private static final Pattern TNG_PAID=Pattern.compile("(?i)\\byou\\s+have\\s+paid\\s+(?:RM|MYR)\\s*[0-9,]+(?:\\.[0-9]{1,2})?\\s+(?:at|to)\\s+([^\\r\\n]+)");
   private static final Pattern PURCHASE_AT=Pattern.compile("(?i)\\bfor\\s+(?:your\\s+)?purchase\\s+(?:at|from)\\s+([\\p{L}0-9][\\p{L}0-9 &'._/()#,+*-]{1,79})");
-  private static final Pattern MALAY_PAID=Pattern.compile("(?im)(?:^|\\b)(?:pembayaran|bayaran)(?:\\s+telah)?\\s+berjaya(?:\\s+(?:dibuat\\s+)?(?:kepada|ke)|\\s*!)\\s*[:\\-! ]*([\\p{L}0-9][\\p{L}0-9 &'._/()#,+*-]{1,79})");
+  private static final Pattern MALAY_PAID=Pattern.compile("(?im)(?:^|\\b)(?:pembayaran|bayaran)(?:\\s+telah)?\\s+berjaya(?:\\s+(?:dibuat\\s+)?(?:kepada|ke)|[ \\t]*!)[ \\t:\\-!]*([\\p{L}0-9][\\p{L}0-9 &'._/()#,+*-]{1,79})");
   private static final Pattern LABELED_MERCHANT=Pattern.compile("(?im)(?:^|\\b)(?:merchant(?:\\s+name)?|seller|biller(?:\\s+name)?|payee|recipient|paid\\s+to|payment\\s+to|pembayaran(?:\\s+telah\\s+berjaya)?\\s+(?:dibuat\\s+)?kepada|bayaran\\s+kepada|dibayar\\s+kepada|penerima|peniaga|penyertaan|perkhidmatan|perniagaan|nota\\s+pembayaran)\\s*:\\s*[\\r\\n\\t ]*([\\p{L}0-9#][\\p{L}0-9 &'._/()#,+*-]{1,79})");
-  private static final Pattern MERCHANT=Pattern.compile("(?i)\\b(?:at|to|from|kepada|di)\\s+([\\p{L}0-9 &'._/()#,+*-]{2,80})");
-  private static final Pattern VERBLESS_PREP=Pattern.compile("(?i)(?:RM|MYR)\\s*"+NUM+"\\s*(?:(?:at|to|di|kepada)\\s+|[@\\-\\u2013\\u2014]\\s*)([\\p{L}0-9][\\p{L}0-9 &'._/()#,+*-]{1,79})");
+  private static final Pattern MERCHANT=Pattern.compile("(?i)\\b(?:at|to|from|kepada|di|dari)\\s+([\\p{L}0-9 &'._/()#,+*-]{2,80})");
+  private static final Pattern VERBLESS_PREP=Pattern.compile("(?i)(?:RM|MYR)\\s*"+NUM+"(?:\\s+(?:at|to|di|kepada)\\s+|[ \\t]*[@\\-\\u2013\\u2014][ \\t]*)([\\p{L}0-9][\\p{L}0-9 &'._/()#,+*-]{1,79})");
   private static final Pattern VERBLESS_CAPS=Pattern.compile("(?:RM|MYR)\\s*"+NUM+"\\s+([A-Z0-9][A-Z0-9&'._/()#+*-]*(?:[ ]+[A-Z0-9&'._/()#+*-]+){0,6})");
   /** Security advice footers ("Never share your TAC/OTP") are removed before any filtering. */
   private static final Pattern FOOTER=Pattern.compile("(?i)\\b(?:never|do\\s+not|don'?t|jangan)\\s+(?:share|disclose|reveal|give|kongsi|dedahkan|berikan)\\b[^.!\\n]*");
   private static final Pattern EXCLUDE_BEFORE=Pattern.compile("(?i)\\b(?:balance|bal|baki|limit|cashback|cash\\s+back|reward|rewards|points|pts|rebate|earned|earn|available|avail|remaining|outstanding|saved|worth|up\\s+to|min(?:imum)?\\s+spend)\\b[^0-9]*$");
   private static final Pattern EXCLUDE_AFTER=Pattern.compile("(?i)^\\s*(?:cashback|cash\\s+back|reward|rewards|points|pts|rebate|back)\\b");
+  private static final Pattern TOTAL_BEFORE=Pattern.compile("(?i)\\b(?:total|jumlah(?:\\s+perlu\\s+dibayar|\\s+bayaran|\\s+keseluruhan)?|grand\\s+total|amount\\s+paid|bayaran\\s+jumlah)\\b[^0-9a-z\\r\\n]*$");
   private static final Pattern PAY_BEFORE=Pattern.compile("(?i)\\b(?:paid|pay|payment|repayment|spent|charged|deducted|debited|purchase|purchased|amount|total|of|transfer|transferred|received|credited|refund|refunded|bayaran|dibayar|potongan|sebanyak|deduction|sale)\\b[^0-9a-z]*$");
-  private static final Pattern PAY_AFTER=Pattern.compile("(?i)^\\s*(?:(?:at|to|di|kepada|has\\s+been|was|deducted|charged|paid|debited)\\b|[@\\-\\u2013\\u2014])");
+  private static final Pattern PAY_AFTER=Pattern.compile("(?i)^(?:\\s*(?:at|to|di|kepada|has\\s+been|was|deducted|charged|paid|debited)\\b|[ \\t]*[@\\-\\u2013\\u2014])");
   public static final String LOANS="Loans, BNPL & Credit";
 
   public static JSONObject parse(String text,String source)throws Exception{
@@ -40,17 +41,18 @@ public final class PaymentParser {
     boolean prep=vp.find(),caps=!prep&&vc.find();
     if(!trigger&&!prep&&!caps)return null;
 
-    Matcher m=AMOUNT.matcher(core);JSONArray candidates=new JSONArray();long primary=0,firstIncluded=0;int count=0;boolean primaryFound=false;
+    Matcher m=AMOUNT.matcher(core);JSONArray candidates=new JSONArray();long primary=0,firstIncluded=0,totalMatch=0;int count=0;boolean primaryFound=false,totalFound=false;
     while(m.find()){
       long v;try{v=Ledger.minor(m.group(1).replace(",",""));}catch(IllegalArgumentException ignored){continue;}
       count++;candidates.put(v);
       String before=core.substring(Math.max(0,m.start()-30),m.start()),after=core.substring(m.end(),Math.min(core.length(),m.end()+16));
       if(EXCLUDE_BEFORE.matcher(before).find()||EXCLUDE_AFTER.matcher(after).find())continue;
       if(firstIncluded==0)firstIncluded=v;
+      if(TOTAL_BEFORE.matcher(before).find()){totalMatch=v;totalFound=true;}
       if(!primaryFound&&(PAY_BEFORE.matcher(before).find()||PAY_AFTER.matcher(after).find())){primary=v;primaryFound=true;}
     }
     if(count==0)return null;
-    long amount=primaryFound?primary:firstIncluded;
+    long amount=totalFound?totalMatch:(primaryFound?primary:firstIncluded);
     if(amount<=0)return null;
 
     boolean outgoingCue=low.matches("(?s).*\\b(for\\s+your\\s+(?:[a-z0-9\\s]{0,30}?\\b)?(?:purchase|investment|sspn|prs|loan|repayment)|your\\s+purchase|purchase\\s+at|from\\s+fpx\\s+to|paid\\s+amount|payment\\s+for|payment\\s+method|payment\\s+to|paid\\s+to|order\\s+(?:id|no)|item|qty|invoice)\\b.*");
@@ -110,6 +112,7 @@ public final class PaymentParser {
 
   private static boolean validMerchant(String c){
     return c!=null&&c.length()>=2
+      &&!c.matches("(?i)^(?:rm|myr)\\s*[0-9,]+(?:\\.[0-9]{1,2})?.*")
       &&!c.matches("(?i)^(your\\s+account|your\\s+ewallet|your\\s+card|your|you|account|ewallet|e-wallet|card|wallet|anyone|others|#[0-9a-z-]+|[0-9]{1,2}:[0-9]{2}.*|[0-9 /.:-]+)$")
       &&!c.matches("(?i)^(?:[0-9]{1,2}(?:st|nd|rd|th)?[-/\\s.]+(?:[0-9]{1,2}|[a-z]{3,10})[-/\\s.,]+(?:20)?[0-9]{2}|20[0-9]{2}[-/][0-9]{1,2}[-/][0-9]{1,2})$")
       &&!c.matches("(?i)^(?:lot|no\\.?|unit|level|lvl|block|blk|floor|flr|jalan|jln|lorong|lrg)\\s*[#0-9a-z-]{1,6}$")
@@ -131,7 +134,7 @@ public final class PaymentParser {
     String s=raw.replaceAll("(?i)\\s*\\(?\\s*biller\\s*code.*","");
     s=s.replaceFirst("(?i)^(?:penyertaan|perkhidmatan|perniagaan|nota\\s+pembayaran)\\s*:\\s*","");
     s=s.replaceFirst("(?i)^(?:(?:boost|tng|grab|grabpay|shopee|shopeepay|mae|maybank)\\s+)?(?:for\\s+)?your\\s+purchase\\s+(?:at|from)\\s+","");
-    s=s.replaceAll("(?i)\\s+(?:has\\s+been\\s+(?:received|completed|paid)|is\\s+successful|was\\s+successful|successful|successfully|berjaya|credited\\s+to|debited\\s+from|paid\\s+from|(?:on|pada)\\s+[0-9]{1,4}[/.-][0-9]{1,2}|(?:on|pada)\\s+[0-9]{1,2}\\s+[a-z]{3}|(?:at|pukul)\\s+[0-9]{1,2}[:.][0-9]{2}|for\\s+ref|ref\\b|reference|via\\s+secure2u|via\\s+duitnow|via\\s+fpx|via\\s+jompay|via\\s+(?:maybank(?:2u)?|mae|tng(?:\\s*e?wallet)?|touch\\s*'?n\\s*go|grabpay|boost|shopeepay|rhb|cimb(?:\\s*clicks)?|public\\s*bank|hong\\s*leong|ambank|bank\\s+islam|gxbank|qr\\s*pay)|using\\s+touch|using\\s+your|with\\s+your|from\\s+your|available\\s+balance|avail\\.?\\s*bal|remaining|balance|baki|limit|cashback|earn\\s+[0-9]|reward|points|thank|terima\\s+kasih|never|do\\s+not|jangan|txn|transaction\\s+id|trx).*","");
+    s=s.replaceAll("(?i)\\s+(?:has\\s+been\\s+(?:received|completed|paid)|is\\s+successful|was\\s+successful|successful|successfully|berjaya|credited\\s+to|debited\\s+from|paid\\s+from|(?:sebanyak|berjumlah)\\s+(?:rm|myr)|(?:on|pada)\\s+[0-9]{1,4}[/.-][0-9]{1,2}|(?:on|pada)\\s+[0-9]{1,2}\\s+[a-z]{3}|(?:at|pukul)\\s+[0-9]{1,2}[:.][0-9]{2}|for\\s+ref|ref\\b|reference|via\\s+secure2u|via\\s+duitnow|via\\s+fpx|via\\s+jompay|via\\s+(?:maybank(?:2u)?|mae|tng(?:\\s*e?wallet)?|touch\\s*'?n\\s*go|grabpay|boost|shopeepay|rhb|cimb(?:\\s*clicks)?|public\\s*bank|hong\\s*leong|ambank|bank\\s+islam|gxbank|qr\\s*pay)|using\\s+touch|using\\s+your|with\\s+your|from\\s+your|available\\s+balance|avail\\.?\\s*bal|remaining|balance|baki|limit|cashback|earn\\s+[0-9]|reward|points|thank|terima\\s+kasih|never|do\\s+not|jangan|txn|transaction\\s+id|trx).*","");
     s=s.replaceAll("[.!]\\s+(?=(?:RM|MYR)\\s*[0-9]|\\p{Lu}\\p{Ll}).*","").trim();
     s=s.replaceAll("[.,;:!\\-\\u2013\\u2014\\s]+$","").replaceAll("^[.,;:!\\-\\u2013\\u2014\\s]+","").trim();
     String noGw=s.replaceFirst("(?i)^(?:fpx|dnqr|duitnow\\s*qr|duitnow|paynet|ipay88|razerms|razer\\s*ms|molpay|billplz|senangpay|gkash|stripe|curlec|2c2p|revpay|kiple|shopeepay)\\s*(?:[*_/:-]+\\s*)","").trim();
@@ -140,6 +143,8 @@ public final class PaymentParser {
     if(noWalletGw.length()>=2)s=noWalletGw;
     String noAddr=s.replaceAll("(?i)\\s*,\\s*(?:no\\.?\\s*[0-9]|lot\\s+[0-9]|jalan\\b|jln\\b|unit\\b|level\\b|lvl\\b|block\\b|blk\\b|persiaran\\b|taman\\b|bandar\\b|seksyen\\b).*","").trim();
     if(noAddr.length()>=2)s=noAddr;
+    String noPost=s.replaceAll("(?i),\\s*[\\p{L} ]{2,25}\\s+[0-9]{5}\\b.*","").trim();
+    if(noPost.length()>=2)s=noPost;
     s=stripSsmSuffix(s);
     s=s.replaceAll("[.,;:!\\-\\u2013\\u2014\\s]+$","").replaceAll("^[.,;:!\\-\\u2013\\u2014\\s]+","").trim();
     if(s.length()>80)s=s.substring(0,80).trim();
@@ -156,6 +161,7 @@ public final class PaymentParser {
     String body=String.valueOf(text).replaceAll("(?im)^\\s*(?:(?:no\\.?|lot|unit|block|blk)\\s*[#0-9a-z-]+,?\\s*)?(?:jalan|jln|lorong|lrg|persiaran|taman|tmn|bandar|seksyen|[0-9]{5})\\b.*$"," ").toLowerCase(Locale.ROOT);
     String hay=m+" "+String.valueOf(source).toLowerCase(Locale.ROOT)+" "+body;
     if(has(hay,"sspn|ptptn sspn"))return new String[]{"Investments & savings","SSPN Savings"};
+    if(has(hay,"prs|private retirement|simpanan persaraan"))return new String[]{"Investments & savings","PRS (Private Retirement Scheme)"};
     if(has(hay,"ptptn|perbadanan tabung pendidikan"))return new String[]{LOANS,"PTPTN Study Loan"};
     if(has(hay,"spaylater|shopee paylater|grabpaylater|grab paylater|paylater|pay later|atome|payflex"))return new String[]{LOANS,"BNPL (SPayLater / GrabPayLater / Atome)"};
     if(has(hay,"credit\\s+card\\s+(?:statement|bill|payment)|penyata\\s+kad\\s+kredit"))return new String[]{LOANS,"Credit Card Bill"};
@@ -175,7 +181,7 @@ public final class PaymentParser {
     if(has(hay,"perodua service|proton service|honda service|toyota service|tyre|tayar|(?:auto|car|motor|tyre|tayar|vehicle|kereta|repair)\\s*workshop|workshop\\s*(?:kereta|motor|auto)|bengkel|bateriku|car wash|carwash|pusat servis|servis kereta|auto service|engine oil"))return new String[]{"Transport","Vehicle Maintenance & Service"};
     if(has(hay,"(auto|car|motor|vehicle)\\s*(insurance|takaful|insurans|cover|coverage)|(insurance|takaful|insurans)\\s*(kereta|motor)|road\\s*(?:&|and)\\s*auto\\s*cover")||(has(hay,"road\\s*tax|roadtax|cukai\\s*jalan")&&has(hay,"insurance|takaful|insurans|cover|policy|polisi")))return new String[]{"Transport","Road Tax & Motor Insurance"};
     if(has(hay,"jpj|mysikap|myeg|puspakom|road tax|roadtax|cukai jalan|summon|summons|saman|traffic fine|compound"))return new String[]{"Taxes & government","JPJ / Renewals / Summons"};
-    if(has(hay,"99\\s*speedmart|speedmart|7-eleven|7 eleven|7eleven|family\\s*mart|familymart|kk\\s*mart|kkmart|kk super mart|mynews|emart24|bilabila|bila-bila|cu mart|kedai runcit|minimart|mini market"))return new String[]{"Groceries","Convenience Store (99 Speedmart / 7-Eleven / FamilyMart)"};
+    if(has(hay,"99\\s*spe[e3]dmart|spe[e3]dmart|7-eleven|7 eleven|7eleven|family\\s*mart|familymart|kk\\s*mart|kkmart|kk super mart|mynews|emart24|bilabila|bila-bila|cu mart|kedai runcit|minimart|mini market"))return new String[]{"Groceries","Convenience Store (99 Speedmart / 7-Eleven / FamilyMart)"};
     if(has(hay,"lotus's|lotus|lotuss|mydin|giant|aeon|jaya grocer|village grocer|tesco|econsave|nsk|hero market|cold storage|mercato|segi fresh|tf value|qra|ben's independent|everrise|servay|supermarket|hypermarket|pasaraya"))return new String[]{"Groceries","Supermarket & Hypermarket"};
     if(has(hay,"wet market|pasar pagi|pasar malam|pasar borong|pasar basah|pasar baru|pasar awam|pasar tani|fresh produce|butcher|fishmonger"))return new String[]{"Groceries","Wet Market & Fresh Produce"};
     if(has(hay,"mamak|nasi|kopitiam|kedai makan|warung|hawker|gerai|pelita|q bistro|kandar|roti canai|medan selera|food court|bak kut teh|char kuey teow|yong tau foo|madam kwan|oriental kopi"))return new String[]{"Food & drinks","Hawker & Mamak"};
@@ -199,7 +205,6 @@ public final class PaymentParser {
     if(has(hay,"tuition|university|universiti|monash|taylor's|taylors|sunway university|utar|uitm|mmu|inti|apu|coursera|udemy|upskill|tuisyen|online course|course enrollment|bootcamp"))return new String[]{"Education","Higher Education & Tuition"};
     if(has(hay,"school fee|yuran sekolah|tadika|taska|kindergarten|preschool|childcare fee"))return new String[]{"Education","School & Childcare Fees"};
     if(has(hay,"epf|kwsp|i-saraan|isaraan"))return new String[]{"Investments & savings","EPF Voluntary (i-Saraan)"};
-    if(has(hay,"prs|private retirement"))return new String[]{"Investments & savings","PRS (Private Retirement Scheme)"};
     if(has(hay,"asnb|asb|tabung haji"))return new String[]{"Investments & savings","ASB / Tabung Haji"};
     if(has(hay,"rakuten trade|moomoo|webull|luno|stashaway|wahed|etf|crypto"))return new String[]{"Investments & savings","Stocks, ETF & Crypto"};
     if(has(hay,"zakat|fitrah|ppz|lembaga zakat|maiwp"))return new String[]{"Family & gifts","Zakat & Fitrah"};

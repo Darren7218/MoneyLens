@@ -94,7 +94,11 @@ test('Bahasa Melayu toggle localizes nav, home, plan, budgets, settings, goals, 
   const planHtml=run(`plan()`);
   assert(planHtml.includes('Bajet')&&planHtml.includes('Hutang')&&planHtml.includes('Cukai LHDN'));
   const setHtml=run(`settings()`);
-  assert(setHtml.includes('id="langToggle"')&&setHtml.includes('value="ms" selected')&&setHtml.includes('Rekod automatik notifikasi')&&setHtml.includes('0.4.0'));
+  assert(setHtml.includes('id="langToggle"')&&setHtml.includes('value="ms" selected')&&setHtml.includes('Rekod automatik notifikasi')&&setHtml.includes('Kunci aplikasi cap jari &amp; biometrik')&&setHtml.includes('0.5.0'));
+  run(`state.settings.appLock=true`);
+  const setLockedHtml=run(`settings()`);
+  assert(setLockedHtml.includes('id="lockTimeoutSelect"')&&setLockedHtml.includes('data-action="lockNow"')&&setLockedHtml.includes('Kunci sekarang'));
+  run(`state.settings.appLock=false`);
   const acctHtml=run(`accounts()`);
   assert(acctHtml.includes('Baki direkodkan')&&acctHtml.includes('Sejarah pelarasan baki'));
   const inboxHtml=run(`inbox()`);

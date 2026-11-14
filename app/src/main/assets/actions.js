@@ -147,6 +147,7 @@ document.addEventListener('click',async e=>{
       case 'add':txForm();break;
       case 'setAccent':{const acc=b.dataset.accent||'emerald';state.settings.accent=acc;render();if(window.MoneyLensNative)await mutate('settings',{accent:acc},`Theme set to ${acc}.`);break;}
       case 'toggleBlur':{const next=!state.settings.privacyBlur;state.settings.privacyBlur=next;render();if(window.MoneyLensNative)await mutate('settings',{privacyBlur:next},next?'Balances hidden for privacy.':'Balances visible.');break;}
+      case 'lockNow':if(window.MoneyLensNative)await call('lockNow');else modal(tr('MoneyLens Vault Locked'),`<div style="text-align:center;padding:12px 0"><div class="icon-bg" style="margin:0 auto 12px">${icon('lock')}</div><p class="note">${esc(tr('Require phone fingerprint, face or screen lock when opening MoneyLens'))}</p><button class="btn" data-action="close">${icon('shield')}${esc(tr('Unlock with Fingerprint'))}</button></div>`);break;
       case 'transfer':if(state.accounts.length<2){toast('Add a second account to make a transfer.');accountForm();}else txForm({kind:'transfer'});break;
       case 'prevMonth':monthOffset--;render();break;
       case 'nextMonth':monthOffset++;render();break;
@@ -392,7 +393,8 @@ document.addEventListener('change',async e=>{
     }
     if(x.id==='darkToggle')await mutate('settings',{theme:x.checked?'dark':'light'});
     if(x.id==='blurToggle')await mutate('settings',{privacyBlur:x.checked});
-    if(x.id==='lockToggle')await mutate('settings',{appLock:x.checked});
+    if(x.id==='lockToggle')await mutate('settings',{appLock:x.checked},x.checked?tr('Fingerprint app lock enabled.'):tr('App lock disabled.'));
+    if(x.id==='lockTimeoutSelect'){if(window.MoneyLensNative)await mutate('settings',{lockTimeoutSec:Number(x.value)},tr('Auto-lock timeout updated.'));else{state.settings.lockTimeoutSec=Number(x.value);render();}}
     if(x.id==='autoRecordToggle')await mutate('settings',{autoRecord:x.checked},x.checked?'Auto-record enabled.':'Auto-record paused.');
     if(x.id==='captureAllToggle')await mutate('settings',{captureAllSources:x.checked},x.checked?'Reading all bank & wallet apps.':'Restricted to selected apps.');
     if(x.id==='alwaysOnToggle')await mutate('settings',{alwaysOnScheduler:x.checked},x.checked?'Always-on task scheduler active.':'Always-on task scheduler paused.');
