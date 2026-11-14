@@ -14,7 +14,7 @@ function modal(title,body){
   const f=$('.modal input:not([type=hidden]),.modal select,.modal button');
   if(f)setTimeout(()=>f.focus(),100);
 }
-function close(){if(busy)return;$('#modal-root').innerHTML='';modalContext={}}
+function close(){if(busy)return;if(modalContext.isRestorePreview&&window.MoneyLensNative)call('cancelRestore').catch(()=>{});$('#modal-root').innerHTML='';modalContext={}}
 
 function txForm(data={}){
   const merged={account:data.draftId?'':state.settings.lastAccount,category:state.settings.lastCategory||'Miscellaneous',...data};
@@ -161,7 +161,7 @@ function insights(){
 function favoriteForm(t={}){modalContext=t;modal('Quick favorite',`<form data-extra="favorite">${field('Favorite name','name',t.name||t.merchant||'','text','required maxlength="80"')}${field('Amount (RM)','amount',typeof t.amount==='number'?amount(t.amount):t.amount||'','text','required inputmode="decimal"')}${acctSelect(t.account)}${categorySelect(t.category)}${field('Merchant','merchant',t.merchant||'','text','maxlength="120"')}${formFooter('Save favorite')}</form>`)}
 function showFavorites(){modal('Quick favorites',`${state.favorites.map(f=>`<div class="setting-row"><div class="grow"><h3>${esc(f.name)}</h3><p>RM ${esc(f.amount)} · ${esc(tr(f.category))} · ${esc(account(f.account).name)}</p></div>${actionButton('Use','useFavorite',f.id)}${actionButton('Edit','editFavorite',f.id,'ghost')}${actionButton('Remove','deleteFavorite',f.id,'ghost')}</div>`).join('')||'<p class="note">Save common purchases for one-tap entry on Home and the Android app icon.</p>'}${actionButton('Create favorite','editFavorite')}`)}
 function ruleForm(r={}){modalContext=r;modal('Merchant suggestion rule',`<form data-extra="rule">${field('Merchant contains','match',r.match||'','text','required maxlength="120" placeholder="e.g. Grab"')}${categorySelect(r.category)}${subcategorySelect(r.category||'Miscellaneous',r.subcategory||'')}${select('Suggest account','account',[['','Leave for me to choose'],...state.accounts.map(a=>[a.id,a.name])],r.account||'')}${select('Limit to source','source',[['','Any source'],...state.sources.map(s=>[s.package,s.name])],r.source||'')}${field('Priority (0–100)','priority',r.priority??10,'number','min="0" max="100"')}${check('Enabled','enabled',r.enabled!==false)}<p class="note">Preview: future merchants containing “${esc(r.match||'your text')}” get these suggestions. Saved transactions stay as recorded.</p><div id="rule-preview" class="note"></div>${formFooter('Save rule')}</form>`)}
-function automationForm(){const s=state.settings;modal('Reminders & privacy',`<form data-extra="automation">${check('Automatically record notifications using history / Miscellaneous','autoRecord',s.autoRecord!==false)}${check('Read payment notifications from all bank & wallet apps','captureAllSources',s.captureAllSources!==false)}${check('Include category badge & budget progress in notifications','categoryAlerts',s.categoryAlerts!==false)}${check('Spend anomaly & high-purchase guard (≥ RM 50 & ≥ 2.5× median)','anomalyGuard',s.anomalyGuard!==false)}${check('Low-power Eco notification engine (saves RAM & battery)','ecoCapture',s.ecoCapture!==false)}${check('Always-on persistent task scheduler (auto-restarts unless Force Stopped)','alwaysOnScheduler',s.alwaysOnScheduler!==false)}${check('Auto-open MoneyLens when phone restarts','autoOpenOnBoot',s.autoOpenOnBoot!==false)}${check('BNPL, PTPTN, bill and cancellation reminders','reminders',s.reminders!==false)}${check('Budget threshold alerts','budgetAlerts',s.budgetAlerts!==false)}${check('Weekly budget pace nudge (respects quiet hours)','weeklyBudgetNudge',!!s.weeklyBudgetNudge)}${field('Budget alert threshold (%)','threshold',s.threshold||80,'number','min="1" max="100" required')}${check('One daily Inbox digest instead of individual prompts','digest',s.digest)}${field('Digest hour (0–23)','digestHour',s.digestHour??19,'number','min="0" max="23" required')}${check('Quiet hours','quietEnabled',s.quietEnabled)}<div class="form-grid">${field('Quiet from hour','quietStart',s.quietStart??22,'number','min="0" max="23" required')}${field('Quiet until hour','quietEnd',s.quietEnd??8,'number','min="0" max="23" required')}</div>${check('Show available estimate on home-screen widget','widgetAmounts',s.widgetAmounts)}${check('Capture while MoneyLens is closed or locked','captureWhileLocked',s.captureWhileLocked!==false)}<p class="note">Always-on task scheduler keeps auto-capture and BNPL/PTPTN due reminders active continuously across restarts.</p>${formFooter('Save preferences')}</form>`)}
+function automationForm(){const s=state.settings;modal('Reminders & privacy',`<form data-extra="automation">${check('Automatically record notifications using history / Miscellaneous','autoRecord',s.autoRecord!==false)}${check('Auto-reconcile incoming DuitNow split transfers','splitAutoMatch',s.splitAutoMatch!==false)}${check('Read payment notifications from all bank & wallet apps','captureAllSources',s.captureAllSources!==false)}${check('Include category badge & budget progress in notifications','categoryAlerts',s.categoryAlerts!==false)}${check('Spend anomaly & high-purchase guard (≥ RM 50 & ≥ 2.5× median)','anomalyGuard',s.anomalyGuard!==false)}${check('Low-power Eco notification engine (saves RAM & battery)','ecoCapture',s.ecoCapture!==false)}${check('Always-on persistent task scheduler (auto-restarts unless Force Stopped)','alwaysOnScheduler',s.alwaysOnScheduler!==false)}${check('Auto-open MoneyLens when phone restarts','autoOpenOnBoot',s.autoOpenOnBoot!==false)}${check('BNPL, PTPTN, bill and cancellation reminders','reminders',s.reminders!==false)}${check('Budget threshold alerts','budgetAlerts',s.budgetAlerts!==false)}${check('Weekly budget pace nudge (respects quiet hours)','weeklyBudgetNudge',!!s.weeklyBudgetNudge)}${field('Budget alert threshold (%)','threshold',s.threshold||80,'number','min="1" max="100" required')}${check('One daily Inbox digest instead of individual prompts','digest',s.digest)}${field('Digest hour (0–23)','digestHour',s.digestHour??19,'number','min="0" max="23" required')}${check('Quiet hours','quietEnabled',s.quietEnabled)}<div class="form-grid">${field('Quiet from hour','quietStart',s.quietStart??22,'number','min="0" max="23" required')}${field('Quiet until hour','quietEnd',s.quietEnd??8,'number','min="0" max="23" required')}</div>${check('Show available estimate on home-screen widget','widgetAmounts',s.widgetAmounts)}${check('Capture while MoneyLens is closed or locked','captureWhileLocked',s.captureWhileLocked!==false)}<p class="note">Always-on task scheduler keeps auto-capture and BNPL/PTPTN due reminders active continuously across restarts.</p>${formFooter('Save preferences')}</form>`)}
 function categoryNotificationLibrary(){
   const s=state.settings,thr=s.threshold||80;
   const rows=CAT_NOTIFICATION_PRESETS.map(p=>{
@@ -170,6 +170,62 @@ function categoryNotificationLibrary(){
   }).join('');
   modal(tr('Category Notification Library'),`<p class="note">${esc(tr('Test category-aware payment capture and budget alerts ({thr}% warning / >100% over limit).',{thr}))}</p><div class="flex between" style="margin:10px 0 14px"><span class="tag">${esc(tr(s.categoryAlerts!==false?'Rich category badges ON':'Rich category badges OFF'))} · ${thr}%</span>${actionButton(tr('Alert Preferences'),'automation','','ghost')}</div><div class="lib-grid">${rows}</div>`);
 }
+function diffMarkup(preview,snapId=''){
+  const d=preview?.diff||preview||{};
+  const c=d.current||{},n=d.candidate||{};
+  const deltaBadge=(v,isMoney=false)=>{
+    if(!v)return '<span class="muted">0</span>';
+    const cls=v>0?'diff-pos':'diff-neg';
+    const txt=isMoney?(v>0?'+':'−')+money(Math.abs(v)):(v>0?'+'+v:String(v));
+    return `<strong class="${cls} money">${esc(txt)}</strong>`;
+  };
+  const rows=[
+    [tr('Active transactions'),c.txCount||0,n.txCount||0,deltaBadge(d.txDelta||0)],
+    [tr('Accounts'),c.accountCount||0,n.accountCount||0,deltaBadge(d.accountDelta||0)],
+    [tr('Budgets'),c.budgetCount||0,n.budgetCount||0,deltaBadge(d.budgetDelta||0)],
+    [tr('Active bills'),c.billCount||0,n.billCount||0,deltaBadge(d.billDelta||0)],
+    [tr('Saved receipts'),c.receiptCount||0,n.receiptCount||0,deltaBadge(preview?.receiptCount!==undefined?(preview.receiptCount-(c.receiptCount||0)):(d.receiptDelta||0))],
+    [tr('Recorded net balance'),signedMoney(c.netBalance||0),signedMoney(n.netBalance||0),deltaBadge(d.netBalanceDelta||0,true)]
+  ];
+  const warn=d.wouldLoseData?`<div class="anomaly-banner"><strong>⚠ ${esc(tr('Warning: Backup contains fewer records than your current ledger.'))}</strong></div>`:'';
+  const confirmAct=snapId?actionButton(tr('Restore this snapshot'),'restoreSnapshot',snapId,'danger'):actionButton(tr('Confirm & Restore Backup'),'confirmRestore','','danger');
+  const cancelAct=snapId?actionButton(tr('Back'),'snapshotHistory','','ghost'):actionButton(tr('Cancel'),'cancelRestore','','ghost');
+  return `${warn}<p class="note">${esc(tr('Review changes before replacing your device ledger. Your current state is automatically retained locally as a safety rollback copy.'))}</p><div class="diff-grid"><div class="diff-head"><span>${esc(tr('Metric'))}</span><span>${esc(tr('Current'))}</span><span>${esc(tr('Backup'))}</span><span>${esc(tr('Delta'))}</span></div>${rows.map(([l,cv,nv,dv])=>`<div class="diff-row"><span>${esc(l)}</span><span class="money">${esc(cv)}</span><strong class="money">${esc(nv)}</strong><span>${dv}</span></div>`).join('')}</div>${n.latestDate?`<p class="note">${esc(tr('Latest transaction in backup'))}: <strong>${esc(dateLabel(n.latestDate))}</strong></p>`:''}<div class="form-footer" style="margin-top:16px">${confirmAct}${cancelAct}</div>`;
+}
+window.restorePreviewLoaded=preview=>{
+  modalContext={isRestorePreview:true};
+  modal(tr('Restore Diff Preview'),diffMarkup(preview));
+};
+function computeLocalHealthCheck(){
+  const txs=validTx(),unverified=state.accounts.filter(a=>!a.balanceVerified).length;
+  const uncat=txs.filter(t=>t.kind==='expense'&&(t.category==='Miscellaneous'||t.needsNote)).length;
+  const pending=state.drafts.filter(d=>d.state==='review').length;
+  const bakOk=!!(status?.backupSuccess||status?.lastSnapshotAt);
+  const lockOk=!!state.settings?.appLock;
+  const score=(25)+(uncat===0?20:12)+(unverified===0?15:8)+(pending<=2?10:5)+(bakOk?20:0)+(lockOk?10:4);
+  return {
+    score,status:score>=80?'healthy':score>=50?'attention':'action',
+    checks:[
+      {id:'integrity',title:'Double-entry ledger & key integrity',ok:true,points:25,maxPoints:25,detail:'All recorded postings balance.',action:''},
+      {id:'backup',title:'Encrypted backup & local snapshot freshness',ok:bakOk,points:bakOk?20:0,maxPoints:20,detail:bakOk?'Recent encrypted copy recorded.':'No encrypted backup or local snapshot recorded yet.',action:'snapshotNow'},
+      {id:'categories',title:'90-day categorization hygiene',ok:uncat===0,points:uncat===0?20:12,maxPoints:20,detail:uncat===0?'No uncategorized transactions.':`${uncat} expense(s) need category/note review.`,action:'openNeedsNote'},
+      {id:'accounts',title:'Verified account balances',ok:unverified===0,points:unverified===0?15:8,maxPoints:15,detail:unverified===0?'All accounts verified.':`${unverified} account(s) need balance verification.`,action:'openAccounts'},
+      {id:'inbox',title:'Capture inbox backlog',ok:pending<=2,points:pending<=2?10:5,maxPoints:10,detail:`${pending} pending capture review(s).`,action:'openInbox'},
+      {id:'security',title:'Biometric & screen lock protection',ok:lockOk,points:lockOk?10:4,maxPoints:10,detail:lockOk?'App lock enabled.':'App lock is off.',action:'enableLock'}
+    ]
+  };
+}
+function renderHealthModal(h){
+  const tone=h.status==='healthy'?'healthy':h.status==='attention'?'attention':'action';
+  const lbl=h.status==='healthy'?tr('Healthy'):h.status==='attention'?tr('Needs attention'):tr('Action recommended');
+  const actionMap={snapshotNow:tr('Snapshot now'),openNeedsNote:tr('Review items'),openAccounts:tr('Verify accounts'),openInbox:tr('Open inbox'),enableLock:tr('Enable lock')};
+  modal(tr('Vault Health Check'),`<div class="health-head"><div class="health-score-ring ${tone}"><strong>${h.score}</strong><span>/100</span></div><div class="grow"><h3>${esc(tr('Overall Vault Health'))}: ${esc(lbl)}</h3><p class="note">${esc(tr('Offline security, backup freshness & double-entry integrity diagnostics.'))}</p></div></div><div class="stack" style="gap:8px;margin-top:12px">${(h.checks||[]).map(c=>`<div class="health-row"><div class="icon-bg ${c.ok?'sage':'peach'}">${icon(c.ok?'check':'bell')}</div><div class="grow"><strong>${esc(tr(c.title))} <span class="tag">${c.points}/${c.maxPoints}</span></strong><p class="note">${esc(c.detail)}</p></div>${(!c.ok&&c.action&&actionMap[c.action])?actionButton(actionMap[c.action],c.action,'','ghost'):''}</div>`).join('')}</div>`);
+}
+function renderSnapshotsModal(list){
+  const rows=Array.isArray(list)?list:[];
+  modal(tr('Encrypted Local Snapshots (5-Slot Ring)'),`<p class="note">${esc(tr('MoneyLens stores up to 5 encrypted local snapshots automatically inside protected storage for instant 1-tap rollback.'))}</p><div class="tools-grid" style="margin:10px 0 14px">${actionButton(tr('Save Encrypted Snapshot Now'),'snapshotNow')}</div>${rows.length?rows.map(s=>`<div class="plan-row"><div class="flex between"><div><strong>${esc(new Date(s.created||Date.now()).toLocaleString(appLocale()))}</strong> <span class="tag">${esc(tr(s.reason==='auto'?'Auto':'Manual'))}</span><p class="note">${esc(tr('{n} txns · {amt}',{n:s.txCount||0,amt:signedMoney(s.netBalance||0)}))} · ${Math.max(1,Math.round((s.sizeBytes||0)/1024))} KB</p></div>${actionButton(tr('Preview Diff'),'previewSnapshot',s.id,'ghost')}</div></div>`).join(''):`<p class="note">${esc(tr('No local encrypted snapshots yet. Tap "Save Encrypted Snapshot Now" above.'))}</p>`}`);
+}
+
 window.csvLoaded=info=>{importInfo=info;const am=info.autoMap||{};const rows=[[-1,tr('Not mapped')],...info.headers.map((h,i)=>[i,h||'Column '+(i+1)])];const pick=(k,fb=k)=>{if(typeof am[k]==='number'&&am[k]>=0)return am[k];return info.headers.findIndex(h=>h.toLowerCase().includes(fb));};const cols=[['date',tr('Date column'),'date'],['amount',tr('Amount column (single)'),'amount'],['debit',tr('Debit / Money Out column'),'debit'],['credit',tr('Credit / Money In column'),'credit'],['merchant',tr('Merchant / Description column'),'merchant'],['category',tr('Category column'),'category'],['kind',tr('Type column'),'kind'],['note',tr('Note column'),'note']];const presetHtml=am.preset?`<div class="soft-card" style="margin:0 0 12px"><span class="muted">${esc(tr('Detected bank format'))}:</span> <strong>${esc(am.preset)}</strong></div>`:'';modal(tr('Map your statement columns'),`<form data-extra="csvMap">${presetHtml}<p class="note">${esc(tr('{n} rows. Choose how your file maps to MoneyLens, then review before saving.',{n:info.count}))}</p>${cols.map(([k,lbl,fb])=>select(lbl,k,rows,pick(k,fb))).join('')}${acctSelect()}${select(tr('Date format'),'dateFormat',[['iso','YYYY-MM-DD'],['dmy','DD/MM/YYYY'],['dmmmy','DD MMM YYYY'],['mdy','MM/DD/YYYY']],am.dateFormat||'iso')}${select(tr('Default transaction type'),'defaultKind',[['expense',tr('Expense')],['income',tr('Income')],['refund',tr('Refund')]],'expense')}${check(tr('Signed amounts: negative expenses, positive income'),'signed',!!am.signed)}<details><summary>${esc(tr('First rows'))}</summary><pre class="csv-sample">${esc(info.sample.map(r=>r.join(' | ')).join('\n'))}</pre></details>${formFooter(tr('Preview import'))}</form>`)};
 function csvReview(rows){importPreview=rows;modal('Review CSV import',`<form data-extra="csvCommit"><p class="note">Possible duplicates start unchecked. Re-imported rows are blocked. Transfers need manual entry.</p><div class="review-list">${rows.map((r,i)=>`<label class="import-row"><input type="checkbox" name="row" value="${i}" ${r.error||r.duplicate?'disabled':r.possibleDuplicate?'':'checked'}><span><strong>${esc(r.merchant||'Row '+r.row)} ${r.amount?'· RM '+esc(r.amount):''}</strong><small>${esc(r.error||(r.date+' · '+r.kind+' · '+r.category))}</small>${r.duplicate?'<b>Already imported</b>':r.possibleDuplicate?'<b>Possible duplicate — check manually</b>':''}</span></label>`).join('')}</div>${formFooter('Import selected rows')}</form>`)}
 function batchForm(){const ds=state.drafts.filter(d=>d.state==='review').slice(0,100);modal('Review selected payments',`<form data-extra="batch"><p class="note">Choose payments with correct amount and category. The account below applies to every selected payment.</p>${acctSelect()}<div class="review-list">${ds.map(d=>`<label class="import-row"><input type="checkbox" name="draft" value="${esc(d.id)}" ${d.amount>0?'':'disabled'}><span><strong>${esc(d.merchant)} · ${money(d.amount)}</strong><small>${esc(d.category)} · ${esc(d.date)} · ${esc(d.reason)}</small></span></label>`).join('')}</div>${formFooter('Record selected payments')}${actionButton('Ignore selected','ignoreSelected','','ghost')}</form>`)}
@@ -288,6 +344,34 @@ document.addEventListener('click',async e=>{
       case 'openTaxPlan':page='plan';planTab='tax';render();window.scrollTo(0,0);break;
       case 'openDebtPlan':page='plan';planTab='debts';render();window.scrollTo(0,0);break;
       case 'openBnplPlan':page='plan';planTab='bills';render();window.scrollTo(0,0);break;
+      case 'openSplitsPlan':page='plan';planTab='splits';render();window.scrollTo(0,0);break;
+      case 'healthCheck':{const h=window.MoneyLensNative?await call('healthCheck'):computeLocalHealthCheck();renderHealthModal(h);break;}
+      case 'snapshotHistory':{const list=window.MoneyLensNative?await call('snapshots'):[];renderSnapshotsModal(list);break;}
+      case 'snapshotNow':{if(!window.MoneyLensNative){toast('Run on Android to save encrypted device snapshot.');break;}const list=await call('snapshotNow');await window.nativeRefresh();renderSnapshotsModal(list);toast(tr('Encrypted local snapshot saved.'));break;}
+      case 'previewSnapshot':{const prev=await call('previewSnapshot',{id});modal(tr('Snapshot Diff Preview'),diffMarkup(prev,id));break;}
+      case 'restoreSnapshot':{await mutate('restoreSnapshot',{id},tr('Snapshot restored.'));close();break;}
+      case 'confirmRestore':{await call('confirmRestore');close();break;}
+      case 'cancelRestore':{if(window.MoneyLensNative)await call('cancelRestore');modalContext={};close();break;}
+      case 'openNeedsNote':{page='transactions';advancedFilters={needsNote:true};close();render();break;}
+      case 'openAccounts':{page='accounts';close();render();break;}
+      case 'openInbox':{page='inbox';close();render();break;}
+      case 'enableLock':{await mutate('settings',{appLock:true},tr('Fingerprint app lock enabled.'));close();break;}
+      case 'settlePerson':{
+        const person=b.dataset.person||'';
+        const amt=Number(b.dataset.amt||0);
+        modal(tr('Settle {name}',{name:person}),`<form data-extra="settlePerson"><input type="hidden" name="person" value="${esc(person)}">${acctSelect(state.settings.lastAccount)}${field(tr('Settlement amount (RM)'),'amount',amt>0?amount(amt):'','text','required inputmode="decimal"')}${field(tr('Date'),'date',today(),'date','required')}${field(tr('Note'),'note','','text','maxlength="500" placeholder="e.g. DuitNow received"')}<p class="note">${esc(tr('FIFO-settles oldest open shared expenses for {name}.',{name:person}))}</p>${formFooter(tr('Confirm Settlement'))}</form>`);
+        break;
+      }
+      case 'copySplitMsg':{
+        const person=b.dataset.person||'';
+        const ssum=reportData?.sharedSummary||computeLocalSharedSummary();
+        const entry=(ssum.friends||[]).find(f=>f.person===person);
+        const txt=entry?.shareMessage||'';
+        if(!txt)break;
+        try{if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(txt);toast(tr('DuitNow split summary copied!'));break;}}catch(ignored){}
+        modal(tr('DuitNow Request · {name}',{name:person}),`<p class="note">${esc(tr('Copy and paste this offline summary in WhatsApp or chat:'))}</p><textarea rows="6" readonly style="width:100%">${esc(txt)}</textarea><div class="form-footer">${actionButton(tr('Close'),'close')}</div>`);
+        break;
+      }
       case 'setPayday':{
         const cand=(reportData?.recurringIncome||[])[Number(id)];
         if(cand)await mutate('setPayday',{name:cand.name,amountMinor:cand.amount,account:cand.account,frequency:cand.frequency,dayOfMonth:cand.dayOfMonth,nextDate:cand.nextDate},`Payday & budget cycle synced to day ${cand.dayOfMonth}.`);
@@ -322,7 +406,7 @@ document.addEventListener('click',async e=>{
       case 'addSplit':$('#split-rows').insertAdjacentHTML('beforeend',splitRow());break;
       case 'removeSplit':b.closest('.split-row').remove();break;
       case 'shared':txForm({kind:'shared'});break;
-      case 'repay':{const r=reportData.receivables.find(x=>x.id===id);txForm({kind:'reimbursement',amount:r.remaining,reimbursementFor:id,merchant:'Repayment · '+r.person,category:'Repayment'});break;}
+      case 'repay':{const r=(reportData?.receivables||[]).find(x=>x.id===id)||(()=>{const t=state.transactions.find(x=>x.id===id);return t?{id,person:t.person||'',remaining:t.amount}:{id,person:'',remaining:undefined};})();txForm({kind:'reimbursement',amount:r.remaining,reimbursementFor:id,merchant:'Repayment · '+r.person,category:'Repayment'});break;}
       case 'repeat':{const txRow=state.transactions.find(x=>x.id===id);if(['reimbursement','opening','adjustment'].includes(txRow.kind)){toast('Use the account reconciliation or repayment workflow for this record.');break}txForm({kind:txRow.kind,amount:txRow.amount,account:txRow.account,to:txRow.to,category:txRow.category,subcategory:txRow.subcategory,merchant:txRow.merchant,tags:txRow.tags,splits:txRow.splits,person:txRow.person,ownAmount:txRow.ownAmount,date:today()});break;}
       case 'favoriteFrom':favoriteForm(state.transactions.find(x=>x.id===id));break;
       case 'useFavorite':{const f=state.favorites.find(x=>x.id===id);txForm({...f,kind:'expense',date:today(),key:cryptoId()});break;}
@@ -396,7 +480,8 @@ document.addEventListener('submit',async e=>{
           await mutate('debtExtra',args,'Debt payoff plan updated.');busy=false;render();return;
         case 'favorite':if(state.favorites.some(f=>f.id===modalContext.id))args.id=modalContext.id;break;
         case 'rule':if(modalContext.id)args.id=modalContext.id;args.priority=Number(args.priority);args.enabled=form.elements.enabled.checked;break;
-        case 'automation':method='settings';for(const name of ['quietEnabled','digest','reminders','budgetAlerts','categoryAlerts','anomalyGuard','weeklyBudgetNudge','widgetAmounts','captureWhileLocked','autoRecord','captureAllSources','ecoCapture','autoOpenOnBoot','alwaysOnScheduler'])if(form.elements[name])args[name]=form.elements[name].checked;for(const name of ['quietStart','quietEnd','digestHour','threshold'])args[name]=Number(args[name]);break;
+        case 'automation':method='settings';for(const name of ['quietEnabled','digest','reminders','budgetAlerts','categoryAlerts','anomalyGuard','splitAutoMatch','weeklyBudgetNudge','widgetAmounts','captureWhileLocked','autoRecord','captureAllSources','ecoCapture','autoOpenOnBoot','alwaysOnScheduler'])if(form.elements[name])args[name]=form.elements[name].checked;for(const name of ['quietStart','quietEnd','digestHour','threshold'])args[name]=Number(args[name]);break;
+        case 'settlePerson':await mutate('settlePerson',args,tr('Split bills settled.'));busy=false;close();return;
         case 'csvMap':for(const k of ['date','amount','debit','credit','merchant','category','kind','note'])args[k]=Number(args[k]);args.signed=form.elements.signed.checked;csvReview(await call('csvPreview',args));stay=true;break;
         case 'csvCommit':args.indices=[...form.querySelectorAll('input[name=row]:checked')].map(x=>Number(x.value));if(!args.indices.length)throw new Error('Choose at least one valid row.');break;
         case 'batch':{const ids=[...form.querySelectorAll('input[name=draft]:checked')].map(x=>x.value);if(!ids.length)throw new Error('Select the payments you checked.');args.rows=ids.map(did=>{const d=state.drafts.find(x=>x.id===did);return {...d,amount:amount(d.amount),account:args.account,draftId:did,draftRevision:d.revision||1,key:'draft:'+did}});method='confirmBatch';break;}
@@ -474,6 +559,7 @@ document.addEventListener('change',async e=>{
     if(x.id==='lockTimeoutSelect'){if(window.MoneyLensNative)await mutate('settings',{lockTimeoutSec:Number(x.value)},tr('Auto-lock timeout updated.'));else{state.settings.lockTimeoutSec=Number(x.value);render();}}
     if(x.id==='categoryAlertsToggle')await mutate('settings',{categoryAlerts:x.checked},x.checked?'Rich category notification cards enabled.':'Rich category notification cards disabled.');
     if(x.id==='anomalyGuardToggle')await mutate('settings',{anomalyGuard:x.checked},tr(x.checked?'Spend anomaly guard enabled.':'Spend anomaly guard paused.'));
+    if(x.id==='splitAutoMatchToggle')await mutate('settings',{splitAutoMatch:x.checked},tr(x.checked?'Auto-reconcile for split transfers enabled.':'Auto-reconcile for split transfers paused.'));
     if(x.id==='autoRecordToggle')await mutate('settings',{autoRecord:x.checked},x.checked?'Auto-record enabled.':'Auto-record paused.');
     if(x.id==='captureAllToggle')await mutate('settings',{captureAllSources:x.checked},x.checked?'Reading all bank & wallet apps.':'Restricted to selected apps.');
     if(x.id==='ecoCaptureToggle')await mutate('settings',{ecoCapture:x.checked},x.checked?tr('Eco notification engine enabled.'):tr('Eco notification engine disabled.'));

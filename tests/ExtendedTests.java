@@ -549,6 +549,86 @@ public final class ExtendedTests {
    yes(!Finance.detectSpendAnomaly(s,"Zus Coffee","Food & drinks",9000L,LocalDate.now(),"").getBoolean("isAnomaly"));
   });
 
+  test("Phase 13 diffStates, BackupArchive roundtrip & vaultHealthCheck compute accurate deltas and scores",()->{
+   JSONObject cur=Ledger.initial();
+   Ledger.apply(cur,"account",new JSONObject().put("name","MAE").put("type","bank").put("opening","1000.00"));
+   String maeId=cur.getJSONArray("accounts").getJSONObject(1).getString("id");
+   Ledger.post(cur,new JSONObject().put("key","p13-t1").put("kind","expense").put("amount","45.00").put("account",maeId).put("category","Food & drinks").put("merchant","Nasi Lemak").put("date",LocalDate.now().toString()));
+   Ledger.apply(cur,"budget",new JSONObject().put("category","Food & drinks").put("amount","400.00"));
+
+   JSONObject candFewer=Ledger.initial();
+   JSONObject diffLoss=Finance.diffStates(cur,candFewer);
+   yes(diffLoss.getBoolean("wouldLoseData"));
+   yes(diffLoss.getInt("txDelta")<0&&diffLoss.getLong("netBalanceDelta")<0);
+
+   String fakeReceiptId=Extras.hex(java.security.MessageDigest.getInstance("SHA-256").digest(new byte[]{1,2,3,4}));
+   cur.getJSONArray("receipts").put(new JSONObject().put("id",fakeReceiptId).put("mime","image/jpeg").put("size",4));
+   byte[] packed=BackupArchive.pack(cur,Collections.singletonMap(fakeReceiptId,new byte[]{1,2,3,4}));
+   BackupArchive.Contents unpacked=BackupArchive.unpack(packed);
+   eq(unpacked.receipts.size(),1);
+   eq(Finance.diffStates(candFewer,unpacked.state).getInt("txDelta"),diffLoss.getInt("txDelta")*-1);
+
+   JSONObject hLow=Finance.vaultHealthCheck(Ledger.initial(),new JSONObject().put("backupSuccess",0L));
+   yes(hLow.getInt("score")<70&&!"healthy".equals(hLow.getString("status")));
+
+   Ledger.apply(cur,"settings",new JSONObject().put("appLock",true));
+   cur.getJSONArray("accounts").getJSONObject(0).put("balanceVerified",true);
+   JSONObject hHigh=Finance.vaultHealthCheck(cur,new JSONObject().put("backupSuccess",System.currentTimeMillis()));
+   yes(hHigh.getInt("score")>=95&&"healthy".equals(hHigh.getString("status")));
+  });
+
+  test("Phase 14 incoming P2P DuitNow notification auto-reconciles shared expense without inflating income",()->{
+   JSONObject s=Ledger.initial();
+   Ledger.apply(s,"account",new JSONObject().put("name","MAE").put("type","bank").put("opening","500.00"));
+   String maeId=s.getJSONArray("accounts").getJSONObject(1).getString("id");
+   String today=LocalDate.now().toString();
+   Ledger.post(s,new JSONObject().put("key","p14-sh1").put("kind","shared").put("amount","80.00").put("ownAmount","40.00").put("person","Ali bin Ahmad").put("account",maeId).put("category","Food & drinks").put("merchant","Banana Leaf").put("date",today));
+   eq(Finance.balance(s,"receivable:"+s.getJSONArray("transactions").getJSONObject(1).getString("id"),"9999-12-31"),4000L);
+
+   JSONObject d=PaymentParser.parse("You received RM 40.00 from Ali via DuitNow to your MAE account.","MAE by Maybank2u");
+   yes(d!=null&&"income".equals(d.getString("kind"))&&"Ali".equals(d.getString("merchant")));
+   d.put("id","p14-in1").put("autoCapture",true).put("package","com.maybank2u.life").put("account",maeId).put("date",today);
+   Extras.apply(s,"draft",d);
+
+   JSONObject savedDraft=s.getJSONArray("drafts").getJSONObject(s.getJSONArray("drafts").length()-1);
+   yes("reimbursement".equals(savedDraft.getString("kind")));
+   yes(savedDraft.optBoolean("autoReconciledSplit"));
+   eq(Finance.balance(s,"receivable:"+s.getJSONArray("transactions").getJSONObject(1).getString("id"),"9999-12-31"),0L);
+   eq(Finance.balance(s,maeId,"9999-12-31"),46000L);
+   eq(Finance.report(s,LocalDate.now()).getJSONObject("sharedSummary").getLong("totalOwed"),0L);
+   eq(Finance.income(s,LocalDate.now().withDayOfMonth(1),LocalDate.now().plusDays(1)),0L);
+   yes(Extras.formatRecordedTitle(savedDraft,s.getJSONObject("settings"),false,false).contains("Split settled RM 40.00"));
+   yes(Extras.formatRecordedBody(savedDraft,s.getJSONObject("settings"),true,false).contains("Dilangsaikan automatik"));
+  });
+
+  test("Phase 14 sharedSummary groups friends and settlePerson FIFO-settles multiple bills",()->{
+   JSONObject s=Ledger.initial();
+   Ledger.apply(s,"account",new JSONObject().put("name","MAE").put("type","bank").put("opening","1000.00"));
+   String maeId=s.getJSONArray("accounts").getJSONObject(1).getString("id");
+   String d1=LocalDate.now().minusDays(5).toString(),d2=LocalDate.now().minusDays(2).toString();
+   Ledger.post(s,new JSONObject().put("key","p14-s1").put("kind","shared").put("amount","25.00").put("ownAmount","0").put("person","Sarah Lee").put("account",maeId).put("category","Food & drinks").put("merchant","Zus Coffee").put("date",d1));
+   Ledger.post(s,new JSONObject().put("key","p14-s2").put("kind","shared").put("amount","35.00").put("ownAmount","0").put("person","Sarah Lee").put("account",maeId).put("category","Transport").put("merchant","GrabCar").put("date",d2));
+   Ledger.post(s,new JSONObject().put("key","p14-s3").put("kind","shared").put("amount","18.00").put("ownAmount","0").put("person","Dan").put("account",maeId).put("category","Food & drinks").put("merchant","Mamak").put("date",d2));
+
+   JSONObject sum1=Finance.sharedSummary(s,LocalDate.now());
+   eq(sum1.getLong("totalOwed"),7800L);
+   eq(sum1.getInt("friendCount"),2);
+   eq(sum1.getInt("openCount"),3);
+   JSONObject top=sum1.getJSONArray("friends").getJSONObject(0);
+   yes("Sarah Lee".equals(top.getString("person"))&&top.getLong("totalOwed")==6000L);
+   yes(top.getString("shareMessage").contains("RM 60.00")&&top.getString("shareMessage").contains("DuitNow"));
+
+   Extras.apply(s,"settlePerson",new JSONObject().put("person","sarah lee").put("account",maeId).put("amount","40.00").put("note","DuitNow partial"));
+   JSONObject sum2=Finance.sharedSummary(s,LocalDate.now());
+   eq(sum2.getLong("totalOwed"),3800L); // RM 20.00 left on Sarah (25+35-40) + RM 18.00 on Dan
+   eq(sum2.getInt("openCount"),2);
+   String firstSarahId=s.getJSONArray("transactions").getJSONObject(1).getString("id");
+   String secondSarahId=s.getJSONArray("transactions").getJSONObject(2).getString("id");
+   eq(Finance.balance(s,"receivable:"+firstSarahId,"9999-12-31"),0L);
+   eq(Finance.balance(s,"receivable:"+secondSarahId,"9999-12-31"),2000L);
+   Ledger.validate(s);
+  });
+
   System.out.println("RESULT: "+passed+" extended tests passed");
  }
 }

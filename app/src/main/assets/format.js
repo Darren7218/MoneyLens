@@ -81,7 +81,7 @@ const formFooter=(text='Save')=>`<div class="error" role="alert"></div><button c
 
 function account(id){return state.accounts.find(a=>a.id===id)||{name:tr('Unknown account'),type:'bank'}}
 function validTx(){return state.transactions.filter(t=>!t.voided)}
-function balance(id){return validTx().reduce((sum,t)=>sum+t.postings.filter(p=>p.account===id).reduce((n,p)=>n+p.amount,0),0)}
+function balance(id){return validTx().reduce((sum,t)=>sum+(t.postings||[]).filter(p=>p.account===id).reduce((n,p)=>n+p.amount,0),0)}
 function period(){
   let now=new Date(),day=state.settings.cycleDay||1;
   const date=(y,m)=>new Date(y,m,Math.min(day,new Date(y,m+1,0).getDate()),0);
@@ -93,11 +93,11 @@ function period(){
   return{start:iso(start),end:iso(end),label:start.toLocaleDateString(appLocale(),{month:'long',year:'numeric'}),day};
 }
 function currentTx(){let p=period();return validTx().filter(t=>t.date>=p.start&&t.date<p.end&&t.date<=today())}
-function expense(t){return t.postings.filter(p=>p.account.startsWith('expense:')).reduce((s,p)=>s+p.amount,0)}
+function expense(t){return (t.postings||[]).filter(p=>p.account.startsWith('expense:')).reduce((s,p)=>s+p.amount,0)}
 function totals(){let tx=currentTx();return{spent:tx.reduce((s,t)=>s+expense(t),0),income:tx.filter(t=>t.kind==='income').reduce((s,t)=>s+t.amount,0),net:state.accounts.reduce((s,a)=>s+balance(a.id),0)}}
 function spendFor(c,sub=''){
   const needle=sub?sub.trim().toLowerCase():'';
-  return currentTx().reduce((s,t)=>needle&&((t.subcategory||'').trim().toLowerCase()!==needle)?s:s+t.postings.filter(p=>p.account==='expense:'+c).reduce((n,p)=>n+p.amount,0),0);
+  return currentTx().reduce((s,t)=>needle&&((t.subcategory||'').trim().toLowerCase()!==needle)?s:s+(t.postings||[]).filter(p=>p.account==='expense:'+c).reduce((n,p)=>n+p.amount,0),0);
 }
 function brandBadge(src){
   const s=String(src||'Auto-captured'),low=s.toLowerCase();

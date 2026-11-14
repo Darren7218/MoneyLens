@@ -163,13 +163,33 @@ public final class Automation {
    if(prefs.optBoolean("budgetAlerts",true)){JSONArray catAlerts=Finance.evaluateCategoryAlerts(s,now,"");for(int i=0;i<catAlerts.length();i++){JSONObject row=catAlerts.getJSONObject(i);String ak=row.getString("key");if(!Vault.alertExists(c,ak)&&notifyCategoryAlert(c,ak,row.getString("title"),row.getString("body"),ms))Vault.markAlert(c,ak);}}
    if(prefs.optBoolean("weeklyBudgetNudge",false)){JSONObject nudge=Finance.weeklyBudgetNudge(s,now);if(nudge!=null)alert(c,nudge.getString("key"),nudge.getString("title"),nudge.getString("body"),"plan");}
   }
+  try{Vault.createLocalSnapshot(c,"auto");}catch(Exception ignored){}
   autoBackup(c,false);MoneyWidget.refresh(c,s);
   AlarmReceiver.scheduleNext(c,s);
  }
  public static void configure(Context c,Uri uri,char[] password)throws Exception{byte[] salt=Crypto.random(16),key=Crypto.derive(password,salt).getEncoded();JSONObject cfg=new JSONObject().put("uri",uri.toString()).put("salt",android.util.Base64.encodeToString(salt,2)).put("key",android.util.Base64.encodeToString(key,2));Vault.writeSecret(c,"auto-backup",cfg.toString().getBytes(StandardCharsets.UTF_8));Arrays.fill(key,(byte)0);c.getSharedPreferences("health",0).edit().putBoolean("autoBackup",true).apply();autoBackup(c,true);}
+ private static void pruneOldAutoBackups(Context c,Uri tree,int keep){
+  try{
+   Uri children=DocumentsContract.buildChildDocumentsUriUsingTree(tree,DocumentsContract.getTreeDocumentId(tree));
+   String[] proj={DocumentsContract.Document.COLUMN_DOCUMENT_ID,DocumentsContract.Document.COLUMN_DISPLAY_NAME};
+   java.util.List<String[]> found=new java.util.ArrayList<>();
+   try(android.database.Cursor cur=c.getContentResolver().query(children,proj,null,null,null)){
+    while(cur!=null&&cur.moveToNext()){
+     String id=cur.getString(0),name=cur.getString(1);
+     if(name!=null&&name.matches("MoneyLens-auto-[0-9]+\\.moneylens"))found.add(new String[]{name,id});
+    }
+   }
+   found.sort((a,b)->b[0].compareTo(a[0]));
+   for(int i=keep;i<found.size();i++){
+    Uri u=DocumentsContract.buildDocumentUriUsingTree(tree,found.get(i)[1]);
+    try{DocumentsContract.deleteDocument(c.getContentResolver(),u);}catch(Exception ignored){}
+   }
+  }catch(Exception ignored){}
+ }
  public static void autoBackup(Context c,boolean force)throws Exception{
+  try{Vault.createLocalSnapshot(c,force?"manual":"auto");}catch(Exception ignored){}
   android.content.SharedPreferences health=c.getSharedPreferences("health",0);if(!health.getBoolean("autoBackup",false))return;if(!force&&System.currentTimeMillis()-health.getLong("backupSuccess",0)<24*3600000L)return;
-  Uri dest=null;try{JSONObject cfg=new JSONObject(new String(Vault.readSecret(c,"auto-backup"),StandardCharsets.UTF_8));Uri tree=Uri.parse(cfg.getString("uri")),parent=DocumentsContract.buildDocumentUriUsingTree(tree,DocumentsContract.getTreeDocumentId(tree));byte[] bytes=Crypto.backupWithKey(Vault.backupPlain(c),android.util.Base64.decode(cfg.getString("salt"),2),android.util.Base64.decode(cfg.getString("key"),2));dest=DocumentsContract.createDocument(c.getContentResolver(),parent,"application/octet-stream","MoneyLens-auto-"+System.currentTimeMillis()+".moneylens");if(dest==null)throw new IOException();try(OutputStream out=c.getContentResolver().openOutputStream(dest,"w")){if(out==null)throw new IOException();out.write(bytes);out.flush();}health.edit().putLong("backupSuccess",System.currentTimeMillis()).putString("backupError","").apply();}catch(Exception e){if(dest!=null)try{DocumentsContract.deleteDocument(c.getContentResolver(),dest);}catch(Exception ignored){}health.edit().putString("backupError","Daily backup could not be written. Choose the backup folder again in Settings.").apply();}
+  Uri dest=null;try{JSONObject cfg=new JSONObject(new String(Vault.readSecret(c,"auto-backup"),StandardCharsets.UTF_8));Uri tree=Uri.parse(cfg.getString("uri")),parent=DocumentsContract.buildDocumentUriUsingTree(tree,DocumentsContract.getTreeDocumentId(tree));byte[] bytes=Crypto.backupWithKey(Vault.backupPlain(c),android.util.Base64.decode(cfg.getString("salt"),2),android.util.Base64.decode(cfg.getString("key"),2));dest=DocumentsContract.createDocument(c.getContentResolver(),parent,"application/octet-stream","MoneyLens-auto-"+System.currentTimeMillis()+".moneylens");if(dest==null)throw new IOException();try(OutputStream out=c.getContentResolver().openOutputStream(dest,"w")){if(out==null)throw new IOException();out.write(bytes);out.flush();}health.edit().putLong("backupSuccess",System.currentTimeMillis()).putString("backupError","").apply();pruneOldAutoBackups(c,tree,5);}catch(Exception e){if(dest!=null)try{DocumentsContract.deleteDocument(c.getContentResolver(),dest);}catch(Exception ignored){}health.edit().putString("backupError","Daily backup could not be written. Choose the backup folder again in Settings.").apply();}
  }
  public static void disableBackup(Context c){new File(c.getNoBackupFilesDir(),"auto-backup").delete();c.getSharedPreferences("health",0).edit().putBoolean("autoBackup",false).putString("backupError","").apply();}
 }

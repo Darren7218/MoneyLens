@@ -194,6 +194,47 @@ public final class Extras {
     return true;
    }
    case "clearPayday":s.getJSONObject("settings").remove("payday");return true;
+   case "settlePerson":{
+    String person=name(a,"person",80),account=a.getString("account"),dt=a.optString("date",LocalDate.now().toString()).trim();
+    Ledger.find(s.getJSONArray("accounts"),account);LocalDate.parse(dt);
+    List<JSONObject> open=new ArrayList<>();
+    long totalOpen=0L;String disp=person;
+    JSONArray tx=s.getJSONArray("transactions");
+    for(int i=0;i<tx.length();i++){
+     JSONObject t=tx.getJSONObject(i);
+     if(t.optBoolean("voided")||!"shared".equals(t.optString("kind")))continue;
+     String p=t.optString("person","").trim();
+     if(!p.equalsIgnoreCase(person))continue;
+     long rem=Finance.balance(s,"receivable:"+t.getString("id"),"9999-12-31");
+     if(rem>0){disp=p;open.add(t);totalOpen+=rem;}
+    }
+    if(open.isEmpty())throw new IllegalArgumentException("No open split bills found for "+person+".");
+    open.sort((x,y)->{int c=x.optString("date").compareTo(y.optString("date"));return c!=0?c:Long.compare(x.optLong("created"),y.optLong("created"));});
+    String rawAmt=a.optString("amount","").trim();
+    long budget=rawAmt.isEmpty()?totalOpen:Ledger.minor(rawAmt);
+    if(budget>totalOpen)throw new IllegalArgumentException("Settlement exceeds total RM "+rm(totalOpen)+" owed by "+disp+".");
+    String baseKey=a.optString("key","settle:"+Ledger.id()),note=Ledger.str(a,"note",500);
+    for(int i=0;i<open.size()&&budget>0;i++){
+     JSONObject sh=open.get(i);
+     long rem=Finance.balance(s,"receivable:"+sh.getString("id"),"9999-12-31");
+     long pay=Math.min(budget,rem);
+     if(pay<=0)continue;
+     JSONObject postArgs=new JSONObject()
+      .put("key",baseKey+":"+i)
+      .put("kind","reimbursement")
+      .put("reimbursementFor",sh.getString("id"))
+      .put("account",account)
+      .put("amount",BigDecimal.valueOf(pay,2).toPlainString())
+      .put("category","Repayment")
+      .put("merchant","Repayment · "+disp)
+      .put("matchedPerson",disp)
+      .put("date",dt)
+      .put("note",note);
+     Ledger.post(s,postArgs);
+     budget-=pay;
+    }
+    return true;
+   }
    default:return false;
   }
  }
@@ -306,6 +347,17 @@ public final class Extras {
     txArgs.put("originalId",matchedOrig.getString("id")).put("needsNote",false);
     d.put("matchedOriginalId",matchedOrig.getString("id")).put("matchedOriginalMerchant",origMerchant).put("refundMatchType",matchType).put("needsNote",false).put("reason","Matched ("+matchType+") to RM "+rm(matchedOrig.getLong("amount"))+" at "+origMerchant+" ("+matchedOrig.getString("date")+"). Category spend & tax relief adjusted.");
    }
+  }else if("income".equals(kind)&&s.getJSONObject("settings").optBoolean("splitAutoMatch",true)){
+   JSONObject splitMatch=findMatchingReceivable(s,amt,merchant+" "+d.optString("source",""),dt);
+   if(splitMatch!=null){
+    JSONObject shared=splitMatch.getJSONObject("sharedTx");
+    String person=shared.optString("person","Friend").trim();if(person.isEmpty())person="Friend";
+    String matchType=splitMatch.getString("matchType");
+    String reimbMerchant="Repayment · "+person;
+    txArgs.put("kind","reimbursement").put("reimbursementFor",shared.getString("id")).put("category","Repayment").put("merchant",reimbMerchant).put("autoReconciledSplit",true).put("matchedPerson",person).put("needsNote",false);
+    txArgs.remove("subcategory");
+    d.put("kind","reimbursement").put("category","Repayment").put("merchant",reimbMerchant).put("reimbursementFor",shared.getString("id")).put("matchedPerson",person).put("splitMatchType",matchType).put("autoReconciledSplit",true).put("needsNote",false).put("reason","Auto-matched ("+matchType+") incoming transfer to "+person+"'s shared bill ("+shared.optString("merchant","")+").");
+   }
   }else if("expense".equals(kind)){
    JSONObject anom=Finance.detectSpendAnomaly(s,merchant,cat,amt,LocalDate.parse(dt),"");
    if(anom.optBoolean("isAnomaly")){
@@ -374,6 +426,56 @@ public final class Extras {
     if(score>bestScore){bestScore=score;best=t;}
    }
    return bestScore>=70?best:null;
+  }catch(Exception ignored){return null;}
+ }
+ private static final Set<String> SPLIT_STOPWORDS=new HashSet<>(Arrays.asList("duitnow","instant","transfer","received","credited","payment","pay","from","dari","daripada","bank","maybank","mae","cimb","rhb","hlb","public","ambank","gxbank","aeon","ryt","tng","ewallet","wallet","boost","shopeepay","grabpay","account","akaun","ref","reference","ibft","giro","qr","detected","shared","text"));
+ /** Matches an incoming P2P transfer notification against open shared-expense receivables within 60 days. */
+ static JSONObject findMatchingReceivable(JSONObject s,long amt,String senderText,String dateStr){
+  try{
+   JSONArray tx=s.optJSONArray("transactions");
+   if(tx==null||tx.length()==0||amt<=0)return null;
+   LocalDate txDate=LocalDate.parse(dateStr);
+   String sNorm=Finance.normalizeMerchant(senderText);
+   List<String> sTokens=new ArrayList<>();
+   for(String tok:sNorm.split(" "))if(tok.length()>=2&&!SPLIT_STOPWORDS.contains(tok))sTokens.add(tok);
+   JSONObject best=null;long bestRem=0;int bestScore=0;
+   List<JSONObject> exactOddCents=new ArrayList<>();
+   for(int i=0;i<tx.length();i++){
+    JSONObject t=tx.getJSONObject(i);
+    if(t.optBoolean("voided")||!"shared".equals(t.optString("kind")))continue;
+    LocalDate shDate=LocalDate.parse(t.getString("date"));
+    long days=ChronoUnit.DAYS.between(shDate,txDate);
+    if(days<-3||days>60)continue;
+    long rem=Finance.balance(s,"receivable:"+t.getString("id"),"9999-12-31");
+    if(rem<amt||rem<=0)continue;
+    if(rem==amt&&(amt%100L)!=0L)exactOddCents.add(t);
+    String pNorm=Finance.normalizeMerchant(t.optString("person",""));
+    if(pNorm.isEmpty())continue;
+    int score=0;
+    String pJoin=String.join(" ",pNorm.split(" "));
+    String sJoin=String.join(" ",sTokens);
+    if(!sJoin.isEmpty()&&pJoin.equals(sJoin))score+=70;
+    else{
+     for(String pt:pNorm.split(" ")){
+      if(pt.length()<2)continue;
+      if(sTokens.contains(pt)){score+=55;break;}
+     }
+    }
+    if(score==0)continue;
+    if(amt==rem)score+=40;
+    else if(amt<rem)score+=15;
+    if(days<=7)score+=10;
+    else if(days<=30)score+=5;
+    if(score>bestScore){bestScore=score;best=t;bestRem=rem;}
+   }
+   if(best!=null&&bestScore>=85){
+    return new JSONObject().put("sharedTx",best).put("remaining",bestRem).put("matchType",amt>=bestRem?"full":"partial").put("score",bestScore);
+   }
+   if(sTokens.isEmpty()&&exactOddCents.size()==1){
+    JSONObject uniq=exactOddCents.get(0);
+    return new JSONObject().put("sharedTx",uniq).put("remaining",amt).put("matchType","full").put("score",85);
+   }
+   return null;
   }catch(Exception ignored){return null;}
  }
  static JSONObject findMatchingBill(JSONObject s,String kind,long amt,String merchant,String category,String subcategory,String dateStr){
@@ -610,18 +712,25 @@ public final class Extras {
   boolean catRich=settings==null||settings.optBoolean("categoryAlerts",true);
   String prefix=catRich?(categoryEmoji(cat)+" "):"";
   String merchant=d.optString("merchant",ms?"Bayaran":"Payment");
-  boolean isRef="refund".equals(d.optString("kind"));
+  String kind=d.optString("kind","");
+  if("reimbursement".equals(kind)){
+   String person=d.optString("matchedPerson",merchant);
+   if(blur)return "🤝 "+(ms?"Bayaran kongsi diterima · ":"Split settled · ")+person;
+   return "🤝 "+(ms?"Bayaran kongsi RM ":"Split settled RM ")+rm(d.optLong("amount"))+" · "+person;
+  }
+  boolean isRef="refund".equals(kind);
   if(blur)return prefix+(isRef?(ms?"Bayaran balik direkod · ":"Refund recorded · "):(ms?"Bayaran direkod · ":"Payment recorded · "))+merchant;
   return prefix+(isRef?(ms?"Bayaran balik RM ":"Refund RM "):(ms?"Direkod RM ":"Recorded RM "))+rm(d.optLong("amount"))+" · "+merchant;
  }
  public static String formatRecordedBody(JSONObject d,JSONObject settings,boolean ms,boolean blur){
-  String cat=d.optString("category","Miscellaneous"),sub=d.optString("subcategory",""),matchedBill=d.optString("matchedBillName",""),matchedOrig=d.optString("matchedOriginalMerchant",""),refType=d.optString("refundMatchType","");
-  String catDisp=Finance.categoryLabel(cat,ms);
+  String cat=d.optString("category","Miscellaneous"),sub=d.optString("subcategory",""),matchedBill=d.optString("matchedBillName",""),matchedOrig=d.optString("matchedOriginalMerchant",""),refType=d.optString("refundMatchType",""),matchedPerson=d.optString("matchedPerson",""),splitType=d.optString("splitMatchType","");
+  String catDisp="reimbursement".equals(d.optString("kind"))?(ms?"Bayaran Balik Kongsi":"Split Repayment"):Finance.categoryLabel(cat,ms);
   StringBuilder sb=new StringBuilder(sub.isEmpty()?catDisp:(catDisp+" › "+sub));
   String origCur=d.optString("originalCurrency",""),origAmt=d.optString("originalAmount","");
   if(!origCur.isEmpty()&&!origAmt.isEmpty()&&!blur)sb.append(" (").append(origCur).append(" ").append(origAmt).append(")");
   if(!matchedBill.isEmpty())sb.append(ms?" · Dipaut ke ":" · Linked to ").append(matchedBill);
   if(!matchedOrig.isEmpty())sb.append(ms?(" · Dipadankan dgn "+matchedOrig+("partial".equals(refType)?" (Sebahagian)":"")):(" · Matched to "+matchedOrig+("partial".equals(refType)?" (Partial)":"")));
+  if(!matchedPerson.isEmpty())sb.append(ms?(" · Dilangsaikan automatik bagi "+matchedPerson+("partial".equals(splitType)?" (Sebahagian)":"")):(" · Auto-settled "+matchedPerson+"'s split"+("partial".equals(splitType)?" (Partial)":"")));
   if(d.optBoolean("anomaly")){
    String ratio=d.optString("anomalyRatio","");
    if(blur)sb.append(ms?" · ⚠ Amaun luar biasa":" · ⚠ Unusual amount");

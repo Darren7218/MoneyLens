@@ -94,7 +94,7 @@ test('Bahasa Melayu toggle localizes nav, home, plan, budgets, settings, goals, 
   const planHtml=run(`plan()`);
   assert(planHtml.includes('Bajet')&&planHtml.includes('Hutang')&&planHtml.includes('Cukai LHDN'));
   const setHtml=run(`settings()`);
-  assert(setHtml.includes('id="langToggle"')&&setHtml.includes('value="ms" selected')&&setHtml.includes('Rekod automatik notifikasi')&&setHtml.includes('id="ecoCaptureToggle"')&&setHtml.includes('Enjin notifikasi jimat kuasa (Mod Eko)')&&setHtml.includes('Kunci aplikasi cap jari &amp; biometrik')&&setHtml.includes('id="categoryAlertsToggle"')&&setHtml.includes('id="anomalyGuardToggle"')&&setHtml.includes('Pengawal anomali')&&setHtml.includes('Pustaka notifikasi &amp; amaran kategori')&&setHtml.includes('0.11.0'));
+  assert(setHtml.includes('id="langToggle"')&&setHtml.includes('value="ms" selected')&&setHtml.includes('Rekod automatik notifikasi')&&setHtml.includes('id="ecoCaptureToggle"')&&setHtml.includes('Enjin notifikasi jimat kuasa (Mod Eko)')&&setHtml.includes('Kunci aplikasi cap jari &amp; biometrik')&&setHtml.includes('id="categoryAlertsToggle"')&&setHtml.includes('id="anomalyGuardToggle"')&&setHtml.includes('id="splitAutoMatchToggle"')&&setHtml.includes('Pengawal anomali')&&setHtml.includes('Pustaka notifikasi &amp; amaran kategori')&&setHtml.includes('0.13.0'));
   run(`state.settings.appLock=true`);
   const setLockedHtml=run(`settings()`);
   assert(setLockedHtml.includes('id="lockTimeoutSelect"')&&setLockedHtml.includes('data-action="lockNow"')&&setLockedHtml.includes('Kunci sekarang'));
@@ -119,7 +119,7 @@ test('home smart insights strip, hero delta pill and digital bank badges render 
   assert(run(`brandBadge('GXBank')`).includes('brand-gxbank'));
   assert(run(`brandBadge('AEON Bank')`).includes('brand-aeon'));
   assert(run(`brandBadge('Setel')`).includes('brand-setel'));
-  assert(run(`settings()`).includes('MoneyLens 0.11.0'));
+  assert(run(`settings()`).includes('MoneyLens 0.13.0'));
   assert(run(`settings()`).includes('id="anomalyGuardToggle"')&&run(`settings()`).includes('Spend anomaly'));
   run(`state.settings.lang='ms'`);
   const bmHome=run(`home()`);
@@ -181,7 +181,7 @@ test('Phase 11 category notification library, budget alert pills & commercial UI
   run(`reportData=null`);
 
   assert(run(`CAT_NOTIFICATION_PRESETS.some(p=>p.key==='refund')`)===true);
-  run(`state.transactions.push({id:'t-orig-1',kind:'expense',amount:10000,account:'a1',category:'Shopping',merchant:'UNIQLO Malaysia',date:'2026-11-10'},{id:'t-ref-1',kind:'refund',originalId:'t-orig-1',amount:4000,account:'a1',category:'Shopping',merchant:'UNIQLO Malaysia',date:'2026-11-12',autoRecorded:true},{id:'t-anom-1',kind:'expense',amount:7000,account:'a1',category:'Food & drinks',merchant:'Zus Coffee',date:'2026-11-12',autoRecorded:true,anomaly:true,anomalyMedian:1400,anomalyRatio:'5.0x',needsNote:true})`);
+  run(`state.transactions.push({id:'t-orig-1',kind:'expense',amount:10000,account:'cash',category:'Shopping',merchant:'UNIQLO Malaysia',date:'2026-11-10',postings:[{account:'cash',amount:-10000},{account:'expense:Shopping',amount:10000}]},{id:'t-ref-1',kind:'refund',originalId:'t-orig-1',amount:4000,account:'cash',category:'Shopping',merchant:'UNIQLO Malaysia',date:'2026-11-12',autoRecorded:true,postings:[{account:'cash',amount:4000},{account:'expense:Shopping',amount:-4000}]},{id:'t-anom-1',kind:'expense',amount:7000,account:'cash',category:'Food & drinks',merchant:'Zus Coffee',date:'2026-11-12',autoRecorded:true,anomaly:true,anomalyMedian:1400,anomalyRatio:'5.0x',needsNote:true,postings:[{account:'cash',amount:-7000},{account:'expense:Food & drinks',amount:7000}]})`);
   const txHtml12=run(`transactions()`);
   assert(txHtml12.includes('tx-pill refund-link')&&txHtml12.includes('Linked refund · UNIQLO Malaysia'));
   assert(txHtml12.includes('tx-pill anomaly-warn')&&txHtml12.includes('5.0x usual'));
@@ -194,5 +194,35 @@ test('Phase 11 category notification library, budget alert pills & commercial UI
   run(`detail('t-ref-1')`);
   assert(detailHtml.includes('Linked refund')&&detailHtml.includes('UNIQLO Malaysia'));
   ctx.modal=prevModal;
+});
+test('Phase 13 vault health check, restore diff preview & snapshot history UI',()=>{
+  const setHtml=run(`settings()`);
+  assert(setHtml.includes('data-action="healthCheck"')&&setHtml.includes('data-action="snapshotHistory"')&&setHtml.includes('id="splitAutoMatchToggle"')&&setHtml.includes('MoneyLens 0.13.0'));
+
+  let mTitle='',mBody='';
+  const prevModal=ctx.modal;
+  ctx.modal=(t,b)=>{mTitle=t;mBody=b;};
+
+  run(`renderHealthModal(computeLocalHealthCheck())`);
+  assert(mTitle.includes('Vault Health Check')&&mBody.includes('health-score-ring')&&mBody.includes('Double-entry ledger'));
+
+  run(`window.restorePreviewLoaded({receiptCount:2,diff:{current:{txCount:10,accountCount:3,budgetCount:2,billCount:1,receiptCount:1,netBalance:50000},candidate:{txCount:8,accountCount:3,budgetCount:2,billCount:1,receiptCount:2,netBalance:30000,latestDate:'2026-11-10'},txDelta:-2,accountDelta:0,budgetDelta:0,billDelta:0,receiptDelta:1,netBalanceDelta:-20000,wouldLoseData:true}})`);
+  assert(mTitle.includes('Restore Diff Preview')&&mBody.includes('diff-grid')&&mBody.includes('fewer records')&&mBody.includes('data-action="confirmRestore"')&&mBody.includes('data-action="cancelRestore"'));
+
+  ctx.modal=prevModal;
+});
+test('Phase 14 split bills tabs by friend, home split banner & auto-reconciled pill',()=>{
+  const prevReport=run(`reportData`);
+  run(`state.transactions.push({id:'t-sh1',kind:'shared',amount:6000,ownAmount:'20.00',person:'Ali bin Ahmad',account:'cash',category:'Food & drinks',merchant:'Banana Leaf',date:today(),postings:[{account:'cash',amount:-6000},{account:'expense:Food & drinks',amount:2000},{account:'receivable:t-sh1',amount:4000}]},{id:'t-rb1',kind:'reimbursement',reimbursementFor:'t-sh1',amount:1500,account:'cash',category:'Repayment',merchant:'Repayment · Sarah Lee',matchedPerson:'Sarah Lee',autoReconciledSplit:true,autoRecorded:true,date:today(),postings:[{account:'cash',amount:1500},{account:'receivable:t-sh1',amount:-1500}]});reportData=null;planTab='splits';`);
+  const splitHtml=run(`plan()`);
+  assert(splitHtml.includes('SPLIT BILLS &amp; RECEIVABLES')&&splitHtml.includes('Ali bin Ahmad')&&splitHtml.includes('RM 25.00')&&splitHtml.includes('data-action="settlePerson"')&&splitHtml.includes('data-action="copySplitMsg"')&&splitHtml.includes('Auto-matched split'));
+
+  run(`reportData={budgets:[],receivables:[{id:'t-sh1',person:'Ali bin Ahmad',merchant:'Banana Leaf',remaining:2500}],owed:2500,sharedSummary:{totalOwed:2500,friendCount:1,openCount:1}}`);
+  const homeHtml=run(`home()`);
+  assert(homeHtml.includes('Split bills owed: RM 25.00')&&homeHtml.includes('data-action="openSplitsPlan"'));
+
+  const txHtml=run(`transactions()`);
+  assert(txHtml.includes('tx-pill split-link')&&txHtml.includes('Auto-matched split · Sarah Lee'));
+  run(`reportData=${JSON.stringify(prevReport)};planTab='budgets'`);
 });
 console.log('RESULT: '+passed+' UI tests passed');

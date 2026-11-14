@@ -1,7 +1,7 @@
 'use strict';
 function plan(){
-  const tabs=[['budgets',tr('Budgets')],['bills',tr('BNPL & Bills')],['debts',tr('Debts')],['goals',tr('Goals')],['tax',tr('LHDN Tax')]];
-  const body=planTab==='budgets'?budgets():planTab==='bills'?bills():planTab==='debts'?debtView():planTab==='tax'?taxView():goals();
+  const tabs=[['budgets',tr('Budgets')],['bills',tr('BNPL & Bills')],['debts',tr('Debts')],['splits',tr('Split Bills')],['goals',tr('Goals')],['tax',tr('LHDN Tax')]];
+  const body=planTab==='budgets'?budgets():planTab==='bills'?bills():planTab==='debts'?debtView():planTab==='splits'?splitsView():planTab==='tax'?taxView():goals();
   return `<div class="stack"><div class="segmented">${tabs.map(([id,lbl])=>`<button class="${planTab===id?'active':''}" data-plan="${id}">${esc(lbl)}</button>`).join('')}</div>${body}</div>`;
 }
 
@@ -191,4 +191,45 @@ function recapMarkup(rc){
   const r=rc||reportData?.recap||computeLocalRecap();
   const deltaSign=r.spentDelta>0?'+':'';
   return `<p class="eyebrow muted">${esc(r.start)} – ${esc(r.end)}</p><div class="paycheck-grid"><div class="soft-card" style="margin:0"><span class="muted" style="font-size:11px">${esc(tr('Total Income'))}</span><strong class="money" style="display:block;font-size:18px;margin-top:4px">${money(r.totalIncome)}</strong></div><div class="soft-card" style="margin:0"><span class="muted" style="font-size:11px">${esc(tr('Total Spending'))}</span><strong class="money" style="display:block;font-size:18px;margin-top:4px">${money(r.totalSpent)}</strong></div></div><div class="detail-line"><span>${esc(tr('Net Saved'))} (${r.savingsRatePct}%)</span><strong class="money">${signedMoney(r.netSaved)}</strong></div><div class="detail-line"><span>${esc(tr('Vs previous cycle'))}</span><span>${deltaSign}${signedMoney(r.spentDelta)}</span></div><div class="detail-line"><span>${esc(tr('Budgets'))}</span><span>${esc(tr('{u} on track · {o} over',{u:r.underBudgetCount,o:r.overBudgetCount}))}</span></div><div class="detail-line"><span>${esc(tr('LHDN YA Claimable items'))}</span><strong>${esc(tr('{n} recorded',{n:r.claimableCount||0}))}</strong></div><h3>${esc(tr('Top Categories'))}</h3>${(r.topCategories||[]).map(c=>`<div class="detail-line"><span>${esc(tr(c.category))} (${c.sharePct}%)</span><strong class="money">${money(c.amount)}</strong></div>`).join('')||`<p class="note">${esc(tr('No expenses in this cycle.'))}</p>`}<h3>${esc(tr('Top Merchants'))}</h3>${(r.topMerchants||[]).map(m=>`<div class="detail-line"><span>${esc(m.merchant)} (${m.count}×)</span><strong class="money">${money(m.amount)}</strong></div>`).join('')||`<p class="note">${esc(tr('No merchant spending in this cycle.'))}</p>`}<div class="form-footer" style="margin-top:16px">${actionButton(tr('Export PDF Report'),'exportPdf')}<button type="button" class="btn ghost" data-action="close">${esc(tr('Close'))}</button></div>`;
+}
+
+function computeLocalSharedSummary(){
+  const txs=validTx();
+  const byFriend=new Map(),repaid=new Map(),settlements=[];
+  for(const x of txs){
+    if(x.kind==='reimbursement'&&x.reimbursementFor){
+      repaid.set(x.reimbursementFor,(repaid.get(x.reimbursementFor)||0)+x.amount);
+      settlements.push({id:x.id,date:x.date,amount:x.amount,merchant:x.merchant||'Repayment',person:x.matchedPerson||'',reimbursementFor:x.reimbursementFor,autoReconciledSplit:!!x.autoReconciledSplit,created:x.created||0});
+    }
+  }
+  let totalOwed=0,openCount=0;
+  for(const x of txs){
+    if(x.kind!=='shared')continue;
+    const rec=(x.postings||[]).filter(p=>p.account==='receivable:'+x.id).reduce((s,p)=>s+p.amount,0)||(x.amount-Math.round(Number(x.ownAmount||0)*100));
+    const rem=Math.max(0,rec-(repaid.get(x.id)||0));
+    if(rem<=0)continue;
+    const person=(x.person||'Friend').trim()||'Friend',key=person.toLowerCase();
+    if(!byFriend.has(key))byFriend.set(key,{person,totalOwed:0,count:0,oldestDate:x.date,latestDate:x.date,items:[]});
+    const g=byFriend.get(key);
+    g.totalOwed+=rem;g.count++;
+    if(x.date<g.oldestDate)g.oldestDate=x.date;
+    if(x.date>g.latestDate)g.latestDate=x.date;
+    g.items.push({id:x.id,date:x.date,merchant:x.merchant||x.category,amount:x.amount,ownAmount:x.ownAmount||'0',remaining:rem,account:x.account});
+    totalOwed+=rem;openCount++;
+  }
+  const friends=[...byFriend.values()].sort((a,b)=>b.totalOwed-a.totalOwed).map(g=>{
+    g.items.sort((a,b)=>a.date.localeCompare(b.date));
+    const lines=g.items.slice(0,8).map(it=>`• ${it.date} · ${it.merchant}: RM ${(it.remaining/100).toFixed(2)}`);
+    if(g.items.length>8)lines.push(`• ... and ${g.items.length-8} more item(s)`);
+    return {...g,shareMessage:`Hi ${g.person}, here's our split-bill summary:\n${lines.join('\n')}\nTotal owed: RM ${(g.totalOwed/100).toFixed(2)}\nPlease DuitNow when convenient — thanks!`};
+  });
+  settlements.sort((a,b)=>b.date.localeCompare(a.date)||(b.created||0)-(a.created||0));
+  return {totalOwed,openCount,friendCount:friends.length,friends,recentSettlements:settlements.slice(0,10)};
+}
+
+function splitsView(){
+  const ssum=reportData?.sharedSummary||computeLocalSharedSummary();
+  const friends=ssum.friends||[],settled=ssum.recentSettlements||[];
+  const autoSplit=state.settings.splitAutoMatch!==false;
+  return `<div class="stack"><section class="card hero"><div class="flex between"><span class="eyebrow">${esc(tr('SPLIT BILLS & RECEIVABLES'))}</span>${actionButton(tr('＋ Shared Expense'),'shared','','secondary')}</div><div class="balance money"><span>RM</span>${(ssum.totalOwed/100).toLocaleString(appLocale(),{minimumFractionDigits:2,maximumFractionDigits:2})}</div><small>${esc(tr('{n} friend(s) owe you across {m} open split(s)',{n:ssum.friendCount||0,m:ssum.openCount||0}))}</small><div class="hero-foot"><div class="hero-stat-box"><div class="label">${esc(tr('Auto-Match'))}</div><strong>${esc(tr(autoSplit?'Active (DuitNow)':'Paused'))}</strong></div><div class="hero-stat-box"><div class="label">${esc(tr('Settled Recently'))}</div><strong class="money">${settled.length}</strong></div></div></section><section class="card"><div class="section-head"><h2>${esc(tr('Split Tabs by Friend'))}</h2><span class="tag">${friends.length}</span></div>${friends.length?friends.map(f=>`<div class="plan-row"><div class="split-friend-head"><div class="flex" style="gap:10px;align-items:center"><div class="icon-bg sage">${esc((f.person||'F')[0].toUpperCase())}</div><div><h3>${esc(f.person)}</h3><p>${esc(tr('{n} open item(s) · {from} – {to}',{n:f.count,from:dateLabel(f.oldestDate),to:dateLabel(f.latestDate)}))}</p></div></div><strong class="money" style="font-size:18px">${money(f.totalOwed)}</strong></div><div style="margin-top:8px">${(f.items||[]).map(it=>`<div class="detail-line"><span>${dateLabel(it.date)} · ${esc(it.merchant)}</span><span class="flex" style="gap:8px"><strong class="money">${money(it.remaining)}</strong><button type="button" class="btn ghost small" data-action="repay" data-id="${esc(it.id)}">${esc(tr('Settle 1'))}</button></span></div>`).join('')}</div><div class="tools-grid" style="margin-top:10px"><button type="button" class="btn small" data-action="settlePerson" data-person="${esc(f.person)}" data-amt="${f.totalOwed}">${icon('check')}${esc(tr('Settle All ({amt})',{amt:money(f.totalOwed)}))}</button><button type="button" class="btn secondary small" data-action="copySplitMsg" data-person="${esc(f.person)}">${esc(tr('Copy DuitNow Request'))}</button></div></div>`).join(''):empty('wallet',tr('No open split bills'),tr('Log a shared meal, trip or ride — incoming DuitNow transfers from friends auto-reconcile too.'),tr('＋ Shared Expense'),'shared')}</section>${settled.length?`<section class="card"><h2>${esc(tr('Recent Split Settlements'))}</h2>${settled.map(r=>`<div class="detail-line" style="cursor:pointer" data-action="detail" data-id="${esc(r.id)}"><span><strong>${esc(r.person||r.merchant)}</strong>${r.autoReconciledSplit?` <span class="tx-pill split-link">🤝 ${esc(tr('Auto-matched split'))}</span>`:''}<br><small class="muted">${dateLabel(r.date)}</small></span><strong class="money" style="color:var(--accent)">+${money(r.amount)}</strong></div>`).join('')}</section>`:''}</div>`;
 }

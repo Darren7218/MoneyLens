@@ -96,10 +96,94 @@ public final class Vault {
     java.util.Map<String,byte[]> files=new java.util.LinkedHashMap<>();JSONArray meta=s.getJSONArray("receipts"),keep=new JSONArray();java.util.Set<String> used=new java.util.HashSet<>();JSONArray tx=s.getJSONArray("transactions");for(int i=0;i<tx.length();i++){String id=tx.getJSONObject(i).optString("receiptId");if(!id.isEmpty())used.add(id);}for(int i=0;i<meta.length();i++){JSONObject r=meta.getJSONObject(i);String id=r.getString("id");if(used.contains(id)){files.put(id,receipt(c,id));keep.put(r);}}s.put("receipts",keep);return BackupArchive.pack(s,files);
   }
   public static synchronized byte[] exportBackup(Context c,char[] password)throws Exception{return Crypto.backup(backupPlain(c),password);}
-  public static synchronized void restoreBackup(Context c,byte[] raw,char[] password)throws Exception{
-    BackupArchive.Contents contents=BackupArchive.unpack(Crypto.restore(raw,password));JSONObject s=contents.state;s.put("drafts",new JSONArray()).put("seen",new JSONArray()).put("sources",new JSONArray());s.getJSONObject("settings").put("appLock",false);
+  public static final class InspectedBackup {
+    public final BackupArchive.Contents contents;
+    public final JSONObject preview;
+    InspectedBackup(BackupArchive.Contents contents,JSONObject preview){this.contents=contents;this.preview=preview;}
+  }
+  private static final int MAX_LOCAL_SNAPSHOTS=5;
+  private static String snapPath(String id){
+    if(id==null||!id.matches("[0-9]{10,20}(?:_[0-9]+)?"))throw new IllegalArgumentException("Invalid snapshot id.");
+    return "auto-snapshots/"+id+".snap";
+  }
+  public static synchronized JSONObject applyRestoredContents(Context c,BackupArchive.Contents contents)throws Exception{
+    JSONObject s=contents.state;
+    Ledger.migrate(s);Ledger.validate(s);
     for(java.util.Map.Entry<String,byte[]> entry:contents.receipts.entrySet())writeSecret(c,"receipts/"+entry.getKey(),entry.getValue());
-    AtomicFile old=file(c);if(old.getBaseFile().exists())atomic(new AtomicFile(new File(c.getNoBackupFilesDir(),"before-restore.vault")),old.readFully());write(c,s);
+    AtomicFile old=file(c);if(old.getBaseFile().exists())atomic(new AtomicFile(new File(c.getNoBackupFilesDir(),"before-restore.vault")),old.readFully());
+    write(c,s);
+    return s;
+  }
+  public static synchronized InspectedBackup inspectBackup(Context c,byte[] raw,char[] password)throws Exception{
+    BackupArchive.Contents contents=BackupArchive.unpack(Crypto.restore(raw,password));
+    JSONObject s=contents.state;s.put("drafts",new JSONArray()).put("seen",new JSONArray()).put("sources",new JSONArray());s.getJSONObject("settings").put("appLock",false);
+    Ledger.migrate(s);Ledger.validate(s);
+    JSONObject diff=Finance.diffStates(read(c),s);
+    JSONObject preview=new JSONObject().put("diff",diff).put("receiptCount",contents.receipts.size());
+    return new InspectedBackup(contents,preview);
+  }
+  public static synchronized void restoreBackup(Context c,byte[] raw,char[] password)throws Exception{
+    applyRestoredContents(c,inspectBackup(c,raw,password).contents);
+  }
+  public static synchronized JSONArray listLocalSnapshots(Context c)throws Exception{
+    File idxFile=new File(c.getNoBackupFilesDir(),"auto-snapshots/index.json");
+    if(!idxFile.exists())return new JSONArray();
+    JSONArray raw=new JSONArray(new String(readSecret(c,"auto-snapshots/index.json"),StandardCharsets.UTF_8));
+    JSONArray valid=new JSONArray();
+    for(int i=0;i<raw.length();i++){
+      JSONObject row=raw.getJSONObject(i);
+      if(new File(c.getNoBackupFilesDir(),snapPath(row.getString("id"))).exists())valid.put(row);
+    }
+    return valid;
+  }
+  public static synchronized JSONObject createLocalSnapshot(Context c,String reason)throws Exception{
+    JSONObject s=read(c);
+    long now=System.currentTimeMillis(),rev=s.optLong("revision",0L);
+    JSONArray list=listLocalSnapshots(c);
+    if("auto".equals(reason)&&list.length()>0){
+      JSONObject top=list.getJSONObject(0);
+      if(now-top.optLong("created",0L)<12L*3600000L&&top.optLong("revision",-1L)==rev)return top;
+    }
+    java.util.Map<String,byte[]> files=new java.util.LinkedHashMap<>();
+    java.util.Set<String> used=new java.util.HashSet<>();
+    JSONArray tx=s.getJSONArray("transactions"),meta=s.getJSONArray("receipts");
+    for(int i=0;i<tx.length();i++){String rid=tx.getJSONObject(i).optString("receiptId");if(!rid.isEmpty())used.add(rid);}
+    for(int i=0;i<meta.length();i++){String rid=meta.getJSONObject(i).getString("id");if(used.contains(rid))files.put(rid,receipt(c,rid));}
+    byte[] packed=BackupArchive.pack(s,files);
+    String snapId=now+"_"+list.length();
+    writeSecret(c,snapPath(snapId),packed);
+    JSONObject stats=Finance.diffStates(null,s).getJSONObject("candidate");
+    JSONObject entry=new JSONObject()
+      .put("id",snapId)
+      .put("created",now)
+      .put("reason",reason==null||reason.isEmpty()?"manual":reason)
+      .put("revision",rev)
+      .put("txCount",stats.getInt("txCount"))
+      .put("accountCount",stats.getInt("accountCount"))
+      .put("netBalance",stats.getLong("netBalance"))
+      .put("receiptCount",files.size())
+      .put("sizeBytes",packed.length);
+    JSONArray updated=new JSONArray().put(entry);
+    for(int i=0;i<list.length();i++){
+      JSONObject old=list.getJSONObject(i);
+      if(updated.length()<MAX_LOCAL_SNAPSHOTS)updated.put(old);
+      else new File(c.getNoBackupFilesDir(),snapPath(old.getString("id"))).delete();
+    }
+    writeSecret(c,"auto-snapshots/index.json",updated.toString().getBytes(StandardCharsets.UTF_8));
+    c.getApplicationContext().getSharedPreferences("health",0).edit().putLong("lastSnapshotAt",now).putInt("snapshotCount",updated.length()).apply();
+    return entry;
+  }
+  public static synchronized JSONObject previewLocalSnapshot(Context c,String snapId)throws Exception{
+    BackupArchive.Contents contents=BackupArchive.unpack(readSecret(c,snapPath(snapId)));
+    Ledger.migrate(contents.state);Ledger.validate(contents.state);
+    JSONArray list=listLocalSnapshots(c);
+    long created=0L;String reason="manual";
+    for(int i=0;i<list.length();i++){JSONObject r=list.getJSONObject(i);if(snapId.equals(r.getString("id"))){created=r.optLong("created");reason=r.optString("reason","manual");break;}}
+    return new JSONObject().put("id",snapId).put("created",created).put("reason",reason).put("receiptCount",contents.receipts.size()).put("diff",Finance.diffStates(read(c),contents.state));
+  }
+  public static synchronized JSONObject restoreLocalSnapshot(Context c,String snapId)throws Exception{
+    BackupArchive.Contents contents=BackupArchive.unpack(readSecret(c,snapPath(snapId)));
+    return applyRestoredContents(c,contents);
   }
   public static synchronized JSONObject recover(Context c)throws Exception{AtomicFile f=new AtomicFile(new File(c.getNoBackupFilesDir(),"before-restore.vault"));JSONObject s=new JSONObject(new String(Crypto.open(f.readFully(),key(),AAD),StandardCharsets.UTF_8));Ledger.migrate(s);Ledger.validate(s);write(c,s);return s;}
   private static void atomic(AtomicFile f,byte[] bytes)throws Exception{FileOutputStream out=null;try{out=f.startWrite();out.write(bytes);f.finishWrite(out);}catch(Exception e){if(out!=null)f.failWrite(out);throw e;}}

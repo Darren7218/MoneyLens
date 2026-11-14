@@ -272,7 +272,7 @@ public final class Finance {
   JSONArray b=s.getJSONArray("budgets");Set<String> topCats=new HashSet<>();List<JSONObject> budgetRows=new ArrayList<>();for(int i=0;i<b.length();i++){JSONObject row=budget(s,b.getJSONObject(i),on);budgets.put(row);budgetRows.add(row);if(row.optString("subcategory","").isEmpty())topCats.add(row.getString("category"));}for(JSONObject row:budgetRows){if(row.optString("subcategory","").isEmpty()||!topCats.contains(row.getString("category")))budgetRemaining+=Math.max(0,row.getLong("remaining"));}
   JSONArray tx=s.getJSONArray("transactions"),receivables=new JSONArray();for(int i=0;i<tx.length();i++){JSONObject t=tx.getJSONObject(i);if(t.optBoolean("voided")||!t.getString("kind").equals("shared"))continue;long remaining=balance(s,"receivable:"+t.getString("id"),on.toString());if(remaining>0){owed+=remaining;receivables.put(new JSONObject().put("id",t.getString("id")).put("person",t.optString("person")).put("merchant",t.optString("merchant")).put("remaining",remaining));}}
   JSONArray months=new JSONArray();for(int i=5;i>=0;i--){LocalDate m=anchored(YearMonth.from(from).minusMonths(i),day),e=next(m,day);months.put(new JSONObject().put("start",m.toString()).put("spent",spend(s,"",m,e)).put("income",income(s,m,e)));}
-  return new JSONObject().put("start",from.toString()).put("end",until.toString()).put("spent",spend(s,"",from,on.plusDays(1))).put("previousComparable",spend(s,"",prev,prevUntil)).put("budgets",budgets).put("dailyAllowance",budgetRemaining/Math.max(1,ChronoUnit.DAYS.between(on,until))).put("liquid",liquid).put("cardReserve",debt).put("billsReserve",commitments).put("goalReserve",reserved).put("availableToSpend",Math.max(0,liquid-debt-commitments-reserved)).put("owed",owed).put("receivables",receivables).put("months",months).put("subscriptions",subscriptions(s)).put("priceHikes",priceHikes(s)).put("taxEstimate",calculateTax(s,null,on.getYear())).put("debtPlan",debtPlan(s,on)).put("recurringIncome",recurringIncome(s,on)).put("forecast",forecast(s,on,30)).put("recap",cycleRecap(s,on));
+  return new JSONObject().put("start",from.toString()).put("end",until.toString()).put("spent",spend(s,"",from,on.plusDays(1))).put("previousComparable",spend(s,"",prev,prevUntil)).put("budgets",budgets).put("dailyAllowance",budgetRemaining/Math.max(1,ChronoUnit.DAYS.between(on,until))).put("liquid",liquid).put("cardReserve",debt).put("billsReserve",commitments).put("goalReserve",reserved).put("availableToSpend",Math.max(0,liquid-debt-commitments-reserved)).put("owed",owed).put("receivables",receivables).put("sharedSummary",sharedSummary(s,on)).put("months",months).put("subscriptions",subscriptions(s)).put("priceHikes",priceHikes(s)).put("taxEstimate",calculateTax(s,null,on.getYear())).put("debtPlan",debtPlan(s,on)).put("recurringIncome",recurringIncome(s,on)).put("forecast",forecast(s,on,30)).put("recap",cycleRecap(s,on));
  }
  public static JSONObject calculateTax(JSONObject s,JSONObject override,int year)throws Exception{
   JSONObject prof=override!=null?override:s.getJSONObject("settings").optJSONObject("taxProfile");
@@ -918,5 +918,204 @@ public final class Finance {
    .put("count",cnt)
    .put("ratio",Math.round(ratio*10.0)/10.0)
    .put("ratioText",String.format(Locale.US,"%.1fx",ratio));
+ }
+ private static JSONObject stateStats(JSONObject s)throws Exception{
+  JSONObject st=s==null?Ledger.initial():s;
+  JSONArray tx=st.optJSONArray("transactions"),accts=st.optJSONArray("accounts"),buds=st.optJSONArray("budgets"),bills=st.optJSONArray("bills"),goals=st.optJSONArray("goals"),debts=st.optJSONArray("debts"),receipts=st.optJSONArray("receipts");
+  int activeTx=0,activeBills=0,unverified=0;String latestDate="";long netBal=0;
+  if(tx!=null){
+   for(int i=0;i<tx.length();i++){
+    JSONObject t=tx.getJSONObject(i);
+    if(t.optBoolean("voided"))continue;
+    activeTx++;
+    String dt=t.optString("date","");
+    if(!"opening".equals(t.optString("kind"))&&dt.compareTo(latestDate)>0)latestDate=dt;
+   }
+  }
+  if(accts!=null){
+   for(int i=0;i<accts.length();i++){
+    JSONObject a=accts.getJSONObject(i);
+    if(!a.optBoolean("balanceVerified"))unverified++;
+    netBal+=balance(st,a.getString("id"),"9999-12-31");
+   }
+  }
+  if(bills!=null)for(int i=0;i<bills.length();i++){JSONObject b=bills.getJSONObject(i);if(!b.optBoolean("paid")&&!b.optBoolean("cancelled"))activeBills++;}
+  return new JSONObject()
+   .put("txCount",activeTx)
+   .put("accountCount",accts==null?0:accts.length())
+   .put("unverifiedAccounts",unverified)
+   .put("budgetCount",buds==null?0:buds.length())
+   .put("billCount",activeBills)
+   .put("goalCount",goals==null?0:goals.length())
+   .put("debtCount",debts==null?0:debts.length())
+   .put("receiptCount",receipts==null?0:receipts.length())
+   .put("netBalance",netBal)
+   .put("latestDate",latestDate)
+   .put("revision",st.optLong("revision",0L));
+ }
+ /** Computes side-by-side record counts and balance deltas between the live vault and a backup candidate. */
+ public static JSONObject diffStates(JSONObject current,JSONObject candidate)throws Exception{
+  JSONObject c=stateStats(current),n=stateStats(candidate);
+  int txD=n.getInt("txCount")-c.getInt("txCount");
+  int acD=n.getInt("accountCount")-c.getInt("accountCount");
+  int buD=n.getInt("budgetCount")-c.getInt("budgetCount");
+  int biD=n.getInt("billCount")-c.getInt("billCount");
+  int goD=n.getInt("goalCount")-c.getInt("goalCount");
+  int deD=n.getInt("debtCount")-c.getInt("debtCount");
+  int rcD=n.getInt("receiptCount")-c.getInt("receiptCount");
+  long balD=n.getLong("netBalance")-c.getLong("netBalance");
+  return new JSONObject()
+   .put("current",c)
+   .put("candidate",n)
+   .put("txDelta",txD)
+   .put("accountDelta",acD)
+   .put("budgetDelta",buD)
+   .put("billDelta",biD)
+   .put("goalDelta",goD)
+   .put("debtDelta",deD)
+   .put("receiptDelta",rcD)
+   .put("netBalanceDelta",balD)
+   .put("wouldLoseData",txD<0||acD<0||buD<0);
+ }
+ /** Evaluates offline ledger integrity, backup recency, uncategorized spend, and lock posture into a 0-100 score. */
+ public static JSONObject vaultHealthCheck(JSONObject s,JSONObject meta)throws Exception{
+  return vaultHealthCheck(s,meta,System.currentTimeMillis());
+ }
+ public static JSONObject vaultHealthCheck(JSONObject s,JSONObject meta,long nowMs)throws Exception{
+  JSONObject st=s==null?Ledger.initial():s;
+  JSONObject stats=stateStats(st);
+  boolean ledgerValid=true;String ledgerErr="";
+  try{Ledger.validate(new JSONObject(st.toString()));}catch(Exception e){ledgerValid=false;ledgerErr=String.valueOf(e.getMessage());}
+  LocalDate cutoff=LocalDate.now().minusDays(90);
+  int recentExp=0,uncat=0,pending=0;
+  JSONArray tx=st.optJSONArray("transactions"),drafts=st.optJSONArray("drafts");
+  if(tx!=null){
+   for(int i=0;i<tx.length();i++){
+    JSONObject t=tx.getJSONObject(i);
+    if(t.optBoolean("voided")||!"expense".equals(t.optString("kind")))continue;
+    if(LocalDate.parse(t.getString("date")).isBefore(cutoff))continue;
+    recentExp++;
+    if("Miscellaneous".equals(t.optString("category"))||t.optBoolean("needsNote"))uncat++;
+   }
+  }
+  if(drafts!=null)for(int i=0;i<drafts.length();i++)if("review".equals(drafts.getJSONObject(i).optString("state")))pending++;
+  int uncatPct=recentExp>0?Math.round(uncat*100f/recentExp):0;
+  int unverified=stats.getInt("unverifiedAccounts");
+  long backupMs=Math.max(meta==null?0L:meta.optLong("backupSuccess",0L),meta==null?0L:meta.optLong("lastSnapshotAt",0L));
+  long backupAgeHours=backupMs>0?Math.max(0L,(nowMs-backupMs)/3600000L):-1L;
+  boolean appLock=st.optJSONObject("settings")!=null&&st.getJSONObject("settings").optBoolean("appLock",false);
+  int pInt=ledgerValid?25:0;
+  int pCat=uncatPct<=10?20:(uncatPct<=30?12:4);
+  int pAcc=unverified==0?15:8;
+  int pRev=pending<=2?10:5;
+  int pBak=backupAgeHours>=0&&backupAgeHours<=48?20:(backupAgeHours>=0&&backupAgeHours<=168?12:(backupAgeHours>=0?4:0));
+  int pSec=appLock?10:4;
+  int score=Math.max(0,Math.min(100,pInt+pCat+pAcc+pRev+pBak+pSec));
+  JSONArray checks=new JSONArray()
+   .put(new JSONObject().put("id","integrity").put("title","Double-entry ledger & key integrity").put("ok",ledgerValid).put("points",pInt).put("maxPoints",25).put("detail",ledgerValid?"All transactions balance and pass schema validation.":"Validation issue: "+ledgerErr).put("action",""))
+   .put(new JSONObject().put("id","backup").put("title","Encrypted backup & local snapshot freshness").put("ok",backupAgeHours>=0&&backupAgeHours<=168).put("points",pBak).put("maxPoints",20).put("detail",backupAgeHours<0?"No encrypted backup or local snapshot recorded yet.":("Latest encrypted copy saved "+backupAgeHours+"h ago.")).put("action","snapshotNow"))
+   .put(new JSONObject().put("id","categories").put("title","90-day categorization hygiene").put("ok",uncatPct<=10).put("points",pCat).put("maxPoints",20).put("detail",recentExp==0?"No recent expenses in the last 90 days.":(uncat+" of "+recentExp+" recent expense(s) need a specific category or note ("+uncatPct+"%).")).put("action","openNeedsNote"))
+   .put(new JSONObject().put("id","accounts").put("title","Verified account balances").put("ok",unverified==0).put("points",pAcc).put("maxPoints",15).put("detail",unverified==0?"All accounts have verified opening or reconciled balances.":(unverified+" account(s) have not been statement-checked yet.")).put("action","openAccounts"))
+   .put(new JSONObject().put("id","inbox").put("title","Capture inbox backlog").put("ok",pending<=2).put("points",pRev).put("maxPoints",10).put("detail",pending==0?"Zero pending suggestions waiting in Inbox.":(pending+" unconfirmed capture suggestion(s) pending.")).put("action","openInbox"))
+   .put(new JSONObject().put("id","security").put("title","Biometric & screen lock protection").put("ok",appLock).put("points",pSec).put("maxPoints",10).put("detail",appLock?"Fingerprint/biometric app lock is active.":"App lock is currently off in Settings.").put("action","enableLock"));
+  JSONObject summary=new JSONObject()
+   .put("ledgerValid",ledgerValid)
+   .put("activeTxCount",stats.getInt("txCount"))
+   .put("accountCount",stats.getInt("accountCount"))
+   .put("unverifiedAccounts",unverified)
+   .put("uncategorizedCount",uncat)
+   .put("uncategorizedPct",uncatPct)
+   .put("pendingReviews",pending)
+   .put("receiptCount",stats.getInt("receiptCount"))
+   .put("appLock",appLock)
+   .put("backupAgeHours",backupAgeHours);
+  return new JSONObject()
+   .put("score",score)
+   .put("status",score>=80?"healthy":(score>=50?"attention":"action"))
+   .put("checks",checks)
+   .put("summary",summary);
+ }
+ /** Groups open shared-expense receivables by friend and builds offline DuitNow split-bill summaries. */
+ public static JSONObject sharedSummary(JSONObject s,LocalDate on)throws Exception{
+  JSONArray tx=s.optJSONArray("transactions");
+  Map<String,List<JSONObject>> groups=new LinkedHashMap<>();
+  Map<String,String> displayNames=new LinkedHashMap<>();
+  List<JSONObject> settlements=new ArrayList<>();
+  long totalOwed=0;int openCount=0;
+  if(tx!=null){
+   for(int i=0;i<tx.length();i++){
+    JSONObject t=tx.getJSONObject(i);
+    if(t.optBoolean("voided"))continue;
+    String kind=t.optString("kind");
+    if("shared".equals(kind)){
+     long rem=balance(s,"receivable:"+t.getString("id"),on.toString());
+     if(rem>0){
+      String rawName=t.optString("person","").trim();
+      if(rawName.isEmpty())rawName="Friend";
+      String key=rawName.toLowerCase(Locale.ROOT);
+      displayNames.putIfAbsent(key,rawName);
+      groups.computeIfAbsent(key,k->new ArrayList<>()).add(new JSONObject()
+       .put("id",t.getString("id"))
+       .put("date",t.getString("date"))
+       .put("merchant",t.optString("merchant",t.optString("category","Shared expense")))
+       .put("amount",t.getLong("amount"))
+       .put("ownAmount",t.optString("ownAmount","0"))
+       .put("remaining",rem)
+       .put("account",t.optString("account","")));
+      totalOwed+=rem;openCount++;
+     }
+    }else if("reimbursement".equals(kind)){
+     settlements.add(new JSONObject()
+      .put("id",t.getString("id"))
+      .put("date",t.getString("date"))
+      .put("amount",t.getLong("amount"))
+      .put("merchant",t.optString("merchant","Repayment"))
+      .put("person",t.optString("matchedPerson",""))
+      .put("reimbursementFor",t.optString("reimbursementFor",""))
+      .put("autoReconciledSplit",t.optBoolean("autoReconciledSplit"))
+      .put("created",t.optLong("created",0L)));
+    }
+   }
+  }
+  List<JSONObject> friendList=new ArrayList<>();
+  for(Map.Entry<String,List<JSONObject>> en:groups.entrySet()){
+   String disp=displayNames.get(en.getKey());
+   List<JSONObject> items=en.getValue();
+   items.sort((a,b)->a.optString("date").compareTo(b.optString("date")));
+   long fTotal=0;String oldest="",latest="";
+   JSONArray itemArr=new JSONArray();
+   StringBuilder msg=new StringBuilder("Hi ").append(disp).append(", here's our split-bill summary:\n");
+   for(int i=0;i<items.size();i++){
+    JSONObject it=items.get(i);
+    long rem=it.optLong("remaining");
+    fTotal+=rem;
+    String dt=it.optString("date");
+    if(oldest.isEmpty()||dt.compareTo(oldest)<0)oldest=dt;
+    if(latest.isEmpty()||dt.compareTo(latest)>0)latest=dt;
+    itemArr.put(it);
+    if(i<8)msg.append("• ").append(dt).append(" · ").append(it.optString("merchant")).append(": RM ").append(BigDecimal.valueOf(rem,2).toPlainString()).append("\n");
+   }
+   if(items.size()>8)msg.append("• ... and ").append(items.size()-8).append(" more item(s)\n");
+   msg.append("Total owed: RM ").append(BigDecimal.valueOf(fTotal,2).toPlainString()).append("\nPlease DuitNow when convenient — thanks!");
+   friendList.add(new JSONObject()
+    .put("person",disp)
+    .put("totalOwed",fTotal)
+    .put("count",items.size())
+    .put("oldestDate",oldest)
+    .put("latestDate",latest)
+    .put("items",itemArr)
+    .put("shareMessage",msg.toString()));
+  }
+  friendList.sort((a,b)->Long.compare(b.optLong("totalOwed"),a.optLong("totalOwed")));
+  settlements.sort((a,b)->{int c=b.optString("date").compareTo(a.optString("date"));return c!=0?c:Long.compare(b.optLong("created"),a.optLong("created"));});
+  JSONArray friends=new JSONArray(),recentSettle=new JSONArray();
+  for(JSONObject f:friendList)friends.put(f);
+  for(int i=0;i<settlements.size()&&i<10;i++)recentSettle.put(settlements.get(i));
+  return new JSONObject()
+   .put("totalOwed",totalOwed)
+   .put("openCount",openCount)
+   .put("friendCount",friends.length())
+   .put("friends",friends)
+   .put("recentSettlements",recentSettle);
  }
 }

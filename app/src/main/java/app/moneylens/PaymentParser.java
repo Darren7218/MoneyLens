@@ -69,7 +69,7 @@ public final class PaymentParser {
   private static final Pattern MERCHANT_FOR=Pattern.compile("(?i)\\bfor\\s+(?:your\\s+)?(?:(?:recent|monthly|install?ment|bnpl)\\s+)?([\\p{L}0-9][\\p{L}0-9 &'._/()#,+*-]{1,79})");
   private static final Pattern REFUND_FROM=Pattern.compile("(?i)\\b(?:refund(?:ed)?|reversal|reversed|chargeback|bayaran\\s+balik(?!\\s+(?:pinjaman|loan|ptptn|hutang|pembiayaan|ansuran|kredit))|pulangan(?:\\s+(?:bayaran|wang|tunai|dana))?)\\b[^\\r\\n]{0,48}?\\b(?:from|dari|daripada|at|di)\\s+([\\p{L}0-9][\\p{L}0-9 &'._/()#,+*-]{1,79})");
   private static final Pattern MERCHANT_REFUND_PREFIX=Pattern.compile("(?i)^(?:refund(?:ed)?|reversal|reversed|chargeback|bayaran\\s+balik(?!\\s+(?:pinjaman|loan|ptptn|hutang|pembiayaan|ansuran|kredit))|pulangan(?:\\s+(?:bayaran|wang|tunai))?)\\s*(?:of|for|from|at|to|dari|daripada|[-:])\\s+");
-  private static final Pattern MERCHANT_FROM=Pattern.compile("(?i)\\b(?:from|dari)\\s+([\\p{L}0-9 &'._/()#,+*-]{2,80})");
+  private static final Pattern MERCHANT_FROM=Pattern.compile("(?i)\\b(?:from|dari(?:pada)?)\\s+([\\p{L}0-9 &'._/()#,+*-]{2,80})");
   private static final Pattern LEADING_SUBJECT=Pattern.compile("(?im)^\\s*([\\p{L}0-9][\\p{L}0-9 &'._/()#,+*-]{1,60})\\s+has\\s+(?:deducted|charged|debited|received)\\b");
   private static final Pattern VERBLESS_PREP=Pattern.compile("(?i)(?:RM|MYR)\\s*"+NUM+"(?:\\s+(?:at|to|di|kepada)\\s+|[ \\t]*[@\\-\\u2013\\u2014][ \\t]*)([\\p{L}0-9][\\p{L}0-9 &'._/()#,+*-]{1,79})");
   private static final Pattern VERBLESS_CAPS=Pattern.compile("(?:RM|MYR)\\s*"+NUM+"\\s+([A-Z0-9][A-Z0-9&'._/()#+*-]*(?:[ ]+[A-Z0-9&'._/()#+*-]+){0,6})");
@@ -155,6 +155,7 @@ public final class PaymentParser {
     if(!validMerchant(merchant)){
       merchant="";Matcher mm=MERCHANT_TO.matcher(core);
       if(refundCue&&!validMerchant(merchant)){Matcher rf=REFUND_FROM.matcher(core);while(rf.find()){String rawRf=rf.group(1).replaceAll("(?i)\\s+(?:to|ke)\\s+(?:touch\\s*'?n\\s*go|tng|mae|maybank2u?|cimb|rhb|hlb|gxbank|shopeepay|boost|bigpay|aeon\\s*bank|ryt\\s*bank|wallet|e.?wallet|account|akaun|dompet|bank|card|kad).*","");String c=cleanMerchant(rawRf);if(validMerchant(c)){merchant=c;break;}}}
+      if("income".equals(kind)&&!validMerchant(merchant)){Matcher inf=MERCHANT_FROM.matcher(core);while(inf.find()){String c=cleanMerchant(inf.group(1));if(validMerchant(c)){merchant=c;break;}}}
       if(!validMerchant(merchant))while(mm.find()){String c=cleanMerchant(mm.group(1));if(validMerchant(c)){merchant=c;break;}}
     }
     if(!validMerchant(merchant)){
