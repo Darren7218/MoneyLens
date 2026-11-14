@@ -94,7 +94,7 @@ test('Bahasa Melayu toggle localizes nav, home, plan, budgets, settings, goals, 
   const planHtml=run(`plan()`);
   assert(planHtml.includes('Bajet')&&planHtml.includes('Hutang')&&planHtml.includes('Cukai LHDN'));
   const setHtml=run(`settings()`);
-  assert(setHtml.includes('id="langToggle"')&&setHtml.includes('value="ms" selected')&&setHtml.includes('Rekod automatik notifikasi')&&setHtml.includes('id="ecoCaptureToggle"')&&setHtml.includes('Enjin notifikasi jimat kuasa (Mod Eko)')&&setHtml.includes('Kunci aplikasi cap jari &amp; biometrik')&&setHtml.includes('0.7.0'));
+  assert(setHtml.includes('id="langToggle"')&&setHtml.includes('value="ms" selected')&&setHtml.includes('Rekod automatik notifikasi')&&setHtml.includes('id="ecoCaptureToggle"')&&setHtml.includes('Enjin notifikasi jimat kuasa (Mod Eko)')&&setHtml.includes('Kunci aplikasi cap jari &amp; biometrik')&&setHtml.includes('0.8.0'));
   run(`state.settings.appLock=true`);
   const setLockedHtml=run(`settings()`);
   assert(setLockedHtml.includes('id="lockTimeoutSelect"')&&setLockedHtml.includes('data-action="lockNow"')&&setLockedHtml.includes('Kunci sekarang'));
@@ -111,5 +111,26 @@ test('Bahasa Melayu toggle localizes nav, home, plan, budgets, settings, goals, 
   assert(inboxHtml.includes('Pembayaran Direkod Auto Terkini'));
   run(`state.settings.lang='en'`);
   assert.strictEqual(run(`dayTitleFor(today())`),'Today');
+});
+test('home smart insights strip, hero delta pill and digital bank badges render accurately',()=>{
+  const html=run(`home()`);
+  assert(html.includes('insights-grid')&&html.includes('insight-chip')&&html.includes('Cycle cashflow'));
+  assert(html.includes('hero-delta-pill'));
+  assert(run(`brandBadge('GXBank')`).includes('brand-gxbank'));
+  assert(run(`brandBadge('AEON Bank')`).includes('brand-aeon'));
+  assert(run(`brandBadge('Setel')`).includes('brand-setel'));
+  assert(run(`settings()`).includes('MoneyLens 0.8.0'));
+  run(`state.settings.lang='ms'`);
+  const bmHome=run(`home()`);
+  assert(bmHome.includes('Aliran tunai kitaran'));
+  run(`state.settings.lang='en'`);
+});
+test('transactions FX pill and goal pot progress bars render cleanly',()=>{
+  const fxHtml=run(`renderTxRow({id:'fx1',kind:'expense',amount:6675,account:'cash',category:'Bills & utilities',subcategory:'Streaming & App Subscriptions',merchant:'ChatGPT OpenAI',originalCurrency:'USD',originalAmount:'15.00',exchangeRate:'4.45',date:today(),postings:[{account:'cash',amount:-6675},{account:'expense:Bills & utilities',amount:6675}]})`);
+  assert(fxHtml.includes('tx-pill fx')&&fxHtml.includes('USD 15.00')&&fxHtml.includes('@4.45'));
+  run(`state.goals=[{id:'g9',name:'Japan Autumn',target:500000,saved:150000}]`);
+  const gHtml=run(`goals()`);
+  assert(gHtml.includes('goal-pot')&&gHtml.includes('goal-pot-pill')&&gHtml.includes('goal-pot-track')&&gHtml.includes('30% there'));
+  run(`state.goals=[]`);
 });
 console.log('RESULT: '+passed+' UI tests passed');

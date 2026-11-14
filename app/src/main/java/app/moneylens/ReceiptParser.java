@@ -17,7 +17,7 @@ public final class ReceiptParser {
  private static final Pattern ITEM_LINE=Pattern.compile("(?i)^(?:[-*•]\\s+.*|(?:[0-9]{1,2}[.)]\\s+|1\\s+(?!Malaysia)[A-Za-z]).*|.*\\b[xX×]\\s*[0-9]{1,3}\\s*$|(?:ptptn\\s+repayment|spaylater|grabpaylater|atome\\s+bnpl|shopee\\s+order|lazada\\s+order|i-saraan).*)$");
  private static final Pattern POSTCODE_STATE=Pattern.compile("(?i)\\b[0-9]{5},?\\s+(?:kuala\\s+lumpur|selangor|petaling|subang|shah\\s+alam|klang|kajang|puchong|ampang|cheras|penang|pulau\\s+pinang|johor|melaka|perak|ipoh|kedah|alor\\s+setar|pahang|kuantan|kelantan|terengganu|negeri\\s+sembilan|seremban|sabah|sarawak|kuching|kota\\s+kinabalu|putrajaya|cyberjaya|malaysia)\\b");
  private static final Pattern PHONE_OR_EMAIL=Pattern.compile("(?i)(?:@|\\b(?:0[1-9]-?[0-9]{6,8}|\\+?60[0-9-]{7,11})\\b|https?://|www\\.)");
- private static final Pattern STORE_HINT=Pattern.compile("(?i)\\b(?:sdn\\.?\\s*bhd\\.?|bhd|berhad|plt|llp|enterprise|trading|holdings|resources|services|solutions|restoran|restaurant|kedai|warung|kopitiam|cafe|café|coffee|bakery|farmasi|pharmacy|obat|ubat|klinik|clinic|hospital|dental|optometrist|optical|speedmart|kk\\s*mart|mynews|familymart|econsave|mydin|watsons|guardian|mart|supermarket|hypermarket|pasaraya|pasar|grocer|mini\\s*market|petrol|station|hardware|carpentry|maintenance|electronics|marketplace|store|bookshop|bookstore|kindergarten|tadika|plaza\\s+tol|toll\\s+plaza|condominium|condo)\\b");
+ private static final Pattern STORE_HINT=Pattern.compile("(?i)\\b(?:sdn\\.?\\s*bhd\\.?|bhd|berhad|plt|llp|enterprise|trading|holdings|resources|services|solutions|restoran|restaurant|kedai|warung|kopitiam|bistro|cafe|café|coffee|zus|chagee|bakery|farmasi|pharmacy|obat|ubat|klinik|clinic|hospital|dental|optometrist|optical|speedmart|kk\\s*mart|mynews|familymart|cu\\s*mart|emart24|econsave|mydin|watsons|guardian|mart|supermarket|hypermarket|pasaraya|pasar|grocer|mini\\s*market|petrol|gentari|jomcharge|chargev|ev\\s+charging|station|hardware|carpentry|maintenance|electronics|marketplace|store|bookshop|bookstore|kindergarten|tadika|plaza\\s+tol|toll\\s+plaza|condominium|condo)\\b");
  private static final Pattern BODY_SECTION=Pattern.compile("(?i)^(?:items?(?:\\s+paid)?|itemized(?:\\s+charges)?|bill\\s+details|subtotal|qty|quantity|description)\\b.*");
  private static final String MONTHS="januari|january|jan|februari|february|feb|march|mac|mar|april|apr|may|mei|june|jun|julai|july|jul|ogos|august|aug|september|sept|sep|oktober|october|oct|okt|november|nov|disember|december|dis|dec";
  private static final Pattern MONTH_DATE=Pattern.compile("(?i)\\b([0-9]{1,2})(?:st|nd|rd|th)?[-/\\s]+("+MONTHS+")[-/\\s,]+(20[0-9]{2}|[0-9]{2})\\b");
@@ -30,6 +30,15 @@ public final class ReceiptParser {
  public static JSONObject parse(String text)throws Exception{
   if(text==null)text="";
   String[] lines=text.split("\\r?\\n");
+  if(lines.length<=2){
+   String flat=text.replace('\u00A0',' ').trim();
+   flat=flat.replaceAll("\\s*\\|\\s*","\n");
+   flat=flat.replaceAll("(?i)\\s+(?=(?:sub\\s*-?\\s*total|sub\\s+ttl|sst|gst|service\\s+(?:tax|charge)|rounding(?:\\s+adjustment)?|runding|rundingan|penggenapan|grand\\s+total|total\\s+payable|net(?:t)?\\s+(?:total|amount|payable)|amount\\s+(?:paid|due|payable)|jumlah\\s+(?:perlu\\s+)?dibayar|jumlah\\s+(?:bayaran|bersih|besar)|total\\s+(?:sales|incl|amount|rm|myr)|total|tendered|tunai|change|baki|thank\\s+you|terima\\s+kasih|invoice\\s+no|ref(?:erence)?\\s+no|no\\.?\\s*rujukan|ssm(?:\\s+reg)?|tarikh|date|tel)(?:\\b|:))","\n");
+   flat=flat.replaceAll("(?i),\\s+(?=(?:sub\\s*-?\\s*total|sst|rounding|runding|grand\\s+total|total|jumlah|tarikh|date|no\\.?\\s*rujukan|item)(?:\\b|:))","\n");
+   flat=flat.replaceAll("(?i)\\s+(?=[0-9]{1,4}(?:,|\\s+)(?:jalan|jln|lorong|lot|unit|level|persiaran|taman)\\b|\\b(?:unit|lot|no\\.?|jalan|jln)\\s+[0-9]{1,4}\\b|\\b[0-9]{12}\\b)","\n");
+   flat=flat.replaceAll("(?i)\\s+(?=[0-9]{1,2}[.)]\\s+(?:[0-9]{1,2}[x×]|\\p{L})|item\\s*:)","\n");
+   lines=flat.split("\\r?\\n");
+  }
   String merchant=extractMerchant(lines);
 
   boolean hasRoundingLine=false;
@@ -186,7 +195,7 @@ public final class ReceiptParser {
     }
     continue;
    }
-   if(scoreTotalLine(line)<0||low.contains("sst")||low.contains("cukai")||low.contains("tax")||low.contains("service charge"))continue;
+   if(scoreTotalLine(line)<0||low.contains("sst")||low.contains("cukai")||low.contains("tax")||low.contains("service charge")||low.contains("ip address"))continue;
    charges.addAll(vals);
   }
   if(charges.size()==1)return charges.iterator().next();

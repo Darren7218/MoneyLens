@@ -466,7 +466,19 @@ const I18N_MS={
   'Low-power notification engine (Eco Mode)':'Enjin notifikasi jimat kuasa (Mod Eko)',
   'Pre-filter non-payment alerts, cache rules & sleep at 0% CPU between bills':'Tapis awal amaran bukan bayaran, cache peraturan & tidur pada 0% CPU antara bil',
   'Eco notification engine enabled.':'Enjin notifikasi Mod Eko diaktifkan.',
-  'Eco notification engine disabled.':'Enjin notifikasi Mod Eko dimatikan.'
+  'Eco notification engine disabled.':'Enjin notifikasi Mod Eko dimatikan.',
+  'MoneyLens 0.8.0 · Personal build':'MoneyLens 0.8.0 · Binaan Peribadi',
+  'Cycle cashflow':'Aliran tunai kitaran',
+  '{pct}% savings rate':'{pct}% kadar simpanan',
+  'Log income to track rate':'Rekod pendapatan untuk jejak kadar',
+  'Daily safe spend':'Perbelanjaan harian selamat',
+  'Cycle daily avg':'Purata harian kitaran',
+  'vs last cycle':'berbanding kitaran lepas',
+  'Tracked this cycle':'Direkod kitaran ini',
+  'Auto & Tax YTD':'Auto & Cukai YTD',
+  'auto':'auto',
+  'LHDN':'LHDN',
+  'Offline AI ready':'AI luar talian sedia'
 };
 function currentLang(){return (typeof state!=='undefined'&&state?.settings?.lang==='ms')?'ms':'en'}
 function appLocale(){return currentLang()==='ms'?'ms-MY':'en-MY'}

@@ -106,6 +106,10 @@ function brandBadge(src){
   else if(low.includes('maybank')||low.includes('mae'))cls='brand-maybank';
   else if(low.includes('shopee')||low.includes('spaylater'))cls='brand-shopee';
   else if(low.includes('cimb')||low.includes('octo'))cls='brand-cimb';
+  else if(low.includes('gxbank')||low.includes('gx'))cls='brand-gxbank';
+  else if(low.includes('aeon'))cls='brand-aeon';
+  else if(low.includes('boost'))cls='brand-boost';
+  else if(low.includes('setel'))cls='brand-setel';
   else if(low.includes('grab'))cls='brand-grab';
   return `<span class="brand-badge ${cls}">${icon('bell')}${esc(s)}</span>`;
 }
