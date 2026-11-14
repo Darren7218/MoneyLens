@@ -94,11 +94,17 @@ test('Bahasa Melayu toggle localizes nav, home, plan, budgets, settings, goals, 
   const planHtml=run(`plan()`);
   assert(planHtml.includes('Bajet')&&planHtml.includes('Hutang')&&planHtml.includes('Cukai LHDN'));
   const setHtml=run(`settings()`);
-  assert(setHtml.includes('id="langToggle"')&&setHtml.includes('value="ms" selected')&&setHtml.includes('Rekod automatik notifikasi')&&setHtml.includes('Kunci aplikasi cap jari &amp; biometrik')&&setHtml.includes('0.5.0'));
+  assert(setHtml.includes('id="langToggle"')&&setHtml.includes('value="ms" selected')&&setHtml.includes('Rekod automatik notifikasi')&&setHtml.includes('Kunci aplikasi cap jari &amp; biometrik')&&setHtml.includes('0.6.0'));
   run(`state.settings.appLock=true`);
   const setLockedHtml=run(`settings()`);
   assert(setLockedHtml.includes('id="lockTimeoutSelect"')&&setLockedHtml.includes('data-action="lockNow"')&&setLockedHtml.includes('Kunci sekarang'));
   run(`state.settings.appLock=false`);
+  run(`reportData={priceHikes:[{merchant:'Netflix Malaysia',previousAvg:4500,latestAmount:5500,deltaAmount:1000,deltaPct:22,billId:'b1'}],subscriptions:[]}`);
+  const billsHtml=run(`bills()`);
+  assert(billsHtml.includes('Pengesan Kenaikan Harga Langganan &amp; Bil')&&billsHtml.includes('Netflix Malaysia')&&billsHtml.includes('+22%'));
+  run(`state.settings.taxProfile={monthlyBaseSalary:8000,epfRate:11,lifestyle:500};reportData=null`);
+  const taxHtml=run(`taxView()`);
+  assert(taxHtml.includes('Pengoptimum Pelepasan Cukai Akhir Tahun LHDN')&&taxHtml.includes('Jimat sehingga'));
   const acctHtml=run(`accounts()`);
   assert(acctHtml.includes('Baki direkodkan')&&acctHtml.includes('Sejarah pelarasan baki'));
   const inboxHtml=run(`inbox()`);

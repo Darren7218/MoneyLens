@@ -263,6 +263,39 @@ public final class ExtendedTests {
    JSONObject rPost=ReceiptParser.parse(postTaxReceipt);
    yes(rPost.getString("merchant").equals("NASI KANDAR PELITA")&&rPost.getLong("amount")==2332);
   });
+  test("phase7 priceHikes, LHDN reliefOptimizer, foreign FX auto-tag and parser v2.3",()->{
+   JSONObject s=Ledger.initial();
+   String acct=s.getJSONArray("accounts").getJSONObject(0).getString("id");
+   Ledger.apply(s,"bill",new JSONObject().put("name","Unifi Home Fibre").put("amount","129.00").put("account",acct).put("category","Bills & utilities").put("date","2026-11-20").put("frequency","monthly"));
+   String billId=s.getJSONArray("bills").getJSONObject(0).getString("id");
+   Ledger.apply(s,"transaction",new JSONObject().put("key","u1").put("kind","expense").put("amount","129.00").put("account",acct).put("category","Bills & utilities").put("merchant","Unifi Home Fibre").put("date","2026-09-15"));
+   Ledger.apply(s,"transaction",new JSONObject().put("key","u2").put("kind","expense").put("amount","129.00").put("account",acct).put("category","Bills & utilities").put("merchant","Unifi Home Fibre").put("date","2026-10-15"));
+   Ledger.apply(s,"transaction",new JSONObject().put("key","u3").put("kind","expense").put("amount","149.00").put("account",acct).put("category","Bills & utilities").put("merchant","Unifi Home Fibre").put("date","2026-11-14"));
+   JSONArray hikes=Finance.priceHikes(s);
+   yes(hikes.length()==1);
+   JSONObject h=hikes.getJSONObject(0);
+   yes(h.getString("merchant").equals("Unifi Home Fibre")&&h.getLong("previousAvg")==12900&&h.getLong("latestAmount")==14900&&h.getLong("deltaAmount")==2000&&h.getString("billId").equals(billId));
+   Extras.apply(s,"updateBillAmount",new JSONObject().put("id",billId).put("amountMinor",14900L));
+   yes(s.getJSONArray("bills").getJSONObject(0).getLong("amount")==14900L);
+
+   Extras.apply(s,"taxProfile",new JSONObject().put("monthlyBaseSalary","8000").put("epfRate","11").put("lifestyle","500"));
+   JSONObject tax=Finance.calculateTax(s,null,2026);
+   yes(tax.getLong("marginalRate")>0&&tax.getLong("maxAdditionalTaxSavings")>0);
+   JSONArray opt=tax.getJSONArray("reliefOptimizer");
+   yes(opt.length()>=5);
+   JSONObject lifeOpt=opt.getJSONObject(0);
+   yes(lifeOpt.getString("key").equals("lifestyle")&&lifeOpt.getLong("unused")==2000_00L&&lifeOpt.getLong("potentialTaxSaved")>0);
+
+   JSONObject fxNotif=PaymentParser.parse("You spent SGD 25.00 (RM 82.50) at Changi Airport Jewel","my.com.maybank2u.m2umobile");
+   yes(fxNotif!=null&&fxNotif.getLong("amount")==8250&&fxNotif.getString("originalCurrency").equals("SGD")&&fxNotif.getString("originalAmount").equals("25.00")&&fxNotif.getString("exchangeRate").startsWith("3.3"));
+
+   String maju="Bayaran Berjaya\nKedai Elektronik Maju\n25 May 2026\n\nBarang: Television LED 43-inch\nJumlah: RM 1499.00\nCukai Perkhidmatan: RM 119.92\n\nJumlah Dibayar: RM 1618.92\nPembayaran Tunai Berjaya";
+   JSONObject pMaju=PaymentParser.parse(maju,"com.touchngo.ewallet");
+   yes(pMaju!=null&&pMaju.getString("merchant").equals("Kedai Elektronik Maju")&&pMaju.getLong("amount")==161892);
+
+   JSONObject rNoisy=ReceiptParser.parse("HDRLH6 JB TYPX HOTTLS\nTVEEL APYBL (RM)\n200.50\nSUBTOTAL: RM 195.00\n15 AUG 2026");
+   yes(rNoisy.getLong("amount")==20050&&rNoisy.getString("date").equals("2026-08-15"));
+  });
   System.out.println("RESULT: "+passed+" extended tests passed");
  }
 }

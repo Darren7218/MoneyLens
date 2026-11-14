@@ -73,6 +73,13 @@ public final class Extras {
     b.put("dismissedCycle",b.getString("date"));
     return true;
    }
+   case "updateBillAmount":{
+    JSONObject b=Ledger.find(s.getJSONArray("bills"),a.getString("id"));
+    long newAmt=a.has("amountMinor")?a.getLong("amountMinor"):Ledger.minor(a.getString("amount"));
+    if(newAmt<=0||newAmt>Ledger.MAX)throw new IllegalArgumentException("Invalid bill amount.");
+    b.put("amount",newAmt);
+    return true;
+   }
    case "payBillAuto":{
     JSONObject bill=Ledger.find(s.getJSONArray("bills"),a.getString("id"));
     if(bill.optBoolean("paid")||bill.optBoolean("cancelled"))return true;
@@ -266,6 +273,7 @@ public final class Extras {
   d.put("amount",amt).put("account",acct).put("category",cat).put("kind",kind);
   JSONObject txArgs=new JSONObject().put("key","auto:"+d.getString("id")).put("draftId",d.getString("id")).put("draftRevision",d.optInt("revision",1)).put("kind",kind).put("amount",BigDecimal.valueOf(amt,2).toPlainString()).put("account",acct).put("category",cat).put("merchant",merchant).put("date",dt).put("note",d.optString("note","")).put("autoRecorded",true).put("historyMatch",d.optString("historyMatch","none")).put("needsNote",d.optBoolean("needsNote",true));
   if(!sub.isEmpty())txArgs.put("subcategory",sub);
+  if(d.has("originalCurrency")&&d.has("originalAmount"))txArgs.put("originalCurrency",d.getString("originalCurrency")).put("originalAmount",d.getString("originalAmount"));
   if(kind.equals("transfer"))txArgs.put("to",to);
   JSONObject matchedBill=findMatchingBill(s,kind,amt,merchant,cat,sub,dt);
   if(matchedBill!=null){

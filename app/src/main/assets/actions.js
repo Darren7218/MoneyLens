@@ -23,7 +23,8 @@ function txForm(data={}){
   const sharedRows=kind==='shared'?`${field('Your own share (RM)','ownAmount',merged.ownAmount||'0','text','required inputmode="decimal"')}${field('Who owes the rest?','person',merged.person||'','text','required maxlength="80"')}`:'';
   const tagsField=field('Tags · comma separated','tags',Array.isArray(merged.tags)?merged.tags.join(', '):merged.tags||'','text','maxlength="200" placeholder="work, holiday"');
   const splitsBox=(!kind||['expense','refund'].includes(kind))?`<details ${merged.splits?.length?'open':''}><summary>Split across categories</summary><div id="split-rows">${(Array.isArray(merged.splits)?merged.splits:[]).map(splitRow).join('')}</div>${actionButton('Add category split','addSplit')}<p class="note">Splits must add up to the full payment above.</p></details>`:'';
-  const fxBox=`<details ${merged.originalCurrency?'open':''}><summary>Foreign currency details</summary><div class="form-grid">${field('Original currency','originalCurrency',merged.originalCurrency||'','text','maxlength="3" placeholder="USD"')}${field('Original amount','originalAmount',merged.originalAmount||'','text','inputmode="decimal"')}</div>${field('Included conversion fees (MYR)','foreignFee',merged.foreignFee||'0','text','inputmode="decimal"')}<p class="note">Enter the actual settled MYR amount at the top, including any fees. The implied rate is saved with this record.</p></details>`;
+  const fxRates=[['SGD','3.30'],['USD','4.45'],['THB','0.13'],['JPY','0.029'],['EUR','4.80'],['GBP','5.65'],['AUD','2.90'],['CNY','0.62']];
+  const fxBox=`<details ${merged.originalCurrency?'open':''}><summary>Foreign currency details</summary><div class="chips" style="margin:8px 0">${fxRates.map(([c,rt])=>`<button type="button" class="chip" data-action="fxPreset" data-id="${c}" data-rate="${rt}">${c} (~${rt})</button>`).join('')}</div><div class="form-grid">${field('Original currency','originalCurrency',merged.originalCurrency||'','text','maxlength="3" placeholder="USD"')}${field('Original amount','originalAmount',merged.originalAmount||'','text','inputmode="decimal"')}</div>${field('Included conversion fees (MYR)','foreignFee',merged.foreignFee||'0','text','inputmode="decimal"')}<p class="note">Enter the actual settled MYR amount at the top, including any fees. The implied rate is saved with this record.</p></details>`;
   const historyCheck=prevCount>0?check(`Update ${prevCount} previous "${esc(merged.merchant)}" transaction${prevCount===1?'':'s'} to this category & remember for future`,'applyHistory',merged.category==='Miscellaneous'||merged.category==='Other'):'';
   const ruleCheck=check('Remember merchant category and account for next time','rememberRule',!!merged.editId&&(merged.category==='Miscellaneous'||merged.category==='Other'));
   const title=merged.draftId?'Review payment':merged.editId?'Edit transaction':merged.billId?'Record bill payment':'Add transaction';
@@ -192,6 +193,22 @@ document.addEventListener('click',async e=>{
       case 'deleteBillExtra':await mutate('deletePlan',{table:'bills',id},'Reminder removed.');close();break;
       case 'deletePlan':await mutate('deletePlan',{table:b.dataset.table,id},'Plan removed.');close();break;
       case 'subscription':billForm({...reportData.subscriptions[Number(id)],subscription:true});break;
+      case 'updateBillHike':{
+        const h=(reportData?.priceHikes||[])[Number(id)];
+        if(h&&h.billId)await mutate('updateBillAmount',{id:h.billId,amountMinor:h.latestAmount},tr('Bill reminder updated to new amount.'));
+        else if(h)billForm({name:h.merchant,amount:h.latestAmount,account:h.account,category:h.category,frequency:h.frequency||'monthly',subscription:true});
+        break;
+      }
+      case 'fxPreset':{
+        const f=$('#transaction-form');
+        if(f){
+          f.elements.originalCurrency.value=id;
+          const rt=Number(b.dataset.rate||1),orig=Number(f.elements.originalAmount.value||0),myr=Number(f.elements.amount.value||0);
+          if(orig>0&&!myr)f.elements.amount.value=(orig*rt).toFixed(2);
+          else if(myr>0&&!orig)f.elements.originalAmount.value=(myr/rt).toFixed(2);
+        }
+        break;
+      }
       case 'review':{const d=state.drafts.find(x=>x.id===id);txForm({...d,draftId:id,draftRevision:d.revision||1});break;}
       case 'ignore':await mutate('ignore',{id},'Suggestion ignored.');break;
       case 'sample':await mutate('sample',{autoCapture:state.settings.autoRecord!==false},state.settings.autoRecord!==false?'Sample payment auto-recorded.':'Sample suggestion added.');break;

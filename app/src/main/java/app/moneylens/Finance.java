@@ -159,7 +159,7 @@ public final class Finance {
   JSONArray b=s.getJSONArray("budgets");Set<String> topCats=new HashSet<>();List<JSONObject> budgetRows=new ArrayList<>();for(int i=0;i<b.length();i++){JSONObject row=budget(s,b.getJSONObject(i),on);budgets.put(row);budgetRows.add(row);if(row.optString("subcategory","").isEmpty())topCats.add(row.getString("category"));}for(JSONObject row:budgetRows){if(row.optString("subcategory","").isEmpty()||!topCats.contains(row.getString("category")))budgetRemaining+=Math.max(0,row.getLong("remaining"));}
   JSONArray tx=s.getJSONArray("transactions"),receivables=new JSONArray();for(int i=0;i<tx.length();i++){JSONObject t=tx.getJSONObject(i);if(t.optBoolean("voided")||!t.getString("kind").equals("shared"))continue;long remaining=balance(s,"receivable:"+t.getString("id"),on.toString());if(remaining>0){owed+=remaining;receivables.put(new JSONObject().put("id",t.getString("id")).put("person",t.optString("person")).put("merchant",t.optString("merchant")).put("remaining",remaining));}}
   JSONArray months=new JSONArray();for(int i=5;i>=0;i--){LocalDate m=anchored(YearMonth.from(from).minusMonths(i),day),e=next(m,day);months.put(new JSONObject().put("start",m.toString()).put("spent",spend(s,"",m,e)).put("income",income(s,m,e)));}
-  return new JSONObject().put("start",from.toString()).put("end",until.toString()).put("spent",spend(s,"",from,on.plusDays(1))).put("previousComparable",spend(s,"",prev,prevUntil)).put("budgets",budgets).put("dailyAllowance",budgetRemaining/Math.max(1,ChronoUnit.DAYS.between(on,until))).put("liquid",liquid).put("cardReserve",debt).put("billsReserve",commitments).put("goalReserve",reserved).put("availableToSpend",Math.max(0,liquid-debt-commitments-reserved)).put("owed",owed).put("receivables",receivables).put("months",months).put("subscriptions",subscriptions(s)).put("taxEstimate",calculateTax(s,null,on.getYear())).put("debtPlan",debtPlan(s,on)).put("recurringIncome",recurringIncome(s,on)).put("forecast",forecast(s,on,30)).put("recap",cycleRecap(s,on));
+  return new JSONObject().put("start",from.toString()).put("end",until.toString()).put("spent",spend(s,"",from,on.plusDays(1))).put("previousComparable",spend(s,"",prev,prevUntil)).put("budgets",budgets).put("dailyAllowance",budgetRemaining/Math.max(1,ChronoUnit.DAYS.between(on,until))).put("liquid",liquid).put("cardReserve",debt).put("billsReserve",commitments).put("goalReserve",reserved).put("availableToSpend",Math.max(0,liquid-debt-commitments-reserved)).put("owed",owed).put("receivables",receivables).put("months",months).put("subscriptions",subscriptions(s)).put("priceHikes",priceHikes(s)).put("taxEstimate",calculateTax(s,null,on.getYear())).put("debtPlan",debtPlan(s,on)).put("recurringIncome",recurringIncome(s,on)).put("forecast",forecast(s,on,30)).put("recap",cycleRecap(s,on));
  }
  public static JSONObject calculateTax(JSONObject s,JSONObject override,int year)throws Exception{
   JSONObject prof=override!=null?override:s.getJSONObject("settings").optJSONObject("taxProfile");
@@ -223,13 +223,14 @@ public final class Finance {
    {600000_00L,2000000_00L,28L},
    {2000000_00L,Long.MAX_VALUE,30L}
   };
-  long grossTaxSen=0L;
+  long grossTaxSen=0L,marginalRate=0L;
   JSONArray brackets=new JSONArray();
   for(long[] tier:tiers){
    if(chargeableSen<=tier[0])break;
    long taxableInTier=Math.min(chargeableSen,tier[1])-tier[0];
    long taxInTier=Math.round(taxableInTier*(tier[2]/100.0));
    grossTaxSen+=taxInTier;
+   marginalRate=tier[2];
    brackets.put(new JSONObject().put("from",tier[0]).put("to",tier[1]==Long.MAX_VALUE?-1:tier[1]).put("rate",tier[2]).put("taxable",taxableInTier).put("tax",taxInTier));
   }
   long statutoryRebateSen=(chargeableSen>0&&chargeableSen<=35000_00L)?400_00L:0L;
@@ -247,6 +248,23 @@ public final class Finance {
   long mTakeHomeSen=Math.max(0L,mGrossSen-mEpfSen-mSocsoSen-mPcbSen);
   JSONObject monthlyPaycheck=new JSONObject().put("grossMonthly",mGrossSen).put("epfMonthly",mEpfSen).put("socsoMonthly",mSocsoSen).put("pcbMonthly",mPcbSen).put("netTakeHomeMonthly",mTakeHomeSen);
   JSONObject ledgerDetected=new JSONObject().put("medical",ledMedical).put("lifestyle",ledLifestyle).put("sports",ledSports).put("education",ledEducation).put("lifeInsurance",ledLifeIns).put("medicalInsurance",ledMedIns).put("sspnPrs",ledSspnPrs).put("zakat",ledZakat).put("pcb",ledPcb);
+  Object[][] optDefs={
+   {"lifestyle","Lifestyle (Books / Tech / WiFi)",lifestyleSen,2500_00L},
+   {"sports","Sports Equipment & Gym",sportsSen,1000_00L},
+   {"sspnPrs","SSPN / PRS / EV Charging",sspnPrsSen,8000_00L},
+   {"medical","Medical & Health Checkup",medicalSen,10000_00L},
+   {"education","Self Education & Upskilling",educationSen,7000_00L},
+   {"lifeInsurance","Life Insurance / Family Takaful",lifeInsSen,3000_00L}
+  };
+  JSONArray reliefOptimizer=new JSONArray();
+  for(Object[] def:optDefs){
+   long used=(Long)def[2],cap=(Long)def[3],unused=Math.max(0L,cap-used);
+   if(unused<=0)continue;
+   long saved=Math.max(0L,netTaxSen-computeNetTax(Math.max(0L,chargeableSen-unused),zakatSen,tiers));
+   reliefOptimizer.put(new JSONObject().put("key",def[0]).put("bucket",def[1]).put("used",used).put("cap",cap).put("unused",unused).put("potentialTaxSaved",saved));
+  }
+  long priorityUnused=Math.max(0L,2500_00L-lifestyleSen)+Math.max(0L,1000_00L-sportsSen)+Math.max(0L,8000_00L-sspnPrsSen);
+  long maxAddSaved=Math.max(0L,netTaxSen-computeNetTax(Math.max(0L,chargeableSen-priorityUnused),zakatSen,tiers));
   return new JSONObject()
    .put("year",year)
    .put("annualGross",grossSen)
@@ -260,10 +278,84 @@ public final class Finance {
    .put("annualPcbPaid",annualPcbSen)
    .put("pcbDifference",pcbDiffSen)
    .put("effectiveRate",BigDecimal.valueOf(effectiveRate).setScale(2,RoundingMode.HALF_UP).toPlainString())
+   .put("marginalRate",marginalRate)
    .put("brackets",brackets)
    .put("ledgerDetected",ledgerDetected)
    .put("claimableItems",claimableItems)
-   .put("monthlyPaycheck",monthlyPaycheck);
+   .put("monthlyPaycheck",monthlyPaycheck)
+   .put("reliefOptimizer",reliefOptimizer)
+   .put("maxAdditionalTaxSavings",maxAddSaved);
+ }
+ private static long computeNetTax(long chargeableSen,long zakatSen,long[][] tiers){
+  long gross=0L;
+  for(long[] tier:tiers){
+   if(chargeableSen<=tier[0])break;
+   long taxable=Math.min(chargeableSen,tier[1])-tier[0];
+   gross+=Math.round(taxable*(tier[2]/100.0));
+  }
+  long stat=(chargeableSen>0&&chargeableSen<=35000_00L)?400_00L:0L;
+  return Math.max(0L,gross-stat-zakatSen);
+ }
+ /** Detects recurring subscriptions or scheduled bills whose latest charge increased by >= RM 0.50 and >= 3% over baseline. */
+ public static JSONArray priceHikes(JSONObject s)throws Exception{
+  Map<String,List<JSONObject>> groups=new LinkedHashMap<>();
+  JSONArray tx=s.getJSONArray("transactions"),bills=s.optJSONArray("bills"),out=new JSONArray();
+  for(int i=0;i<tx.length();i++){
+   JSONObject t=tx.getJSONObject(i);
+   if(t.optBoolean("voided")||!"expense".equals(t.optString("kind"))||t.optString("merchant").trim().isEmpty())continue;
+   String k=t.getString("merchant").trim().toLowerCase(Locale.ROOT)+"|"+t.getString("account");
+   groups.computeIfAbsent(k,x->new ArrayList<>()).add(t);
+  }
+  for(List<JSONObject> rows:groups.values()){
+   rows.sort(Comparator.comparing(x->x.optString("date")));
+   if(rows.size()<2)continue;
+   JSONObject c=rows.get(rows.size()-1),b=rows.get(rows.size()-2);
+   String mName=c.getString("merchant").trim();
+   JSONObject matchedBill=null;
+   if(bills!=null){
+    for(int i=0;i<bills.length();i++){
+     JSONObject bl=bills.getJSONObject(i);
+     if(!bl.optBoolean("paid")&&!bl.optBoolean("cancelled")&&bl.optString("name","").trim().equalsIgnoreCase(mName)){
+      matchedBill=bl;break;
+     }
+    }
+   }
+   boolean weekly=false,monthly=false;
+   long prevAvg=0;
+   if(rows.size()>=3){
+    JSONObject a=rows.get(rows.size()-3);
+    long gap1=ChronoUnit.DAYS.between(LocalDate.parse(a.getString("date")),LocalDate.parse(b.getString("date")));
+    long gap2=ChronoUnit.DAYS.between(LocalDate.parse(b.getString("date")),LocalDate.parse(c.getString("date")));
+    weekly=gap1>=5&&gap1<=9&&gap2>=5&&gap2<=9;
+    monthly=gap1>=24&&gap1<=36&&gap2>=24&&gap2<=36;
+    prevAvg=Math.round((a.getLong("amount")+b.getLong("amount"))/2.0);
+   }else if(matchedBill!=null){
+    long gap=ChronoUnit.DAYS.between(LocalDate.parse(b.getString("date")),LocalDate.parse(c.getString("date")));
+    weekly=gap>=5&&gap<=9;monthly=gap>=24&&gap<=36;
+    prevAvg=b.getLong("amount");
+   }
+   if(!weekly&&!monthly&&matchedBill==null)continue;
+   long latestAmt=c.getLong("amount");
+   if(matchedBill!=null&&matchedBill.getLong("amount")>0&&prevAvg==latestAmt&&latestAmt>matchedBill.getLong("amount")){
+    prevAvg=matchedBill.getLong("amount");
+   }
+   if(prevAvg<=0||latestAmt-prevAvg<50)continue;
+   long delta=latestAmt-prevAvg;
+   int deltaPct=(int)Math.round(delta*100.0/prevAvg);
+   if(deltaPct<3)continue;
+   out.put(new JSONObject()
+    .put("merchant",mName)
+    .put("account",c.getString("account"))
+    .put("category",c.optString("category","Bills & utilities"))
+    .put("previousAvg",prevAvg)
+    .put("latestAmount",latestAmt)
+    .put("deltaAmount",delta)
+    .put("deltaPct",deltaPct)
+    .put("date",c.getString("date"))
+    .put("frequency",weekly?"weekly":"monthly")
+    .put("billId",matchedBill!=null?matchedBill.getString("id"):""));
+  }
+  return out;
  }
  public static JSONArray subscriptions(JSONObject s)throws Exception{
   Map<String,List<JSONObject>> groups=new LinkedHashMap<>();JSONArray tx=s.getJSONArray("transactions"),out=new JSONArray();for(int i=0;i<tx.length();i++){JSONObject t=tx.getJSONObject(i);if(t.optBoolean("voided")||!t.getString("kind").equals("expense")||t.optString("merchant").trim().isEmpty())continue;String k=t.getString("merchant").toLowerCase(Locale.ROOT)+"|"+t.getString("account");groups.computeIfAbsent(k,x->new ArrayList<>()).add(t);}

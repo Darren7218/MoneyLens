@@ -8,9 +8,10 @@ import java.time.LocalDate;
 public final class PaymentParser {
   private static final String NUM="([0-9]{1,3}(?:,[0-9]{3})+(?:\\.[0-9]{1,2})?|[0-9]{1,9}(?:\\.[0-9]{1,2})?)(?![0-9]|\\.[0-9])";
   private static final Pattern AMOUNT=Pattern.compile("(?i)(?:RM|MYR)[\\s\\u00A0]*"+NUM);
+  private static final Pattern FOREIGN_AMT=Pattern.compile("(?i)\\b(SGD|USD|THB|JPY|IDR|EUR|GBP|AUD|CNY|HKD|TWD|KRW|VND)[\\s\\u00A0]*([0-9]{1,3}(?:,[0-9]{3})+(?:\\.[0-9]{1,2})?|[0-9]{1,9}(?:\\.[0-9]{1,2})?)(?![0-9]|\\.[0-9])");
   private static final Pattern TNG_PAID=Pattern.compile("(?i)\\byou\\s+have\\s+paid\\s+(?:RM|MYR)\\s*[0-9,]+(?:\\.[0-9]{1,2})?\\s+(?:at|to)\\s+([^\\r\\n]+)");
   private static final Pattern PURCHASE_AT=Pattern.compile("(?i)\\bfor\\s+(?:your\\s+)?purchase\\s+(?:at|from)\\s+([\\p{L}0-9][\\p{L}0-9 &'._/()#,+*-]{1,79})");
-  private static final Pattern MALAY_PAID=Pattern.compile("(?im)(?:^|\\b)(?:pembayaran|bayaran)(?:\\s+telah)?\\s+berjaya(?:\\s+(?:dibuat\\s+)?(?:kepada|ke)|[ \\t]*!)[ \\t:\\-!]*([\\p{L}0-9][\\p{L}0-9 &'._/()#,+*-]{1,79})");
+  private static final Pattern MALAY_PAID=Pattern.compile("(?im)(?:^|\\b)(?:pembayaran|bayaran)(?:\\s+telah)?\\s+berjaya(?:[ \\t]+(?:dibuat[ \\t]+)?(?:kepada|ke)\\b|[ \\t]*!)[ \\t:\\-!]*([\\p{L}0-9][\\p{L}0-9 &'._/()#,+*-]{1,79})");
   private static final Pattern LABELED_MERCHANT=Pattern.compile("(?im)(?:^|\\b)(?:merchant(?:\\s+name)?|seller|biller(?:\\s+name)?|payee|recipient|paid\\s+to|payment\\s+to|pembayaran(?:\\s+telah\\s+berjaya)?\\s+(?:dibuat\\s+)?kepada|bayaran\\s+kepada|dibayar\\s+kepada|penerima|peniaga|penyertaan|perkhidmatan|perniagaan|nota\\s+pembayaran)\\s*:\\s*[\\r\\n\\t ]*([\\p{L}0-9#][\\p{L}0-9 &'._/()#,+*-]{1,79})");
   private static final Pattern MERCHANT=Pattern.compile("(?i)\\b(?:at|to|from|kepada|di|dari)\\s+([\\p{L}0-9 &'._/()#,+*-]{2,80})");
   private static final Pattern VERBLESS_PREP=Pattern.compile("(?i)(?:RM|MYR)\\s*"+NUM+"(?:\\s+(?:at|to|di|kepada)\\s+|[ \\t]*[@\\-\\u2013\\u2014][ \\t]*)([\\p{L}0-9][\\p{L}0-9 &'._/()#,+*-]{1,79})");
@@ -19,7 +20,7 @@ public final class PaymentParser {
   private static final Pattern FOOTER=Pattern.compile("(?i)\\b(?:never|do\\s+not|don'?t|jangan)\\s+(?:share|disclose|reveal|give|kongsi|dedahkan|berikan)\\b[^.!\\n]*");
   private static final Pattern EXCLUDE_BEFORE=Pattern.compile("(?i)\\b(?:balance|bal|baki|limit|cashback|cash\\s+back|reward|rewards|points|pts|rebate|earned|earn|available|avail|remaining|outstanding|saved|worth|up\\s+to|min(?:imum)?\\s+spend)\\b[^0-9]*$");
   private static final Pattern EXCLUDE_AFTER=Pattern.compile("(?i)^\\s*(?:cashback|cash\\s+back|reward|rewards|points|pts|rebate|back)\\b");
-  private static final Pattern TOTAL_BEFORE=Pattern.compile("(?i)\\b(?:total|jumlah(?:\\s+perlu\\s+dibayar|\\s+bayaran|\\s+keseluruhan)?|grand\\s+total|amount\\s+paid|bayaran\\s+jumlah)\\b[^0-9a-z\\r\\n]*$");
+  private static final Pattern TOTAL_BEFORE=Pattern.compile("(?i)\\b(?:total|jumlah(?:\\s+(?:perlu\\s+)?dibayar|\\s+bayaran|\\s+keseluruhan)?|grand\\s+total|amount\\s+paid|bayaran\\s+jumlah)\\b[^0-9a-z\\r\\n]*$");
   private static final Pattern PAY_BEFORE=Pattern.compile("(?i)\\b(?:paid|pay|payment|repayment|spent|charged|deducted|debited|purchase|purchased|amount|total|of|transfer|transferred|received|credited|refund|refunded|bayaran|dibayar|potongan|sebanyak|deduction|sale)\\b[^0-9a-z]*$");
   private static final Pattern PAY_AFTER=Pattern.compile("(?i)^(?:\\s*(?:at|to|di|kepada|has\\s+been|was|deducted|charged|paid|debited)\\b|[ \\t]*[@\\-\\u2013\\u2014])");
   public static final String LOANS="Loans, BNPL & Credit";
@@ -50,6 +51,21 @@ public final class PaymentParser {
       if(firstIncluded==0)firstIncluded=v;
       if(TOTAL_BEFORE.matcher(before).find()){totalMatch=v;totalFound=true;}
       if(!primaryFound&&(PAY_BEFORE.matcher(before).find()||PAY_AFTER.matcher(after).find())){primary=v;primaryFound=true;}
+    }
+    String origCur="",origAmt="";
+    Matcher fm=FOREIGN_AMT.matcher(core);
+    if(fm.find()){
+      try{
+        String candAmt=fm.group(2).replace(",","");
+        if(new java.math.BigDecimal(candAmt).signum()>0){
+          origCur=fm.group(1).toUpperCase(Locale.ROOT);
+          origAmt=candAmt;
+        }
+      }catch(Exception ignored){}
+    }
+    if(count==0&&!origCur.isEmpty()&&completed){
+      long fxMinor=Math.max(1L,new java.math.BigDecimal(origAmt).multiply(java.math.BigDecimal.valueOf(defaultFxRate(origCur))).movePointRight(2).setScale(0,java.math.RoundingMode.HALF_UP).longValue());
+      count=1;firstIncluded=fxMinor;candidates.put(fxMinor);
     }
     if(count==0)return null;
     long amount=totalFound?totalMatch:(primaryFound?primary:firstIncluded);
@@ -102,12 +118,34 @@ public final class PaymentParser {
     String[] cs=kind.equals("income")?new String[]{"Other income",""}:classify(merchant,source,low);
     JSONObject d=new JSONObject().put("id",Ledger.id()).put("amount",amount).put("primaryAmount",amount).put("kind",kind).put("merchant",merchant).put("category",cs[0]).put("date",LocalDate.now().toString()).put("source",source).put("state","review").put("reason",reason).put("amountCandidates",candidates).put("adapter","generic-5").put("revision",1).put("created",System.currentTimeMillis());
     if(!cs[1].isEmpty())d.put("subcategory",cs[1]);
+    if(!origCur.isEmpty()&&kind.equals("expense")){
+      d.put("originalCurrency",origCur).put("originalAmount",origAmt).put("exchangeRate",java.math.BigDecimal.valueOf(amount,2).divide(new java.math.BigDecimal(origAmt),8,java.math.RoundingMode.HALF_UP).toPlainString());
+    }
     if(kind.equals("transfer")){
       if(low.matches("(?s).*\\b(top.?up|reload|reloaded)\\b.*"))d.put("reload",true);
       Matcher w=Pattern.compile("(?i)\\b(tng|touch\\s*'?n\\s*go|grabpay|boost|shopeepay|bigpay|mae|gxbank)\\b").matcher(core);
       if(w.find())d.put("transferHint",w.group(1));
     }
     return d;
+  }
+
+  public static double defaultFxRate(String cur){
+    switch(String.valueOf(cur).toUpperCase(Locale.ROOT)){
+      case "SGD":return 3.30;
+      case "USD":return 4.45;
+      case "EUR":return 4.80;
+      case "GBP":return 5.65;
+      case "AUD":return 2.90;
+      case "CNY":return 0.62;
+      case "HKD":return 0.57;
+      case "THB":return 0.13;
+      case "TWD":return 0.14;
+      case "JPY":return 0.029;
+      case "KRW":return 0.0032;
+      case "IDR":return 0.00028;
+      case "VND":return 0.00018;
+      default:return 1.0;
+    }
   }
 
   private static boolean validMerchant(String c){
@@ -167,19 +205,20 @@ public final class PaymentParser {
     if(has(hay,"credit\\s+card\\s+(?:statement|bill|payment)|penyata\\s+kad\\s+kredit"))return new String[]{LOANS,"Credit Card Bill"};
     if(has(hay,"personal\\s+loan|pinjaman\\s+peribadi"))return new String[]{LOANS,"Personal Loan"};
     if(has(hay,"home\\s+loan|housing\\s+loan|mortgage|pembiayaan\\s+rumah|pinjaman\\s+perumahan"))return new String[]{"Housing & property","Home Loan / Mortgage"};
+    if(has(m,"credit services|aeon credit|courts|singer|senheng|senq|chan furniture")&&has(hay,"hire\\s+purchase|ansuran|instal?ment"))return new String[]{LOANS,"Hire Purchase / Installment"};
     if(has(hay,"car\\s+loan|auto\\s+loan|hire\\s+purchase|sewa\\s+beli|pinjaman\\s+kereta|a(?:ng|ns)uran\\s+kenderaan"))return new String[]{"Transport","Car Loan Installment"};
     if(has(hay,"bank transfer fee|transfer fee|ibt fee|rentas fee|meps fee|atm fee"))return new String[]{"Fees & charges","Bank & Transfer Fee"};
     if(has(hay,"late payment fee|late charge"))return new String[]{"Fees & charges","Late Payment Fee"};
     if(has(hay,"rfid|paydirect|toll|tol|plaza tol|lebuhraya|expressway|highway|smart\\s*tag|smarttag|smart\\s*tunnel|plus\\s+(?:highway|expressway|lebuhraya|toll)|(?:highway|expressway|lebuhraya|plaza\\s+tol)\\s+plus")||has(m,"duke|ldp|kesas|mex|sprint|npe|akleh|besraya|lekas|guthrie|nkve|suke|silk|lpt|wce|skve|latar|grand saga|ekve"))return new String[]{"Transport","Toll (TNG / RFID / PayDirect)"};
     if(has(hay,"petronas|shell|petron|caltex|bhpetrol|bhp|setel|petrol|fuel|ron95|ron97|diesel|ev charging|chargev|gentari|jomcharge|chargsv|chargenow|tesla supercharger|dc handal|shell recharge|evconnection|kineta"))return new String[]{"Transport","Petrol & EV Charging"};
     if(has(hay,"grabfood|grab food|foodpanda|shopeefood|shopee food|beepit|airasia food|misirakyat"))return new String[]{"Food & drinks","Food Delivery (GrabFood / Foodpanda)"};
-    if(has(m,"grab|grabcar|airasia ride|maxim|indrive|mycar")||has(hay,"grabcar|airasia ride|e-hailing|ehailing|indrive"))return new String[]{"Transport","E-Hailing (Grab / AirAsia Ride)"};
+    if(has(m,"grab|grabcar|airasia ride|maxim|indrive|mycar|ride")||has(hay,"grabcar|airasia ride|e-hailing|ehailing|indrive"))return new String[]{"Transport","E-Hailing (Grab / AirAsia Ride)"};
     if(has(hay,"parking|flexiparking|flexi parking|jompark|smart selangor parking|parkir|autopay|valet parking"))return new String[]{"Transport","Parking"};
     if(has(hay,"mrt|lrt|rapidkl|rapid kl|ktm|ktmb|ets|monorail|myrapid|rapidbus|rapid bus|klia ekspres|klia transit|rapid penang|prasarana|my50"))return new String[]{"Transport","Public Transit (MRT / LRT / Bus)"};
     if(has(hay,"home\\s+(?:repair|maintenance|improvement)|pembaikan\\s+(?:dalam\\s+)?rumah|window\\s+replacement|kitchen\\s+sink|plumbing|roof\\s+repair|wiring\\s+repair"))return new String[]{"Housing & property","Home Repair & Maintenance"};
     if(has(hay,"mr\\.?\\s*diy|mr\\.?\\s*dollar|ecoshop|eco-shop|noko|daiso|kaison|ninso|hardware|carpentry|wooden\\s+chairs?|kitchen\\s+drawers?|home\\s*&\\s*living"))return new String[]{"Shopping","Home & Living"};
     if(has(hay,"perodua service|proton service|honda service|toyota service|tyre|tayar|(?:auto|car|motor|tyre|tayar|vehicle|kereta|repair)\\s*workshop|workshop\\s*(?:kereta|motor|auto)|bengkel|bateriku|car wash|carwash|pusat servis|servis kereta|auto service|engine oil"))return new String[]{"Transport","Vehicle Maintenance & Service"};
-    if(has(hay,"(auto|car|motor|vehicle)\\s*(insurance|takaful|insurans|cover|coverage)|(insurance|takaful|insurans)\\s*(kereta|motor)|road\\s*(?:&|and)\\s*auto\\s*cover")||(has(hay,"road\\s*tax|roadtax|cukai\\s*jalan")&&has(hay,"insurance|takaful|insurans|cover|policy|polisi")))return new String[]{"Transport","Road Tax & Motor Insurance"};
+    if(has(hay,"(auto|car|motor|vehicle)\\s*(insurance|takaful|insurans|cover|coverage)|(insurance|takaful|insurans)\\s*(kereta|motor)|road\\s*(?:&|and)\\s*auto\\s*cover")||(has(hay,"road\\s*tax|roadtax|cukai\\s*jalan")&&has(hay,"insurance|takaful|insurans|cover|policy|polisi|motor\\s*service|motorway")))return new String[]{"Transport","Road Tax & Motor Insurance"};
     if(has(hay,"jpj|mysikap|myeg|puspakom|road tax|roadtax|cukai jalan|summon|summons|saman|traffic fine|compound"))return new String[]{"Taxes & government","JPJ / Renewals / Summons"};
     if(has(hay,"99\\s*spe[e3]dmart|spe[e3]dmart|7-eleven|7 eleven|7eleven|family\\s*mart|familymart|kk\\s*mart|kkmart|kk super mart|mynews|emart24|bilabila|bila-bila|cu mart|kedai runcit|minimart|mini market"))return new String[]{"Groceries","Convenience Store (99 Speedmart / 7-Eleven / FamilyMart)"};
     if(has(hay,"lotus's|lotus|lotuss|mydin|giant|aeon|jaya grocer|village grocer|tesco|econsave|nsk|hero market|cold storage|mercato|segi fresh|tf value|qra|ben's independent|everrise|servay|supermarket|hypermarket|pasaraya"))return new String[]{"Groceries","Supermarket & Hypermarket"};
@@ -209,7 +248,8 @@ public final class PaymentParser {
     if(has(hay,"rakuten trade|moomoo|webull|luno|stashaway|wahed|etf|crypto"))return new String[]{"Investments & savings","Stocks, ETF & Crypto"};
     if(has(hay,"zakat|fitrah|ppz|lembaga zakat|maiwp"))return new String[]{"Family & gifts","Zakat & Fitrah"};
     if(has(hay,"charity|donation|derma|sumbangan|tabung kebajikan"))return new String[]{"Family & gifts","Charity & Donations"};
-    if(has(hay,"lhdn|hasil|cp38|pcb|cukai pendapatan"))return new String[]{"Taxes & government","LHDN Income Tax / PCB"};
+    if(has(hay,"lhdn|hasil|cp38|pcb|cukai pendapatan|tax agency|harbour tax|income tax"))return new String[]{"Taxes & government","LHDN Income Tax / PCB"};
+    if(has(hay,"stamp duty|duti setem|government services|govt services|govt service tax"))return new String[]{"Taxes & government","Government Service & Stamp Duty"};
     if(has(hay,"card annual fee|annual fee"))return new String[]{"Fees & charges","Card Annual Fee"};
     if(has(hay,"foreign currency fee|overseas fee|fx fee"))return new String[]{"Fees & charges","Foreign Currency Fee"};
     if(has(hay,"cukai pintu|cukai tanah|dbkl|mbpj|mbsj|mpsj|mpkj"))return new String[]{"Housing & property","Cukai Pintu & Cukai Tanah"};

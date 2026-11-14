@@ -443,7 +443,26 @@ const I18N_MS={
   'Signed amounts: negative expenses, positive income':'Jumlah bertanda: negatif perbelanjaan, positif pendapatan',
   'First rows':'Baris pertama',
   'Preview import':'Pratonton import',
-  'Import CSV':'Import CSV'
+  'Import CSV':'Import CSV',
+  'Subscription & Bill Price-Hike Detector':'Pengesan Kenaikan Harga Langganan & Bil',
+  'Recurring bills or subscriptions whose latest charge increased compared to your prior payments.':'Bil berulang atau langganan yang caj terkininya meningkat berbanding bayaran terdahulu anda.',
+  'Update bill':'Kemas kini bil',
+  'Track bill':'Jejak bil',
+  'Bill reminder updated to new amount.':'Peringatan bil dikemas kini ke jumlah baharu.',
+  'Price hike detected: {name}':'Kenaikan harga dikesan: {name}',
+  'LHDN Year-End Relief Optimizer':'Pengoptimum Pelepasan Cukai Akhir Tahun LHDN',
+  'Marginal rate {rate}%':'Kadar marginal {rate}%',
+  'You can save up to {amt} more in tax by utilizing your remaining priority relief caps before 31 Dec.':'Anda boleh menjimatkan sehingga {amt} lagi cukai dengan memanfaatkan baki had pelepasan utama sebelum 31 Dis.',
+  'Remaining LHDN relief caps available for this assessment year.':'Baki had pelepasan LHDN yang tersedia bagi tahun taksiran ini.',
+  '{used} used of {cap} · {rem} remaining':'{used} digunakan daripada {cap} · baki {rem}',
+  'Save up to {amt}':'Jimat sehingga {amt}',
+  '{rem} cap left':'Baki had {rem}',
+  'Lifestyle (Books / Tech / WiFi)':'Gaya Hidup (Buku / gajet / WiFi)',
+  'Sports Equipment & Gym':'Peralatan Sukan & Gimnasium',
+  'SSPN / PRS / EV Charging':'SSPN / PRS / Pengecasan EV',
+  'Medical & Health Checkup':'Perubatan & Pemeriksaan Kesihatan',
+  'Self Education & Upskilling':'Pendidikan Sendiri & Kemahiran',
+  'Life Insurance / Family Takaful':'Insurans Hayat / Takaful Keluarga'
 };
 function currentLang(){return (typeof state!=='undefined'&&state?.settings?.lang==='ms')?'ms':'en'}
 function appLocale(){return currentLang()==='ms'?'ms-MY':'en-MY'}
