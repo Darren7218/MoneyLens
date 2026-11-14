@@ -151,7 +151,14 @@ public final class Extras {
       JSONArray p=t.getJSONArray("postings");for(int i=0;i<p.length();i++){JSONObject e=p.getJSONObject(i);if(e.getString("account").equals("expense:"+oldCat)){e.put("account","expense:"+newCat);break;}}
      }
     }
+    if(a.optBoolean("dismissAnomaly"))t.put("anomaly",false).put("anomalyDismissed",true);
     if(a.optBoolean("applyHistory")&&!t.optString("merchant").isEmpty())updateMerchantHistory(s,t.getString("merchant"),t.optString("category"),t.optString("subcategory",""),t.optString("account"));
+    return true;
+   }
+   case "dismissAnomaly":{
+    JSONObject t=Ledger.find(s.getJSONArray("transactions"),a.getString("id"));
+    if(t.optBoolean("voided"))return true;
+    t.put("anomaly",false).put("anomalyDismissed",true).put("needsNote",false);
     return true;
    }
    case "updateMerchantHistory":{
@@ -287,6 +294,25 @@ public final class Extras {
    txArgs.put("billId",matchedBill.getString("id")).put("billDate",matchedBill.getString("date")).put("needsNote",false);
    d.put("matchedBillId",matchedBill.getString("id")).put("matchedBillName",matchedBill.getString("name")).put("needsNote",false);
   }
+  if("refund".equals(kind)){
+   JSONObject matchedOrig=findMatchingRefundExpense(s,acct,amt,merchant,dt);
+   if(matchedOrig!=null){
+    String oCat=matchedOrig.optString("category",cat),oSub=matchedOrig.optString("subcategory",sub);
+    if(!oCat.isEmpty()){cat=oCat;txArgs.put("category",cat);d.put("category",cat);}
+    if(!oSub.isEmpty()){sub=oSub;txArgs.put("subcategory",sub);d.put("subcategory",sub);}
+    long remBefore=Math.max(amt,matchedOrig.getLong("amount")-refundedAmountFor(s,matchedOrig.getString("id")));
+    String matchType=amt>=remBefore?"full":"partial";
+    String origMerchant=matchedOrig.optString("merchant",cat);
+    txArgs.put("originalId",matchedOrig.getString("id")).put("needsNote",false);
+    d.put("matchedOriginalId",matchedOrig.getString("id")).put("matchedOriginalMerchant",origMerchant).put("refundMatchType",matchType).put("needsNote",false).put("reason","Matched ("+matchType+") to RM "+rm(matchedOrig.getLong("amount"))+" at "+origMerchant+" ("+matchedOrig.getString("date")+"). Category spend & tax relief adjusted.");
+   }
+  }else if("expense".equals(kind)){
+   JSONObject anom=Finance.detectSpendAnomaly(s,merchant,cat,amt,LocalDate.parse(dt),"");
+   if(anom.optBoolean("isAnomaly")){
+    txArgs.put("anomaly",true).put("anomalyMedian",anom.getLong("median")).put("anomalyRatio",anom.getString("ratioText")).put("needsNote",true);
+    d.put("anomaly",true).put("anomalyMedian",anom.getLong("median")).put("anomalyRatio",anom.getString("ratioText")).put("needsNote",true);
+   }
+  }
   Ledger.post(s,txArgs);
   d.put("autoRecorded",true);
   if("expense".equals(kind)){
@@ -305,6 +331,50 @@ public final class Extras {
     }
    }catch(Exception ignored){}
   }
+ }
+ /** Sums already-linked non-voided refund amounts against a given original expense id. */
+ static long refundedAmountFor(JSONObject s,String originalId){
+  long sum=0;
+  JSONArray tx=s.optJSONArray("transactions");
+  if(tx==null)return 0;
+  for(int i=0;i<tx.length();i++){
+   JSONObject t=tx.optJSONObject(i);
+   if(t!=null&&!t.optBoolean("voided")&&"refund".equals(t.optString("kind"))&&originalId.equals(t.optString("originalId","")))sum+=t.optLong("amount",0L);
+  }
+  return sum;
+ }
+ /** Matches an incoming refund notification to an eligible historical expense within 60 days. */
+ static JSONObject findMatchingRefundExpense(JSONObject s,String acct,long amt,String merchant,String dateStr){
+  try{
+   JSONArray tx=s.optJSONArray("transactions");
+   if(tx==null||tx.length()==0||amt<=0)return null;
+   LocalDate txDate=LocalDate.parse(dateStr);
+   String mNorm=Finance.normalizeMerchant(merchant);
+   if(mNorm.equals("detected payment"))mNorm="";
+   JSONObject best=null;int bestScore=0;
+   for(int i=0;i<tx.length();i++){
+    JSONObject t=tx.getJSONObject(i);
+    if(t.optBoolean("voided")||!"expense".equals(t.optString("kind")))continue;
+    LocalDate origDate=LocalDate.parse(t.getString("date"));
+    long days=ChronoUnit.DAYS.between(origDate,txDate);
+    if(days<-1||days>60)continue;
+    long remaining=t.getLong("amount")-refundedAmountFor(s,t.getString("id"));
+    if(remaining<amt)continue;
+    int score=0;
+    String oNorm=Finance.normalizeMerchant(t.optString("merchant",""));
+    if(!mNorm.isEmpty()&&!oNorm.isEmpty()){
+     if(mNorm.equals(oNorm))score+=65;
+     else if(mNorm.length()>=4&&oNorm.length()>=4&&(mNorm.contains(oNorm)||oNorm.contains(mNorm)))score+=50;
+     else{for(String tok:mNorm.split(" "))if(tok.length()>=4&&oNorm.contains(tok)){score+=35;break;}}
+    }
+    if(!acct.isEmpty()&&acct.equals(t.optString("account","")))score+=25;
+    if(amt==remaining||amt==t.getLong("amount"))score+=50;
+    else if(amt<remaining)score+=15;
+    score+=Math.max(0,15-(int)(Math.max(0L,days)/4));
+    if(score>bestScore){bestScore=score;best=t;}
+   }
+   return bestScore>=70?best:null;
+  }catch(Exception ignored){return null;}
  }
  static JSONObject findMatchingBill(JSONObject s,String kind,long amt,String merchant,String category,String subcategory,String dateStr){
   if(!"expense".equals(kind))return null;
@@ -540,16 +610,23 @@ public final class Extras {
   boolean catRich=settings==null||settings.optBoolean("categoryAlerts",true);
   String prefix=catRich?(categoryEmoji(cat)+" "):"";
   String merchant=d.optString("merchant",ms?"Bayaran":"Payment");
-  if(blur)return prefix+(ms?"Bayaran direkod · ":"Payment recorded · ")+merchant;
-  return prefix+(ms?"Direkod RM ":"Recorded RM ")+rm(d.optLong("amount"))+" · "+merchant;
+  boolean isRef="refund".equals(d.optString("kind"));
+  if(blur)return prefix+(isRef?(ms?"Bayaran balik direkod · ":"Refund recorded · "):(ms?"Bayaran direkod · ":"Payment recorded · "))+merchant;
+  return prefix+(isRef?(ms?"Bayaran balik RM ":"Refund RM "):(ms?"Direkod RM ":"Recorded RM "))+rm(d.optLong("amount"))+" · "+merchant;
  }
  public static String formatRecordedBody(JSONObject d,JSONObject settings,boolean ms,boolean blur){
-  String cat=d.optString("category","Miscellaneous"),sub=d.optString("subcategory",""),matchedBill=d.optString("matchedBillName","");
+  String cat=d.optString("category","Miscellaneous"),sub=d.optString("subcategory",""),matchedBill=d.optString("matchedBillName",""),matchedOrig=d.optString("matchedOriginalMerchant",""),refType=d.optString("refundMatchType","");
   String catDisp=Finance.categoryLabel(cat,ms);
   StringBuilder sb=new StringBuilder(sub.isEmpty()?catDisp:(catDisp+" › "+sub));
   String origCur=d.optString("originalCurrency",""),origAmt=d.optString("originalAmount","");
   if(!origCur.isEmpty()&&!origAmt.isEmpty()&&!blur)sb.append(" (").append(origCur).append(" ").append(origAmt).append(")");
   if(!matchedBill.isEmpty())sb.append(ms?" · Dipaut ke ":" · Linked to ").append(matchedBill);
+  if(!matchedOrig.isEmpty())sb.append(ms?(" · Dipadankan dgn "+matchedOrig+("partial".equals(refType)?" (Sebahagian)":"")):(" · Matched to "+matchedOrig+("partial".equals(refType)?" (Partial)":"")));
+  if(d.optBoolean("anomaly")){
+   String ratio=d.optString("anomalyRatio","");
+   if(blur)sb.append(ms?" · ⚠ Amaun luar biasa":" · ⚠ Unusual amount");
+   else sb.append(ms?(" · ⚠ "+ratio+" drpd biasa (med RM "+rm(d.optLong("anomalyMedian"))+")"):(" · ⚠ "+ratio+" usual (med RM "+rm(d.optLong("anomalyMedian"))+")"));
+  }
   boolean catRich=settings==null||settings.optBoolean("categoryAlerts",true);
   if(!blur&&catRich){
    if(d.optBoolean("catHasBudget")){

@@ -467,7 +467,7 @@ const I18N_MS={
   'Pre-filter non-payment alerts, cache rules & sleep at 0% CPU between bills':'Tapis awal amaran bukan bayaran, cache peraturan & tidur pada 0% CPU antara bil',
   'Eco notification engine enabled.':'Enjin notifikasi Mod Eko diaktifkan.',
   'Eco notification engine disabled.':'Enjin notifikasi Mod Eko dimatikan.',
-  'MoneyLens 0.10.0 · Personal build':'MoneyLens 0.10.0 · Binaan Peribadi',
+  'MoneyLens 0.11.0 · Personal build':'MoneyLens 0.11.0 · Binaan Peribadi',
   'All apps':'Semua aplikasi',
   'BNPL':'BNPL',
   'E-Wallets':'E-Dompet',
@@ -514,7 +514,18 @@ const I18N_MS={
   'Category alerts ready':'Amaran kategori sedia',
   'Test category-aware payment capture and budget alerts ({thr}% warning / >100% over limit).':'Uji tangkapan bayaran mengikut kategori & amaran bajet ({thr}% amaran / >100% melebihi had).',
   'Rich category badges ON':'Lencana kategori terperinci AKTIF',
-  'Rich category badges OFF':'Lencana kategori terperinci MATI'
+  'Rich category badges OFF':'Lencana kategori terperinci MATI',
+  'Linked refund':'Bayaran balik dipautkan',
+  'usual':'drpd biasa',
+  'Dismiss alert':'Tutup amaran',
+  'Unusual spend':'Perbelanjaan luar biasa',
+  'Median at this merchant':'Median di peniaga ini',
+  'Dismiss unusual spend warning':'Tutup amaran perbelanjaan luar biasa',
+  'Anomaly alert dismissed.':'Amaran anomali ditutup.',
+  'Spend anomaly & high-purchase guard':'Pengawal anomali & belian tinggi',
+  'Flag single payments ≥ RM 50 and ≥ 2.5× your usual merchant spend, plus auto-match refunds':'Tandakan bayaran tunggal ≥ RM 50 dan ≥ 2.5× kebiasaan peniaga, serta padankan bayaran balik automatik',
+  'Spend anomaly guard enabled.':'Pengawal anomali perbelanjaan diaktifkan.',
+  'Spend anomaly guard paused.':'Pengawal anomali perbelanjaan dijeda.'
 };
 function currentLang(){return (typeof state!=='undefined'&&state?.settings?.lang==='ms')?'ms':'en'}
 function appLocale(){return currentLang()==='ms'?'ms-MY':'en-MY'}

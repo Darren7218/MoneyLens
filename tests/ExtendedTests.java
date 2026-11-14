@@ -445,6 +445,110 @@ public final class ExtendedTests {
    JSONArray aMs=Finance.evaluateCategoryAlerts(s,LocalDate.now(),"Food & drinks");
    yes(aMs.length()==1&&aMs.getJSONObject(0).getString("title").contains("Makanan & minuman")&&aMs.getJSONObject(0).getString("title").contains("Melebihi bajet"));
   });
+  test("Phase 12 smart refund detection and full/partial auto-matcher adjust category spend",()->{
+   JSONObject s=Ledger.initial();
+   Ledger.apply(s,"account",new JSONObject().put("name","Touch 'n Go eWallet").put("type","wallet").put("opening","500.00"));
+   String tngId=s.getJSONArray("accounts").getJSONObject(1).getString("id");
+   String buyDt=LocalDate.now().minusDays(4).toString(),refDt=LocalDate.now().toString();
+   Ledger.post(s,new JSONObject().put("key","p12-orig").put("kind","expense").put("amount","100.00").put("account",tngId).put("category","Shopping").put("subcategory","Clothing, Bags & Footwear").put("merchant","UNIQLO Malaysia").put("date",buyDt));
+   JSONArray txArr=s.getJSONArray("transactions");
+   String origId=txArr.getJSONObject(txArr.length()-1).getString("id");
+
+   // Reject refund policy/request promos and keep non-refundable deposits as expense
+   yes(PaymentParser.parse("Your refund request from Shopee for RM 50.00 has been submitted","Shopee")==null);
+   JSONObject nonRef=PaymentParser.parse("Non-refundable deposit RM 50.00 paid to Studio KL","MAE by Maybank2u");
+   yes(nonRef!=null);
+   yes("expense".equals(nonRef.getString("kind")));
+
+   // Partial EN refund
+   JSONObject d1=PaymentParser.parse("Refund of RM 40.00 from UNIQLO Malaysia credited to your TNG eWallet","Touch 'n Go eWallet");
+   yes(d1!=null);
+   yes("refund".equals(d1.getString("kind")));
+   d1.put("id","p12-d1").put("autoCapture",true).put("package","my.com.tngdigital.ewallet").put("account",tngId).put("date",refDt);
+   Extras.apply(s,"draft",d1);
+   JSONObject tx1=txArr.getJSONObject(txArr.length()-1);
+   yes(origId.equals(tx1.getString("originalId")));
+   yes("Shopping".equals(tx1.getString("category")));
+   yes("Clothing, Bags & Footwear".equals(tx1.getString("subcategory")));
+   eq(Finance.spend(s,"Shopping",LocalDate.now().minusDays(10),LocalDate.now().plusDays(1)),6000L);
+
+   // Remaining BM full refund
+   JSONObject d2=PaymentParser.parse("Bayaran balik RM 60.00 daripada UNIQLO Malaysia telah dikreditkan ke dompet anda","Touch 'n Go eWallet");
+   yes(d2!=null);
+   yes("refund".equals(d2.getString("kind")));
+   d2.put("id","p12-d2").put("autoCapture",true).put("package","my.com.tngdigital.ewallet").put("account",tngId).put("date",refDt);
+   Extras.apply(s,"draft",d2);
+   JSONObject savedD2=s.getJSONArray("drafts").getJSONObject(s.getJSONArray("drafts").length()-1);
+   JSONObject tx2=txArr.getJSONObject(txArr.length()-1);
+   yes(origId.equals(tx2.getString("originalId")));
+   eq(Finance.spend(s,"Shopping",LocalDate.now().minusDays(10),LocalDate.now().plusDays(1)),0L);
+   yes(Extras.formatRecordedTitle(savedD2,s.getJSONObject("settings"),false,false).contains("Refund RM 60.00"));
+   yes(Extras.formatRecordedBody(savedD2,s.getJSONObject("settings"),false,false).contains("Matched to UNIQLO Malaysia"));
+  });
+
+  test("Phase 12 LHDN tax relief deducts linked and unlinked refunds properly",()->{
+   JSONObject s=Ledger.initial();
+   Ledger.apply(s,"account",new JSONObject().put("name","MAE").put("type","bank").put("opening","2000.00"));
+   String maeId=s.getJSONArray("accounts").getJSONObject(1).getString("id");
+   int yr=LocalDate.now().getYear();
+   String d1=yr+"-06-10",d2=yr+"-06-13",d3=yr+"-09-20";
+   Ledger.post(s,new JSONObject().put("key","p12-tax1").put("kind","expense").put("amount","500.00").put("account",maeId).put("category","Education").put("subcategory","Books & Stationery").put("merchant","POPULAR Bookstore").put("date",d1));
+   JSONArray txTax=s.getJSONArray("transactions");
+   String bookTxId=txTax.getJSONObject(txTax.length()-1).getString("id");
+   eq(Finance.calculateTax(s,null,yr).getJSONObject("ledgerDetected").getLong("lifestyle"),50000L);
+   // Partial refund linked to the bookstore tx
+   Extras.apply(s,"draft",new JSONObject().put("id","p12-tref1").put("kind","refund").put("amount",20000L).put("account",maeId).put("merchant","POPULAR Bookstore").put("date",d2).put("autoCapture",true));
+   String firstRefundId=txTax.getJSONObject(txTax.length()-1).optString("originalId","");
+   JSONObject taxMid=Finance.calculateTax(s,null,yr);
+   eq(taxMid.getJSONObject("ledgerDetected").getLong("lifestyle"),30000L);
+   eq(taxMid.getJSONArray("claimableItems").length(),1);
+   eq(taxMid.getJSONArray("claimableItems").getJSONObject(0).getLong("amount"),30000L);
+   eq(taxMid.getJSONArray("claimableItems").getJSONObject(0).getLong("refundedAmount"),20000L);
+   // Remaining RM 300 refund wipes out the claimable item
+   Extras.apply(s,"draft",new JSONObject().put("id","p12-tref2").put("kind","refund").put("amount",30000L).put("account",maeId).put("merchant","POPULAR Bookstore").put("date",d2).put("autoCapture",true));
+   JSONObject taxEnd=Finance.calculateTax(s,null,yr);
+   eq(taxEnd.getJSONObject("ledgerDetected").getLong("lifestyle"),0L);
+   eq(taxEnd.getJSONArray("claimableItems").length(),0);
+   // Unlinked medical refund >60 days later still reduces year's medical relief
+   Ledger.post(s,new JSONObject().put("key","p12-med1").put("kind","expense").put("amount","100.00").put("account",maeId).put("category","Health & medical").put("merchant","Klinik Mediviron").put("date",d1));
+   Ledger.post(s,new JSONObject().put("key","p12-med-ref").put("kind","refund").put("amount","40.00").put("account",maeId).put("category","Health & medical").put("merchant","Klinik Mediviron").put("date",d3));
+   eq(Finance.calculateTax(s,null,yr).getJSONObject("ledgerDetected").getLong("medical"),6000L);
+   yes(bookTxId.equals(firstRefundId));
+  });
+
+  test("Phase 12 spend anomaly guard flags >= RM 50 and >= 2.5x median with blur-safe alerts and dismiss",()->{
+   JSONObject s=Ledger.initial();
+   Ledger.apply(s,"account",new JSONObject().put("name","MAE").put("type","bank").put("opening","2000.00"));
+   String maeId=s.getJSONArray("accounts").getJSONObject(1).getString("id");
+   String today=LocalDate.now().toString();
+   Ledger.post(s,new JSONObject().put("key","p12-z1").put("kind","expense").put("amount","12.00").put("account",maeId).put("category","Food & drinks").put("merchant","Zus Coffee").put("date",LocalDate.now().minusDays(9).toString()));
+   Ledger.post(s,new JSONObject().put("key","p12-z2").put("kind","expense").put("amount","14.00").put("account",maeId).put("category","Food & drinks").put("merchant","Zus Coffee #04").put("date",LocalDate.now().minusDays(6).toString()));
+   Ledger.post(s,new JSONObject().put("key","p12-z3").put("kind","expense").put("amount","16.00").put("account",maeId).put("category","Food & drinks").put("merchant","Zus Coffee").put("date",LocalDate.now().minusDays(3).toString()));
+   // Below RM 50 floor is not flagged even if >= 2.5x median RM 14
+   yes(!Finance.detectSpendAnomaly(s,"Zus Coffee","Food & drinks",4200L,LocalDate.now(),"").getBoolean("isAnomaly"));
+   // RM 70 (5.0x median RM 14.00) triggers anomaly guard
+   JSONObject dHigh=PaymentParser.parse("You have paid RM 70.00 at Zus Coffee via DuitNow QR.","MAE by Maybank2u");
+   yes(dHigh!=null);
+   dHigh.put("id","p12-high").put("autoCapture",true).put("package","com.maybank2u.life").put("account",maeId).put("date",today);
+   Extras.apply(s,"draft",dHigh);
+   JSONObject savedHigh=s.getJSONArray("drafts").getJSONObject(s.getJSONArray("drafts").length()-1);
+   yes(savedHigh.optBoolean("anomaly"));
+   eq(savedHigh.getLong("anomalyMedian"),1400L);
+   yes("5.0x".equals(savedHigh.getString("anomalyRatio")));
+   JSONArray txAnom=s.getJSONArray("transactions");
+   JSONObject anomTx=txAnom.getJSONObject(txAnom.length()-1);
+   yes(anomTx.getBoolean("anomaly")&&anomTx.getBoolean("needsNote"));
+   String clearBody=Extras.formatRecordedBody(savedHigh,s.getJSONObject("settings"),false,false);
+   String blurBody=Extras.formatRecordedBody(savedHigh,s.getJSONObject("settings"),false,true);
+   yes(clearBody.contains("5.0x usual")&&clearBody.contains("14.00"));
+   yes(blurBody.contains("Unusual amount")&&!blurBody.contains("14.00")&&!blurBody.contains("70.00"));
+   Extras.apply(s,"dismissAnomaly",new JSONObject().put("id",anomTx.getString("id")));
+   yes(!anomTx.getBoolean("anomaly")&&anomTx.getBoolean("anomalyDismissed")&&!anomTx.getBoolean("needsNote"));
+   // Disabling anomalyGuard skips flagging subsequent high transactions
+   Ledger.apply(s,"settings",new JSONObject().put("anomalyGuard",false));
+   yes(!Finance.detectSpendAnomaly(s,"Zus Coffee","Food & drinks",9000L,LocalDate.now(),"").getBoolean("isAnomaly"));
+  });
+
   System.out.println("RESULT: "+passed+" extended tests passed");
  }
 }

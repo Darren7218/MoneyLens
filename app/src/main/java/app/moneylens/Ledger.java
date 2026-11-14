@@ -19,7 +19,7 @@ public final class Ledger {
     JSONObject s=new JSONObject();s.put("schema",2);s.put("revision",0);
     for(String name: new String[]{"accounts","transactions","drafts","budgets","bills","goals","debts","sources","seen","rules","favorites","receipts","imports","reconciliations","installments","customCategories","alerts","ruleHistory"})s.put(name,new JSONArray());
     s.getJSONArray("accounts").put(new JSONObject().put("id","cash").put("name","Cash").put("type","cash").put("color","sage"));
-    s.put("settings",new JSONObject().put("name","Darren").put("theme","light").put("lang","en").put("cycleDay",1).put("appLock",false).put("lockTimeoutSec",0).put("autoRecord",true).put("captureAllSources",true).put("autoOpenOnBoot",true).put("alwaysOnScheduler",true).put("ecoCapture",true).put("categoryAlerts",true));
+    s.put("settings",new JSONObject().put("name","Darren").put("theme","light").put("lang","en").put("cycleDay",1).put("appLock",false).put("lockTimeoutSec",0).put("autoRecord",true).put("captureAllSources",true).put("autoOpenOnBoot",true).put("alwaysOnScheduler",true).put("ecoCapture",true).put("categoryAlerts",true).put("anomalyGuard",true));
     return s;
   }
   public static JSONObject find(JSONArray a,String id) throws JSONException {
@@ -67,7 +67,7 @@ public final class Ledger {
         if(a.has("cycleDay")){int d=a.getInt("cycleDay");if(d<1||d>31)throw new IllegalArgumentException("Cycle day must be 1–31.");settings.put("cycleDay",d);}
         if(a.has("appLock"))settings.put("appLock",a.getBoolean("appLock"));
         if(a.has("lockTimeoutSec")){int v=a.getInt("lockTimeoutSec");if(!Arrays.asList(0,60,300,900).contains(v))throw new IllegalArgumentException("Choose a supported lock timeout.");settings.put("lockTimeoutSec",v);}
-        for(String k:new String[]{"quietEnabled","digest","reminders","budgetAlerts","categoryAlerts","weeklyBudgetNudge","widgetAmounts","captureWhileLocked","autoRecord","captureAllSources","autoOpenOnBoot","alwaysOnScheduler","ecoCapture","privacyBlur"})if(a.has(k))settings.put(k,a.getBoolean(k));
+        for(String k:new String[]{"quietEnabled","digest","reminders","budgetAlerts","categoryAlerts","weeklyBudgetNudge","widgetAmounts","captureWhileLocked","autoRecord","captureAllSources","autoOpenOnBoot","alwaysOnScheduler","ecoCapture","anomalyGuard","privacyBlur"})if(a.has(k))settings.put(k,a.getBoolean(k));
         for(String k:new String[]{"quietStart","quietEnd","digestHour"})if(a.has(k)){int v=a.getInt(k);if(v<0||v>23)throw new IllegalArgumentException("Choose an hour from 0 to 23.");settings.put(k,v);}
         if(a.has("threshold")){int v=a.getInt("threshold");if(v<1||v>100)throw new IllegalArgumentException("Threshold must be 1–100%.");settings.put("threshold",v);}break;
       }
@@ -110,7 +110,7 @@ public final class Ledger {
     find(s.getJSONArray("accounts"),account);date(dt);long n=minor(a.getString("amount"));JSONArray p=new JSONArray();
     String tid=id();p=postings(s,a,tid,n);
     JSONObject t=new JSONObject().put("id",tid).put("key",key).put("kind",kind).put("amount",n).put("account",account).put("to",a.optString("to","")).put("category",category).put("merchant",str(a,"merchant",120)).put("date",dt).put("note",str(a,"note",500)).put("postings",p).put("created",System.currentTimeMillis());
-    for(String k:new String[]{"subcategory","splits","ownAmount","person","receiptId","originalCurrency","originalAmount","exchangeRate","foreignFee","source","sourcePackage","tags","reimbursementFor","importBatch","importRow","installmentId","autoRecorded","historyMatch","needsNote"})if(a.has(k))t.put(k,a.get(k));
+    for(String k:new String[]{"subcategory","splits","ownAmount","person","receiptId","originalCurrency","originalAmount","exchangeRate","foreignFee","source","sourcePackage","tags","reimbursementFor","importBatch","importRow","installmentId","autoRecorded","historyMatch","needsNote","anomaly","anomalyMedian","anomalyRatio","anomalyDismissed"})if(a.has(k))t.put(k,a.get(k));
     if(a.has("originalCurrency")){String currency=a.getString("originalCurrency").toUpperCase(java.util.Locale.ROOT);java.util.Currency.getInstance(currency);if(new java.math.BigDecimal(a.getString("originalAmount")).signum()<=0)throw new IllegalArgumentException("Original amount must be positive.");t.put("originalCurrency",currency);BigDecimal fee=new BigDecimal(a.optString("foreignFee","0"));if(fee.signum()<0||fee.movePointRight(2).longValueExact()>=n)throw new IllegalArgumentException("Included fees must be less than the MYR total.");t.put("exchangeRate",BigDecimal.valueOf(n,2).subtract(fee).divide(new BigDecimal(a.getString("originalAmount")),8,java.math.RoundingMode.HALF_UP).toPlainString());}
     if(a.has("tags")&&a.getJSONArray("tags").length()>30)throw new IllegalArgumentException("At most 30 tags.");
     if(a.has("foreignFee")&&new BigDecimal(a.getString("foreignFee")).signum()<0)throw new IllegalArgumentException("Fee cannot be negative.");

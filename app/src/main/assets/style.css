@@ -981,3 +981,27 @@ body.dark .tone-stone { background: rgba(168, 162, 158, 0.2); color: #d6d3d1; }
   color: var(--accent);
   border-radius: 14px;
 }
+
+/* v0.11.0 Refund Link & Spend Anomaly Badges */
+.tx-pill.refund-link {
+  background: rgba(16, 185, 129, 0.12);
+  color: #047857;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  font-weight: 700;
+}
+:root[data-theme="dark"] .tx-pill.refund-link { color: #34d399; }
+.tx-pill.anomaly-warn {
+  background: rgba(245, 158, 11, 0.14);
+  color: #b45309;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  font-weight: 700;
+}
+:root[data-theme="dark"] .tx-pill.anomaly-warn { color: #fbbf24; }
+.anomaly-banner {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  padding: 10px 12px; margin-bottom: 12px; border-radius: 12px;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.32);
+  color: #92400e; font-size: 13px;
+}
+:root[data-theme="dark"] .anomaly-banner { color: #fcd34d; background: rgba(245, 158, 11, 0.16); }

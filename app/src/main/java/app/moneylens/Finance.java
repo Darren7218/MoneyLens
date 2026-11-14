@@ -278,32 +278,36 @@ public final class Finance {
   JSONObject prof=override!=null?override:s.getJSONObject("settings").optJSONObject("taxProfile");
   if(prof==null)prof=new JSONObject();
   String yearPrefix=String.valueOf(year);
-  long ledMedical=0,ledLifestyle=0,ledSports=0,ledEducation=0,ledLifeIns=0,ledMedIns=0,ledSspnPrs=0,ledZakat=0,ledPcb=0;
+  long[] acc=new long[9]; // 0=med,1=lifestyle,2=sports,3=edu,4=lifeIns,5=medIns,6=sspnPrs,7=zakat,8=pcb
   JSONArray tx=s.getJSONArray("transactions"),claimableItems=new JSONArray();
+  Map<String,Long> linkedRefunds=new HashMap<>();
   for(int i=0;i<tx.length();i++){
    JSONObject t=tx.getJSONObject(i);
-   if(t.optBoolean("voided")||!t.optString("kind").equals("expense")||!t.optString("date","").startsWith(yearPrefix))continue;
-   long amt=t.getLong("amount");
-   String cat=t.optString("category",""),sub=t.optString("subcategory",""),low=(cat+" "+sub+" "+t.optString("merchant","")+" "+t.optString("note","")).toLowerCase(Locale.ROOT);
-   String bucket="";
-   boolean isSport=PaymentParser.has(low,"sports?|gym|fitness|badminton|futsal|pickleball|decathlon|al-ikhsan|alikhsan|marathon");
-   if(cat.startsWith("Health")||PaymentParser.has(low,"clinic|klinik|hospital|medical|pharmacy|farmasi|dental|dentist|pergigian|pathlab|bp healthcare|gribbles|optometrist|gleneagles|kpj|columbia asia")){
-    if(isSport){ledSports+=amt;bucket="Sports & Gym";}
-    else{ledMedical+=amt;bucket="Medical & Health";}
-   }else if(isSport){ledSports+=amt;bucket="Sports & Gym";}
-   if(cat.equals("Education")||PaymentParser.has(low,"tuition|university|universiti|upskill|course|coursera|udemy|certification")){ledEducation+=amt;if(bucket.isEmpty())bucket="Education";}
-   if(sub.contains("Internet")||sub.contains("Mobile")||sub.contains("Books")||sub.contains("Electronics")||PaymentParser.has(low,"unifi|time fibre|time internet|maxis|celcom|digi|celcomdigi|yes 5g|umobile|books?|bookstore|bookshop|popular|kinokuniya|bookxcess|tsutaya|mph|laptop|macbook|smartphone|iphone|ipad|tablet|machines|harvey norman|all it|thundermatch|senheng")){ledLifestyle+=amt;if(bucket.isEmpty())bucket="Lifestyle (Tech / Books / WiFi)";}
-   if(cat.equals("Insurance & Takaful")||PaymentParser.has(low,"takaful|prudential|prubsn|great eastern|aia|allianz|etiqa|zurich|manulife")){
-    if(sub.contains("Medical")||sub.contains("Education")||low.contains("medical card")||PaymentParser.has(low,"health")){ledMedIns+=amt;if(bucket.isEmpty())bucket="Medical & Edu Insurance";}
-    else{ledLifeIns+=amt;if(bucket.isEmpty())bucket="Life Insurance / Takaful";}
-   }
-   if(PaymentParser.has(low,"sspn|prs|ev charging|gentari|chargev|jomcharge|chargenow|dc handal|shell recharge|evconnection|tesla supercharger")){ledSspnPrs+=amt;if(bucket.isEmpty())bucket="SSPN / PRS / EV";}
-   if(PaymentParser.has(low,"zakat|fitrah")){ledZakat+=amt;if(bucket.isEmpty())bucket="Zakat / Fitrah Rebate";}
-   if(PaymentParser.has(low,"lhdn|pcb|cp38")||sub.contains("LHDN")){ledPcb+=amt;if(bucket.isEmpty())bucket="LHDN / PCB Paid";}
-   if(!bucket.isEmpty()&&claimableItems.length()<50){
-    claimableItems.put(new JSONObject().put("id",t.optString("id")).put("date",t.optString("date")).put("merchant",t.optString("merchant",cat)).put("category",cat).put("subcategory",sub).put("bucket",bucket).put("amount",amt));
+   if(t.optBoolean("voided")||!"refund".equals(t.optString("kind")))continue;
+   String oid=t.optString("originalId","");
+   if(!oid.isEmpty())linkedRefunds.put(oid,linkedRefunds.getOrDefault(oid,0L)+t.getLong("amount"));
+  }
+  for(int i=0;i<tx.length();i++){
+   JSONObject t=tx.getJSONObject(i);
+   if(t.optBoolean("voided")||!t.optString("date","").startsWith(yearPrefix))continue;
+   String kind=t.optString("kind");
+   if("expense".equals(kind)){
+    long origAmt=t.getLong("amount");
+    long refunded=linkedRefunds.getOrDefault(t.getString("id"),0L);
+    long remAmt=Math.max(0L,origAmt-refunded);
+    if(remAmt==0L)continue;
+    String bucket=applyTaxBuckets(t,remAmt,acc);
+    if(!bucket.isEmpty()&&claimableItems.length()<50){
+     JSONObject ci=new JSONObject().put("id",t.optString("id")).put("date",t.optString("date")).put("merchant",t.optString("merchant",t.optString("category",""))).put("category",t.optString("category","")).put("subcategory",t.optString("subcategory","")).put("bucket",bucket).put("amount",remAmt);
+     if(refunded>0L)ci.put("originalAmount",origAmt).put("refundedAmount",Math.min(origAmt,refunded));
+     claimableItems.put(ci);
+    }
+   }else if("refund".equals(kind)&&t.optString("originalId","").isEmpty()){
+    applyTaxBuckets(t,-t.getLong("amount"),acc);
    }
   }
+  for(int i=0;i<acc.length;i++)acc[i]=Math.max(0L,acc[i]);
+  long ledMedical=acc[0],ledLifestyle=acc[1],ledSports=acc[2],ledEducation=acc[3],ledLifeIns=acc[4],ledMedIns=acc[5],ledSspnPrs=acc[6],ledZakat=acc[7],ledPcb=acc[8];
   double baseMonthly=prof.optDouble("monthlyBaseSalary",0);
   double annualBonus=prof.optDouble("annualBonus",0);
   double otherIncome=prof.optDouble("otherIncome",0);
@@ -851,5 +855,68 @@ public final class Finance {
    .put("order",orderArr)
    .put("schedule",schedule)
    .put("perDebt",perDebt);
+ }
+ /** Applies a signed sen delta across LHDN tax relief buckets and returns the primary bucket label. */
+ private static String applyTaxBuckets(JSONObject t,long signedAmt,long[] acc){
+  String cat=t.optString("category",""),sub=t.optString("subcategory",""),low=(cat+" "+sub+" "+t.optString("merchant","")+" "+t.optString("note","")).toLowerCase(Locale.ROOT);
+  String bucket="";
+  boolean isSport=PaymentParser.has(low,"sports?|gym|fitness|badminton|futsal|pickleball|decathlon|al-ikhsan|alikhsan|marathon");
+  if(cat.startsWith("Health")||PaymentParser.has(low,"clinic|klinik|hospital|medical|pharmacy|farmasi|dental|dentist|pergigian|pathlab|bp healthcare|gribbles|optometrist|gleneagles|kpj|columbia asia")){
+   if(isSport){acc[2]+=signedAmt;bucket="Sports & Gym";}
+   else{acc[0]+=signedAmt;bucket="Medical & Health";}
+  }else if(isSport){acc[2]+=signedAmt;bucket="Sports & Gym";}
+  if(cat.equals("Education")||PaymentParser.has(low,"tuition|university|universiti|upskill|course|coursera|udemy|certification")){acc[3]+=signedAmt;if(bucket.isEmpty())bucket="Education";}
+  if(sub.contains("Internet")||sub.contains("Mobile")||sub.contains("Books")||sub.contains("Electronics")||PaymentParser.has(low,"unifi|time fibre|time internet|maxis|celcom|digi|celcomdigi|yes 5g|umobile|books?|bookstore|bookshop|popular|kinokuniya|bookxcess|tsutaya|mph|laptop|macbook|smartphone|iphone|ipad|tablet|machines|harvey norman|all it|thundermatch|senheng")){acc[1]+=signedAmt;if(bucket.isEmpty())bucket="Lifestyle (Tech / Books / WiFi)";}
+  if(cat.equals("Insurance & Takaful")||PaymentParser.has(low,"takaful|prudential|prubsn|great eastern|aia|allianz|etiqa|zurich|manulife")){
+   if(sub.contains("Medical")||sub.contains("Education")||low.contains("medical card")||PaymentParser.has(low,"health")){acc[5]+=signedAmt;if(bucket.isEmpty())bucket="Medical & Edu Insurance";}
+   else{acc[4]+=signedAmt;if(bucket.isEmpty())bucket="Life Insurance / Takaful";}
+  }
+  if(PaymentParser.has(low,"sspn|prs|ev charging|gentari|chargev|jomcharge|chargenow|dc handal|shell recharge|evconnection|tesla supercharger")){acc[6]+=signedAmt;if(bucket.isEmpty())bucket="SSPN / PRS / EV";}
+  if(PaymentParser.has(low,"zakat|fitrah")){acc[7]+=signedAmt;if(bucket.isEmpty())bucket="Zakat / Fitrah Rebate";}
+  if(PaymentParser.has(low,"lhdn|pcb|cp38")||sub.contains("LHDN")){acc[8]+=signedAmt;if(bucket.isEmpty())bucket="LHDN / PCB Paid";}
+  return bucket;
+ }
+ /** Normalizes merchant labels across outlets and casing for matching and anomaly baselines. */
+ public static String normalizeMerchant(String raw){
+  if(raw==null)return "";
+  return raw.toLowerCase(Locale.ROOT).trim()
+   .replaceAll("\\s*(?:#|no\\.?)\\s*[0-9a-z-]+$","")
+   .replaceAll("\\b(?:sdn\\.?\\s*bhd\\.?|bhd\\.?|enterprise|trading|malaysia|plaza)\\b","")
+   .replaceAll("[^a-z0-9]+"," ").trim();
+ }
+ /** Detects single-expense spending anomalies (>= RM 50 and >= 2.5x historical merchant median over >= 3 expenses). */
+ public static JSONObject detectSpendAnomaly(JSONObject s,String merchant,String category,long amountMinor,LocalDate on,String excludeTxId)throws Exception{
+  JSONObject out=new JSONObject().put("isAnomaly",false);
+  JSONObject prefs=s.optJSONObject("settings");
+  if(prefs!=null&&!prefs.optBoolean("anomalyGuard",true))return out;
+  if(amountMinor<50_00L)return out;
+  String target=normalizeMerchant(merchant);
+  if(target.length()<3||target.equals("detected payment"))return out;
+  JSONArray tx=s.getJSONArray("transactions");
+  List<Long> samples=new ArrayList<>();
+  LocalDate cutoff=on.minusDays(365);
+  for(int i=0;i<tx.length();i++){
+   JSONObject t=tx.getJSONObject(i);
+   if(t.optBoolean("voided")||!"expense".equals(t.optString("kind")))continue;
+   if(excludeTxId!=null&&!excludeTxId.isEmpty()&&excludeTxId.equals(t.optString("id")))continue;
+   LocalDate dt=LocalDate.parse(t.getString("date"));
+   if(dt.isBefore(cutoff)||dt.isAfter(on))continue;
+   String tm=normalizeMerchant(t.optString("merchant",""));
+   if(tm.isEmpty())continue;
+   if(tm.equals(target)||(target.length()>=4&&tm.length()>=4&&(tm.startsWith(target+" ")||target.startsWith(tm+" ")))){
+    samples.add(t.getLong("amount"));
+   }
+  }
+  if(samples.size()<3)return out;
+  Collections.sort(samples);
+  int cnt=samples.size();
+  long median=(cnt%2==1)?samples.get(cnt/2):((samples.get(cnt/2-1)+samples.get(cnt/2))/2L);
+  if(median<500L||amountMinor*10L<median*25L)return out;
+  double ratio=(double)amountMinor/(double)median;
+  return out.put("isAnomaly",true)
+   .put("median",median)
+   .put("count",cnt)
+   .put("ratio",Math.round(ratio*10.0)/10.0)
+   .put("ratioText",String.format(Locale.US,"%.1fx",ratio));
  }
 }
