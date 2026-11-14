@@ -1,0 +1,863 @@
+﻿{
+    "phase":  "v0.4.0_phase5",
+    "zero_leakage_holdout":  {
+                                 "oracle_merchant_only":  {
+                                                              "cat_acc":  0.5664,
+                                                              "subcat_acc":  0.4685
+                                                          },
+                                 "payment_notifications":  {
+                                                               "merchant_match":  0.872,
+                                                               "parsed_rate":  0.9878,
+                                                               "cat_acc":  0.8689,
+                                                               "n":  328,
+                                                               "amount_exact":  0.9756,
+                                                               "subcat_acc":  0.814
+                                                           },
+                                 "total_samples":  858,
+                                 "thermal_receipts":  {
+                                                          "merchant_match":  0.7811,
+                                                          "date_exact":  0.9151,
+                                                          "cat_acc":  0.9245,
+                                                          "n":  530,
+                                                          "amount_exact":  0.9755,
+                                                          "subcat_acc":  0.8434
+                                                      },
+                                 "holdout_split_end_to_end":  {
+                                                                  "cat_acc":  0.8606,
+                                                                  "n":  165,
+                                                                  "subcat_acc":  0.7576
+                                                              },
+                                 "sample_misses":  [
+                                                       {
+                                                           "expected_merchant":  "CREDIT SERVICES KL",
+                                                           "expected_cat":  "Loans, BNPL \u0026 Credit / Hire Purchase / Installment",
+                                                           "expected_amt":  252505,
+                                                           "got_cat":  "Transport / Car Loan Installment",
+                                                           "source_type":  "thermal_receipt",
+                                                           "got_merchant":  "CREDIT SERVICES KL",
+                                                           "parsed":  true,
+                                                           "got_amt":  252505
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "PETALING JAYA WATER \u0026 SEWERAGE BOARD",
+                                                           "expected_cat":  "Fees \u0026 charges / Late Payment Fee",
+                                                           "expected_amt":  2750,
+                                                           "got_cat":  "Bills \u0026 utilities / Water \u0026 Sewerage (Air Selangor / IWK)",
+                                                           "source_type":  "thermal_receipt",
+                                                           "got_merchant":  "PETALING JAYA WATER \u0026 SEWERAGE BOARD",
+                                                           "parsed":  true,
+                                                           "got_amt":  2750
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "Matahari Supermarket",
+                                                           "expected_cat":  "Food \u0026 drinks / Groceries \u0026 Snacks",
+                                                           "expected_amt":  1590,
+                                                           "got_cat":  "Groceries / Supermarket \u0026 Hypermarket",
+                                                           "source_type":  "payment_notification",
+                                                           "got_merchant":  "Matahari Supermarket",
+                                                           "parsed":  true,
+                                                           "got_amt":  1590
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "TechWaves Johor",
+                                                           "expected_cat":  "Shopping / Electronics \u0026 Gadgets",
+                                                           "expected_amt":  35000,
+                                                           "got_cat":  "Miscellaneous / Auto-Captured (Uncategorized)",
+                                                           "source_type":  "payment_notification",
+                                                           "got_merchant":  "TechWaves Johor",
+                                                           "parsed":  true,
+                                                           "got_amt":  35000
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "Book Haven",
+                                                           "expected_cat":  "Education / Books \u0026 Stationery",
+                                                           "expected_amt":  7925,
+                                                           "got_cat":  "Miscellaneous / Auto-Captured (Uncategorized)",
+                                                           "source_type":  "payment_notification",
+                                                           "got_merchant":  "Book Haven",
+                                                           "parsed":  true,
+                                                           "got_amt":  7925
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "Sinar Cafe",
+                                                           "expected_cat":  "Family \u0026 gifts / Parents Allowance",
+                                                           "expected_amt":  12550,
+                                                           "got_cat":  "Food \u0026 drinks / Restaurant \u0026 Cafe",
+                                                           "source_type":  "payment_notification",
+                                                           "got_merchant":  "Sinar Cafe",
+                                                           "parsed":  true,
+                                                           "got_amt":  12550
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "Penang Old Town Souvenirs",
+                                                           "expected_cat":  "Family \u0026 gifts / Parents Allowance",
+                                                           "expected_amt":  15000,
+                                                           "got_cat":  "Food \u0026 drinks / Coffee, Tea \u0026 Drinks",
+                                                           "source_type":  "payment_notification",
+                                                           "got_merchant":  "Penang Old Town Souvenirs",
+                                                           "parsed":  true,
+                                                           "got_amt":  15000
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "AirAsia Express",
+                                                           "expected_cat":  "Entertainment \u0026 travel / Flights \u0026 Transport",
+                                                           "expected_amt":  34950,
+                                                           "got_cat":  " / ",
+                                                           "source_type":  "payment_notification",
+                                                           "got_merchant":  "",
+                                                           "parsed":  false,
+                                                           "got_amt":  0
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "Asian Food Emporium",
+                                                           "expected_cat":  "Fees \u0026 charges / Foreign Currency Fee",
+                                                           "expected_amt":  11072,
+                                                           "got_cat":  "Food \u0026 drinks / Restaurant \u0026 Cafe",
+                                                           "source_type":  "payment_notification",
+                                                           "got_merchant":  "Asian Food Emporium",
+                                                           "parsed":  true,
+                                                           "got_amt":  11072
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "Kedai Buah-buahan Kota Kinabalu",
+                                                           "expected_cat":  "Food \u0026 drinks / Food Delivery (GrabFood / Foodpanda)",
+                                                           "expected_amt":  3745,
+                                                           "got_cat":  "Food \u0026 drinks / Food Delivery (GrabFood / Foodpanda)",
+                                                           "source_type":  "thermal_receipt",
+                                                           "got_merchant":  "Kedai Buah-buahan Kota Kinabalu",
+                                                           "parsed":  true,
+                                                           "got_amt":  3500
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "Kedai Satay Kampung",
+                                                           "expected_cat":  "Food \u0026 drinks / Food Delivery (GrabFood / Foodpanda)",
+                                                           "expected_amt":  2438,
+                                                           "got_cat":  "Food \u0026 drinks / Food Delivery (GrabFood / Foodpanda)",
+                                                           "source_type":  "thermal_receipt",
+                                                           "got_merchant":  "Kedai Satay Kampung",
+                                                           "parsed":  true,
+                                                           "got_amt":  2300
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "Kedai Roti Canai",
+                                                           "expected_cat":  "Food \u0026 drinks / Food Delivery (GrabFood / Foodpanda)",
+                                                           "expected_amt":  1908,
+                                                           "got_cat":  "Food \u0026 drinks / Hawker \u0026 Mamak",
+                                                           "source_type":  "payment_notification",
+                                                           "got_merchant":  "RM 1.08",
+                                                           "parsed":  true,
+                                                           "got_amt":  1500
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "Pasaran Makanan Kota Kinabalu",
+                                                           "expected_cat":  "Food \u0026 drinks / Food Delivery (GrabFood / Foodpanda)",
+                                                           "expected_amt":  1484,
+                                                           "got_cat":  "Food \u0026 drinks / Food Delivery (GrabFood / Foodpanda)",
+                                                           "source_type":  "payment_notification",
+                                                           "got_merchant":  "RM 0.84",
+                                                           "parsed":  true,
+                                                           "got_amt":  1200
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "Pejabat Pasar Sentral",
+                                                           "expected_cat":  "Groceries / Household \u0026 Cleaning Supplies",
+                                                           "expected_amt":  2650,
+                                                           "got_cat":  "Food \u0026 drinks / Hawker \u0026 Mamak",
+                                                           "source_type":  "payment_notification",
+                                                           "got_merchant":  "Pejabat Pasar Sentral",
+                                                           "parsed":  true,
+                                                           "got_amt":  2650
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "Bengkel Damansara Jaya Groceries",
+                                                           "expected_cat":  "Groceries / Household \u0026 Cleaning Supplies",
+                                                           "expected_amt":  3200,
+                                                           "got_cat":  "Transport / Vehicle Maintenance \u0026 Service",
+                                                           "source_type":  "payment_notification",
+                                                           "got_merchant":  "Bengkel Damansara Jaya Groceries",
+                                                           "parsed":  true,
+                                                           "got_amt":  3200
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "Grab",
+                                                           "expected_cat":  "Transport / E-Hailing (Grab / AirAsia Ride)",
+                                                           "expected_amt":  1625,
+                                                           "got_cat":  "Transport / E-Hailing (Grab / AirAsia Ride)",
+                                                           "source_type":  "payment_notification",
+                                                           "got_merchant":  "Pejabat Grab",
+                                                           "parsed":  true,
+                                                           "got_amt":  1500
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "Grab",
+                                                           "expected_cat":  "Transport / E-Hailing (Grab / AirAsia Ride)",
+                                                           "expected_amt":  1980,
+                                                           "got_cat":  "Transport / E-Hailing (Grab / AirAsia Ride)",
+                                                           "source_type":  "payment_notification",
+                                                           "got_merchant":  "Pejabat Grab",
+                                                           "parsed":  true,
+                                                           "got_amt":  1800
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "Kedai Raya Harian",
+                                                           "expected_cat":  "Housing \u0026 property / Rent",
+                                                           "expected_amt":  22000,
+                                                           "got_cat":  "Miscellaneous / Auto-Captured (Uncategorized)",
+                                                           "source_type":  "payment_notification",
+                                                           "got_merchant":  "RM20.00",
+                                                           "parsed":  true,
+                                                           "got_amt":  22000
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "Bengkel Bengkel Betull",
+                                                           "expected_cat":  "Housing \u0026 property / Home Repair \u0026 Maintenance",
+                                                           "expected_amt":  50000,
+                                                           "got_cat":  "Transport / Vehicle Maintenance \u0026 Service",
+                                                           "source_type":  "payment_notification",
+                                                           "got_merchant":  "Bengkel Bengkel Betull",
+                                                           "parsed":  true,
+                                                           "got_amt":  50000
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "Salon Anisa, Cheras",
+                                                           "expected_cat":  "Shopping / Beauty, Skincare \u0026 Grooming",
+                                                           "expected_amt":  1000,
+                                                           "got_cat":  "Fees \u0026 charges / Foreign Currency Fee",
+                                                           "source_type":  "payment_notification",
+                                                           "got_merchant":  "RM 10.00",
+                                                           "parsed":  true,
+                                                           "got_amt":  1000
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "Pejabat Warisan",
+                                                           "expected_cat":  "Family \u0026 gifts / Parents Allowance",
+                                                           "expected_amt":  140000,
+                                                           "got_cat":  "Family \u0026 gifts / Parents Allowance",
+                                                           "source_type":  "thermal_receipt",
+                                                           "got_merchant":  "Pejabat Warisan",
+                                                           "parsed":  true,
+                                                           "got_amt":  125000
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "Klinik Simpanan Persaraan PRS",
+                                                           "expected_cat":  "Investments \u0026 savings / PRS (Private Retirement Scheme)",
+                                                           "expected_amt":  120000,
+                                                           "got_cat":  "Health \u0026 medical / Clinic \u0026 GP",
+                                                           "source_type":  "payment_notification",
+                                                           "got_merchant":  "Klinik Simpanan Persaraan PRS, Seremban 70300",
+                                                           "parsed":  true,
+                                                           "got_amt":  120000
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "Bengkel Simpanan Persaraan PRS",
+                                                           "expected_cat":  "Investments \u0026 savings / PRS (Private Retirement Scheme)",
+                                                           "expected_amt":  150000,
+                                                           "got_cat":  "Transport / Vehicle Maintenance \u0026 Service",
+                                                           "source_type":  "payment_notification",
+                                                           "got_merchant":  "Bengkel Simpanan Persaraan PRS, Seremban 70400",
+                                                           "parsed":  true,
+                                                           "got_amt":  150000
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "Klinik Kesihatan Subang",
+                                                           "expected_cat":  "Fees \u0026 charges / Foreign Currency Fee",
+                                                           "expected_amt":  1500,
+                                                           "got_cat":  "Health \u0026 medical / Clinic \u0026 GP",
+                                                           "source_type":  "payment_notification",
+                                                           "got_merchant":  "RM 15.00",
+                                                           "parsed":  true,
+                                                           "got_amt":  1500
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "Pasukuan Boleh Bengkel",
+                                                           "expected_cat":  "Fees \u0026 charges / Foreign Currency Fee",
+                                                           "expected_amt":  875,
+                                                           "got_cat":  "Transport / Vehicle Maintenance \u0026 Service",
+                                                           "source_type":  "thermal_receipt",
+                                                           "got_merchant":  "Pasukuan Boleh Bengkel",
+                                                           "parsed":  true,
+                                                           "got_amt":  875
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "Bengkel Tani Alat Merkuri",
+                                                           "expected_cat":  "Fees \u0026 charges / Late Payment Fee",
+                                                           "expected_amt":  1500,
+                                                           "got_cat":  "Transport / Vehicle Maintenance \u0026 Service",
+                                                           "source_type":  "payment_notification",
+                                                           "got_merchant":  "Bengkel Tani Alat Merkuri",
+                                                           "parsed":  true,
+                                                           "got_amt":  1500
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "Klinik Healthcare Makmur",
+                                                           "expected_cat":  "Fees \u0026 charges / Late Payment Fee",
+                                                           "expected_amt":  2000,
+                                                           "got_cat":  "Health \u0026 medical / Clinic \u0026 GP",
+                                                           "source_type":  "thermal_receipt",
+                                                           "got_merchant":  "Klinik Healthcare Makmur",
+                                                           "parsed":  true,
+                                                           "got_amt":  2000
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "99 Speedmart",
+                                                           "expected_cat":  "Groceries / Convenience Store (99 Speedmart / 7-Eleven / FamilyMart)",
+                                                           "expected_amt":  4800,
+                                                           "got_cat":  "Food \u0026 drinks / Coffee, Tea \u0026 Drinks",
+                                                           "source_type":  "thermal_receipt",
+                                                           "got_merchant":  "99 Spe3dmart",
+                                                           "parsed":  true,
+                                                           "got_amt":  4800
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "Sab Grocery \u0026 Supplies",
+                                                           "expected_cat":  "Groceries / Household \u0026 Cleaning Supplies",
+                                                           "expected_amt":  15830,
+                                                           "got_cat":  "Bills \u0026 utilities / Electricity (TNB)",
+                                                           "source_type":  "thermal_receipt",
+                                                           "got_merchant":  "SAB",
+                                                           "parsed":  true,
+                                                           "got_amt":  15830
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "Alor Setar Toll Plaza",
+                                                           "expected_cat":  "Transport / Toll (TNG / RFID / PayDirect)",
+                                                           "expected_amt":  315,
+                                                           "got_cat":  "Transport / Toll (TNG / RFID / PayDirect)",
+                                                           "source_type":  "thermal_receipt",
+                                                           "got_merchant":  "payable (RM)",
+                                                           "parsed":  true,
+                                                           "got_amt":  0
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "RIDE KU",
+                                                           "expected_cat":  "Transport / E-Hailing (Grab / AirAsia Ride)",
+                                                           "expected_amt":  1550,
+                                                           "got_cat":  "Education / Higher Education \u0026 Tuition",
+                                                           "source_type":  "thermal_receipt",
+                                                           "got_merchant":  "RIDE KU",
+                                                           "parsed":  true,
+                                                           "got_amt":  1550
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "JBR TRAVEL RIDE",
+                                                           "expected_cat":  "Transport / E-Hailing (Grab / AirAsia Ride)",
+                                                           "expected_amt":  6725,
+                                                           "got_cat":  "Entertainment \u0026 travel / Hotel \u0026 Holiday Stay",
+                                                           "source_type":  "thermal_receipt",
+                                                           "got_merchant":  "JBR TRAVEL RIDE",
+                                                           "parsed":  true,
+                                                           "got_amt":  6725
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "ABC Motor Service",
+                                                           "expected_cat":  "Transport / Road Tax \u0026 Motor Insurance",
+                                                           "expected_amt":  7000,
+                                                           "got_cat":  "Taxes \u0026 government / JPJ / Renewals / Summons",
+                                                           "source_type":  "thermal_receipt",
+                                                           "got_merchant":  "ROAD TAX",
+                                                           "parsed":  true,
+                                                           "got_amt":  7000
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "Motorway Services",
+                                                           "expected_cat":  "Transport / Road Tax \u0026 Motor Insurance",
+                                                           "expected_amt":  7500,
+                                                           "got_cat":  "Taxes \u0026 government / JPJ / Renewals / Summons",
+                                                           "source_type":  "thermal_receipt",
+                                                           "got_merchant":  "Motorway Services",
+                                                           "parsed":  true,
+                                                           "got_amt":  7500
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "Abstract Automotive Group",
+                                                           "expected_cat":  "Loans, BNPL \u0026 Credit / Credit Card Bill",
+                                                           "expected_amt":  123456,
+                                                           "got_cat":  "Miscellaneous / Auto-Captured (Uncategorized)",
+                                                           "source_type":  "thermal_receipt",
+                                                           "got_merchant":  "TYRES \u0026 GROOMING SERVICES",
+                                                           "parsed":  true,
+                                                           "got_amt":  123456
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "BL4CK M4TH5",
+                                                           "expected_cat":  "Loans, BNPL \u0026 Credit / Credit Card Bill",
+                                                           "expected_amt":  650000,
+                                                           "got_cat":  "Shopping / Electronics \u0026 Gadgets",
+                                                           "source_type":  "thermal_receipt",
+                                                           "got_merchant":  "Gaming Laptop: ASUS ROG Zephyrus G14",
+                                                           "parsed":  true,
+                                                           "got_amt":  650000
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "7H3 B00K 5H3L0W",
+                                                           "expected_cat":  "Loans, BNPL \u0026 Credit / Credit Card Bill",
+                                                           "expected_amt":  50000,
+                                                           "got_cat":  "Education / Books \u0026 Stationery",
+                                                           "source_type":  "thermal_receipt",
+                                                           "got_merchant":  "Books: Various Titles",
+                                                           "parsed":  true,
+                                                           "got_amt":  50000
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "Typhus Hotel",
+                                                           "expected_cat":  "Loans, BNPL \u0026 Credit / Personal Loan",
+                                                           "expected_amt":  20050,
+                                                           "got_cat":  "Loans, BNPL \u0026 Credit / Personal Loan",
+                                                           "source_type":  "thermal_receipt",
+                                                           "got_merchant":  "HDRLH6 JB TYPX HOTTLS",
+                                                           "parsed":  true,
+                                                           "got_amt":  0
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "NPDKL 2026",
+                                                           "expected_cat":  "Loans, BNPL \u0026 Credit / Personal Loan",
+                                                           "expected_amt":  15900,
+                                                           "got_cat":  "Loans, BNPL \u0026 Credit / Personal Loan",
+                                                           "source_type":  "thermal_receipt",
+                                                           "got_merchant":  "NPDNLK 2026",
+                                                           "parsed":  true,
+                                                           "got_amt":  0
+                                                       },
+                                                       {
+                                                           "expected_merchant":  "TBNPL Versions",
+                                                           "expected_cat":  "Loans, BNPL \u0026 Credit / Personal Loan",
+                                                           "expected_amt":  29999,
+                                                           "got_cat":  "Miscellaneous / Auto-Captured (Uncategorized)",
+                                                           "source_type":  "thermal_receipt",
+                                                           "got_merchant":  "TBNPL VRSNS 2026",
+                                                           "parsed":  true,
+                                                           "got_amt":  0
+                                                       }
+                                                   ]
+                             },
+    "production_asset":  {
+                             "oracle_merchant_only":  {
+                                                          "cat_acc":  0.5897,
+                                                          "subcat_acc":  0.4907
+                                                      },
+                             "payment_notifications":  {
+                                                           "merchant_match":  0.872,
+                                                           "parsed_rate":  0.9878,
+                                                           "cat_acc":  0.8811,
+                                                           "n":  328,
+                                                           "amount_exact":  0.9756,
+                                                           "subcat_acc":  0.8262
+                                                       },
+                             "total_samples":  858,
+                             "thermal_receipts":  {
+                                                      "merchant_match":  0.7811,
+                                                      "date_exact":  0.9151,
+                                                      "cat_acc":  0.934,
+                                                      "n":  530,
+                                                      "amount_exact":  0.9755,
+                                                      "subcat_acc":  0.8528
+                                                  },
+                             "holdout_split_end_to_end":  {
+                                                              "cat_acc":  0.9152,
+                                                              "n":  165,
+                                                              "subcat_acc":  0.8121
+                                                          },
+                             "sample_misses":  [
+                                                   {
+                                                       "expected_merchant":  "CREDIT SERVICES KL",
+                                                       "expected_cat":  "Loans, BNPL \u0026 Credit / Hire Purchase / Installment",
+                                                       "expected_amt":  252505,
+                                                       "got_cat":  "Transport / Car Loan Installment",
+                                                       "source_type":  "thermal_receipt",
+                                                       "got_merchant":  "CREDIT SERVICES KL",
+                                                       "parsed":  true,
+                                                       "got_amt":  252505
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "PETALING JAYA WATER \u0026 SEWERAGE BOARD",
+                                                       "expected_cat":  "Fees \u0026 charges / Late Payment Fee",
+                                                       "expected_amt":  2750,
+                                                       "got_cat":  "Bills \u0026 utilities / Water \u0026 Sewerage (Air Selangor / IWK)",
+                                                       "source_type":  "thermal_receipt",
+                                                       "got_merchant":  "PETALING JAYA WATER \u0026 SEWERAGE BOARD",
+                                                       "parsed":  true,
+                                                       "got_amt":  2750
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "Matahari Supermarket",
+                                                       "expected_cat":  "Food \u0026 drinks / Groceries \u0026 Snacks",
+                                                       "expected_amt":  1590,
+                                                       "got_cat":  "Groceries / Supermarket \u0026 Hypermarket",
+                                                       "source_type":  "payment_notification",
+                                                       "got_merchant":  "Matahari Supermarket",
+                                                       "parsed":  true,
+                                                       "got_amt":  1590
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "Sinar Cafe",
+                                                       "expected_cat":  "Family \u0026 gifts / Parents Allowance",
+                                                       "expected_amt":  12550,
+                                                       "got_cat":  "Food \u0026 drinks / Restaurant \u0026 Cafe",
+                                                       "source_type":  "payment_notification",
+                                                       "got_merchant":  "Sinar Cafe",
+                                                       "parsed":  true,
+                                                       "got_amt":  12550
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "Penang Old Town Souvenirs",
+                                                       "expected_cat":  "Family \u0026 gifts / Parents Allowance",
+                                                       "expected_amt":  15000,
+                                                       "got_cat":  "Food \u0026 drinks / Coffee, Tea \u0026 Drinks",
+                                                       "source_type":  "payment_notification",
+                                                       "got_merchant":  "Penang Old Town Souvenirs",
+                                                       "parsed":  true,
+                                                       "got_amt":  15000
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "AirAsia Express",
+                                                       "expected_cat":  "Entertainment \u0026 travel / Flights \u0026 Transport",
+                                                       "expected_amt":  34950,
+                                                       "got_cat":  " / ",
+                                                       "source_type":  "payment_notification",
+                                                       "got_merchant":  "",
+                                                       "parsed":  false,
+                                                       "got_amt":  0
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "Asian Food Emporium",
+                                                       "expected_cat":  "Fees \u0026 charges / Foreign Currency Fee",
+                                                       "expected_amt":  11072,
+                                                       "got_cat":  "Food \u0026 drinks / Restaurant \u0026 Cafe",
+                                                       "source_type":  "payment_notification",
+                                                       "got_merchant":  "Asian Food Emporium",
+                                                       "parsed":  true,
+                                                       "got_amt":  11072
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "Kedai Buah-buahan Kota Kinabalu",
+                                                       "expected_cat":  "Food \u0026 drinks / Food Delivery (GrabFood / Foodpanda)",
+                                                       "expected_amt":  3745,
+                                                       "got_cat":  "Food \u0026 drinks / Food Delivery (GrabFood / Foodpanda)",
+                                                       "source_type":  "thermal_receipt",
+                                                       "got_merchant":  "Kedai Buah-buahan Kota Kinabalu",
+                                                       "parsed":  true,
+                                                       "got_amt":  3500
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "Kedai Satay Kampung",
+                                                       "expected_cat":  "Food \u0026 drinks / Food Delivery (GrabFood / Foodpanda)",
+                                                       "expected_amt":  2438,
+                                                       "got_cat":  "Food \u0026 drinks / Food Delivery (GrabFood / Foodpanda)",
+                                                       "source_type":  "thermal_receipt",
+                                                       "got_merchant":  "Kedai Satay Kampung",
+                                                       "parsed":  true,
+                                                       "got_amt":  2300
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "Kedai Roti Canai",
+                                                       "expected_cat":  "Food \u0026 drinks / Food Delivery (GrabFood / Foodpanda)",
+                                                       "expected_amt":  1908,
+                                                       "got_cat":  "Food \u0026 drinks / Hawker \u0026 Mamak",
+                                                       "source_type":  "payment_notification",
+                                                       "got_merchant":  "RM 1.08",
+                                                       "parsed":  true,
+                                                       "got_amt":  1500
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "Pasaran Makanan Kota Kinabalu",
+                                                       "expected_cat":  "Food \u0026 drinks / Food Delivery (GrabFood / Foodpanda)",
+                                                       "expected_amt":  1484,
+                                                       "got_cat":  "Food \u0026 drinks / Food Delivery (GrabFood / Foodpanda)",
+                                                       "source_type":  "payment_notification",
+                                                       "got_merchant":  "RM 0.84",
+                                                       "parsed":  true,
+                                                       "got_amt":  1200
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "Pejabat Pasar Sentral",
+                                                       "expected_cat":  "Groceries / Household \u0026 Cleaning Supplies",
+                                                       "expected_amt":  2650,
+                                                       "got_cat":  "Food \u0026 drinks / Hawker \u0026 Mamak",
+                                                       "source_type":  "payment_notification",
+                                                       "got_merchant":  "Pejabat Pasar Sentral",
+                                                       "parsed":  true,
+                                                       "got_amt":  2650
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "Bengkel Damansara Jaya Groceries",
+                                                       "expected_cat":  "Groceries / Household \u0026 Cleaning Supplies",
+                                                       "expected_amt":  3200,
+                                                       "got_cat":  "Transport / Vehicle Maintenance \u0026 Service",
+                                                       "source_type":  "payment_notification",
+                                                       "got_merchant":  "Bengkel Damansara Jaya Groceries",
+                                                       "parsed":  true,
+                                                       "got_amt":  3200
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "Grab",
+                                                       "expected_cat":  "Transport / E-Hailing (Grab / AirAsia Ride)",
+                                                       "expected_amt":  1625,
+                                                       "got_cat":  "Transport / E-Hailing (Grab / AirAsia Ride)",
+                                                       "source_type":  "payment_notification",
+                                                       "got_merchant":  "Pejabat Grab",
+                                                       "parsed":  true,
+                                                       "got_amt":  1500
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "Grab",
+                                                       "expected_cat":  "Transport / E-Hailing (Grab / AirAsia Ride)",
+                                                       "expected_amt":  1980,
+                                                       "got_cat":  "Transport / E-Hailing (Grab / AirAsia Ride)",
+                                                       "source_type":  "payment_notification",
+                                                       "got_merchant":  "Pejabat Grab",
+                                                       "parsed":  true,
+                                                       "got_amt":  1800
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "Bengkel Bengkel Betull",
+                                                       "expected_cat":  "Housing \u0026 property / Home Repair \u0026 Maintenance",
+                                                       "expected_amt":  50000,
+                                                       "got_cat":  "Transport / Vehicle Maintenance \u0026 Service",
+                                                       "source_type":  "payment_notification",
+                                                       "got_merchant":  "Bengkel Bengkel Betull",
+                                                       "parsed":  true,
+                                                       "got_amt":  50000
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "Pejabat Warisan",
+                                                       "expected_cat":  "Family \u0026 gifts / Parents Allowance",
+                                                       "expected_amt":  140000,
+                                                       "got_cat":  "Family \u0026 gifts / Parents Allowance",
+                                                       "source_type":  "thermal_receipt",
+                                                       "got_merchant":  "Pejabat Warisan",
+                                                       "parsed":  true,
+                                                       "got_amt":  125000
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "Klinik Simpanan Persaraan PRS",
+                                                       "expected_cat":  "Investments \u0026 savings / PRS (Private Retirement Scheme)",
+                                                       "expected_amt":  120000,
+                                                       "got_cat":  "Health \u0026 medical / Clinic \u0026 GP",
+                                                       "source_type":  "payment_notification",
+                                                       "got_merchant":  "Klinik Simpanan Persaraan PRS, Seremban 70300",
+                                                       "parsed":  true,
+                                                       "got_amt":  120000
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "Bengkel Simpanan Persaraan PRS",
+                                                       "expected_cat":  "Investments \u0026 savings / PRS (Private Retirement Scheme)",
+                                                       "expected_amt":  150000,
+                                                       "got_cat":  "Transport / Vehicle Maintenance \u0026 Service",
+                                                       "source_type":  "payment_notification",
+                                                       "got_merchant":  "Bengkel Simpanan Persaraan PRS, Seremban 70400",
+                                                       "parsed":  true,
+                                                       "got_amt":  150000
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "Klinik Kesihatan Subang",
+                                                       "expected_cat":  "Fees \u0026 charges / Foreign Currency Fee",
+                                                       "expected_amt":  1500,
+                                                       "got_cat":  "Health \u0026 medical / Clinic \u0026 GP",
+                                                       "source_type":  "payment_notification",
+                                                       "got_merchant":  "RM 15.00",
+                                                       "parsed":  true,
+                                                       "got_amt":  1500
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "Pasukuan Boleh Bengkel",
+                                                       "expected_cat":  "Fees \u0026 charges / Foreign Currency Fee",
+                                                       "expected_amt":  875,
+                                                       "got_cat":  "Transport / Vehicle Maintenance \u0026 Service",
+                                                       "source_type":  "thermal_receipt",
+                                                       "got_merchant":  "Pasukuan Boleh Bengkel",
+                                                       "parsed":  true,
+                                                       "got_amt":  875
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "Bengkel Tani Alat Merkuri",
+                                                       "expected_cat":  "Fees \u0026 charges / Late Payment Fee",
+                                                       "expected_amt":  1500,
+                                                       "got_cat":  "Transport / Vehicle Maintenance \u0026 Service",
+                                                       "source_type":  "payment_notification",
+                                                       "got_merchant":  "Bengkel Tani Alat Merkuri",
+                                                       "parsed":  true,
+                                                       "got_amt":  1500
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "Klinik Healthcare Makmur",
+                                                       "expected_cat":  "Fees \u0026 charges / Late Payment Fee",
+                                                       "expected_amt":  2000,
+                                                       "got_cat":  "Health \u0026 medical / Clinic \u0026 GP",
+                                                       "source_type":  "thermal_receipt",
+                                                       "got_merchant":  "Klinik Healthcare Makmur",
+                                                       "parsed":  true,
+                                                       "got_amt":  2000
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "99 Speedmart",
+                                                       "expected_cat":  "Groceries / Convenience Store (99 Speedmart / 7-Eleven / FamilyMart)",
+                                                       "expected_amt":  4800,
+                                                       "got_cat":  "Food \u0026 drinks / Coffee, Tea \u0026 Drinks",
+                                                       "source_type":  "thermal_receipt",
+                                                       "got_merchant":  "99 Spe3dmart",
+                                                       "parsed":  true,
+                                                       "got_amt":  4800
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "Sab Grocery \u0026 Supplies",
+                                                       "expected_cat":  "Groceries / Household \u0026 Cleaning Supplies",
+                                                       "expected_amt":  15830,
+                                                       "got_cat":  "Bills \u0026 utilities / Electricity (TNB)",
+                                                       "source_type":  "thermal_receipt",
+                                                       "got_merchant":  "SAB",
+                                                       "parsed":  true,
+                                                       "got_amt":  15830
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "Alor Setar Toll Plaza",
+                                                       "expected_cat":  "Transport / Toll (TNG / RFID / PayDirect)",
+                                                       "expected_amt":  315,
+                                                       "got_cat":  "Transport / Toll (TNG / RFID / PayDirect)",
+                                                       "source_type":  "thermal_receipt",
+                                                       "got_merchant":  "payable (RM)",
+                                                       "parsed":  true,
+                                                       "got_amt":  0
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "RIDE KU",
+                                                       "expected_cat":  "Transport / E-Hailing (Grab / AirAsia Ride)",
+                                                       "expected_amt":  1550,
+                                                       "got_cat":  "Education / Higher Education \u0026 Tuition",
+                                                       "source_type":  "thermal_receipt",
+                                                       "got_merchant":  "RIDE KU",
+                                                       "parsed":  true,
+                                                       "got_amt":  1550
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "JBR TRAVEL RIDE",
+                                                       "expected_cat":  "Transport / E-Hailing (Grab / AirAsia Ride)",
+                                                       "expected_amt":  6725,
+                                                       "got_cat":  "Entertainment \u0026 travel / Hotel \u0026 Holiday Stay",
+                                                       "source_type":  "thermal_receipt",
+                                                       "got_merchant":  "JBR TRAVEL RIDE",
+                                                       "parsed":  true,
+                                                       "got_amt":  6725
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "ABC Motor Service",
+                                                       "expected_cat":  "Transport / Road Tax \u0026 Motor Insurance",
+                                                       "expected_amt":  7000,
+                                                       "got_cat":  "Taxes \u0026 government / JPJ / Renewals / Summons",
+                                                       "source_type":  "thermal_receipt",
+                                                       "got_merchant":  "ROAD TAX",
+                                                       "parsed":  true,
+                                                       "got_amt":  7000
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "Motorway Services",
+                                                       "expected_cat":  "Transport / Road Tax \u0026 Motor Insurance",
+                                                       "expected_amt":  7500,
+                                                       "got_cat":  "Taxes \u0026 government / JPJ / Renewals / Summons",
+                                                       "source_type":  "thermal_receipt",
+                                                       "got_merchant":  "Motorway Services",
+                                                       "parsed":  true,
+                                                       "got_amt":  7500
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "BL4CK M4TH5",
+                                                       "expected_cat":  "Loans, BNPL \u0026 Credit / Credit Card Bill",
+                                                       "expected_amt":  650000,
+                                                       "got_cat":  "Shopping / Electronics \u0026 Gadgets",
+                                                       "source_type":  "thermal_receipt",
+                                                       "got_merchant":  "Gaming Laptop: ASUS ROG Zephyrus G14",
+                                                       "parsed":  true,
+                                                       "got_amt":  650000
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "7H3 B00K 5H3L0W",
+                                                       "expected_cat":  "Loans, BNPL \u0026 Credit / Credit Card Bill",
+                                                       "expected_amt":  50000,
+                                                       "got_cat":  "Education / Books \u0026 Stationery",
+                                                       "source_type":  "thermal_receipt",
+                                                       "got_merchant":  "Books: Various Titles",
+                                                       "parsed":  true,
+                                                       "got_amt":  50000
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "Typhus Hotel",
+                                                       "expected_cat":  "Loans, BNPL \u0026 Credit / Personal Loan",
+                                                       "expected_amt":  20050,
+                                                       "got_cat":  "Loans, BNPL \u0026 Credit / Personal Loan",
+                                                       "source_type":  "thermal_receipt",
+                                                       "got_merchant":  "HDRLH6 JB TYPX HOTTLS",
+                                                       "parsed":  true,
+                                                       "got_amt":  0
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "NPDKL 2026",
+                                                       "expected_cat":  "Loans, BNPL \u0026 Credit / Personal Loan",
+                                                       "expected_amt":  15900,
+                                                       "got_cat":  "Loans, BNPL \u0026 Credit / Personal Loan",
+                                                       "source_type":  "thermal_receipt",
+                                                       "got_merchant":  "NPDNLK 2026",
+                                                       "parsed":  true,
+                                                       "got_amt":  0
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "TBNPL Versions",
+                                                       "expected_cat":  "Loans, BNPL \u0026 Credit / Personal Loan",
+                                                       "expected_amt":  29999,
+                                                       "got_cat":  "Loans, BNPL \u0026 Credit / Personal Loan",
+                                                       "source_type":  "thermal_receipt",
+                                                       "got_merchant":  "TBNPL VRSNS 2026",
+                                                       "parsed":  true,
+                                                       "got_amt":  0
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "Kuantan Grooming Sales",
+                                                       "expected_cat":  "Loans, BNPL \u0026 Credit / Personal Loan",
+                                                       "expected_amt":  17500,
+                                                       "got_cat":  "Loans, BNPL \u0026 Credit / Personal Loan",
+                                                       "source_type":  "thermal_receipt",
+                                                       "got_merchant":  "KUANTAN GDNG SLLRS",
+                                                       "parsed":  true,
+                                                       "got_amt":  0
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "ELEKTRIK 123\nBILANAN BULANAN",
+                                                       "expected_cat":  "Housing \u0026 property / Home Loan / Mortgage",
+                                                       "expected_amt":  80000,
+                                                       "got_cat":  "Bills \u0026 utilities / Electricity (TNB)",
+                                                       "source_type":  "thermal_receipt",
+                                                       "got_merchant":  "ELEKTRIK 123",
+                                                       "parsed":  true,
+                                                       "got_amt":  80000
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "L. SNGLN TYRE",
+                                                       "expected_cat":  "Insurance \u0026 Takaful / Education Insurance",
+                                                       "expected_amt":  25000,
+                                                       "got_cat":  "Transport / Vehicle Maintenance \u0026 Service",
+                                                       "source_type":  "thermal_receipt",
+                                                       "got_merchant":  "L. SNGLN TYRE",
+                                                       "parsed":  true,
+                                                       "got_amt":  25000
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "Chl Ed Svc P/s",
+                                                       "expected_cat":  "Education / School \u0026 Childcare Fees",
+                                                       "expected_amt":  47000,
+                                                       "got_cat":  "Education / School \u0026 Childcare Fees",
+                                                       "source_type":  "thermal_receipt",
+                                                       "got_merchant":  "Rcv:R78901 12 Oct 2026",
+                                                       "parsed":  true,
+                                                       "got_amt":  0
+                                                   },
+                                                   {
+                                                       "expected_merchant":  "EduCare Ltd",
+                                                       "expected_cat":  "Education / School \u0026 Childcare Fees",
+                                                       "expected_amt":  20000,
+                                                       "got_cat":  "Education / School \u0026 Childcare Fees",
+                                                       "source_type":  "thermal_receipt",
+                                                       "got_merchant":  "Rdc: 2026-10-13",
+                                                       "parsed":  true,
+                                                       "got_amt":  0
+                                                   }
+                                               ]
+                         }
+}

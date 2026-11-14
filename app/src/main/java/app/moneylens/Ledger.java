@@ -35,7 +35,7 @@ public final class Ledger {
     if(Extras.apply(s,action,a)){validate(s);s.put("revision",s.optLong("revision")+1);return s;}
     switch(action){
       case "transaction": post(s,a);break;
-      case "void": {JSONObject t=find(s.getJSONArray("transactions"),a.getString("id"));if(a.optBoolean("restore")&&t.has("replacedBy"))throw new IllegalArgumentException("An edited transaction cannot be restored over its replacement.");boolean restoring=a.optBoolean("restore"),wasVoided=t.optBoolean("voided");if(restoring!=wasVoided)break;if(t.has("billId")){JSONObject bill=null;try{bill=find(s.getJSONArray("bills"),t.getString("billId"));}catch(IllegalArgumentException ignored){}if(bill!=null){String due=t.getString("billDate"),f=bill.optString("frequency",bill.optBoolean("monthly")?"monthly":"once"),next=f.equals("once")?due:Finance.advance(LocalDate.parse(due),f,bill.optInt("anchorDay",LocalDate.parse(due).getDayOfMonth())).toString();if(restoring){if(!bill.getString("date").equals(due)||bill.optBoolean("paid"))throw new IllegalArgumentException("The bill plan has moved on. Restore manually as a new record.");if(f.equals("once"))bill.put("paid",true);else bill.put("date",next);}else if(bill.getString("date").equals(next)){bill.put("date",due).put("paid",false);}}}t.put("voided",!restoring);break;}
+      case "void": {JSONObject t=find(s.getJSONArray("transactions"),a.getString("id"));if(a.optBoolean("restore")&&t.has("replacedBy"))throw new IllegalArgumentException("An edited transaction cannot be restored over its replacement.");boolean restoring=a.optBoolean("restore"),wasVoided=t.optBoolean("voided");if(restoring!=wasVoided)break;if(t.has("billId")){JSONObject bill=null;try{bill=find(s.getJSONArray("bills"),t.getString("billId"));}catch(IllegalArgumentException ignored){}if(bill!=null){String due=t.getString("billDate"),f=bill.optString("frequency",bill.optBoolean("monthly")?"monthly":"once"),next=f.equals("once")?due:Finance.advance(LocalDate.parse(due),f,bill.optInt("anchorDay",LocalDate.parse(due).getDayOfMonth())).toString();if(restoring){if(!bill.getString("date").equals(due)||bill.optBoolean("paid"))throw new IllegalArgumentException("The bill plan has moved on. Restore manually as a new record.");if(f.equals("once"))bill.put("paid",true);else bill.put("date",next);}else if(bill.getString("date").equals(next)){bill.put("date",due).put("paid",false);}}}if(restoring){if(t.has("billId"))Extras.adjustDebtBalance(s,t.optString("billId",""),t,false);}else Extras.adjustDebtBalance(s,"",t,true);t.put("voided",!restoring);break;}
       case "account": {
         String name=str(a,"name",60),type=a.optString("type","bank");
         if(name.isEmpty()||!Arrays.asList("bank","cash","wallet","card").contains(type))throw new IllegalArgumentException("Choose an account name and type.");
@@ -50,7 +50,10 @@ public final class Ledger {
       case "bill": Extras.bill(s,a);break;
       case "goal": {
         long target=minor(a.getString("target"));String raw=a.optString("saved","0");long saved=raw.equals("0")||raw.isEmpty()?0:minor(raw);
-        upsert(s,"goals",new JSONObject().put("id",a.optString("id",id())).put("name",str(a,"name",80)).put("target",target).put("saved",saved));break;
+        String targetDate=a.optString("targetDate","").trim();if(!targetDate.isEmpty())date(targetDate);
+        JSONObject row=new JSONObject().put("id",a.optString("id",id())).put("name",str(a,"name",80)).put("target",target).put("saved",saved);
+        if(!targetDate.isEmpty())row.put("targetDate",targetDate);
+        upsert(s,"goals",row);break;
       }
       case "deletePlan": {
         String table=a.getString("table");if(!Arrays.asList("budgets","bills","goals","debts").contains(table))throw new IllegalArgumentException("Invalid plan.");JSONArray rows=s.getJSONArray(table);for(int i=rows.length()-1;i>=0;i--)if(rows.getJSONObject(i).getString("id").equals(a.getString("id")))rows.remove(i);break;
@@ -111,7 +114,7 @@ public final class Ledger {
     if(a.has("tags")&&a.getJSONArray("tags").length()>30)throw new IllegalArgumentException("At most 30 tags.");
     if(a.has("foreignFee")&&new BigDecimal(a.getString("foreignFee")).signum()<0)throw new IllegalArgumentException("Fee cannot be negative.");
     if(a.has("receiptId"))find(s.getJSONArray("receipts"),a.getString("receiptId"));
-    String edit=a.optString("editId","");if(!edit.isEmpty()){JSONObject old=find(rows,edit);if(old.optBoolean("voided"))throw new IllegalArgumentException("This transaction was already removed.");old.put("voided",true).put("replacedBy",tid);t.put("replaces",edit);for(String k:new String[]{"billId","billDate","installmentId","source","sourcePackage","autoRecorded","subcategory"})if(old.has(k)&&!t.has(k))t.put(k,old.get(k));t.put("needsNote",false);}
+    String edit=a.optString("editId","");if(!edit.isEmpty()){JSONObject old=find(rows,edit);if(old.optBoolean("voided"))throw new IllegalArgumentException("This transaction was already removed.");old.put("voided",true).put("replacedBy",tid);t.put("replaces",edit);for(String k:new String[]{"billId","billDate","installmentId","source","sourcePackage","autoRecorded","subcategory"})if(old.has(k)&&!t.has(k))t.put(k,old.get(k));t.put("needsNote",false);Extras.adjustDebtBalance(s,"",old,true);if(t.has("billId"))Extras.adjustDebtBalance(s,t.optString("billId",""),t,false);}
     String original=a.optString("originalId","");if(!original.isEmpty()){JSONObject orig=find(rows,original);if(!kind.equals("refund")||!orig.getString("kind").equals("expense")||orig.optBoolean("voided"))throw new IllegalArgumentException("Choose a recorded expense for this refund.");t.put("originalId",original);}
     rows.put(t);if(draft!=null){t.put("source",draft.optString("source")).put("sourcePackage",draft.optString("package"));if(draft.has("subcategory")&&!t.has("subcategory"))t.put("subcategory",draft.getString("subcategory"));draft.put("state","confirmed").put("transactionId",tid);if(draft.has("receiptId"))t.put("receiptId",draft.getString("receiptId"));}
     s.getJSONObject("settings").put("lastAccount",account).put("lastCategory",category);
@@ -123,6 +126,7 @@ public final class Ledger {
       t.put("billId",billId).put("billDate",due);
       String frequency=bill.optString("frequency",bill.optBoolean("monthly")?"monthly":"once");
       if(!frequency.equals("once")){bill.put("date",Finance.advance(LocalDate.parse(due),frequency,bill.optInt("anchorDay",LocalDate.parse(due).getDayOfMonth())).toString());}else bill.put("paid",true);
+      Extras.adjustDebtBalance(s,billId,t,false);
     }
   }
   public static void migrate(JSONObject s)throws Exception{

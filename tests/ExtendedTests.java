@@ -168,7 +168,71 @@ public final class ExtendedTests {
    yes(Extras.shouldPromptDraft(false,set,dr,true));
    yes(!Extras.shouldPromptDraft(true,set,dr,true));
    yes(!Extras.shouldPromptDraft(false,set,dr,false));
-   yes(!Extras.shouldPromptDraft(false,set,new JSONObject().put("id","d2").put("duplicateOf","tx1"),true));
+    yes(!Extras.shouldPromptDraft(false,set,new JSONObject().put("id","d2").put("duplicateOf","tx1"),true));
+  });
+  test("Hierarchical ML, BM receipt dates, Malay alerts, live debt paydown, goal deltas and MY CSV presets",()->{
+   JSONObject bmOct=ReceiptParser.parse("KEDAI RUNCIT BAHAGIA\nNo 18, Jalan Bukit\n8 Oktober 2026\nTotal: RM 24.50");
+   yes(bmOct.getString("date").equals("2026-10-08"));yes(bmOct.getString("merchant").equals("KEDAI RUNCIT BAHAGIA"));eq(bmOct.getLong("amount"),2450);
+   JSONObject bmOgos=ReceiptParser.parse("CAFE KITA\n23 Ogos 2026\nTotal RM 12.00");
+   yes(bmOgos.getString("date").equals("2026-08-23"));
+   JSONObject spDate=ReceiptParser.parse("Kedai Emas Murni\n24 02 2026\nJumlah: RM 300.00");
+   yes(spDate.getString("date").equals("2026-02-24"));
+   JSONObject mdDate=ReceiptParser.parse("KLINIK PRIMA\nMay 01, 2026\nAmount Due: RM 65.00");
+   yes(mdDate.getString("date").equals("2026-05-01"));
+   JSONObject bmNotif=PaymentParser.parse("Notifikasi Pembayaran\nBayaran kepada: Kedai Buku Ilmu\nJumlah: RM 45.00","Bank");
+   yes(bmNotif!=null&&bmNotif.getString("merchant").equals("Kedai Buku Ilmu")&&bmNotif.getLong("amount")==4500&&bmNotif.getString("category").equals("Education"));
+   JSONObject bmRef=PaymentParser.parse("Nota Pembayaran: #67889\nAnda telah membayar RM 35.00 kepada Kafe Santai pada 05 Oct 2026","Bank");
+   yes(bmRef!=null&&bmRef.getString("merchant").equals("Kafe Santai")&&bmRef.getLong("amount")==3500);
+   java.nio.file.Path modelPath=java.nio.file.Paths.get("app/src/main/assets/moneylens_classifier.json.gz");
+   if(java.nio.file.Files.exists(modelPath)){
+    try{
+     MlClassifier.loadFromPath(modelPath);
+     MlClassifier.Prediction pred=MlClassifier.predict("Klinik Pergigian Harapan","scaling");
+     yes(pred.categoryProbability>=pred.probability&&pred.categoryProbability<=1.0001);
+    }finally{MlClassifier.clear();}
+   }
+
+   JSONObject s=Ledger.initial();
+   String acctId=s.getJSONArray("accounts").getJSONObject(0).getString("id");
+   Ledger.apply(s,"transaction",new JSONObject().put("key","op1").put("kind","income").put("amount","5000.00").put("account",acctId).put("category","Salary").put("date",LocalDate.now().toString()));
+   Extras.apply(s,"debt",new JSONObject().put("id","d_auto").put("name","Auto Pay Loan").put("type","loan").put("balance","1000.00").put("minPayment","200.00").put("apr","12").put("rateType","reducing").put("dueDay",15).put("account",acctId).put("createReminder",true));
+   String billId=Ledger.find(s.getJSONArray("debts"),"d_auto").getString("billId");
+   Extras.apply(s,"payBillAuto",new JSONObject().put("id",billId));
+   eq(Ledger.find(s.getJSONArray("debts"),"d_auto").getLong("balance"),81000L);
+   JSONObject paidTx=null;JSONArray txs=s.getJSONArray("transactions");
+   for(int i=0;i<txs.length();i++){JSONObject t=txs.getJSONObject(i);if(billId.equals(t.optString("billId"))&&!t.optBoolean("voided"))paidTx=t;}
+   yes(paidTx!=null&&paidTx.getLong("debtPrincipalApplied")==19000L);
+   String txId=paidTx.getString("id");
+   Ledger.apply(s,"void",new JSONObject().put("id",txId));
+   eq(Ledger.find(s.getJSONArray("debts"),"d_auto").getLong("balance"),100000L);
+   Ledger.apply(s,"void",new JSONObject().put("id",txId).put("restore",true));
+   eq(Ledger.find(s.getJSONArray("debts"),"d_auto").getLong("balance"),81000L);
+   Extras.apply(s,"unlinkBill",new JSONObject().put("id",txId));
+   eq(Ledger.find(s.getJSONArray("debts"),"d_auto").getLong("balance"),100000L);
+   Extras.apply(s,"matchBill",new JSONObject().put("id",billId).put("transactionId",txId));
+   eq(Ledger.find(s.getJSONArray("debts"),"d_auto").getLong("balance"),81000L);
+
+   Ledger.apply(s,"goal",new JSONObject().put("id","g_pc").put("name","PC Build").put("target","3000.00").put("saved","200.00").put("targetDate",LocalDate.now().plusMonths(3).toString()));
+   Extras.apply(s,"adjustGoal",new JSONObject().put("id","g_pc").put("delta",5000L));
+   eq(Ledger.find(s.getJSONArray("goals"),"g_pc").getLong("saved"),25000L);
+   Extras.apply(s,"adjustGoal",new JSONObject().put("id","g_pc").put("delta",-999999L));
+   eq(Ledger.find(s.getJSONArray("goals"),"g_pc").getLong("saved"),0L);
+
+   String mbCsv="Transaction Date,Description,Debit,Credit,Balance\n14/11/2026,JAYA GROCER,85.40,,914.60\n15/11/2026,ACME PAYROLL,,4500.00,5414.60\n";
+   JSONObject insp=CsvImport.inspect(mbCsv);
+   JSONObject am=insp.getJSONObject("autoMap");
+   yes(am.getString("preset").equals("Maybank2u / MAE"));
+   eq(am.getInt("debit"),2);eq(am.getInt("credit"),3);yes(am.getString("dateFormat").equals("dmy"));
+   JSONArray prev=CsvImport.preview(mbCsv,new JSONObject(am.toString()).put("account",acctId),s);
+   yes(prev.getJSONObject(0).getString("kind").equals("expense"));yes(prev.getJSONObject(0).getString("amount").equals("85.40"));yes(prev.getJSONObject(0).getString("date").equals("2026-11-14"));
+   yes(prev.getJSONObject(1).getString("kind").equals("income"));yes(prev.getJSONObject(1).getString("amount").equals("4500.00"));
+
+   String cimbCsv="Date,Transaction Details,Money Out,Money In\n14 Nov 2026,TNG RELOAD,50.00,\n";
+   JSONObject inspCimb=CsvImport.inspect(cimbCsv);
+   yes(inspCimb.getJSONObject("autoMap").getString("preset").equals("CIMB Octo"));
+   yes(inspCimb.getJSONObject("autoMap").getString("dateFormat").equals("dmmmy"));
+   JSONArray prevCimb=CsvImport.preview(cimbCsv,new JSONObject(inspCimb.getJSONObject("autoMap").toString()).put("account",acctId),s);
+   yes(prevCimb.getJSONObject(0).getString("date").equals("2026-11-14"));yes(prevCimb.getJSONObject(0).getString("kind").equals("expense"));
   });
   System.out.println("RESULT: "+passed+" extended tests passed");
  }

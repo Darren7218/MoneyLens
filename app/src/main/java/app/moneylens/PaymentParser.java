@@ -10,7 +10,8 @@ public final class PaymentParser {
   private static final Pattern AMOUNT=Pattern.compile("(?i)(?:RM|MYR)[\\s\\u00A0]*"+NUM);
   private static final Pattern TNG_PAID=Pattern.compile("(?i)\\byou\\s+have\\s+paid\\s+(?:RM|MYR)\\s*[0-9,]+(?:\\.[0-9]{1,2})?\\s+(?:at|to)\\s+([^\\r\\n]+)");
   private static final Pattern PURCHASE_AT=Pattern.compile("(?i)\\bfor\\s+(?:your\\s+)?purchase\\s+(?:at|from)\\s+([\\p{L}0-9][\\p{L}0-9 &'._/()#,+*-]{1,79})");
-  private static final Pattern LABELED_MERCHANT=Pattern.compile("(?im)(?:^|\\b)(?:merchant(?:\\s+name)?|seller|biller(?:\\s+name)?|payee|recipient|paid\\s+to|payment\\s+to|bayaran\\s+kepada|dibayar\\s+kepada|penerima|peniaga)\\s*:\\s*([\\p{L}0-9][\\p{L}0-9 &'._/()#,+*-]{1,79})");
+  private static final Pattern MALAY_PAID=Pattern.compile("(?im)(?:^|\\b)(?:pembayaran|bayaran)(?:\\s+telah)?\\s+berjaya(?:\\s+(?:dibuat\\s+)?(?:kepada|ke)|\\s*!)\\s*[:\\-! ]*([\\p{L}0-9][\\p{L}0-9 &'._/()#,+*-]{1,79})");
+  private static final Pattern LABELED_MERCHANT=Pattern.compile("(?im)(?:^|\\b)(?:merchant(?:\\s+name)?|seller|biller(?:\\s+name)?|payee|recipient|paid\\s+to|payment\\s+to|pembayaran(?:\\s+telah\\s+berjaya)?\\s+(?:dibuat\\s+)?kepada|bayaran\\s+kepada|dibayar\\s+kepada|penerima|peniaga|penyertaan|perkhidmatan|perniagaan|nota\\s+pembayaran)\\s*:\\s*[\\r\\n\\t ]*([\\p{L}0-9#][\\p{L}0-9 &'._/()#,+*-]{1,79})");
   private static final Pattern MERCHANT=Pattern.compile("(?i)\\b(?:at|to|from|kepada|di)\\s+([\\p{L}0-9 &'._/()#,+*-]{2,80})");
   private static final Pattern VERBLESS_PREP=Pattern.compile("(?i)(?:RM|MYR)\\s*"+NUM+"\\s*(?:(?:at|to|di|kepada)\\s+|[@\\-\\u2013\\u2014]\\s*)([\\p{L}0-9][\\p{L}0-9 &'._/()#,+*-]{1,79})");
   private static final Pattern VERBLESS_CAPS=Pattern.compile("(?:RM|MYR)\\s*"+NUM+"\\s+([A-Z0-9][A-Z0-9&'._/()#+*-]*(?:[ ]+[A-Z0-9&'._/()#+*-]+){0,6})");
@@ -27,14 +28,14 @@ public final class PaymentParser {
     String normalized=text.replace('\u00A0',' ').trim();
     String core=FOOTER.matcher(normalized).replaceAll(" ").trim();
     String low=core.toLowerCase(Locale.ROOT);
-    boolean completed=low.matches("(?s).*\\b(you have paid|paid|successful|successfully|completed|approved|deducted|charged|debited|credited|received|berjaya|diterima|dibayar|authori[sz]ed a payment|spent|payment\\s+(?:of|to|confirmation))\\b.*");
+    boolean completed=low.matches("(?s).*\\b(you have paid|paid|successful|successfully|completed|approved|deducted|charged|debited|credited|received|berjaya|diterima|dibayar|membayar|authori[sz]ed a payment|spent|payment\\s+(?:of|to|confirmation))\\b.*");
     if(low.matches("(?s).*\\b(declined|failed|unsuccessful|gagal|rejected)\\b.*"))return null;
     boolean otpWord=low.matches("(?s).*\\b(otp|tac|verification\\s+code|kod\\s+pengesahan|one.?time\\s+(?:pin|password|passcode)|security\\s+code)\\b.*");
     if(otpWord&&!completed&&low.matches("(?s).*(?<![0-9.,])[0-9]{4,8}(?![0-9.,]).*"))return null;
     if(!completed&&low.matches("(?s).*\\b(voucher|promo|promotion|discount|offer|deal|deals|lucky\\s+draw|win|redeem|claim\\s+now|get\\s+up\\s+to|enjoy|limited\\s+time|flash\\s+sale)\\b.*"))return null;
     if(!completed&&low.matches("(?s).*\\b(secure2u|authorise|authorize|approve|approval)\\b.*"))return null;
     if(low.matches("(?s).*\\b(pending|processing|requested|scheduled|pre.?authori[sz]ation|awaiting)\\b.*"))return null;
-    boolean trigger=low.matches("(?s).*\\b(paid|pay|payment|repayment|instal?ment|purchase|spent|debited|deducted|deduction|charged|charge|sale|credited|received|refund|refunded|transfer|transferred|withdrawal|top.?up|reload|reloaded|toll|paydirect|rfid|duitnow|fpx|jompay|giro|ibft|autodebit|paywave|contactless|bayaran|dibayar|diterima|transaksi|potongan|transaction|spaylater|paylater|ptptn)\\b.*");
+    boolean trigger=low.matches("(?s).*\\b(paid|pay|payment|repayment|instal?ment|purchase|spent|debited|deducted|deduction|charged|charge|sale|credited|received|refund|refunded|transfer|transferred|withdrawal|top.?up|reload|reloaded|toll|paydirect|rfid|duitnow|fpx|jompay|giro|ibft|autodebit|paywave|contactless|bayaran|pembayaran|dibayar|membayar|diterima|transaksi|potongan|transaction|spaylater|paylater|ptptn)\\b.*");
     Matcher vp=VERBLESS_PREP.matcher(core),vc=VERBLESS_CAPS.matcher(core);
     boolean prep=vp.find(),caps=!prep&&vc.find();
     if(!trigger&&!prep&&!caps)return null;
@@ -52,7 +53,7 @@ public final class PaymentParser {
     long amount=primaryFound?primary:firstIncluded;
     if(amount<=0)return null;
 
-    boolean outgoingCue=low.matches("(?s).*\\b(for\\s+your\\s+purchase|your\\s+purchase|purchase\\s+at|paid\\s+amount|payment\\s+for|payment\\s+method|payment\\s+to|paid\\s+to|order\\s+(?:id|no)|item|qty|invoice)\\b.*");
+    boolean outgoingCue=low.matches("(?s).*\\b(for\\s+your\\s+(?:[a-z0-9\\s]{0,30}?\\b)?(?:purchase|investment|sspn|prs|loan|repayment)|your\\s+purchase|purchase\\s+at|from\\s+fpx\\s+to|paid\\s+amount|payment\\s+for|payment\\s+method|payment\\s+to|paid\\s+to|order\\s+(?:id|no)|item|qty|invoice)\\b.*");
     String kind=low.contains("refund")?"refund":(!outgoingCue&&low.matches("(?s).*\\b(credited|received|diterima)\\b.*"))?"income":"expense";
     String reason=count==1?"Recorded from a notification. Check the account, amount and type.":"Several amounts were found; MoneyLens used RM "+java.math.BigDecimal.valueOf(amount,2).toPlainString()+" as the payment. Edit it if that is wrong.";
     if(!kind.equals("income")&&low.matches("(?s).*\\b(transfer(?:red|ring)?|top.?up|reload|reloaded|withdrawal)\\b.*")&&!low.matches("(?s).*\\b(duitnow\\s+qr|fpx|jompay|paid|purchase|spent|sale)\\b.*")){
@@ -60,15 +61,19 @@ public final class PaymentParser {
     }
 
     String merchant="";
-    Matcher pm=PURCHASE_AT.matcher(core);
-    if(pm.find()){String c=cleanMerchant(pm.group(1));if(validMerchant(c))merchant=c;}
+    Matcher lbl=LABELED_MERCHANT.matcher(core);
+    while(lbl.find()){String c=cleanMerchant(lbl.group(1));if(validMerchant(c)){merchant=c;break;}}
+    if(!validMerchant(merchant)){
+      Matcher pm=PURCHASE_AT.matcher(core);
+      if(pm.find()){String c=cleanMerchant(pm.group(1));if(validMerchant(c))merchant=c;}
+    }
     if(!validMerchant(merchant)){
       Matcher tng=TNG_PAID.matcher(core);
       if(tng.find()){String c=cleanMerchant(tng.group(1));if(validMerchant(c))merchant=c;}
     }
     if(!validMerchant(merchant)){
-      Matcher lbl=LABELED_MERCHANT.matcher(core);
-      if(lbl.find()){String c=cleanMerchant(lbl.group(1));if(validMerchant(c))merchant=c;}
+      Matcher mp=MALAY_PAID.matcher(core);
+      if(mp.find()){String c=cleanMerchant(mp.group(1));if(validMerchant(c))merchant=c;}
     }
     if(!validMerchant(merchant)){
       merchant="";Matcher mm=MERCHANT.matcher(core);
@@ -78,13 +83,13 @@ public final class PaymentParser {
     if(merchant.isEmpty()&&caps){String c=cleanMerchant(vc.group(2));if(validMerchant(c))merchant=c;}
     if(!validMerchant(merchant)&&core.contains("\n")){
       String[] lines=core.split("\\r?\\n");
-      for(int i=0;i<lines.length&&i<6;i++){
+      for(int i=0;i<lines.length&&i<8;i++){
         String ln=lines[i].trim();
-        if(ln.isEmpty())continue;
+        if(ln.isEmpty()||ln.endsWith(":"))continue;
         String lowLn=ln.toLowerCase(Locale.ROOT);
-        if(lowLn.matches("^(?:bayaran|pembayaran|transaksi|payment|transaction|terima\\s+kasih|thank\\s+you|sila\\s+semak).*"))continue;
+        if(lowLn.matches("^(?:notifikasi|notis|nota(?:\\s+pembayaran)?|makluman|berita(?:\\s+bayaran)?|pengesahan|amaran|alert|notice|notification|bayar(?:\\s+dengan|\\s+menggunakan)?|bayaran|pembayaran|transaksi|payment|transaction|kad\\s+kredit|carta\\s+kredit|credit\\s+card|no\\.?\\s*kad|item|barang|produk|harga|perkhidmatan|penyertaan|angsuran|terima\\s+kasih|thank\\s+you|sila\\s+semak).*"))continue;
         if(lowLn.matches("^(?:rm|myr)?\\s*[0-9,]+(?:\\.[0-9]{1,2})?\\s*$"))continue;
-        if(lowLn.matches("^(?:tarikh|date|time|masa|kod\\b|code|ref\\b|reference|txn|transaction|order|invoice|barang|item|baki|tunai|cash|balance|cukai|sst|gst|service|subtotal|jumlah|total|contact|hotline|tel|hp|phone|no\\.|lot\\b|jalan\\b|jln\\b|lorong\\b|unit\\b|level\\b|[0-9]{1,2}[\\s/-](?:[0-9]{1,2}|[a-z]{3,9})[\\s/-]20[0-9]{2}|20[0-9]{2}-[0-9]{2}-[0-9]{2}).*"))continue;
+        if(lowLn.matches("^(?:tarikh|date|time|masa|kod\\b|code|ref\\b|reference|rujukan|txn|transaction|order|invoice|barang|item|baki|tunai|cash|balance|cukai|sst|gst|service|subtotal|jumlah|total|contact|hotline|tel|hp|phone|no\\.|lot\\b|jalan\\b|jln\\b|lorong\\b|unit\\b|level\\b|[0-9]+,\\s*(?:jalan|jln|lorong)|[0-9]{1,2}(?:st|nd|rd|th)?[\\s/-]+(?:[0-9]{1,2}|[a-z]{3,10})[\\s/-]+20[0-9]{2}|20[0-9]{2}-[0-9]{2}-[0-9]{2}).*"))continue;
         String c=cleanMerchant(ln);
         if(validMerchant(c)){merchant=c;break;}
       }
@@ -105,9 +110,10 @@ public final class PaymentParser {
 
   private static boolean validMerchant(String c){
     return c!=null&&c.length()>=2
-      &&!c.matches("(?i)^(your\\s+account|your\\s+ewallet|your\\s+card|your|you|account|ewallet|e-wallet|card|wallet|anyone|others|[0-9]{1,2}:[0-9]{2}.*|[0-9 /.:-]+)$")
+      &&!c.matches("(?i)^(your\\s+account|your\\s+ewallet|your\\s+card|your|you|account|ewallet|e-wallet|card|wallet|anyone|others|#[0-9a-z-]+|[0-9]{1,2}:[0-9]{2}.*|[0-9 /.:-]+)$")
+      &&!c.matches("(?i)^(?:[0-9]{1,2}(?:st|nd|rd|th)?[-/\\s.]+(?:[0-9]{1,2}|[a-z]{3,10})[-/\\s.,]+(?:20)?[0-9]{2}|20[0-9]{2}[-/][0-9]{1,2}[-/][0-9]{1,2})$")
       &&!c.matches("(?i)^(?:lot|no\\.?|unit|level|lvl|block|blk|floor|flr|jalan|jln|lorong|lrg)\\s*[#0-9a-z-]{1,6}$")
-      &&!c.matches("(?i)^(?:bayaran|pembayaran|transaksi|payment|transaction)(?:\\s+(?:berjaya|successful|completed|approved|confirmed))?$");
+      &&!c.matches("(?i)^(?:bayar\\s+dengan|bayaran|pembayaran|transaksi|payment|transaction|notifikasi|notis|nota(?:\\s+pembayaran)?|berita(?:\\s+bayaran)?|carta\\s+kredit|kad\\s+kredit)(?:\\s+(?:berjaya|successful|completed|approved|confirmed|dibahalkan|dibatalkan|prs))?$");
   }
 
   static String stripSsmSuffix(String raw){
@@ -123,8 +129,9 @@ public final class PaymentParser {
   private static String cleanMerchant(String raw){
     if(raw==null)return "";
     String s=raw.replaceAll("(?i)\\s*\\(?\\s*biller\\s*code.*","");
+    s=s.replaceFirst("(?i)^(?:penyertaan|perkhidmatan|perniagaan|nota\\s+pembayaran)\\s*:\\s*","");
     s=s.replaceFirst("(?i)^(?:(?:boost|tng|grab|grabpay|shopee|shopeepay|mae|maybank)\\s+)?(?:for\\s+)?your\\s+purchase\\s+(?:at|from)\\s+","");
-    s=s.replaceAll("(?i)\\s+(?:has\\s+been\\s+(?:received|completed|paid)|is\\s+successful|was\\s+successful|successful|successfully|berjaya|credited\\s+to|debited\\s+from|paid\\s+from|on\\s+[0-9]{1,4}[/.-][0-9]{1,2}|on\\s+[0-9]{1,2}\\s+[a-z]{3}|at\\s+[0-9]{1,2}[:.][0-9]{2}|for\\s+ref|ref\\b|reference|via\\s+secure2u|via\\s+duitnow|via\\s+fpx|via\\s+jompay|via\\s+(?:maybank(?:2u)?|mae|tng(?:\\s*e?wallet)?|touch\\s*'?n\\s*go|grabpay|boost|shopeepay|rhb|cimb(?:\\s*clicks)?|public\\s*bank|hong\\s*leong|ambank|bank\\s+islam|gxbank|qr\\s*pay)|using\\s+touch|using\\s+your|with\\s+your|from\\s+your|available\\s+balance|avail\\.?\\s*bal|remaining|balance|baki|limit|cashback|earn\\s+[0-9]|reward|points|thank|terima\\s+kasih|never|do\\s+not|jangan|txn|transaction\\s+id|trx).*","");
+    s=s.replaceAll("(?i)\\s+(?:has\\s+been\\s+(?:received|completed|paid)|is\\s+successful|was\\s+successful|successful|successfully|berjaya|credited\\s+to|debited\\s+from|paid\\s+from|(?:on|pada)\\s+[0-9]{1,4}[/.-][0-9]{1,2}|(?:on|pada)\\s+[0-9]{1,2}\\s+[a-z]{3}|(?:at|pukul)\\s+[0-9]{1,2}[:.][0-9]{2}|for\\s+ref|ref\\b|reference|via\\s+secure2u|via\\s+duitnow|via\\s+fpx|via\\s+jompay|via\\s+(?:maybank(?:2u)?|mae|tng(?:\\s*e?wallet)?|touch\\s*'?n\\s*go|grabpay|boost|shopeepay|rhb|cimb(?:\\s*clicks)?|public\\s*bank|hong\\s*leong|ambank|bank\\s+islam|gxbank|qr\\s*pay)|using\\s+touch|using\\s+your|with\\s+your|from\\s+your|available\\s+balance|avail\\.?\\s*bal|remaining|balance|baki|limit|cashback|earn\\s+[0-9]|reward|points|thank|terima\\s+kasih|never|do\\s+not|jangan|txn|transaction\\s+id|trx).*","");
     s=s.replaceAll("[.!]\\s+(?=(?:RM|MYR)\\s*[0-9]|\\p{Lu}\\p{Ll}).*","").trim();
     s=s.replaceAll("[.,;:!\\-\\u2013\\u2014\\s]+$","").replaceAll("^[.,;:!\\-\\u2013\\u2014\\s]+","").trim();
     String noGw=s.replaceFirst("(?i)^(?:fpx|dnqr|duitnow\\s*qr|duitnow|paynet|ipay88|razerms|razer\\s*ms|molpay|billplz|senangpay|gkash|stripe|curlec|2c2p|revpay|kiple|shopeepay)\\s*(?:[*_/:-]+\\s*)","").trim();
@@ -151,6 +158,10 @@ public final class PaymentParser {
     if(has(hay,"sspn|ptptn sspn"))return new String[]{"Investments & savings","SSPN Savings"};
     if(has(hay,"ptptn|perbadanan tabung pendidikan"))return new String[]{LOANS,"PTPTN Study Loan"};
     if(has(hay,"spaylater|shopee paylater|grabpaylater|grab paylater|paylater|pay later|atome|payflex"))return new String[]{LOANS,"BNPL (SPayLater / GrabPayLater / Atome)"};
+    if(has(hay,"credit\\s+card\\s+(?:statement|bill|payment)|penyata\\s+kad\\s+kredit"))return new String[]{LOANS,"Credit Card Bill"};
+    if(has(hay,"personal\\s+loan|pinjaman\\s+peribadi"))return new String[]{LOANS,"Personal Loan"};
+    if(has(hay,"home\\s+loan|housing\\s+loan|mortgage|pembiayaan\\s+rumah|pinjaman\\s+perumahan"))return new String[]{"Housing & property","Home Loan / Mortgage"};
+    if(has(hay,"car\\s+loan|auto\\s+loan|hire\\s+purchase|sewa\\s+beli|pinjaman\\s+kereta|a(?:ng|ns)uran\\s+kenderaan"))return new String[]{"Transport","Car Loan Installment"};
     if(has(hay,"bank transfer fee|transfer fee|ibt fee|rentas fee|meps fee|atm fee"))return new String[]{"Fees & charges","Bank & Transfer Fee"};
     if(has(hay,"late payment fee|late charge"))return new String[]{"Fees & charges","Late Payment Fee"};
     if(has(hay,"rfid|paydirect|toll|tol|plaza tol|lebuhraya|expressway|highway|smart\\s*tag|smarttag|smart\\s*tunnel|plus\\s+(?:highway|expressway|lebuhraya|toll)|(?:highway|expressway|lebuhraya|plaza\\s+tol)\\s+plus")||has(m,"duke|ldp|kesas|mex|sprint|npe|akleh|besraya|lekas|guthrie|nkve|suke|silk|lpt|wce|skve|latar|grand saga|ekve"))return new String[]{"Transport","Toll (TNG / RFID / PayDirect)"};
@@ -159,6 +170,8 @@ public final class PaymentParser {
     if(has(m,"grab|grabcar|airasia ride|maxim|indrive|mycar")||has(hay,"grabcar|airasia ride|e-hailing|ehailing|indrive"))return new String[]{"Transport","E-Hailing (Grab / AirAsia Ride)"};
     if(has(hay,"parking|flexiparking|flexi parking|jompark|smart selangor parking|parkir|autopay|valet parking"))return new String[]{"Transport","Parking"};
     if(has(hay,"mrt|lrt|rapidkl|rapid kl|ktm|ktmb|ets|monorail|myrapid|rapidbus|rapid bus|klia ekspres|klia transit|rapid penang|prasarana|my50"))return new String[]{"Transport","Public Transit (MRT / LRT / Bus)"};
+    if(has(hay,"home\\s+(?:repair|maintenance|improvement)|pembaikan\\s+(?:dalam\\s+)?rumah|window\\s+replacement|kitchen\\s+sink|plumbing|roof\\s+repair|wiring\\s+repair"))return new String[]{"Housing & property","Home Repair & Maintenance"};
+    if(has(hay,"mr\\.?\\s*diy|mr\\.?\\s*dollar|ecoshop|eco-shop|noko|daiso|kaison|ninso|hardware|carpentry|wooden\\s+chairs?|kitchen\\s+drawers?|home\\s*&\\s*living"))return new String[]{"Shopping","Home & Living"};
     if(has(hay,"perodua service|proton service|honda service|toyota service|tyre|tayar|(?:auto|car|motor|tyre|tayar|vehicle|kereta|repair)\\s*workshop|workshop\\s*(?:kereta|motor|auto)|bengkel|bateriku|car wash|carwash|pusat servis|servis kereta|auto service|engine oil"))return new String[]{"Transport","Vehicle Maintenance & Service"};
     if(has(hay,"(auto|car|motor|vehicle)\\s*(insurance|takaful|insurans|cover|coverage)|(insurance|takaful|insurans)\\s*(kereta|motor)|road\\s*(?:&|and)\\s*auto\\s*cover")||(has(hay,"road\\s*tax|roadtax|cukai\\s*jalan")&&has(hay,"insurance|takaful|insurans|cover|policy|polisi")))return new String[]{"Transport","Road Tax & Motor Insurance"};
     if(has(hay,"jpj|mysikap|myeg|puspakom|road tax|roadtax|cukai jalan|summon|summons|saman|traffic fine|compound"))return new String[]{"Taxes & government","JPJ / Renewals / Summons"};
@@ -168,7 +181,7 @@ public final class PaymentParser {
     if(has(hay,"mamak|nasi|kopitiam|kedai makan|warung|hawker|gerai|pelita|q bistro|kandar|roti canai|medan selera|food court|bak kut teh|char kuey teow|yong tau foo|madam kwan|oriental kopi"))return new String[]{"Food & drinks","Hawker & Mamak"};
     if(has(hay,"mcdonald|mcdonalds|mcd|kfc|burger king|marrybrown|subway|pizza hut|domino|dominos|texas chicken|a&w|4fingers|wendy's|wendys|jollibee|popeyes|us pizza|nando's|nandos|kenny rogers|kyochon|shake shack"))return new String[]{"Food & drinks","Fast Food"};
     if(has(hay,"starbucks|tealive|zus|chagee|coffee bean|gigi coffee|kenangan|luckin|boba|bubble tea|coolblog|chatime|mixue|bask bear|richiamo|oldtown|old town|gong cha|beutea|boost juice|llaollao|secret recipe|coffee|kopi"))return new String[]{"Food & drinks","Coffee, Tea & Drinks"};
-    if(has(hay,"restoran|restaurant|cafe|café|bistro|kitchen|eatery|sushi|sushiro|haidilao|sukiya|suki-ya|seoul garden|din tai fung|steak|bakery|dim sum|bbq|seafood|papparich|pappa rich|nanyang|boat noodle|chicken rice shop|teppanyaki|food"))return new String[]{"Food & drinks","Restaurant & Cafe"};
+    if(has(hay,"restoran|restaurant|cafe|café|bistro|eatery|sushi|sushiro|haidilao|sukiya|suki-ya|seoul garden|din tai fung|steak|bakery|dim sum|bbq|seafood|papparich|pappa rich|nanyang|boat noodle|chicken rice shop|teppanyaki|food"))return new String[]{"Food & drinks","Restaurant & Cafe"};
     if(has(hay,"tnb|tenaga nasional|mytnb|sesb|sarawak energy|elektrik|tarif elektrik|bil elektrik|electricity(?:\\s+bill)?|power\\s+supply"))return new String[]{"Bills & utilities","Electricity (TNB)"};
     if(has(hay,"air selangor|syabas|indah water|iwk|ranhill|air kelantan|air johor|saj|pbapp|air perak|sada|pembetungan|bil air|water.*sewerage"))return new String[]{"Bills & utilities","Water & Sewerage (Air Selangor / IWK)"};
     if(has(hay,"unifi fibre|unifi|time fibre|time internet|maxis fibre|celcom fibre|digi fibre|astro fibre|tm net|home internet|fibre internet|broadband"))return new String[]{"Bills & utilities","Home Internet & WiFi (Unifi / Time)"};
@@ -176,13 +189,13 @@ public final class PaymentParser {
     if(has(hay,"netflix|spotify|astro|sooka|disney|youtube|icloud|google one|apple\\.com|viu|iqiyi|chatgpt|openai|claude|anthropic|microsoft 365|adobe|canva"))return new String[]{"Bills & utilities","Streaming & App Subscriptions"};
     if(has(hay,"condo maintenance|sinking fund|management corporation|jmb"))return new String[]{"Bills & utilities","Condo Maintenance & Sinking Fund"};
     if(has(hay,"decathlon|sports direct|al-ikhsan|alikhsan|jd sports|foot locker|anytime fitness|celebrity fitness|chi fitness|fitness first|babel|flyproject|badminton|futsal|pickleball|gym|sports"))return new String[]{"Health & medical","Gym, Sports & Fitness"};
-    if(has(hay,"watsons|guardian|caring pharmacy|big pharmacy|aa pharmacy|alpro|health lane|multicare|constant pharmacy|pharmacy|farmasi|panadol"))return new String[]{"Health & medical","Pharmacy & Medicine"};
+    if(has(hay,"watsons|guardian|caring pharmacy|big pharmacy|aa pharmacy|alpro|health lane|multicare|constant pharmacy|pharmacy|farmasi|panadol|obat|ubat"))return new String[]{"Health & medical","Pharmacy & Medicine"};
     if(has(hay,"dental|dentist|pergigian|orthodontic|optometrist|optical|focus point|owndays|mog eyewear|a-look|eyecare"))return new String[]{"Health & medical","Dental & Optical"};
     if(has(hay,"pathlab|bp healthcare|bp diagnostic|gribbles|health screening|full medical|medical checkup|medical check-up"))return new String[]{"Health & medical","Full Medical Checkup (LHDN)"};
     if(has(hay,"hospital|gleneagles|pantai|sunway medical|kpj|columbia asia|prince court|sjmc|subang jaya medical|thomson hospital|assunta|tung shin|institut jantung|ijn|medical cent(?:er|re)|pusat perubatan|specialist cent(?:er|re)"))return new String[]{"Health & medical","Hospital & Specialist"};
     if(has(hay,"klinik|clinic|poliklinik|polyclinic|qualitas|mediviron|mediklinik|careclinics|megaklinik"))return new String[]{"Health & medical","Clinic & GP"};
-    if(has(hay,"prudential|prubsn|great eastern|aia|allianz|etiqa|zurich|manulife|fwd|takaful"))return new String[]{"Insurance & Takaful","Life Insurance / Takaful"};
-    if(!has(hay,"cinema|cinemas|cineplex|wayang")&&has(hay,"popular|kinokuniya|mph bookstore|mph bookstores|bookxcess|tsutaya|smiggle|typo|cziplee|bookstore|bookshop|books|stationery"))return new String[]{"Education","Books & Stationery"};
+    if(has(hay,"prudential|prubsn|great eastern|aia|allianz|etiqa|zurich|manulife|fwd|[\\p{L}0-9]*takaful"))return new String[]{"Insurance & Takaful","Life Insurance / Takaful"};
+    if(!has(hay,"cinema|cinemas|cineplex|wayang")&&has(hay,"popular|kinokuniya|mph bookstore|mph bookstores|bookxcess|tsutaya|smiggle|typo|cziplee|bookstore|bookshop|kedai\\s+buku|alat\\s+tulis|books|stationery"))return new String[]{"Education","Books & Stationery"};
     if(has(hay,"tuition|university|universiti|monash|taylor's|taylors|sunway university|utar|uitm|mmu|inti|apu|coursera|udemy|upskill|tuisyen|online course|course enrollment|bootcamp"))return new String[]{"Education","Higher Education & Tuition"};
     if(has(hay,"school fee|yuran sekolah|tadika|taska|kindergarten|preschool|childcare fee"))return new String[]{"Education","School & Childcare Fees"};
     if(has(hay,"epf|kwsp|i-saraan|isaraan"))return new String[]{"Investments & savings","EPF Voluntary (i-Saraan)"};
@@ -196,7 +209,6 @@ public final class PaymentParser {
     if(has(hay,"foreign currency fee|overseas fee|fx fee"))return new String[]{"Fees & charges","Foreign Currency Fee"};
     if(has(hay,"cukai pintu|cukai tanah|dbkl|mbpj|mbsj|mpsj|mpkj"))return new String[]{"Housing & property","Cukai Pintu & Cukai Tanah"};
     if(has(hay,"coway|cuckoo|ikea|ssf|hooga|akemi"))return new String[]{"Housing & property","Furniture & Appliances"};
-    if(has(hay,"mr\\.?\\s*diy|mr\\.?\\s*dollar|ecoshop|eco-shop|noko|daiso|kaison|ninso|hardware"))return new String[]{"Shopping","Home & Living"};
     if(has(hay,"machines|switch|senheng|senq|harvey norman|all it|tmt|thundermatch|challenger|courts|xiaomi|samsung|apple store|sony|dyson|laptop|smartphone|iphone|ipad"))return new String[]{"Shopping","Electronics & Gadgets"};
     if(has(hay,"uniqlo|padini|brands outlet|h&m|zara|cotton on|parkson|isetan|seibu|sogo|bata|charles & keith|skechers|nike|adidas|puma|love bonito"))return new String[]{"Shopping","Clothing, Bags & Footwear"};
     if(has(hay,"sephora|innisfree|bath & body|l'occitane|loccitane|the body shop|kiehl's|kiehls|sasa"))return new String[]{"Shopping","Beauty, Skincare & Grooming"};
@@ -208,13 +220,15 @@ public final class PaymentParser {
     return new String[]{"Miscellaneous","Auto-Captured (Uncategorized)"};
   }
 
-  /** Hybrid rules + offline sparse TF-IDF classifier for Malaysian merchants. Returns {category, subcategory}. */
+  /** Hybrid rules + hierarchical offline sparse TF-IDF classifier for Malaysian merchants. Returns {category, subcategory}. */
   public static String[] classify(String merchant,String source,String text){
     String[] ruleHit=classifyRulesOnly(merchant,source,text);
     if(!ruleHit[0].equals("Miscellaneous"))return ruleHit;
     boolean hasRichBody=text!=null&&text.trim().length()>=20;
     MlClassifier.Prediction ml=MlClassifier.predict(merchant,text);
-    if(ml!=null&&ml.activeSignals>=3&&(hasRichBody?(ml.probability>=0.09&&ml.margin>=0.02):(ml.probability>=0.35&&ml.margin>=0.12))){
+    if(ml!=null&&ml.activeSignals>=3&&(hasRichBody
+        ?(ml.probability>=0.08||(ml.categoryProbability>=0.22&&ml.categoryMargin>=0.06))
+        :((ml.probability>=0.24&&ml.margin>=0.06)||(ml.categoryProbability>=0.24&&ml.categoryMargin>=0.08)))){
       return new String[]{ml.category,ml.subcategory};
     }
     return ruleHit;

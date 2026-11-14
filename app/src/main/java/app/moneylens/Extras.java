@@ -104,6 +104,7 @@ public final class Extras {
      if(f.equals("once")&&bill.optBoolean("paid"))bill.put("paid",false);
      else if(bill.getString("date").equals(next))bill.put("date",due);
     }
+    adjustDebtBalance(s,"",t,true);
     t.remove("billId");t.remove("billDate");
     return true;
    }
@@ -124,7 +125,7 @@ public final class Extras {
     if(a.optBoolean("adjust")&&delta!=0){String tid=Ledger.id();JSONObject t=new JSONObject().put("id",tid).put("kind","adjustment").put("amount",Math.abs(delta)).put("account",account).put("date",dt).put("merchant","Balance reconciliation").put("category","Adjustment").put("note",Ledger.str(a,"note",500)).put("created",System.currentTimeMillis()).put("postings",new JSONArray().put(Ledger.entry(account,delta)).put(Ledger.entry("equity",-delta)));s.getJSONArray("transactions").put(t);r.put("transactionId",tid);}s.getJSONArray("reconciliations").put(r);return true;
    }
    case "installment":installment(s,a);return true;
-   case "matchBill":{JSONObject bill=Ledger.find(s.getJSONArray("bills"),a.getString("id")),t=Ledger.find(s.getJSONArray("transactions"),a.getString("transactionId"));if(bill.optBoolean("paid")||bill.optBoolean("cancelled")||t.optBoolean("voided")||t.has("billId"))throw new IllegalArgumentException("Choose an unpaid plan and an unlinked active transaction.");if(!t.getString("account").equals(bill.getString("account"))||!t.getString("kind").equals(bill.optString("kind","expense"))||("transfer".equals(t.getString("kind"))&&!t.optString("to").equals(bill.optString("to"))))throw new IllegalArgumentException("Payment account or type does not match this bill.");t.put("billId",bill.getString("id")).put("billDate",bill.getString("date"));String f=bill.optString("frequency",bill.optBoolean("monthly")?"monthly":"once");if(f.equals("once"))bill.put("paid",true);else bill.put("date",Finance.advance(LocalDate.parse(bill.getString("date")),f,bill.optInt("anchorDay",LocalDate.parse(bill.getString("date")).getDayOfMonth())).toString());return true;}
+   case "matchBill":{JSONObject bill=Ledger.find(s.getJSONArray("bills"),a.getString("id")),t=Ledger.find(s.getJSONArray("transactions"),a.getString("transactionId"));if(bill.optBoolean("paid")||bill.optBoolean("cancelled")||t.optBoolean("voided")||t.has("billId"))throw new IllegalArgumentException("Choose an unpaid plan and an unlinked active transaction.");if(!t.getString("account").equals(bill.getString("account"))||!t.getString("kind").equals(bill.optString("kind","expense"))||("transfer".equals(t.getString("kind"))&&!t.optString("to").equals(bill.optString("to"))))throw new IllegalArgumentException("Payment account or type does not match this bill.");t.put("billId",bill.getString("id")).put("billDate",bill.getString("date"));String f=bill.optString("frequency",bill.optBoolean("monthly")?"monthly":"once");if(f.equals("once"))bill.put("paid",true);else bill.put("date",Finance.advance(LocalDate.parse(bill.getString("date")),f,bill.optInt("anchorDay",LocalDate.parse(bill.getString("date")).getDayOfMonth())).toString());adjustDebtBalance(s,bill.getString("id"),t,false);return true;}
    case "cancelBill":{JSONObject b=Ledger.find(s.getJSONArray("bills"),a.getString("id"));b.put("cancelled",a.optBoolean("cancelled",true));return true;}
    case "importCommit":{
     String batch=a.getString("batch");JSONArray rows=a.getJSONArray("rows");if(rows.length()>1000)throw new IllegalArgumentException("Import at most 1,000 rows per batch.");int count=0;JSONArray ids=new JSONArray();
@@ -158,6 +159,12 @@ public final class Extras {
     return true;
    }
    case "syncDebtReminder":syncDebtReminder(s,Ledger.find(s.getJSONArray("debts"),a.getString("id")));return true;
+   case "adjustGoal":{
+    JSONObject g=Ledger.find(s.getJSONArray("goals"),a.getString("id"));
+    long delta=a.has("delta")?a.getLong("delta"):(a.optBoolean("withdraw")?-1L:1L)*Ledger.minor(a.getString("amount"));
+    g.put("saved",Math.max(0L,Math.min(Ledger.MAX,g.optLong("saved",0L)+delta)));
+    return true;
+   }
    case "setPayday":{
     String pName=name(a,"name",80),acct=a.optString("account","").trim();
     if(acct.isEmpty())acct=s.getJSONArray("accounts").getJSONObject(0).getString("id");
@@ -426,5 +433,43 @@ public final class Extras {
   JSONObject args=new JSONObject().put("id",billId).put("name",debtRow.getString("name")).put("amount",BigDecimal.valueOf(debtRow.getLong("minPayment"),2).toPlainString()).put("date",existing!=null?existing.getString("date"):due.toString()).put("account",debtRow.optString("account",s.getJSONArray("accounts").getJSONObject(0).getString("id"))).put("category","Loans, BNPL & Credit").put("subcategory",sub).put("frequency","monthly").put("remindDaysBefore",3).put("remindTime","09:00").put("reminderType",rType);
   bill(s,args);
   debtRow.put("billId",billId);
+ }
+ /** Deducts estimated principal (payment minus monthly interest) from a debt linked to billId, or reverses that exact adjustment. */
+ static void adjustDebtBalance(JSONObject s,String billId,JSONObject tx,boolean reverse)throws JSONException{
+  JSONArray debts=s.optJSONArray("debts");
+  if(debts==null||tx==null)return;
+  if(reverse){
+   String did=tx.optString("debtId","");
+   long applied=tx.optLong("debtPrincipalApplied",0L);
+   if(!did.isEmpty()&&applied>0L){
+    for(int i=0;i<debts.length();i++){
+     JSONObject d=debts.getJSONObject(i);
+     if(did.equals(d.optString("id"))){
+      d.put("balance",Math.min(Ledger.MAX,d.optLong("balance",0L)+applied));
+      break;
+     }
+    }
+   }
+   tx.remove("debtId");tx.remove("debtPrincipalApplied");
+   return;
+  }
+  if(billId==null||billId.isEmpty()||tx.has("debtPrincipalApplied"))return;
+  long pay=tx.optLong("amount",0L);
+  if(pay<=0L)return;
+  for(int i=0;i<debts.length();i++){
+   JSONObject d=debts.getJSONObject(i);
+   if(!billId.equals(d.optString("billId")))continue;
+   long bal=d.optLong("balance",0L);
+   if(bal<=0L)return;
+   int aprBps=d.optInt("aprBps",0);
+   long base="flat".equals(d.optString("rateType","reducing"))?d.optLong("principal",bal):bal;
+   long monthlyInterest=aprBps<=0?0L:Math.round(base*(double)aprBps/120000.0);
+   long principalPaid=Math.min(bal,Math.max(0L,pay-monthlyInterest));
+   if(principalPaid>0L){
+    d.put("balance",bal-principalPaid);
+    tx.put("debtId",d.getString("id")).put("debtPrincipalApplied",principalPaid);
+   }
+   return;
+  }
  }
 }

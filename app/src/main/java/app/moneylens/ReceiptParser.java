@@ -8,15 +8,24 @@ import java.util.*;
 public final class ReceiptParser {
  private static final Pattern AMOUNT=Pattern.compile("(?i)(?:(?:RM|MYR)\\s*([0-9]{1,3}(?:,[0-9]{3})+(?:\\.[0-9]{1,2})?|[0-9]{1,9}(?:\\.[0-9]{1,2})?)|([0-9]{1,3}(?:,[0-9]{3})+\\.[0-9]{2}|[0-9]{1,9}\\.[0-9]{2}))(?![0-9]|\\.[0-9])");
  private static final Pattern STANDALONE_AMOUNT=Pattern.compile("(?i)^\\s*(?:(?:RM|MYR)\\s*([0-9]{1,3}(?:,[0-9]{3})+(?:\\.[0-9]{1,2})?|[0-9]{1,9}(?:\\.[0-9]{1,2})?)|([0-9]{1,3}(?:,[0-9]{3})+\\.[0-9]{2}|[0-9]{1,9}\\.[0-9]{2}))\\s*$");
- private static final Pattern GENERIC_HEADER=Pattern.compile("(?i)^(?:(?:simplified\\s+)?tax\\s+invoice|invoice|official\\s+receipt|cash\\s+bill|sales\\s+receipt|customer\\s+copy|merchant\\s+copy|duplicate|reprint|resit\\s+rasmi|invois\\s+cukai|thank\\s+you.*|terima\\s+kasih.*|welcome(?:\\s+to)?)$");
+ private static final Pattern GENERIC_HEADER=Pattern.compile("(?i)^(?:(?:simplified\\s+)?tax\\s+invoice|invoice|official\\s+receipt|cash\\s+bill|sales\\s+receipt|customer\\s+copy|merchant\\s+copy|duplicate|reprint|resit\\s+rasmi|invois\\s+cukai|credit\\s+card\\s+(?:statement|payment\\s+receipt)|toll\\s+payment|resit\\s+bayaran|tarikan\\s+kasir|slip\\s+transaksi|slip\\s+bayaran|tanda\\s+bayar|items?(?:\\s+paid)?|itemized(?:\\s+charges)?|bill\\s+details|late\\s+payment\\s+fee|thank\\s+you.*|terima\\s+kasih.*|welcome(?:\\s+to)?)$");
  private static final Pattern WELCOME_PREFIX=Pattern.compile("(?i)^welcome\\s+to\\s+(.{2,})$");
- private static final Pattern NOISE_META=Pattern.compile("(?i)^(?:sst|gst|ssm|reg(?:\\.|istration)?\\s*(?:no|id)|roc|rob|co\\.?\\s*reg|company\\s*(?:no|reg)|tin|msic|brn|tel|hp|phone|fax|hotline|call|email|web|www|http|date|tarikh|time|masa|cashier|staff|server|waiter|table|meja|pax|order|bill|receipt|ref|terminal|pos|shift|batch|trace|approval)\\b[:.#\\s-]*.*");
- private static final Pattern ADDRESS_LINE=Pattern.compile("(?i)^(?:no\\.?|lot|level|lvl|floor|flr|unit|suite|block|blk|ground\\s+floor|g-|lg-|ug-|b1-|jalan|jln|lorong|lrg|persiaran|taman|tmn|bandar|seksyen|section|kampung|kg\\.?|kompleks|pusat)\\b.*");
- private static final Pattern POSTCODE_STATE=Pattern.compile("(?i)\\b[0-9]{5}\\s+(?:kuala\\s+lumpur|selangor|petaling|subang|shah\\s+alam|klang|kajang|puchong|ampang|cheras|penang|pulau\\s+pinang|johor|melaka|perak|ipoh|kedah|pahang|sabah|sarawak|kuching|kota\\s+kinabalu|seremban|putrajaya|cyberjaya|malaysia)\\b");
+ private static final Pattern NOISE_META=Pattern.compile("(?i)^(?:sst|gst|ssm|reg(?:\\.|istration)?\\s*(?:no|id)|roc|rob|co\\.?\\s*reg|company\\s*(?:no|reg)|tin|msic|brn|tel|hp|phone|fax|hotline|call|email|web|www|http|date|tarikh|time|masa|cashier|staff|server|waiter|table|meja|pax|order|bill|receipt|ref|terminal|pos|shift|batch|trace|approval|items?(?:\\s+paid)?|itemized|customer\\s*(?:name|id)?|client|subscriber|service|description|desc|qty|quantity|amount|payment\\s+(?:of|for)|due\\s+date|invoice\\s+no|job|produk|barang|harga|perkhidmatan|penyertaan|bill\\s+details|late\\s+payment\\s+fee)\\b[:.#\\s-]*.*");
+ private static final Pattern ADDRESS_LINE=Pattern.compile("(?i)^(?:[0-9]{1,4}[a-z]?(?:-[0-9]{1,4})?[,\\s]+)?(?:no\\.?|lot|plot|level|lvl|floor|flr|unit|suite|block|blk|ground\\s+floor|g-|lg-|ug-|b1-|jalan|jln|lorong|lrg|persiaran|lebuh|taman|tmn|bandar|seksyen|section|kampung|kg\\.?|kompleks|pusat\\s+(?:bandar|komersial|membeli))\\b.*");
+ private static final Pattern STREET_TOKEN=Pattern.compile("(?i)\\b(?:jalan|jln|lorong|lrg|persiaran|lebuhraya|lebuh)\\b");
+ private static final Pattern BIZ_SUFFIX=Pattern.compile("(?i).*\\b(?:sdn\\.?\\s*bhd|bhd|berhad|enterprise|trading|services|solutions|holdings|kindergarten|tadika|taska|school|sekolah|klinik|clinic|farmasi|pharmacy|restoran|restaurant|cafe|café|mart|store|grocer|supermarket|motors?|workshop|bengkel|resources|ventures)\\b\\.?$");
+ private static final Pattern ITEM_LINE=Pattern.compile("(?i)^(?:[-*•]\\s+.*|(?:[0-9]{1,2}[.)]\\s+|1\\s+(?!Malaysia)[A-Za-z]).*|.*\\b[xX×]\\s*[0-9]{1,3}\\s*$|(?:ptptn\\s+repayment|spaylater|grabpaylater|atome\\s+bnpl|shopee\\s+order|lazada\\s+order|i-saraan).*)$");
+ private static final Pattern POSTCODE_STATE=Pattern.compile("(?i)\\b[0-9]{5},?\\s+(?:kuala\\s+lumpur|selangor|petaling|subang|shah\\s+alam|klang|kajang|puchong|ampang|cheras|penang|pulau\\s+pinang|johor|melaka|perak|ipoh|kedah|alor\\s+setar|pahang|kuantan|kelantan|terengganu|negeri\\s+sembilan|seremban|sabah|sarawak|kuching|kota\\s+kinabalu|putrajaya|cyberjaya|malaysia)\\b");
  private static final Pattern PHONE_OR_EMAIL=Pattern.compile("(?i)(?:@|\\b(?:0[1-9]-?[0-9]{6,8}|\\+?60[0-9-]{7,11})\\b|https?://|www\\.)");
- private static final Pattern STORE_HINT=Pattern.compile("(?i)\\b(?:sdn\\.?\\s*bhd\\.?|bhd|berhad|plt|llp|enterprise|trading|holdings|resources|restoran|restaurant|kedai|warung|kopitiam|cafe|café|coffee|bakery|farmasi|pharmacy|klinik|clinic|hospital|dental|optometrist|optical|mart|supermarket|hypermarket|pasaraya|grocer|mini\\s*market|petrol|station|hardware|store|bookshop|bookstore)\\b");
- private static final Pattern MONTH_DATE=Pattern.compile("(?i)\\b([0-9]{1,2})[-/\\s]+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[-/\\s,]+(20[0-9]{2}|[0-9]{2})\\b");
- private static final Pattern NUM_DMY_SHORT=Pattern.compile("\\b([0-9]{1,2})[-/]([0-9]{1,2})[-/]([0-9]{2})\\b");
+ private static final Pattern STORE_HINT=Pattern.compile("(?i)\\b(?:sdn\\.?\\s*bhd\\.?|bhd|berhad|plt|llp|enterprise|trading|holdings|resources|services|solutions|restoran|restaurant|kedai|warung|kopitiam|cafe|café|coffee|bakery|farmasi|pharmacy|obat|ubat|klinik|clinic|hospital|dental|optometrist|optical|speedmart|kk\\s*mart|mynews|familymart|econsave|mydin|watsons|guardian|mart|supermarket|hypermarket|pasaraya|pasar|grocer|mini\\s*market|petrol|station|hardware|carpentry|maintenance|electronics|marketplace|store|bookshop|bookstore|kindergarten|tadika|plaza\\s+tol|toll\\s+plaza|condominium|condo)\\b");
+ private static final Pattern BODY_SECTION=Pattern.compile("(?i)^(?:items?(?:\\s+paid)?|itemized(?:\\s+charges)?|bill\\s+details|subtotal|qty|quantity|description)\\b.*");
+ private static final String MONTHS="januari|january|jan|februari|february|feb|march|mac|mar|april|apr|may|mei|june|jun|julai|july|jul|ogos|august|aug|september|sept|sep|oktober|october|oct|okt|november|nov|disember|december|dis|dec";
+ private static final Pattern MONTH_DATE=Pattern.compile("(?i)\\b([0-9]{1,2})(?:st|nd|rd|th)?[-/\\s]+("+MONTHS+")[-/\\s,]+(20[0-9]{2}|[0-9]{2})\\b");
+ private static final Pattern MONTH_FIRST_DATE=Pattern.compile("(?i)\\b("+MONTHS+")\\s+([0-9]{1,2})(?:st|nd|rd|th)?[,\\s]+(20[0-9]{2}|[0-9]{2})\\b");
+ private static final Pattern YMD_MONTH_DATE=Pattern.compile("(?i)\\b(20[0-9]{2})[-/\\s]+("+MONTHS+")[-/\\s]+([0-9]{1,2})(?:st|nd|rd|th)?\\b");
+ private static final Pattern NUM_DMY_SPACED=Pattern.compile("\\b([0-9]{1,2})[-/.\\s]+([0-9]{1,2})[-/.\\s]+(20[0-9]{2})\\b");
+ private static final Pattern LABELED_DMY_COMPACT=Pattern.compile("(?i)(?:date|tarikh)\\s*[:.]?\\s*([0-9]{2})[-/.\\s]*([0-9]{2})[-/.\\s]*(20[0-9]{2})\\b");
+ private static final Pattern NUM_DMY_SHORT=Pattern.compile("\\b([0-9]{1,2})[-/.]([0-9]{1,2})[-/.]([0-9]{2})\\b");
 
  public static JSONObject parse(String text)throws Exception{
   if(text==null)text="";
@@ -87,24 +96,33 @@ public final class ReceiptParser {
   String bestMerchant="Receipt";
   int bestScore=0;
   int inspected=0;
+  boolean afterBody=false;
   for(int i=0;i<lines.length&&inspected<12;i++){
    String raw=lines[i].trim();
    if(raw.isEmpty())continue;
    inspected++;
+   if(inspected>1&&BODY_SECTION.matcher(raw).matches())afterBody=true;
    Matcher wm=WELCOME_PREFIX.matcher(raw);
    String candidate=(wm.matches()?wm.group(1):raw).replaceFirst("(?i)^(?:nota|merchant|store|shop)\\s*:\\s*","").replaceAll("\\s*\\|\\s*[0-9]{5}.*$","").trim();
    if(candidate.length()<2||candidate.matches("[0-9\\W_]+"))continue;
    if(GENERIC_HEADER.matcher(candidate).matches())continue;
+   boolean isAddr=ADDRESS_LINE.matcher(candidate).matches()&&!(inspected<=2&&BIZ_SUFFIX.matcher(candidate).matches());
+   boolean isPost=POSTCODE_STATE.matcher(candidate).find();
    int s=10+Math.max(0,10-inspected);
    if(candidate.matches(".*\\p{L}{2,}.*"))s+=6;
-   if(NOISE_META.matcher(candidate).matches())s-=45;
-   if(ADDRESS_LINE.matcher(candidate).matches())s-=40;
-   if(POSTCODE_STATE.matcher(candidate).find())s-=40;
+   if(NOISE_META.matcher(candidate).matches())s-=50;
+   if(ITEM_LINE.matcher(candidate).matches())s-=50;
+   if(afterBody)s-=35;
+   if(isAddr)s-=45;
+   if(isPost)s-=45;
+   if(inspected>=2&&!BIZ_SUFFIX.matcher(candidate).matches()&&STREET_TOKEN.matcher(candidate).find())s-=30;
    if(PHONE_OR_EMAIL.matcher(candidate).find())s-=35;
    if(AMOUNT.matcher(candidate).find())s-=35;
-   if(STORE_HINT.matcher(candidate).find())s+=25;
-   String[] cls=PaymentParser.classifyRulesOnly(candidate,"Receipt scan","");
-   if(!cls[0].equals("Miscellaneous"))s+=25;
+   if(!isAddr&&!isPost){
+    if(STORE_HINT.matcher(candidate).find())s+=25;
+    String[] cls=PaymentParser.classifyRulesOnly(candidate,"Receipt scan","");
+    if(!cls[0].equals("Miscellaneous"))s+=25;
+   }
    if(s>bestScore){
     bestScore=s;
     bestMerchant=PaymentParser.stripSsmSuffix(candidate);
@@ -175,16 +193,32 @@ public final class ReceiptParser {
 
  private static String extractDate(String text){
   String date=LocalDate.now().toString();
-  Matcher dm=Pattern.compile("\\b(20[0-9]{2})[-/]([0-9]{1,2})[-/]([0-9]{1,2})\\b").matcher(text);
+  Matcher dm=Pattern.compile("\\b(20[0-9]{2})[-/.]([0-9]{1,2})[-/.]([0-9]{1,2})\\b").matcher(text);
   try{
    if(dm.find())return LocalDate.of(Integer.parseInt(dm.group(1)),Integer.parseInt(dm.group(2)),Integer.parseInt(dm.group(3))).toString();
-   dm=Pattern.compile("\\b([0-9]{1,2})[-/]([0-9]{1,2})[-/](20[0-9]{2})\\b").matcher(text);
-   if(dm.find())return LocalDate.of(Integer.parseInt(dm.group(3)),Integer.parseInt(dm.group(2)),Integer.parseInt(dm.group(1))).toString();
+   dm=YMD_MONTH_DATE.matcher(text);
+   if(dm.find()){int mon=monthNum(dm.group(2));if(mon>0)return LocalDate.of(Integer.parseInt(dm.group(1)),mon,Integer.parseInt(dm.group(3))).toString();}
+   dm=NUM_DMY_SPACED.matcher(text);
+   while(dm.find()){
+    int d=Integer.parseInt(dm.group(1)),m=Integer.parseInt(dm.group(2)),y=Integer.parseInt(dm.group(3));
+    if(m>=1&&m<=12&&d>=1&&d<=31){try{return LocalDate.of(y,m,d).toString();}catch(Exception ignored){}}
+   }
    dm=MONTH_DATE.matcher(text);
    if(dm.find()){
     int yr=Integer.parseInt(dm.group(3));if(yr<100)yr+=2000;
     int mon=monthNum(dm.group(2));
     if(mon>0)return LocalDate.of(yr,mon,Integer.parseInt(dm.group(1))).toString();
+   }
+   dm=MONTH_FIRST_DATE.matcher(text);
+   if(dm.find()){
+    int yr=Integer.parseInt(dm.group(3));if(yr<100)yr+=2000;
+    int mon=monthNum(dm.group(1));
+    if(mon>0)return LocalDate.of(yr,mon,Integer.parseInt(dm.group(2))).toString();
+   }
+   dm=LABELED_DMY_COMPACT.matcher(text);
+   if(dm.find()){
+    int d=Integer.parseInt(dm.group(1)),m=Integer.parseInt(dm.group(2)),y=Integer.parseInt(dm.group(3));
+    if(m>=1&&m<=12&&d>=1&&d<=31)return LocalDate.of(y,m,d).toString();
    }
    dm=NUM_DMY_SHORT.matcher(text);
    if(dm.find()){
@@ -197,9 +231,18 @@ public final class ReceiptParser {
 
  private static int monthNum(String abbr){
   switch(abbr.toLowerCase(Locale.ROOT)){
-   case "jan":return 1;case "feb":return 2;case "mar":return 3;case "apr":return 4;
-   case "may":return 5;case "jun":return 6;case "jul":return 7;case "aug":return 8;
-   case "sep":return 9;case "oct":return 10;case "nov":return 11;case "dec":return 12;
+   case "jan":case "januari":case "january":return 1;
+   case "feb":case "februari":case "february":return 2;
+   case "mar":case "mac":case "march":return 3;
+   case "apr":case "april":return 4;
+   case "may":case "mei":return 5;
+   case "jun":case "june":return 6;
+   case "jul":case "julai":case "july":return 7;
+   case "aug":case "ogos":case "august":return 8;
+   case "sep":case "sept":case "september":return 9;
+   case "oct":case "okt":case "oktober":case "october":return 10;
+   case "nov":case "november":return 11;
+   case "dec":case "dis":case "disember":case "december":return 12;
    default:return 0;
   }
  }

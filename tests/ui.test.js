@@ -77,7 +77,14 @@ test('cycle recap modal renders income, savings rate and PDF export trigger',()=
   const html=run(`recapMarkup({start:'2026-06-01',end:'2026-06-30',totalIncome:500000,totalSpent:150000,previousSpent:140000,spentDelta:10000,netSaved:350000,savingsRatePct:70,underBudgetCount:2,overBudgetCount:0,claimableCount:3,topCategories:[{category:'Food & drinks',amount:120000,sharePct:80}],topMerchants:[{merchant:'Village Grocer',amount:120000,count:4}]})`);
   assert(html.includes('2026-06-01')&&html.includes('70%')&&html.includes('Export PDF Report')&&html.includes('Village Grocer'));
 });
-test('Bahasa Melayu toggle localizes nav, home, plan, budgets, settings and day titles',()=>{
+test('goals view renders quick-contribute buttons and target date pace',()=>{
+  const future=new Date(Date.now()+90*86400000).toISOString().slice(0,10);
+  run(`state.goals=[{id:'g1',name:'Emergency Fund',target:300000,saved:50000,targetDate:'${future}'}]`);
+  const html=run(`goals()`);
+  assert(html.includes('+ RM 50')&&html.includes('+ RM 100')&&html.includes('− RM 50')&&html.includes('data-action="goalDelta"')&&html.includes('/mo needed'));
+  run(`state.goals=[]`);
+});
+test('Bahasa Melayu toggle localizes nav, home, plan, budgets, settings, goals, accounts, inbox and day titles',()=>{
   run(`state.settings.lang='ms'`);
   assert.strictEqual(run(`dayTitleFor(today())`),'Hari ini');
   const navHtml=run(`nav()`);
@@ -87,7 +94,11 @@ test('Bahasa Melayu toggle localizes nav, home, plan, budgets, settings and day 
   const planHtml=run(`plan()`);
   assert(planHtml.includes('Bajet')&&planHtml.includes('Hutang')&&planHtml.includes('Cukai LHDN'));
   const setHtml=run(`settings()`);
-  assert(setHtml.includes('id="langToggle"')&&setHtml.includes('value="ms" selected'));
+  assert(setHtml.includes('id="langToggle"')&&setHtml.includes('value="ms" selected')&&setHtml.includes('Rekod automatik notifikasi')&&setHtml.includes('0.4.0'));
+  const acctHtml=run(`accounts()`);
+  assert(acctHtml.includes('Baki direkodkan')&&acctHtml.includes('Sejarah pelarasan baki'));
+  const inboxHtml=run(`inbox()`);
+  assert(inboxHtml.includes('Pembayaran Direkod Auto Terkini'));
   run(`state.settings.lang='en'`);
   assert.strictEqual(run(`dayTitleFor(today())`),'Today');
 });

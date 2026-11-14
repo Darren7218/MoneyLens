@@ -28,13 +28,18 @@ public final class MlClassifier {
     public final String subcategory;
     public final double probability;
     public final double margin;
+    public final double categoryProbability;
+    public final double categoryMargin;
     public final int activeSignals;
 
-    Prediction(String category, String subcategory, double probability, double margin, int activeSignals) {
+    Prediction(String category, String subcategory, double probability, double margin,
+               double categoryProbability, double categoryMargin, int activeSignals) {
       this.category = category;
       this.subcategory = subcategory;
       this.probability = probability;
       this.margin = margin;
+      this.categoryProbability = categoryProbability;
+      this.categoryMargin = categoryMargin;
       this.activeSignals = activeSignals;
     }
   }
@@ -54,6 +59,8 @@ public final class MlClassifier {
   private static final class Model {
     final String[] categories;
     final String[] subcategories;
+    final String[] uniqueCategories;
+    final int[] classToCategory;
     final double[] intercepts;
     final Map<String, Feature> wordFeatures;
     final Map<String, Feature> charFeatures;
@@ -65,6 +72,20 @@ public final class MlClassifier {
       this.intercepts = intercepts;
       this.wordFeatures = wordFeatures;
       this.charFeatures = charFeatures;
+      Map<String, Integer> catIdxMap = new HashMap<>();
+      List<String> catList = new ArrayList<>();
+      this.classToCategory = new int[categories.length];
+      for (int i = 0; i < categories.length; i++) {
+        String c = categories[i];
+        Integer idx = catIdxMap.get(c);
+        if (idx == null) {
+          idx = catList.size();
+          catIdxMap.put(c, idx);
+          catList.add(c);
+        }
+        this.classToCategory[i] = idx;
+      }
+      this.uniqueCategories = catList.toArray(new String[0]);
     }
   }
 
@@ -240,23 +261,69 @@ public final class MlClassifier {
     double maxLogit = Double.NEGATIVE_INFINITY;
     for (double v : logits) if (v > maxLogit) maxLogit = v;
     double sumExp = 0.0;
-    int bestIdx = 0;
-    double bestLogit = Double.NEGATIVE_INFINITY;
-    double secondLogit = Double.NEGATIVE_INFINITY;
+    double[] exps = new double[logits.length];
     for (int i = 0; i < logits.length; i++) {
-      sumExp += Math.exp(logits[i] - maxLogit);
-      if (logits[i] > bestLogit) {
-        secondLogit = bestLogit;
-        bestLogit = logits[i];
-        bestIdx = i;
-      } else if (logits[i] > secondLogit) {
-        secondLogit = logits[i];
-      }
+      double e = Math.exp(logits[i] - maxLogit);
+      exps[i] = e;
+      sumExp += e;
     }
     if (sumExp <= 0.0) return null;
-    double bestProb = Math.exp(bestLogit - maxLogit) / sumExp;
-    double secondProb = secondLogit == Double.NEGATIVE_INFINITY ? 0.0 : Math.exp(secondLogit - maxLogit) / sumExp;
-    return new Prediction(m.categories[bestIdx], m.subcategories[bestIdx], bestProb, bestProb - secondProb, activeSignals);
+
+    double[] catProbs = new double[m.uniqueCategories.length];
+    for (int i = 0; i < logits.length; i++) {
+      catProbs[m.classToCategory[i]] += exps[i] / sumExp;
+    }
+    int bestCatIdx = 0;
+    double bestCatProb = -1.0, secondCatProb = 0.0;
+    for (int c = 0; c < catProbs.length; c++) {
+      double cp = catProbs[c];
+      if (cp > bestCatProb) {
+        secondCatProb = bestCatProb < 0.0 ? 0.0 : bestCatProb;
+        bestCatProb = cp;
+        bestCatIdx = c;
+      } else if (cp > secondCatProb) {
+        secondCatProb = cp;
+      }
+    }
+
+    int bestIdx = 0;
+    double bestLogitInCat = Double.NEGATIVE_INFINITY;
+    double secondLogitOverall = Double.NEGATIVE_INFINITY;
+    int globalBestIdx = 0;
+    double globalBestLogit = Double.NEGATIVE_INFINITY;
+    for (int i = 0; i < logits.length; i++) {
+      if (logits[i] > globalBestLogit) {
+        globalBestLogit = logits[i];
+        globalBestIdx = i;
+      }
+      if (m.classToCategory[i] == bestCatIdx && logits[i] > bestLogitInCat) {
+        bestLogitInCat = logits[i];
+        bestIdx = i;
+      }
+    }
+    for (int i = 0; i < logits.length; i++) {
+      if (i != bestIdx && logits[i] > secondLogitOverall) {
+        secondLogitOverall = logits[i];
+      }
+    }
+    double bestProb = exps[bestIdx] / sumExp;
+    double secondProb = secondLogitOverall == Double.NEGATIVE_INFINITY ? 0.0 : exps[findIndex(logits, bestIdx, secondLogitOverall)] / sumExp;
+    double subMargin = globalBestIdx == bestIdx ? Math.max(0.0, bestProb - secondProb) : bestProb;
+    return new Prediction(
+        m.categories[bestIdx],
+        m.subcategories[bestIdx],
+        bestProb,
+        subMargin,
+        bestCatProb,
+        Math.max(0.0, bestCatProb - secondCatProb),
+        activeSignals);
+  }
+
+  private static int findIndex(double[] logits, int excludeIdx, double targetLogit) {
+    for (int i = 0; i < logits.length; i++) {
+      if (i != excludeIdx && logits[i] == targetLogit) return i;
+    }
+    return excludeIdx;
   }
 
   private static void scoreBlock(Map<String, Integer> counts, Map<String, Feature> vocab, double[] logits) {
