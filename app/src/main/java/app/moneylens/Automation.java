@@ -24,7 +24,28 @@ public final class Automation {
   AlarmReceiver.scheduleNext(c);
  }
  public static boolean quiet(JSONObject settings){if(!settings.optBoolean("quietEnabled"))return false;int h=LocalTime.now().getHour(),start=settings.optInt("quietStart",22),end=settings.optInt("quietEnd",8);return start==end|| (start<end?h>=start&&h<end:h>=start||h<end);}
- public static boolean notify(Context c,String id,String title,String body,String screen){NotificationManager nm=c.getSystemService(NotificationManager.class);if(!nm.areNotificationsEnabled())return false;nm.createNotificationChannel(new NotificationChannel("planning","Planning & reminders",NotificationManager.IMPORTANCE_DEFAULT));Intent i=new Intent(c,MainActivity.class).putExtra("screen",screen).setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);PendingIntent p=PendingIntent.getActivity(c,id.hashCode(),i,PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);try{nm.notify(id.hashCode(),new Notification.Builder(c,"planning").setSmallIcon(R.drawable.ic_notification).setContentTitle(title).setContentText(body).setContentIntent(p).setVisibility(Notification.VISIBILITY_PRIVATE).setAutoCancel(true).build());return true;}catch(SecurityException e){return false;}}
+ public static boolean notify(Context c,String id,String title,String body,String screen){NotificationManager nm=c.getSystemService(NotificationManager.class);if(!nm.areNotificationsEnabled())return false;nm.createNotificationChannel(new NotificationChannel("planning","Planning & reminders",NotificationManager.IMPORTANCE_DEFAULT));Intent i=new Intent(c,MainActivity.class).putExtra("screen",screen).setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);PendingIntent p=PendingIntent.getActivity(c,id.hashCode(),i,PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);try{nm.notify(id.hashCode(),new Notification.Builder(c,"planning").setSmallIcon(R.drawable.ic_notification).setContentTitle(title).setContentText(body).setStyle(new Notification.BigTextStyle().bigText(body)).setContentIntent(p).setVisibility(Notification.VISIBILITY_PRIVATE).setAutoCancel(true).build());return true;}catch(SecurityException e){return false;}}
+ public static boolean notifyCategoryAlert(Context c,String id,String title,String body,boolean ms){
+  NotificationManager nm=c.getSystemService(NotificationManager.class);
+  if(nm==null||!nm.areNotificationsEnabled())return false;
+  nm.createNotificationChannel(new NotificationChannel("category_alerts",ms?"Amaran bajet kategori":"Category budget alerts",NotificationManager.IMPORTANCE_DEFAULT));
+  Intent i=new Intent(c,MainActivity.class).putExtra("screen","plan").setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);
+  PendingIntent p=PendingIntent.getActivity(c,id.hashCode(),i,PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
+  try{
+   Notification pub=new Notification.Builder(c,"category_alerts").setSmallIcon(R.drawable.ic_notification).setContentTitle(ms?"Amaran bajet kategori":"Category budget alert").setContentText(ms?"Buka Rancang di MoneyLens untuk butiran.":"Open Plan in MoneyLens for details.").build();
+   nm.notify(id.hashCode(),new Notification.Builder(c,"category_alerts").setSmallIcon(R.drawable.ic_notification).setContentTitle(title).setContentText(body).setStyle(new Notification.BigTextStyle().bigText(body)).setGroup("moneylens_category_alerts").setCategory(Notification.CATEGORY_STATUS).setPublicVersion(pub).setContentIntent(p).setVisibility(Notification.VISIBILITY_PRIVATE).setAutoCancel(true).build());
+   return true;
+  }catch(SecurityException e){return false;}
+ }
+ public static void dispatchCategoryAlerts(Context c,JSONArray alerts,boolean ms){
+  if(alerts==null||alerts.length()==0)return;
+  for(int i=0;i<alerts.length();i++){
+   try{
+    JSONObject row=alerts.getJSONObject(i);
+    notifyCategoryAlert(c,row.getString("key"),row.getString("title"),row.getString("body"),ms);
+   }catch(Exception ignored){}
+  }
+ }
  static void alert(Context c,String id,String title,String body,String screen)throws Exception{if(!Vault.alertExists(c,id)&&notify(c,id,title,body,screen))Vault.markAlert(c,id);}
 
  public static void checkDueReminders(Context c)throws Exception{
@@ -139,7 +160,7 @@ public final class Automation {
    if(prefs.optBoolean("digest")){if(count>0&&LocalTime.now().getHour()>=prefs.optInt("digestHour",19))alert(c,"digest:"+now,ms?"Semakan MoneyLens anda":"Your MoneyLens check-in",ms?(count+" cadangan menunggu semakan anda."):(count+" suggestions are waiting for your review."),"inbox");}
    else for(int i=0;i<drafts.length();i++){JSONObject d=drafts.getJSONObject(i);if(d.optString("state").equals("review")&&!d.optBoolean("prompted"))CaptureService.showPrompt(c,d);}
    if(prefs.optBoolean("reminders",true)){JSONArray bills=s.getJSONArray("bills");for(int i=0;i<bills.length();i++){JSONObject b=bills.getJSONObject(i);if(b.optBoolean("paid")||b.optBoolean("cancelled"))continue;String cancel=b.optString("cancelDate");if(!cancel.isEmpty()&&!LocalDate.parse(cancel).isAfter(now.plusDays(2)))alert(c,"cancel:"+b.getString("id")+":"+cancel,ms?"Peringatan langganan":"Subscription reminder",ms?"Tarikh akhir pembatalan semakin hampir. Semak Rancang.":"A cancellation deadline is approaching. Check Plan.","plan");}}
-   if(prefs.optBoolean("budgetAlerts",true)){JSONObject r=Finance.report(s,now);JSONArray b=r.getJSONArray("budgets");int threshold=prefs.optInt("threshold",80);for(int i=0;i<b.length();i++){JSONObject row=b.getJSONObject(i);if(row.getLong("available")>0&&row.getLong("spent")*100>=row.getLong("available")*threshold)alert(c,"budget:"+row.getString("id")+":"+row.getString("start")+":"+threshold,ms?"Semakan bajet":"Budget check-in",ms?"Kategori telah mencapai ambang amaran anda. Buka Rancang untuk butiran.":"A category has reached your alert threshold. Open Plan for details.","plan");}}
+   if(prefs.optBoolean("budgetAlerts",true)){JSONArray catAlerts=Finance.evaluateCategoryAlerts(s,now,"");for(int i=0;i<catAlerts.length();i++){JSONObject row=catAlerts.getJSONObject(i);String ak=row.getString("key");if(!Vault.alertExists(c,ak)&&notifyCategoryAlert(c,ak,row.getString("title"),row.getString("body"),ms))Vault.markAlert(c,ak);}}
    if(prefs.optBoolean("weeklyBudgetNudge",false)){JSONObject nudge=Finance.weeklyBudgetNudge(s,now);if(nudge!=null)alert(c,nudge.getString("key"),nudge.getString("title"),nudge.getString("body"),"plan");}
   }
   autoBackup(c,false);MoneyWidget.refresh(c,s);

@@ -289,6 +289,22 @@ public final class Extras {
   }
   Ledger.post(s,txArgs);
   d.put("autoRecorded",true);
+  if("expense".equals(kind)){
+   try{
+    JSONObject sum=Finance.categoryBudgetSummary(s,LocalDate.parse(dt),cat,sub);
+    if(sum!=null){
+     d.put("catCycleSpent",sum.getLong("cycleSpent"));
+     if(sum.optBoolean("hasBudget")){
+      d.put("catHasBudget",true)
+       .put("catBudgetAvailable",sum.getLong("available"))
+       .put("catBudgetSpent",sum.getLong("spent"))
+       .put("catBudgetRemaining",sum.getLong("remaining"))
+       .put("catBudgetPct",sum.getInt("spentPct"))
+       .put("catBudgetPace",sum.optString("paceStatus","on_track"));
+     }
+    }
+   }catch(Exception ignored){}
+  }
  }
  static JSONObject findMatchingBill(JSONObject s,String kind,long amt,String merchant,String category,String subcategory,String dateStr){
   if(!"expense".equals(kind))return null;
@@ -492,5 +508,80 @@ public final class Extras {
    }
    return;
   }
+ }
+ public static String categoryEmoji(String category){
+  if(category==null)return "💸";
+  switch(category){
+   case "Food & drinks":return "🍲";
+   case "Groceries":return "🛒";
+   case "Transport":return "🚗";
+   case "Bills & utilities":return "⚡";
+   case "Loans, BNPL & Credit":return "💳";
+   case "Housing & property":return "🏠";
+   case "Shopping":return "🛍️";
+   case "Health & medical":return "🏥";
+   case "Insurance & Takaful":return "🛡️";
+   case "Education":return "📚";
+   case "Family & gifts":return "🎁";
+   case "Entertainment & travel":return "🎬";
+   case "Investments & savings":return "📈";
+   case "Taxes & government":return "🏛️";
+   case "Fees & charges":return "🧾";
+   case "Income & salary":return "💼";
+   case "Transfers & top-up":return "🔄";
+   default:return "💸";
+  }
+ }
+ private static String rm(long minor){
+  return BigDecimal.valueOf(Math.abs(minor),2).toPlainString();
+ }
+ public static String formatRecordedTitle(JSONObject d,JSONObject settings,boolean ms,boolean blur){
+  String cat=d.optString("category","Miscellaneous");
+  boolean catRich=settings==null||settings.optBoolean("categoryAlerts",true);
+  String prefix=catRich?(categoryEmoji(cat)+" "):"";
+  String merchant=d.optString("merchant",ms?"Bayaran":"Payment");
+  if(blur)return prefix+(ms?"Bayaran direkod · ":"Payment recorded · ")+merchant;
+  return prefix+(ms?"Direkod RM ":"Recorded RM ")+rm(d.optLong("amount"))+" · "+merchant;
+ }
+ public static String formatRecordedBody(JSONObject d,JSONObject settings,boolean ms,boolean blur){
+  String cat=d.optString("category","Miscellaneous"),sub=d.optString("subcategory",""),matchedBill=d.optString("matchedBillName","");
+  String catDisp=Finance.categoryLabel(cat,ms);
+  StringBuilder sb=new StringBuilder(sub.isEmpty()?catDisp:(catDisp+" › "+sub));
+  String origCur=d.optString("originalCurrency",""),origAmt=d.optString("originalAmount","");
+  if(!origCur.isEmpty()&&!origAmt.isEmpty()&&!blur)sb.append(" (").append(origCur).append(" ").append(origAmt).append(")");
+  if(!matchedBill.isEmpty())sb.append(ms?" · Dipaut ke ":" · Linked to ").append(matchedBill);
+  boolean catRich=settings==null||settings.optBoolean("categoryAlerts",true);
+  if(!blur&&catRich){
+   if(d.optBoolean("catHasBudget")){
+    int pct=d.optInt("catBudgetPct",0);
+    long rem=d.optLong("catBudgetRemaining",0L);
+    if(rem<0)sb.append(ms?(" · "+pct+"% bajet (terlebih RM "+rm(-rem)+")"):(" · "+pct+"% budget (RM "+rm(-rem)+" over)"));
+    else sb.append(ms?(" · "+pct+"% bajet (baki RM "+rm(rem)+")"):(" · "+pct+"% of budget (RM "+rm(rem)+" left)"));
+   }else{
+    long cycleSpent=d.optLong("catCycleSpent",0L);
+    if(cycleSpent>d.optLong("amount",0L))sb.append(ms?(" · RM "+rm(cycleSpent)+" kitaran ini"):(" · RM "+rm(cycleSpent)+" this cycle"));
+   }
+  }
+  sb.append(d.optBoolean("needsNote")?(ms?" · Ketik untuk ubah atau Tambah Nota":" · Tap to edit or Add Note"):(ms?" · Disimpan automatik":" · Auto-saved"));
+  return sb.toString();
+ }
+ public static String formatReviewTitle(JSONObject d,JSONObject settings,boolean ms,boolean blur){
+  String cat=d.optString("category","Miscellaneous");
+  boolean catRich=settings==null||settings.optBoolean("categoryAlerts",true);
+  String prefix=catRich?(categoryEmoji(cat)+" "):"";
+  if(blur)return prefix+(ms?"Semak bayaran baharu?":"Review new payment?");
+  long amt=d.optLong("amount",0L);
+  String merchant=d.optString("merchant","");
+  if(amt>0&&!merchant.isEmpty())return prefix+(ms?"Semak · RM ":"Review · RM ")+rm(amt)+" · "+merchant;
+  return prefix+(ms?"Rekod bayaran?":"Record a payment?");
+ }
+ public static String formatReviewBody(JSONObject d,JSONObject settings,boolean ms,boolean blur){
+  if(blur)return ms?"Cadangan baharu sedia. Semak butiran di MoneyLens.":"A new suggestion is ready. Review the details in MoneyLens.";
+  String cat=d.optString("category","Miscellaneous"),sub=d.optString("subcategory","");
+  String catDisp=Finance.categoryLabel(cat,ms);
+  String head=sub.isEmpty()?catDisp:(catDisp+" › "+sub);
+  String src=d.optString("source","");
+  if(!src.isEmpty())return head+" · "+src+(ms?" · Ketik Semak":" · Tap Review");
+  return head+(ms?" · Ketik untuk semak butiran.":" · Tap to review details.");
  }
 }

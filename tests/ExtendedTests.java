@@ -387,6 +387,64 @@ public final class ExtendedTests {
    JSONObject atomeDraft=Extras.captureState(s,"com.atome.my","com.atome.my","k-atome","Your Atome payment of RM 16.90 at Nasi Kandar Line Clear has succeeded.",now+1000,now+1000);
    yes(atomeDraft!=null&&atomeDraft.optBoolean("autoRecorded")&&atomeDraft.getString("category").equals("Food & drinks")&&atomeDraft.getString("subcategory").equals("Hawker & Mamak"));
   });
+  test("Phase 11 expanded category notification rules & real-time category budget alerts",()->{
+   JSONObject rent=PaymentParser.parse("You transferred RM 1,250.00 for Monthly Rent October.","MAE by Maybank2u");
+   yes(rent!=null&&rent.getString("category").equals("Housing & property")&&rent.getString("subcategory").equals("Rent"));
+
+   JSONObject pipe=PaymentParser.parse("Paid RM 180.00 to Tukang Paip Plumbing Works.","TNG eWallet");
+   yes(pipe!=null&&pipe.getString("category").equals("Housing & property")&&pipe.getString("subcategory").equals("Home Repair & Maintenance"));
+
+   JSONObject dobi=PaymentParser.parse("Paid RM 14.00 at dobiQueen Self Service Laundry.","TNG eWallet");
+   yes(dobi!=null&&dobi.getString("category").equals("Groceries")&&dobi.getString("subcategory").equals("Household & Cleaning Supplies"));
+
+   JSONObject wash=PaymentParser.parse("Paid RM 20.00 at Auto Spa Car Wash.","TNG eWallet");
+   yes(wash!=null&&wash.getString("category").equals("Transport")&&wash.getString("subcategory").equals("Vehicle Maintenance & Service"));
+
+   JSONObject allowance=PaymentParser.parse("RM 300.00 transferred for Parents Allowance via DuitNow.","MAE");
+   yes(allowance!=null&&allowance.getString("category").equals("Family & gifts")&&allowance.getString("subcategory").equals("Parents Allowance"));
+
+   JSONObject gift=PaymentParser.parse("Paid RM 120.00 to BloomThis Gift Hamper.","ShopeePay");
+   yes(gift!=null&&gift.getString("category").equals("Family & gifts")&&gift.getString("subcategory").equals("Festive (Angpao / Duit Raya) & Gifts"));
+
+   JSONObject insMed=PaymentParser.parse("RM 220.00 debited for Prudential PruBSN Medical Card policy.","CIMB OCTO");
+   yes(insMed!=null&&insMed.getString("category").equals("Insurance & Takaful")&&insMed.getString("subcategory").equals("Medical & Health Card"));
+
+   JSONObject insPa=PaymentParser.parse("Allianz Personal Accident Plan payment of RM 65.00 completed.","Maybank2u");
+   yes(insPa!=null&&insPa.getString("category").equals("Insurance & Takaful")&&insPa.getString("subcategory").equals("Personal Accident"));
+
+   JSONObject insEdu=PaymentParser.parse("Great Eastern Child Education Plan RM 150.00 deducted.","Maybank2u");
+   yes(insEdu!=null&&insEdu.getString("category").equals("Insurance & Takaful")&&insEdu.getString("subcategory").equals("Education Insurance"));
+
+   JSONObject insLife=PaymentParser.parse("Auto-debit of RM 110.00 for Takaful Ikhlas completed.","BIMB");
+   yes(insLife!=null&&insLife.getString("category").equals("Insurance & Takaful")&&insLife.getString("subcategory").equals("Life Insurance / Takaful"));
+
+   JSONObject outlets=PaymentParser.parse("Paid RM 45.00 at Pet Corner Outlets.","TNG eWallet");
+   yes(outlets!=null&&!outlets.getString("category").equals("Transport"));
+
+   // Category budget summary + threshold alerts (warn @ 80% & over @ >100%) + blur-safe formatting
+   JSONObject s=Ledger.initial();
+   Ledger.apply(s,"budget",new JSONObject().put("category","Food & drinks").put("amount","100.00"));
+   long now=System.currentTimeMillis();
+   JSONObject d1=Extras.captureState(s,"com.maybank2u.life","MAE","k-cat1","RM 85.00 at RESTORAN PELITA",now,now);
+   yes(d1!=null&&d1.optBoolean("autoRecorded")&&d1.optBoolean("catHasBudget")&&d1.optInt("catBudgetPct")==85&&d1.optLong("catBudgetRemaining")==1500);
+   JSONArray a1=Finance.evaluateCategoryAlerts(s,LocalDate.now(),"Food & drinks");
+   yes(a1.length()==1&&"warn".equals(a1.getJSONObject(0).getString("level"))&&a1.getJSONObject(0).getString("title").contains("Food & drinks (85%)")&&a1.getJSONObject(0).getString("title").contains("🍲"));
+
+   JSONObject d2=Extras.captureState(s,"com.maybank2u.life","MAE","k-cat2","RM 30.00 at ZUS COFFEE",now+2000,now+2000);
+   yes(d2!=null&&d2.optBoolean("autoRecorded")&&d2.optInt("catBudgetPct")==115&&d2.optLong("catBudgetRemaining")==-1500);
+   JSONArray a2=Finance.evaluateCategoryAlerts(s,LocalDate.now(),"Food & drinks");
+   yes(a2.length()==1&&"over".equals(a2.getJSONObject(0).getString("level"))&&a2.getJSONObject(0).getString("title").contains("Budget exceeded")&&!a2.getJSONObject(0).getString("key").equals(a1.getJSONObject(0).getString("key")));
+
+   JSONObject prefs=s.getJSONObject("settings");
+   String tClear=Extras.formatRecordedTitle(d2,prefs,false,false),bClear=Extras.formatRecordedBody(d2,prefs,false,false);
+   yes(tClear.contains("🍲")&&tClear.contains("RM 30.00")&&bClear.contains("115% budget (RM 15.00 over)"));
+   String tBlur=Extras.formatRecordedTitle(d2,prefs,false,true),bBlur=Extras.formatRecordedBody(d2,prefs,false,true);
+   yes(tBlur.contains("🍲")&&!tBlur.contains("30.00")&&!bBlur.contains("15.00")&&!bBlur.contains("115%"));
+
+   Ledger.apply(s,"settings",new JSONObject().put("lang","ms"));
+   JSONArray aMs=Finance.evaluateCategoryAlerts(s,LocalDate.now(),"Food & drinks");
+   yes(aMs.length()==1&&aMs.getJSONObject(0).getString("title").contains("Makanan & minuman")&&aMs.getJSONObject(0).getString("title").contains("Melebihi bajet"));
+  });
   System.out.println("RESULT: "+passed+" extended tests passed");
  }
 }

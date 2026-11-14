@@ -19,7 +19,7 @@ public final class Ledger {
     JSONObject s=new JSONObject();s.put("schema",2);s.put("revision",0);
     for(String name: new String[]{"accounts","transactions","drafts","budgets","bills","goals","debts","sources","seen","rules","favorites","receipts","imports","reconciliations","installments","customCategories","alerts","ruleHistory"})s.put(name,new JSONArray());
     s.getJSONArray("accounts").put(new JSONObject().put("id","cash").put("name","Cash").put("type","cash").put("color","sage"));
-    s.put("settings",new JSONObject().put("name","Darren").put("theme","light").put("lang","en").put("cycleDay",1).put("appLock",false).put("lockTimeoutSec",0).put("autoRecord",true).put("captureAllSources",true).put("autoOpenOnBoot",true).put("alwaysOnScheduler",true).put("ecoCapture",true));
+    s.put("settings",new JSONObject().put("name","Darren").put("theme","light").put("lang","en").put("cycleDay",1).put("appLock",false).put("lockTimeoutSec",0).put("autoRecord",true).put("captureAllSources",true).put("autoOpenOnBoot",true).put("alwaysOnScheduler",true).put("ecoCapture",true).put("categoryAlerts",true));
     return s;
   }
   public static JSONObject find(JSONArray a,String id) throws JSONException {
@@ -67,7 +67,7 @@ public final class Ledger {
         if(a.has("cycleDay")){int d=a.getInt("cycleDay");if(d<1||d>31)throw new IllegalArgumentException("Cycle day must be 1–31.");settings.put("cycleDay",d);}
         if(a.has("appLock"))settings.put("appLock",a.getBoolean("appLock"));
         if(a.has("lockTimeoutSec")){int v=a.getInt("lockTimeoutSec");if(!Arrays.asList(0,60,300,900).contains(v))throw new IllegalArgumentException("Choose a supported lock timeout.");settings.put("lockTimeoutSec",v);}
-        for(String k:new String[]{"quietEnabled","digest","reminders","budgetAlerts","weeklyBudgetNudge","widgetAmounts","captureWhileLocked","autoRecord","captureAllSources","autoOpenOnBoot","alwaysOnScheduler","ecoCapture","privacyBlur"})if(a.has(k))settings.put(k,a.getBoolean(k));
+        for(String k:new String[]{"quietEnabled","digest","reminders","budgetAlerts","categoryAlerts","weeklyBudgetNudge","widgetAmounts","captureWhileLocked","autoRecord","captureAllSources","autoOpenOnBoot","alwaysOnScheduler","ecoCapture","privacyBlur"})if(a.has(k))settings.put(k,a.getBoolean(k));
         for(String k:new String[]{"quietStart","quietEnd","digestHour"})if(a.has(k)){int v=a.getInt(k);if(v<0||v>23)throw new IllegalArgumentException("Choose an hour from 0 to 23.");settings.put(k,v);}
         if(a.has("threshold")){int v=a.getInt("threshold");if(v<1||v>100)throw new IllegalArgumentException("Threshold must be 1–100%.");settings.put("threshold",v);}break;
       }

@@ -15,6 +15,7 @@ import android.widget.*;
 import android.text.InputType;
 import org.json.*;
 import java.io.*;
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.*;
 import java.nio.charset.StandardCharsets;
@@ -192,20 +193,32 @@ public final class MainActivity extends Activity {
     String listeners=Settings.Secure.getString(getContentResolver(),"enabled_notification_listeners");ComponentName ours=new ComponentName(this,CaptureService.class);boolean access=false;if(listeners!=null)for(String item:listeners.split(":"))if(ours.equals(ComponentName.unflattenFromString(item)))access=true;
     PowerManager pm=getSystemService(PowerManager.class);
     boolean batteryOk=pm!=null&&pm.isIgnoringBatteryOptimizations(getPackageName());
-    return new JSONObject().put("notificationAccess",access).put("listenerConnected",CaptureService.connected).put("schedulerRunning",KeepAliveService.running).put("batteryUnrestricted",batteryOk).put("biometricAvailable",isBiometricAvailable()).put("promptPermission",getSystemService(NotificationManager.class).areNotificationsEnabled()).put("overlayPermission",Settings.canDrawOverlays(this)).put("autoOpenOnBoot",getSharedPreferences("health",0).getBoolean("autoOpenOnBoot",true)).put("alwaysOnScheduler",getSharedPreferences("health",0).getBoolean("alwaysOnScheduler",true)).put("ecoCapture",!Vault.hasMeta(this)||Vault.fastBool(this,"ecoCapture",true)).put("error",getSharedPreferences("health",0).getString("error","")).put("version","0.9.0").put("autoBackup",getSharedPreferences("health",0).getBoolean("autoBackup",false)).put("backupSuccess",getSharedPreferences("health",0).getLong("backupSuccess",0)).put("backupError",getSharedPreferences("health",0).getString("backupError","")).put("recovery",new File(getNoBackupFilesDir(),"before-restore.vault").exists());
+    return new JSONObject().put("notificationAccess",access).put("listenerConnected",CaptureService.connected).put("schedulerRunning",KeepAliveService.running).put("batteryUnrestricted",batteryOk).put("biometricAvailable",isBiometricAvailable()).put("promptPermission",getSystemService(NotificationManager.class).areNotificationsEnabled()).put("overlayPermission",Settings.canDrawOverlays(this)).put("autoOpenOnBoot",getSharedPreferences("health",0).getBoolean("autoOpenOnBoot",true)).put("alwaysOnScheduler",getSharedPreferences("health",0).getBoolean("alwaysOnScheduler",true)).put("ecoCapture",!Vault.hasMeta(this)||Vault.fastBool(this,"ecoCapture",true)).put("error",getSharedPreferences("health",0).getString("error","")).put("version","0.10.0").put("autoBackup",getSharedPreferences("health",0).getBoolean("autoBackup",false)).put("backupSuccess",getSharedPreferences("health",0).getLong("backupSuccess",0)).put("backupError",getSharedPreferences("health",0).getString("backupError","")).put("recovery",new File(getNoBackupFilesDir(),"before-restore.vault").exists());
   }
-  private JSONObject sendTestNotification()throws Exception{
+  private JSONObject sendTestNotification(String presetKey)throws Exception{
     String[][] templates={
-      {"my.com.tngdigital.ewallet","Touch 'n Go eWallet","PayDirect Toll Deduction","You have paid RM2.50 at DUKE TOLL PLAZA.","You have paid RM2.50 at DUKE TOLL PLAZA. Wallet balance: RM84.20. Never share your OTP/TAC with anyone."},
-      {"com.maybank2u.life","MAE by Maybank2u","MAE QRPay","RM 15.50 at RESTORAN PELITA","RM 15.50 at RESTORAN PELITA. Available balance: RM 1,240.00. Do not share your Secure2u or TAC."},
-      {"com.shopee.pay.my","ShopeePay MY","ShopeePay Payment Successful","You have paid RM 8.50 at Nasi Lemak Wanjo Kampung Baru.","You have paid RM 8.50 at Nasi Lemak Wanjo Kampung Baru. ShopeePay balance: RM 64.50."},
-      {"com.shopee.my","Shopee (SPayLater / ShopeePay)","SPayLater Payment","Payment of RM 49.90 for SPayLater installment completed.","Payment of RM 49.90 for SPayLater installment completed. Available credit limit: RM 1,500.00. Cashback earned: RM 1.00."},
-      {"com.atome.my","Atome BNPL","Atome Instalment Confirmed","Your Atome payment of RM 16.90 at Zus Coffee has succeeded.","Your Atome payment of RM 16.90 at Zus Coffee has succeeded. 1/3 instalment settled."},
-      {"my.com.myboost","Boost / Boost PayFlex","Boost PayFlex QR Payment","You have paid RM 12.00 to Warung Pak Mat using PayFlex.","You have paid RM 12.00 to Warung Pak Mat using PayFlex. Boost Stars earned: 12."},
-      {"my.com.gxbank.mobile","GXBank","GXBank DuitNow QR","You paid RM 34.80 at 99 Speedmart via DuitNow QR.","You paid RM 34.80 at 99 Speedmart via DuitNow QR. Available balance: RM 820.10."},
-      {"com.maybank2u.life","Maybank2u","JomPAY Payment","You have paid RM 150.00 to PTPTN Direct Debit.","You have paid RM 150.00 to PTPTN Direct Debit. Ref: 9928172. Never share your TAC with anyone."}
+      {"toll","my.com.tngdigital.ewallet","Touch 'n Go eWallet","PayDirect Toll Deduction","You have paid RM2.50 at DUKE TOLL PLAZA.","You have paid RM2.50 at DUKE TOLL PLAZA. Wallet balance: RM84.20."},
+      {"food","com.maybank2u.life","MAE by Maybank2u","MAE QRPay","RM 15.50 at RESTORAN PELITA","RM 15.50 at RESTORAN PELITA. Available balance: RM 1,240.00."},
+      {"hawker","com.shopee.pay.my","ShopeePay MY","ShopeePay Payment Successful","You have paid RM 8.50 at Nasi Lemak Wanjo Kampung Baru.","You have paid RM 8.50 at Nasi Lemak Wanjo Kampung Baru. ShopeePay balance: RM 64.50."},
+      {"bnpl","com.shopee.my","Shopee (SPayLater / ShopeePay)","SPayLater Payment","Payment of RM 49.90 for SPayLater installment completed.","Payment of RM 49.90 for SPayLater installment completed. Available credit limit: RM 1,500.00."},
+      {"atome","com.atome.my","Atome BNPL","Atome Instalment Confirmed","Your Atome payment of RM 16.90 at Zus Coffee has succeeded.","Your Atome payment of RM 16.90 at Zus Coffee has succeeded. 1/3 instalment settled."},
+      {"payflex","my.com.myboost","Boost / Boost PayFlex","Boost PayFlex QR Payment","You have paid RM 12.00 to Warung Pak Mat using PayFlex.","You have paid RM 12.00 to Warung Pak Mat using PayFlex."},
+      {"groceries","my.com.gxbank.mobile","GXBank","GXBank DuitNow QR","You paid RM 34.80 at 99 Speedmart via DuitNow QR.","You paid RM 34.80 at 99 Speedmart via DuitNow QR. Available balance: RM 820.10."},
+      {"petrol","my.com.setel.mobile","Setel","Setel Pump & Pay Completed","RM 50.00 paid at PETRONAS Sri Hartamas via Setel.","RM 50.00 paid at PETRONAS Sri Hartamas via Setel. Mesra points earned."},
+      {"bills","com.maybank2u.life","MAE by Maybank2u","JomPAY Bill Payment","RM 142.30 paid to Tenaga Nasional (myTNB) Ref: 882104.","RM 142.30 paid to Tenaga Nasional (myTNB) Ref: 882104."},
+      {"health","my.com.tngdigital.ewallet","Touch 'n Go eWallet","TNG eWallet Payment","You paid RM 45.00 at Klinik Mediviron Bangsar.","You paid RM 45.00 at Klinik Mediviron Bangsar via DuitNow QR."},
+      {"insurance","com.cimb.octo","CIMB OCTO","Direct Debit Successful","RM 220.00 debited for Prudential PruBSN Medical Card.","RM 220.00 debited for Prudential PruBSN Medical Card monthly policy."},
+      {"rent","com.maybank2u.life","MAE by Maybank2u","DuitNow Transfer","You transferred RM 1,250.00 for Monthly Rent October.","You transferred RM 1,250.00 for Monthly Rent October via DuitNow."},
+      {"family","com.maybank2u.life","MAE by Maybank2u","DuitNow Instant Transfer","RM 300.00 transferred for Parents Allowance.","RM 300.00 transferred for Parents Allowance. Ref: MAK & AYAH."},
+      {"shopping","com.shopee.my","Shopee MY","Order Payment Confirmed","RM 68.00 paid at UNIQLO Malaysia via ShopeePay.","RM 68.00 paid at UNIQLO Malaysia via ShopeePay."},
+      {"education","my.com.tngdigital.ewallet","Touch 'n Go eWallet","eWallet Payment","You have paid RM 39.90 at POPULAR Bookstore.","You have paid RM 39.90 at POPULAR Bookstore."},
+      {"entertainment","my.com.tngdigital.ewallet","Touch 'n Go eWallet","GSC Cinema Tickets","You paid RM 42.00 at GSC Mid Valley.","You paid RM 42.00 at GSC Mid Valley via TNG eWallet."},
+      {"ptptn","com.maybank2u.life","Maybank2u","JomPAY Payment","You have paid RM 150.00 to PTPTN Direct Debit.","You have paid RM 150.00 to PTPTN Direct Debit. Ref: 9928172."}
     };
     int idx=(testCursor++)%templates.length;
+    if(presetKey!=null&&!presetKey.isEmpty()){
+      for(int i=0;i<templates.length;i++)if(templates[i][0].equalsIgnoreCase(presetKey)){idx=i;break;}
+    }
     String[] tpl=templates[idx];
     long now=System.currentTimeMillis();
     NotificationManager nm=getSystemService(NotificationManager.class);
@@ -213,13 +226,13 @@ public final class MainActivity extends Activity {
       nm.createNotificationChannel(new NotificationChannel("test_payment","Simulated bank & wallet alerts",NotificationManager.IMPORTANCE_HIGH));
       Bundle b=new Bundle();
       b.putBoolean("moneylensTestPayment",true);
-      b.putString("testPackage",tpl[0]);
-      b.putString("testLabel",tpl[1]);
+      b.putString("testPackage",tpl[1]);
+      b.putString("testLabel",tpl[2]);
       Notification n=new Notification.Builder(this,"test_payment")
         .setSmallIcon(R.drawable.ic_notification)
-        .setContentTitle(tpl[2])
-        .setContentText(tpl[3])
-        .setStyle(new Notification.BigTextStyle().bigText(tpl[4]))
+        .setContentTitle(tpl[3])
+        .setContentText(tpl[4])
+        .setStyle(new Notification.BigTextStyle().bigText(tpl[5]))
         .addExtras(b)
         .setAutoCancel(true)
         .build();
@@ -230,11 +243,46 @@ public final class MainActivity extends Activity {
     }
     JSONObject state=Vault.read(this);
     if(now-state.optLong("lastCapture",0)>2000){
-      JSONObject d=Vault.capture(this,tpl[0],tpl[1],"test-"+now,tpl[2]+" "+tpl[4],now);
-      if(d!=null)try{CaptureService.showPrompt(this,d);}catch(Exception ignored){}
+      boolean canNotify=nm!=null&&nm.areNotificationsEnabled();
+      JSONObject res=Vault.captureNotification(this,tpl[1],tpl[2],"test-"+now,tpl[3]+" "+tpl[5],now,visibleUnlocked,true,canNotify);
+      if(res!=null&&"captured".equals(res.optString("status"))){
+        JSONObject sPrefs=res.getJSONObject("settings");
+        if(res.optBoolean("shouldPrompt"))try{CaptureService.showPrompt(this,res.getJSONObject("draft"),sPrefs,true);}catch(Exception ignored){}
+        JSONArray alerts=res.optJSONArray("categoryAlerts");
+        if(alerts!=null&&alerts.length()>0)Automation.dispatchCategoryAlerts(this,alerts,"ms".equals(sPrefs.optString("lang","en")));
+      }
       state=Vault.read(this);
     }
     return state;
+  }
+  private JSONObject sendTestCategoryAlert(String category)throws Exception{
+    JSONObject s=Vault.read(this),prefs=s.getJSONObject("settings");
+    boolean ms="ms".equals(prefs.optString("lang","en"));
+    java.time.LocalDate now=java.time.LocalDate.now();
+    JSONArray live=Finance.evaluateCategoryAlerts(s,now,category);
+    if(live.length()>0){
+      Automation.dispatchCategoryAlerts(this,live,ms);
+      return s;
+    }
+    String cat=(category==null||category.trim().isEmpty())?"Food & drinks":category.trim();
+    String catDisp=Finance.categoryLabel(cat,ms);
+    String emoji=Extras.categoryEmoji(cat);
+    JSONObject sum=Finance.categoryBudgetSummary(s,now,cat,"");
+    String title;String body;
+    if(sum!=null&&sum.optBoolean("hasBudget")){
+      int pct=Math.max(82,sum.optInt("spentPct",82));
+      long avail=sum.getLong("available");
+      long sampleSpent=Math.round(avail*(pct/100.0));
+      long rem=avail-sampleSpent;
+      title=emoji+" "+(rem<0?(ms?"Melebihi bajet · ":"Budget exceeded · "):(ms?"Amaran bajet · ":"Budget alert · "))+catDisp+" ("+pct+"%)";
+      body=ms?("RM "+BigDecimal.valueOf(sampleSpent,2).toPlainString()+" daripada bajet RM "+BigDecimal.valueOf(avail,2).toPlainString()+" kitaran ini.")
+             :("RM "+BigDecimal.valueOf(sampleSpent,2).toPlainString()+" of RM "+BigDecimal.valueOf(avail,2).toPlainString()+" budget this cycle.");
+    }else{
+      title=emoji+" "+(ms?"Amaran bajet · ":"Budget alert · ")+catDisp+" (85%)";
+      body=ms?"RM 425.00 daripada had bajet RM 500.00 telah digunakan (baki RM 75.00 minggu ini).":"RM 425.00 of RM 500.00 limit used (RM 75.00 left this cycle).";
+    }
+    Automation.notifyCategoryAlert(this,"sample-cat:"+cat,title,body,ms);
+    return s;
   }
   public final class Bridge {
     @JavascriptInterface public void request(String rid,String method,String payload){
@@ -250,7 +298,8 @@ public final class MainActivity extends Activity {
         else if(method.equals("csvPreview")){if(stagedCsv==null)throw new IllegalStateException("Choose a CSV file first.");stagedRows=CsvImport.preview(stagedCsv,args,Vault.read(MainActivity.this));result=stagedRows;}
         else if(method.equals("csvCommit")){if(stagedRows==null)throw new IllegalStateException("Preview the CSV first.");JSONArray selected=args.getJSONArray("indices"),rows=new JSONArray();for(int i=0;i<selected.length();i++){JSONObject row=stagedRows.getJSONObject(selected.getInt(i));if(row.has("error")||row.optBoolean("duplicate"))throw new IllegalArgumentException("Remove invalid or previously imported rows.");rows.put(row);}result=Vault.command(MainActivity.this,"importCommit",new JSONObject().put("batch",Ledger.id()).put("rows",rows));stagedCsv=null;stagedRows=null;}
         else if(method.equals("paste")){String text=args.getString("text");if(text.length()>4000)throw new IllegalArgumentException("Paste at most 4,000 characters.");JSONObject draft=PaymentParser.parse(text,"Shared text");if(draft==null)draft=ReceiptParser.parse(text);draft.put("autoCapture",true);result=Vault.command(MainActivity.this,"draft",draft);MoneyWidget.refresh(MainActivity.this);}
-        else if(method.equals("testNotification")){result=sendTestNotification();MoneyWidget.refresh(MainActivity.this);}
+        else if(method.equals("testNotification")){result=sendTestNotification(args.optString("preset",""));MoneyWidget.refresh(MainActivity.this);}
+        else if(method.equals("testCategoryAlert")){result=sendTestCategoryAlert(args.optString("category",""));}
         else if(method.equals("testReminder")){
           JSONObject s=Vault.read(MainActivity.this),bill=null;
           String bid=args.optString("id","");
@@ -267,7 +316,7 @@ public final class MainActivity extends Activity {
         else if(method.equals("stopAutoBackup")){getSharedPreferences("health",0).edit().putBoolean("autoBackup",false).apply();result=true;}
         else if(method.equals("backupNow")){Automation.autoBackup(MainActivity.this,true);result=true;}
         else if(method.equals("diagnosticExport")){exportToast="Diagnostics exported.";pendingExport=args.getString("text").getBytes(StandardCharsets.UTF_8);runOnUiThread(()->launchExternal(new Intent(Intent.ACTION_CREATE_DOCUMENT).setType("text/plain").addCategory(Intent.CATEGORY_OPENABLE).putExtra(Intent.EXTRA_TITLE,"MoneyLens-Diagnostics.txt"),50));result=true;}
-        else if(method.equals("diagnostics"))result=new JSONObject().put("version","0.9.0").put("ecoCapture",!Vault.hasMeta(MainActivity.this)||Vault.fastBool(MainActivity.this,"ecoCapture",true)).put("mlClassifierLoaded",MlClassifier.isLoaded()).put("notificationAccess",status().getBoolean("notificationAccess")).put("listenerConnected",CaptureService.connected).put("schedulerRunning",KeepAliveService.running).put("lastCapture",Vault.read(MainActivity.this).optLong("lastCapture")).put("backupSuccess",status().getLong("backupSuccess")).put("workError",getSharedPreferences("health",0).getString("workError","")).put("pendingReviews",countPending()).put("networkPermission",false).put("counters",Health.snapshot(MainActivity.this));
+        else if(method.equals("diagnostics"))result=new JSONObject().put("version","0.10.0").put("ecoCapture",!Vault.hasMeta(MainActivity.this)||Vault.fastBool(MainActivity.this,"ecoCapture",true)).put("mlClassifierLoaded",MlClassifier.isLoaded()).put("notificationAccess",status().getBoolean("notificationAccess")).put("listenerConnected",CaptureService.connected).put("schedulerRunning",KeepAliveService.running).put("lastCapture",Vault.read(MainActivity.this).optLong("lastCapture")).put("backupSuccess",status().getLong("backupSuccess")).put("workError",getSharedPreferences("health",0).getString("workError","")).put("pendingReviews",countPending()).put("networkPermission",false).put("counters",Health.snapshot(MainActivity.this));
         else if(method.equals("apps")){
           JSONArray apps=new JSONArray();List<ResolveInfo> list=getPackageManager().queryIntentActivities(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER),0);Set<String> seen=new HashSet<>();
           List<JSONObject> rows=new ArrayList<>();

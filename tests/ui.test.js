@@ -94,7 +94,7 @@ test('Bahasa Melayu toggle localizes nav, home, plan, budgets, settings, goals, 
   const planHtml=run(`plan()`);
   assert(planHtml.includes('Bajet')&&planHtml.includes('Hutang')&&planHtml.includes('Cukai LHDN'));
   const setHtml=run(`settings()`);
-  assert(setHtml.includes('id="langToggle"')&&setHtml.includes('value="ms" selected')&&setHtml.includes('Rekod automatik notifikasi')&&setHtml.includes('id="ecoCaptureToggle"')&&setHtml.includes('Enjin notifikasi jimat kuasa (Mod Eko)')&&setHtml.includes('Kunci aplikasi cap jari &amp; biometrik')&&setHtml.includes('0.9.0'));
+  assert(setHtml.includes('id="langToggle"')&&setHtml.includes('value="ms" selected')&&setHtml.includes('Rekod automatik notifikasi')&&setHtml.includes('id="ecoCaptureToggle"')&&setHtml.includes('Enjin notifikasi jimat kuasa (Mod Eko)')&&setHtml.includes('Kunci aplikasi cap jari &amp; biometrik')&&setHtml.includes('id="categoryAlertsToggle"')&&setHtml.includes('Pustaka notifikasi &amp; amaran kategori')&&setHtml.includes('0.10.0'));
   run(`state.settings.appLock=true`);
   const setLockedHtml=run(`settings()`);
   assert(setLockedHtml.includes('id="lockTimeoutSelect"')&&setLockedHtml.includes('data-action="lockNow"')&&setLockedHtml.includes('Kunci sekarang'));
@@ -119,7 +119,7 @@ test('home smart insights strip, hero delta pill and digital bank badges render 
   assert(run(`brandBadge('GXBank')`).includes('brand-gxbank'));
   assert(run(`brandBadge('AEON Bank')`).includes('brand-aeon'));
   assert(run(`brandBadge('Setel')`).includes('brand-setel'));
-  assert(run(`settings()`).includes('MoneyLens 0.9.0'));
+  assert(run(`settings()`).includes('MoneyLens 0.10.0'));
   run(`state.settings.lang='ms'`);
   const bmHome=run(`home()`);
   assert(bmHome.includes('Aliran tunai kitaran'));
@@ -155,5 +155,28 @@ test('Phase 10 BNPL/app brand badges, quick category chips, source group filters
 
   const billsHtml=run(`bills()`);
   assert(billsHtml.includes('Boost PayFlex')&&billsHtml.includes('LazPayLater'));
+});
+test('Phase 11 category notification library, budget alert pills & commercial UI tones',()=>{
+  const cm=run(`catMeta('Food & drinks')`);
+  assert.strictEqual(cm.tone,'coral');
+  assert(run(`CAT_NOTIFICATION_PRESETS.length`)>=15);
+
+  const txHtml=run(`transactions()`);
+  assert(txHtml.includes('cat-ico-badge')&&txHtml.includes('tone-coral')&&txHtml.includes('cat-tint')&&txHtml.includes('chip-count'));
+
+  const homeHtml=run(`home()`);
+  assert(homeHtml.includes('data-action="catNotifLibrary"')&&homeHtml.includes('cat-mini-pill'));
+
+  let libTitle='',libBody='';
+  const prevModal=ctx.modal;
+  ctx.modal=(t,b)=>{libTitle=t;libBody=b;};
+  run(`categoryNotificationLibrary()`);
+  assert(libTitle.includes('Category Notification Library')&&libBody.includes('lib-grid')&&libBody.includes('lib-card')&&libBody.includes('data-action="testPreset"')&&libBody.includes('data-action="testCategoryAlert"'));
+  ctx.modal=prevModal;
+
+  run(`state.budgets=[{id:'b-food',category:'Food & drinks',limit:5000},{id:'b-petrol',category:'Transport',limit:2000}];reportData={budgets:[{id:'b-food',category:'Food & drinks',limit:5000,available:5000,spent:6200,carry:0,remaining:-1200,spentPct:124,pacePct:40,paceStatus:'over'},{id:'b-petrol',category:'Transport',limit:2000,available:2000,spent:1700,carry:0,remaining:300,spentPct:85,pacePct:40,paceStatus:'fast'}]}`);
+  const budgetHtml=run(`budgets()`);
+  assert(budgetHtml.includes('budget-alert-pill over')&&budgetHtml.includes('budget-alert-pill warn')&&budgetHtml.includes('data-action="testCategoryAlert"')&&budgetHtml.includes('Alert Rules'));
+  run(`reportData=null`);
 });
 console.log('RESULT: '+passed+' UI tests passed');

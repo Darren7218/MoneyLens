@@ -125,3 +125,59 @@ function sameMerchantCount(merchant,excludeId,diffFromCat){
   const m=merchant.trim().toLowerCase();
   return validTx().filter(t=>t.id!==excludeId&&['expense','refund'].includes(t.kind)&&!t.splits&&(t.merchant||'').trim().toLowerCase()===m&&(!diffFromCat||t.category!==diffFromCat)).length;
 }
+const CAT_META={
+  'Food & drinks':{emoji:'🍲',tone:'coral'},
+  'Groceries':{emoji:'🛒',tone:'sage'},
+  'Transport':{emoji:'🚗',tone:'sky'},
+  'Bills & utilities':{emoji:'⚡',tone:'amber'},
+  'Loans, BNPL & Credit':{emoji:'💳',tone:'violet'},
+  'Housing & property':{emoji:'🏠',tone:'teal'},
+  'Shopping':{emoji:'🛍️',tone:'rose'},
+  'Health & medical':{emoji:'🏥',tone:'mint'},
+  'Insurance & Takaful':{emoji:'🛡️',tone:'indigo'},
+  'Education':{emoji:'📚',tone:'blue'},
+  'Family & gifts':{emoji:'🎁',tone:'pink'},
+  'Entertainment & travel':{emoji:'🎬',tone:'purple'},
+  'Investments & savings':{emoji:'📈',tone:'emerald'},
+  'Taxes & government':{emoji:'🏛️',tone:'slate'},
+  'Fees & charges':{emoji:'🧾',tone:'stone'},
+  'Income & salary':{emoji:'💼',tone:'emerald'},
+  'Transfers & top-up':{emoji:'🔄',tone:'sky'},
+  'Miscellaneous':{emoji:'💸',tone:'neutral'}
+};
+function catMeta(c){
+  if(CAT_META[c])return CAT_META[c];
+  const low=String(c||'').toLowerCase();
+  if(low.includes('food')||low.includes('makan'))return CAT_META['Food & drinks'];
+  if(low.includes('grocer')||low.includes('runcit'))return CAT_META['Groceries'];
+  if(low.includes('transport')||low.includes('angkut'))return CAT_META['Transport'];
+  if(low.includes('bill')||low.includes('util'))return CAT_META['Bills & utilities'];
+  if(low.includes('bnpl')||low.includes('loan'))return CAT_META['Loans, BNPL & Credit'];
+  if(low.includes('hous')||low.includes('rent'))return CAT_META['Housing & property'];
+  if(low.includes('shop'))return CAT_META['Shopping'];
+  if(low.includes('health')||low.includes('clinic'))return CAT_META['Health & medical'];
+  if(low.includes('insur')||low.includes('takaful'))return CAT_META['Insurance & Takaful'];
+  if(low.includes('educ'))return CAT_META['Education'];
+  if(low.includes('famil')||low.includes('gift')||low.includes('zakat'))return CAT_META['Family & gifts'];
+  if(low.includes('entertain')||low.includes('travel'))return CAT_META['Entertainment & travel'];
+  if(low.includes('invest')||low.includes('saving'))return CAT_META['Investments & savings'];
+  if(low.includes('tax')||low.includes('lhdn')||low.includes('jpj'))return CAT_META['Taxes & government'];
+  return CAT_META['Miscellaneous'];
+}
+const CAT_NOTIFICATION_PRESETS=[
+  {key:'hawker',category:'Food & drinks',sub:'Hawker & Mamak',source:'ShopeePay MY',sample:'You have paid RM 8.50 at Nasi Lemak Wanjo Kampung Baru.'},
+  {key:'food',category:'Food & drinks',sub:'Restaurant & Cafe',source:'MAE by Maybank2u',sample:'RM 15.50 at RESTORAN PELITA via MAE QRPay.'},
+  {key:'groceries',category:'Groceries',sub:'Convenience / Supermarket',source:'GXBank',sample:'You paid RM 34.80 at 99 Speedmart via DuitNow QR.'},
+  {key:'petrol',category:'Transport',sub:'Petrol & EV Charging',source:'Setel',sample:'RM 50.00 paid at PETRONAS Sri Hartamas via Setel.'},
+  {key:'toll',category:'Transport',sub:'Toll (TNG / RFID / PayDirect)',source:"Touch 'n Go eWallet",sample:'You have paid RM2.50 at DUKE TOLL PLAZA.'},
+  {key:'bnpl',category:'Loans, BNPL & Credit',sub:'BNPL (SPayLater / Atome)',source:'Shopee SPayLater',sample:'Payment of RM 49.90 for SPayLater installment completed.'},
+  {key:'ptptn',category:'Loans, BNPL & Credit',sub:'PTPTN Study Loan',source:'Maybank2u',sample:'You have paid RM 150.00 to PTPTN Direct Debit.'},
+  {key:'bills',category:'Bills & utilities',sub:'Electricity (TNB)',source:'MAE by Maybank2u',sample:'RM 142.30 paid to Tenaga Nasional (myTNB).'},
+  {key:'health',category:'Health & medical',sub:'Clinic & GP',source:"Touch 'n Go eWallet",sample:'You paid RM 45.00 at Klinik Mediviron Bangsar.'},
+  {key:'insurance',category:'Insurance & Takaful',sub:'Medical & Health Card',source:'CIMB OCTO',sample:'RM 220.00 debited for Prudential PruBSN Medical Card.'},
+  {key:'rent',category:'Housing & property',sub:'Rent',source:'MAE by Maybank2u',sample:'You transferred RM 1,250.00 for Monthly Rent October.'},
+  {key:'family',category:'Family & gifts',sub:'Parents Allowance',source:'MAE by Maybank2u',sample:'RM 300.00 transferred for Parents Allowance.'},
+  {key:'shopping',category:'Shopping',sub:'Clothing, Bags & Footwear',source:'Shopee MY',sample:'RM 68.00 paid at UNIQLO Malaysia via ShopeePay.'},
+  {key:'education',category:'Education',sub:'Books & Stationery',source:"Touch 'n Go eWallet",sample:'You have paid RM 39.90 at POPULAR Bookstore.'},
+  {key:'entertainment',category:'Entertainment & travel',sub:'Movies, Concerts & Events',source:"Touch 'n Go eWallet",sample:'You paid RM 42.00 at GSC Mid Valley.'}
+];

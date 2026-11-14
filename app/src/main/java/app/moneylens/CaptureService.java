@@ -117,7 +117,10 @@ public final class CaptureService extends NotificationListenerService {
       if("locked".equals(status))return;
       if("filtered".equals(status)){Health.bump(this,"filtered");return;}
       Health.bump(this,"parsed");MainActivity.notifyCaptured();
-      if(res.optBoolean("shouldPrompt"))showPrompt(this,res.getJSONObject("draft"),res.getJSONObject("settings"),true);
+      JSONObject sPrefs=res.getJSONObject("settings");
+      if(res.optBoolean("shouldPrompt"))showPrompt(this,res.getJSONObject("draft"),sPrefs,true);
+      JSONArray catAlerts=res.optJSONArray("categoryAlerts");
+      if(catAlerts!=null&&catAlerts.length()>0)Automation.dispatchCategoryAlerts(this,catAlerts,"ms".equals(sPrefs.optString("lang","en")));
       if(!MainActivity.visibleUnlocked){
         idleHandler.removeCallbacks(idleTrim);
         idleHandler.postDelayed(idleTrim,IDLE_TRIM_MS);
@@ -151,11 +154,7 @@ public final class CaptureService extends NotificationListenerService {
     nm.createNotificationChannel(new NotificationChannel("payments",ms?"Cadangan bayaran":"Payment suggestions",NotificationManager.IMPORTANCE_DEFAULT));
     String id=d.getString("id");int code=promptId(id);
     if(d.optBoolean("autoRecorded")){
-      String txId=d.optString("transactionId",""),amt=BigDecimal.valueOf(d.optLong("amount"),2).toPlainString(),merchant=d.optString("merchant",ms?"Bayaran":"Payment"),cat=d.optString("category","Miscellaneous"),sub=d.optString("subcategory",""),matchedBill=d.optString("matchedBillName","");
-      String origCur=d.optString("originalCurrency",""),origAmt=d.optString("originalAmount","");
-      String catLabel=sub.isEmpty()?cat:(cat+" › "+sub);
-      if(!origCur.isEmpty()&&!origAmt.isEmpty()&&!blur)catLabel+=" ("+origCur+" "+origAmt+")";
-      if(!matchedBill.isEmpty())catLabel+=(ms?" · Dipaut ke ":" · Linked to ")+matchedBill;
+      String txId=d.optString("transactionId",""),cat=d.optString("category","Miscellaneous");
       Intent editIntent=new Intent(c,MainActivity.class).putExtra("screen","inbox").putExtra("editNoteId",txId).setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);
       PendingIntent editPi=PendingIntent.getActivity(c,code,editIntent,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
       Intent noteIntent=new Intent(c,IgnoreReceiver.class).setAction("note."+id).putExtra("id",id).putExtra("noteTxId",txId);
@@ -165,9 +164,9 @@ public final class CaptureService extends NotificationListenerService {
       Notification.Action inlineNoteAction=new Notification.Action.Builder(null,ms?"Tambah Nota":"Add Note",notePi).addRemoteInput(remoteInput).build();
       Intent undoIntent=new Intent(c,IgnoreReceiver.class).setAction("undo."+id).putExtra("id",id).putExtra("voidTxId",txId);
       PendingIntent undoPi=PendingIntent.getBroadcast(c,code,undoIntent,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
-      String recTitle=blur?((ms?"Bayaran direkod · ":"Payment recorded · ")+merchant):((ms?"Direkod RM ":"Recorded RM ")+amt+" · "+merchant);
-      String recBody=catLabel+(d.optBoolean("needsNote")?(ms?" · Ketik untuk ubah atau Tambah Nota":" · Tap to edit or Add Note"):(ms?" · Disimpan automatik":" · Auto-saved"));
-      Notification pubVersion=new Notification.Builder(c,"payments").setSmallIcon(R.drawable.ic_notification).setContentTitle(ms?"Bayaran MoneyLens direkod":"MoneyLens payment recorded").setContentText(ms?"Buka MoneyLens untuk lihat butiran.":"Open MoneyLens to view details.").build();
+      String recTitle=Extras.formatRecordedTitle(d,settings,ms,blur);
+      String recBody=Extras.formatRecordedBody(d,settings,ms,blur);
+      Notification pubVersion=new Notification.Builder(c,"payments").setSmallIcon(R.drawable.ic_notification).setContentTitle(Extras.categoryEmoji(cat)+" "+(ms?"Bayaran MoneyLens direkod":"MoneyLens payment recorded")).setContentText(ms?"Buka MoneyLens untuk lihat butiran.":"Open MoneyLens to view details.").build();
       Notification n=new Notification.Builder(c,"payments").setSmallIcon(R.drawable.ic_notification).setContentTitle(recTitle).setContentText(recBody).setStyle(new Notification.BigTextStyle().bigText(recBody)).setGroup("moneylens_payments").setCategory(Notification.CATEGORY_STATUS).setPublicVersion(pubVersion).setContentIntent(editPi).setAutoCancel(true).setVisibility(Notification.VISIBILITY_PRIVATE).addAction(inlineNoteAction).addAction(new Notification.Action.Builder(null,ms?"Ubah Kategori":"Edit Category",editPi).build()).addAction(new Notification.Action.Builder(null,ms?"Buang":"Remove",undoPi).build()).build();
       try{nm.notify(code,n);}catch(SecurityException ignored){}
       return;
@@ -175,8 +174,8 @@ public final class CaptureService extends NotificationListenerService {
     Intent open=new Intent(c,MainActivity.class).putExtra("screen","inbox");open.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);
     PendingIntent review=PendingIntent.getActivity(c,code,open,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
     Intent ignore=new Intent(c,IgnoreReceiver.class).setAction("ignore."+id).putExtra("id",id);PendingIntent no=PendingIntent.getBroadcast(c,code,ignore,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
-    String revTitle=blur?(ms?"Semak bayaran baharu?":"Review new payment?"):(ms?"Rekod bayaran?":"Record a payment?");
-    String revBody=ms?"Cadangan baharu sedia. Semak butiran di MoneyLens.":"A new suggestion is ready. Review the details in MoneyLens.";
+    String revTitle=Extras.formatReviewTitle(d,settings,ms,blur);
+    String revBody=Extras.formatReviewBody(d,settings,ms,blur);
     Notification n=new Notification.Builder(c,"payments").setSmallIcon(R.drawable.ic_notification).setContentTitle(revTitle).setContentText(revBody).setStyle(new Notification.BigTextStyle().bigText(revBody)).setGroup("moneylens_payments").setCategory(Notification.CATEGORY_STATUS).setContentIntent(review).setAutoCancel(true).setVisibility(Notification.VISIBILITY_PRIVATE).addAction(new Notification.Action.Builder(null,ms?"Semak":"Review",review).build()).addAction(new Notification.Action.Builder(null,ms?"Abaikan":"Ignore",no).build()).build();
     try{nm.notify(code,n);if(!promptAlreadyMarked)Vault.markPrompt(c,id);}catch(SecurityException ignored){}
   }

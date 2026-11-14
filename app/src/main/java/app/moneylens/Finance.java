@@ -72,6 +72,119 @@ public final class Finance {
   String wk=on.get(java.time.temporal.IsoFields.WEEK_BASED_YEAR)+"-W"+on.get(java.time.temporal.IsoFields.WEEK_OF_WEEK_BASED_YEAR);
   return new JSONObject().put("key","weekly-nudge:"+wk).put("title",title).put("body",body).put("category",worst.getString("category")).put("subcategory",worst.optString("subcategory","")).put("paceStatus",st).put("spentPct",sp).put("pacePct",pp);
  }
+ private static String fmtRm(long minor){
+  return BigDecimal.valueOf(Math.abs(minor),2).setScale(2,RoundingMode.HALF_UP).toPlainString();
+ }
+ public static String categoryLabel(String category,boolean ms){
+  if(category==null||category.trim().isEmpty())return ms?"Lain-lain":"Miscellaneous";
+  if(!ms)return category;
+  switch(category){
+   case "Food & drinks":return "Makanan & minuman";
+   case "Groceries":return "Barangan runcit";
+   case "Transport":return "Pengangkutan";
+   case "Bills & utilities":return "Bil & utiliti";
+   case "Loans, BNPL & Credit":return "Pinjaman, BNPL & Kredit";
+   case "Housing & property":return "Perumahan & harta";
+   case "Shopping":return "Beli-belah";
+   case "Health & medical":return "Kesihatan & perubatan";
+   case "Insurance & Takaful":return "Insurans & Takaful";
+   case "Education":return "Pendidikan";
+   case "Family & gifts":return "Keluarga & hadiah";
+   case "Entertainment & travel":return "Hiburan & pelancongan";
+   case "Investments & savings":return "Pelaburan & simpanan";
+   case "Taxes & government":return "Cukai & kerajaan";
+   case "Fees & charges":return "Yuran & caj";
+   case "Income & salary":return "Pendapatan & gaji";
+   case "Transfers & top-up":return "Pindahan & tambah nilai";
+   case "Miscellaneous":return "Lain-lain";
+   default:return category;
+  }
+ }
+ /** Returns current cycle spending and matching budget progress for a given category/subcategory. */
+ public static JSONObject categoryBudgetSummary(JSONObject s,LocalDate on,String category,String subcategory)throws Exception{
+  String cat=category==null?"":category.trim(),sub=subcategory==null?"":subcategory.trim();
+  if(cat.isEmpty())return null;
+  int day=s.optJSONObject("settings")!=null?s.getJSONObject("settings").optInt("cycleDay",1):1;
+  LocalDate from=start(on,day),until=next(from,day);
+  long cycleSpent=spend(s,cat,"",from,until);
+  JSONObject out=new JSONObject().put("category",cat).put("subcategory",sub).put("cycleSpent",cycleSpent).put("hasBudget",false);
+  JSONArray list=s.optJSONArray("budgets");
+  if(list==null||list.length()==0)return out;
+  JSONObject best=null;int bestRank=-1;
+  for(int i=0;i<list.length();i++){
+   JSONObject raw=list.getJSONObject(i);
+   if(!cat.equalsIgnoreCase(raw.optString("category","").trim()))continue;
+   String bSub=raw.optString("subcategory","").trim();
+   boolean exactSub=!sub.isEmpty()&&bSub.equalsIgnoreCase(sub);
+   if(!bSub.isEmpty()&&!exactSub)continue;
+   JSONObject row=budget(s,raw,on);
+   int rank=(exactSub?10000:0)+row.optInt("spentPct",0);
+   if(rank>bestRank){bestRank=rank;best=row;}
+  }
+  if(best!=null){
+   out.put("hasBudget",true)
+    .put("budgetId",best.getString("id"))
+    .put("budgetCategory",best.getString("category"))
+    .put("budgetSubcategory",best.optString("subcategory",""))
+    .put("available",best.getLong("available"))
+    .put("spent",best.getLong("spent"))
+    .put("remaining",best.getLong("remaining"))
+    .put("spentPct",best.getInt("spentPct"))
+    .put("pacePct",best.getInt("pacePct"))
+    .put("paceStatus",best.optString("paceStatus","on_track"))
+    .put("start",best.getString("start"));
+  }
+  return out;
+ }
+ /** Evaluates per-category budget threshold alerts (warn at threshold% or over at >100%) with deduplicated alert keys. */
+ public static JSONArray evaluateCategoryAlerts(JSONObject s,LocalDate on,String onlyCategory)throws Exception{
+  JSONArray out=new JSONArray();
+  JSONObject prefs=s.optJSONObject("settings");
+  if(prefs!=null&&!prefs.optBoolean("budgetAlerts",true))return out;
+  JSONArray list=s.optJSONArray("budgets");
+  if(list==null||list.length()==0)return out;
+  int threshold=prefs!=null?Math.max(1,Math.min(100,prefs.optInt("threshold",80))):80;
+  boolean ms=prefs!=null&&"ms".equals(prefs.optString("lang","en"));
+  String filter=onlyCategory==null?"":onlyCategory.trim();
+  for(int i=0;i<list.length();i++){
+   JSONObject b=list.getJSONObject(i);
+   if(!filter.isEmpty()&&!filter.equalsIgnoreCase(b.optString("category","").trim()))continue;
+   JSONObject row=budget(s,b,on);
+   long avail=row.getLong("available"),spent=row.getLong("spent"),rem=row.getLong("remaining");
+   if(avail<=0)continue;
+   boolean over=spent>avail;
+   boolean warn=!over&&spent*100>=avail*threshold;
+   if(!over&&!warn)continue;
+   int pct=row.getInt("spentPct");
+   String cat=row.getString("category"),sub=row.optString("subcategory","");
+   String catDisp=categoryLabel(cat,ms)+(sub.isEmpty()?"":" › "+sub);
+   String emoji=Extras.categoryEmoji(cat);
+   String level=over?"over":"warn";
+   String key="budget-cat:"+row.getString("id")+":"+row.getString("start")+":"+(over?"over":("warn:"+threshold));
+   String title=over
+    ?(emoji+" "+(ms?"Melebihi bajet · ":"Budget exceeded · ")+catDisp+" ("+pct+"%)")
+    :(emoji+" "+(ms?"Amaran bajet · ":"Budget alert · ")+catDisp+" ("+pct+"%)");
+   String body=over
+    ?(ms?("Belanja RM "+fmtRm(spent)+" daripada had RM "+fmtRm(avail)+" — terlebih RM "+fmtRm(-rem)+".")
+        :("Spent RM "+fmtRm(spent)+" of RM "+fmtRm(avail)+" limit — RM "+fmtRm(-rem)+" over budget."))
+    :(ms?("RM "+fmtRm(spent)+" daripada RM "+fmtRm(avail)+" digunakan (baki RM "+fmtRm(rem)+").")
+        :("RM "+fmtRm(spent)+" of RM "+fmtRm(avail)+" used (RM "+fmtRm(rem)+" left this cycle)."));
+   out.put(new JSONObject()
+    .put("key",key)
+    .put("budgetId",row.getString("id"))
+    .put("category",cat)
+    .put("subcategory",sub)
+    .put("level",level)
+    .put("threshold",over?100:threshold)
+    .put("spentPct",pct)
+    .put("spent",spent)
+    .put("available",avail)
+    .put("remaining",rem)
+    .put("title",title)
+    .put("body",body));
+  }
+  return out;
+ }
  /** Computes cycle summary, category shares, top merchants and budget adherence for the cycle containing `on`. */
  public static JSONObject cycleRecap(JSONObject s,LocalDate on)throws Exception{
   int day=s.getJSONObject("settings").optInt("cycleDay",1);

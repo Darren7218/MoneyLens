@@ -108,8 +108,10 @@ public final class Vault {
   public static synchronized String saveReceipt(Context c,byte[] bytes)throws Exception{if(bytes.length>4_000_000)throw new IllegalArgumentException("Receipt too large.");String id=hex(MessageDigest.getInstance("SHA-256").digest(bytes));writeSecret(c,"receipts/"+id,bytes);JSONObject s=read(c);JSONArray receipts=s.getJSONArray("receipts");boolean exists=false;for(int i=0;i<receipts.length();i++)if(receipts.getJSONObject(i).getString("id").equals(id))exists=true;if(!exists){receipts.put(new JSONObject().put("id",id).put("mime","image/jpeg").put("size",bytes.length));write(c,s);}return id;}
   public static synchronized byte[] receipt(Context c,String id)throws Exception{if(!id.matches("[a-f0-9]{64}"))throw new IllegalArgumentException("Invalid receipt.");return readSecret(c,"receipts/"+id);}
   public static synchronized void markPrompt(Context c,String id)throws Exception{JSONObject s=read(c);Ledger.find(s.getJSONArray("drafts"),id).put("prompted",true);write(c,s);}
-  public static synchronized boolean alertExists(Context c,String id)throws Exception{JSONArray a=read(c).getJSONArray("alerts");for(int i=0;i<a.length();i++)if(a.getJSONObject(i).getString("id").equals(id))return true;return false;}
-  public static synchronized void markAlert(Context c,String id)throws Exception{JSONObject s=read(c);JSONArray a=s.getJSONArray("alerts");a.put(new JSONObject().put("id",id));while(a.length()>2000)a.remove(0);write(c,s);}
+  static boolean hasAlertInState(JSONObject s,String id)throws Exception{JSONArray a=s.getJSONArray("alerts");for(int i=0;i<a.length();i++)if(a.getJSONObject(i).getString("id").equals(id))return true;return false;}
+  static void putAlertInState(JSONObject s,String id)throws Exception{JSONArray a=s.getJSONArray("alerts");a.put(new JSONObject().put("id",id));while(a.length()>2000)a.remove(0);}
+  public static synchronized boolean alertExists(Context c,String id)throws Exception{return hasAlertInState(read(c),id);}
+  public static synchronized void markAlert(Context c,String id)throws Exception{JSONObject s=read(c);putAlertInState(s,id);write(c,s);}
   public static synchronized JSONObject capture(Context c,String pkg,String label,String key,String text)throws Exception{
     return capture(c,pkg,label,key,text,0L);
   }
@@ -139,9 +141,21 @@ public final class Vault {
     if(d==null)return null;
     boolean prompt=Extras.shouldPromptDraft(Automation.quiet(settings),settings,d,canNotify);
     if(prompt&&!d.optBoolean("autoRecorded"))d.put("prompted",true);
+    JSONArray pendingAlerts=new JSONArray();
+    if(d.optBoolean("autoRecorded")&&"expense".equals(d.optString("kind","expense"))&&canNotify&&settings.optBoolean("budgetAlerts",true)&&!Automation.quiet(settings)){
+      JSONArray eval=Finance.evaluateCategoryAlerts(s,java.time.LocalDate.now(),d.optString("category",""));
+      for(int i=0;i<eval.length();i++){
+        JSONObject row=eval.getJSONObject(i);
+        String ak=row.getString("key");
+        if(!hasAlertInState(s,ak)){
+          putAlertInState(s,ak);
+          pendingAlerts.put(row);
+        }
+      }
+    }
     write(c,s);
     try{MoneyWidget.refresh(c,s);}catch(Exception ignored){}
-    return new JSONObject().put("status","captured").put("draft",d).put("settings",settings).put("shouldPrompt",prompt);
+    return new JSONObject().put("status","captured").put("draft",d).put("settings",settings).put("shouldPrompt",prompt).put("categoryAlerts",pendingAlerts);
   }
   public static String hex(byte[] b){return Extras.hex(b);}
   /** Registers lazy on-demand loading for the ML classifier so app launch and idle filtering use zero ML RAM. */

@@ -6,17 +6,21 @@ function plan(){
 }
 
 function budgets(){
+  const threshold=state.settings.threshold||80;
   const list=reportData?.budgets||state.budgets.map(b=>{
     const sp=spendFor(b.category,b.subcategory||'');
     return {...b,available:b.limit,spent:sp,carry:0,remaining:b.limit-sp,pacePct:50,spentPct:b.limit?Math.round(sp/b.limit*100):0,paceStatus:sp>b.limit?'over':'on_track'};
   });
-  return `<section class="card"><div class="section-head"><h2>${esc(tr('Room to spend'))}</h2>${actionButton(tr('Add budget'),'addBudget')}</div><p class="note">${currentLang()==='ms'?`Kitaran semasa · hari ${state.settings.cycleDay||1}. Penanda menunjukkan kemajuan hari dalam kitaran.`:`Current cycle · day ${state.settings.cycleDay||1}. Tick marks show how far into the cycle you are.`}</p>${list.map(b=>{
+  return `<section class="card"><div class="section-head"><h2>${esc(tr('Room to spend'))}</h2><div class="flex">${actionButton(tr('Alert Rules'),'catNotifLibrary','','ghost')}${actionButton(tr('Add budget'),'addBudget')}</div></div><p class="note">${currentLang()==='ms'?`Kitaran semasa · hari ${state.settings.cycleDay||1}. Penanda menunjukkan kemajuan hari dalam kitaran & amaran kategori pada ${threshold}%.`:`Current cycle · day ${state.settings.cycleDay||1}. Tick marks show cycle progress; category alerts trigger at ${threshold}%.`}</p>${list.map(b=>{
+    const cm=catMeta(b.category);
+    const hitOver=b.spent>b.available&&b.available>0,hitWarn=!hitOver&&b.available>0&&b.spent*100>=b.available*threshold;
     const paceTag=b.paceStatus==='over'
       ? `<span class="tag pace-over">${esc(tr('Over budget'))}</span>`
       : b.paceStatus==='fast'
         ? `<span class="tag pace-fast">${esc(tr('Ahead of pace'))} (${b.spentPct}% at ${b.pacePct}% cycle)</span>`
         : `<span class="tag">${esc(tr('On pace'))} (${b.pacePct??50}% cycle)</span>`;
-    return `<div class="plan-row"><div class="flex between"><div><h3>${esc(tr(b.category))}${b.subcategory?` <span class="tx-pill">${esc(b.subcategory)}</span>`:''}</h3><p>${esc(tr('{amt} used',{amt:money(b.spent)}))} · ${esc(tr('{amt} available',{amt:money(b.available)}))}</p></div>${actionButton(tr('Edit'),'editBudget',b.id)}</div><div class="progress ${b.remaining<0?'over':''}"><span style="width:${Math.max(0,Math.min(100,b.spent/Math.max(1,b.available)*100))}%"></span><i class="pace-tick" style="left:${Math.max(2,Math.min(98,b.pacePct??50))}%" title="${esc(tr('Expected cycle pace ({pct}%)',{pct:b.pacePct??50}))}"></i></div><div class="budget-foot"><span>${b.carry?esc(tr('{amt} carried forward',{amt:money(b.carry)})):esc(tr('Base {amt}',{amt:money(b.limit)}))} · ${paceTag}</span><span>${esc(tr('{amt} left',{amt:signedMoney(b.remaining)}))}</span></div></div>`;
+    const alertBadge=hitOver?`<span class="budget-alert-pill over">${esc(tr('Over limit'))} (${b.spentPct}%)</span>`:hitWarn?`<span class="budget-alert-pill warn">${esc(tr('Near limit'))} (${b.spentPct}%)</span>`:'';
+    return `<div class="plan-row"><div class="flex between"><div class="flex" style="gap:10px;align-items:center"><div class="icon-bg cat-ico-badge tone-${cm.tone}"><span class="cat-emoji">${cm.emoji}</span></div><div><h3>${esc(tr(b.category))}${b.subcategory?` <span class="tx-pill">${esc(b.subcategory)}</span>`:''} ${alertBadge}</h3><p>${esc(tr('{amt} used',{amt:money(b.spent)}))} · ${esc(tr('{amt} available',{amt:money(b.available)}))}</p></div></div><div class="flex"><button type="button" class="btn ghost small" data-action="testCategoryAlert" data-cat="${esc(b.category)}" title="Test category alert">${icon('bell')}</button>${actionButton(tr('Edit'),'editBudget',b.id)}</div></div><div class="progress ${b.remaining<0?'over':''}"><span style="width:${Math.max(0,Math.min(100,b.spent/Math.max(1,b.available)*100))}%"></span><i class="pace-tick" style="left:${Math.max(2,Math.min(98,b.pacePct??50))}%" title="${esc(tr('Expected cycle pace ({pct}%)',{pct:b.pacePct??50}))}"></i></div><div class="budget-foot"><span>${b.carry?esc(tr('{amt} carried forward',{amt:money(b.carry)})):esc(tr('Base {amt}',{amt:money(b.limit)}))} · ${paceTag}</span><span>${esc(tr('{amt} left',{amt:signedMoney(b.remaining)}))}</span></div></div>`;
   }).join('')||empty('target',tr('Give your money a plan'),tr('Start with your everyday categories or a specific subcategory.'),tr('Add budget'),'addBudget')}</section>`;
 }
 
