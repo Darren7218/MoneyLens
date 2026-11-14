@@ -133,6 +133,7 @@ public final class Vault {
     if(!selected&&(!allowAll||isChatApp))return new JSONObject().put("status","filtered");
     if(!selected){
       try{android.content.pm.PackageManager pm=c.getPackageManager();CharSequence appLabel=pm.getApplicationLabel(pm.getApplicationInfo(pkg,0));if(appLabel!=null&&appLabel.length()>0)label=appLabel.toString();}catch(Exception ignored){}
+      if(label.equals(pkg)||label.trim().isEmpty()){String known=PaymentParser.knownAppLabel(pkg);if(!known.isEmpty())label=known;}
     }
     JSONObject d=Extras.captureState(s,pkg,label,key,text,postTime,System.currentTimeMillis());
     if(d==null)return null;

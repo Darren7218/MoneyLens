@@ -94,7 +94,7 @@ test('Bahasa Melayu toggle localizes nav, home, plan, budgets, settings, goals, 
   const planHtml=run(`plan()`);
   assert(planHtml.includes('Bajet')&&planHtml.includes('Hutang')&&planHtml.includes('Cukai LHDN'));
   const setHtml=run(`settings()`);
-  assert(setHtml.includes('id="langToggle"')&&setHtml.includes('value="ms" selected')&&setHtml.includes('Rekod automatik notifikasi')&&setHtml.includes('id="ecoCaptureToggle"')&&setHtml.includes('Enjin notifikasi jimat kuasa (Mod Eko)')&&setHtml.includes('Kunci aplikasi cap jari &amp; biometrik')&&setHtml.includes('0.8.0'));
+  assert(setHtml.includes('id="langToggle"')&&setHtml.includes('value="ms" selected')&&setHtml.includes('Rekod automatik notifikasi')&&setHtml.includes('id="ecoCaptureToggle"')&&setHtml.includes('Enjin notifikasi jimat kuasa (Mod Eko)')&&setHtml.includes('Kunci aplikasi cap jari &amp; biometrik')&&setHtml.includes('0.9.0'));
   run(`state.settings.appLock=true`);
   const setLockedHtml=run(`settings()`);
   assert(setLockedHtml.includes('id="lockTimeoutSelect"')&&setLockedHtml.includes('data-action="lockNow"')&&setLockedHtml.includes('Kunci sekarang'));
@@ -119,7 +119,7 @@ test('home smart insights strip, hero delta pill and digital bank badges render 
   assert(run(`brandBadge('GXBank')`).includes('brand-gxbank'));
   assert(run(`brandBadge('AEON Bank')`).includes('brand-aeon'));
   assert(run(`brandBadge('Setel')`).includes('brand-setel'));
-  assert(run(`settings()`).includes('MoneyLens 0.8.0'));
+  assert(run(`settings()`).includes('MoneyLens 0.9.0'));
   run(`state.settings.lang='ms'`);
   const bmHome=run(`home()`);
   assert(bmHome.includes('Aliran tunai kitaran'));
@@ -132,5 +132,28 @@ test('transactions FX pill and goal pot progress bars render cleanly',()=>{
   const gHtml=run(`goals()`);
   assert(gHtml.includes('goal-pot')&&gHtml.includes('goal-pot-pill')&&gHtml.includes('goal-pot-track')&&gHtml.includes('30% there'));
   run(`state.goals=[]`);
+});
+test('Phase 10 BNPL/app brand badges, quick category chips, source group filters & templates',()=>{
+  assert(run(`brandBadge('Atome BNPL')`).includes('brand-atome'));
+  assert(run(`brandBadge('Ryt Bank')`).includes('brand-ryt'));
+  assert(run(`brandBadge('Lazada')`).includes('brand-lazada'));
+  assert(run(`brandBadge('foodpanda')`).includes('brand-foodpanda'));
+  assert(run(`brandBadge('BigPay')`).includes('brand-wallet'));
+  assert(run(`brandBadge('MyPB by Public Bank')`).includes('brand-bank'));
+  assert(run(`brandBadge('Boost PayFlex')`).includes('brand-boost'));
+
+  let modalBody='';
+  const prevModal=ctx.modal;
+  ctx.modal=(t,b)=>{modalBody=b;};
+  run(`quickNoteForm('t1')`);
+  assert(modalBody.includes('quick-cat-chips')&&modalBody.includes('Hawker &amp; Mamak')&&modalBody.includes('BNPL (SPayLater / Atome)'));
+
+  run(`apps=[{package:'com.shopee.pay.my',name:'ShopeePay MY',group:'bnpl',installed:true},{package:'com.atome.my',name:'Atome BNPL',group:'bnpl',installed:false},{package:'my.com.rytbank',name:'Ryt Bank',group:'bank',installed:false}];sourceGroup='bnpl';renderSources('');`);
+  assert(modalBody.includes('ShopeePay MY')&&modalBody.includes('Atome BNPL')&&!modalBody.includes('Ryt Bank')&&modalBody.includes('Not installed'));
+  run(`sourceGroup='all'`);
+  ctx.modal=prevModal;
+
+  const billsHtml=run(`bills()`);
+  assert(billsHtml.includes('Boost PayFlex')&&billsHtml.includes('LazPayLater'));
 });
 console.log('RESULT: '+passed+' UI tests passed');

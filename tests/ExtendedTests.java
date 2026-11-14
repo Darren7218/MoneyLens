@@ -340,6 +340,53 @@ public final class ExtendedTests {
    JSONObject rBolt=PaymentParser.parse("You have paid RM 18.00 at Bolt Ride KL via TNG eWallet.","TNG eWallet");
    yes(rBolt!=null&&rBolt.getString("category").equals("Transport")&&rBolt.getString("subcategory").equals("E-Hailing (Grab / AirAsia Ride)"));
   });
+  test("Phase 10 MY BNPL, ShopeePay, hawkers, 2-pass account matching & auto-record",()->{
+   yes(PaymentParser.KNOWN_APPS.length>=25);
+   yes(PaymentParser.knownAppLabel("com.shopee.pay.my").equals("ShopeePay MY"));
+   yes(PaymentParser.knownAppLabel("com.atome.my").equals("Atome BNPL"));
+   yes(PaymentParser.knownAppLabel("my.com.rytbank").equals("Ryt Bank"));
+
+   JSONObject spHawker=PaymentParser.parse("ShopeePay Payment Successful: You have paid RM 8.50 at Nasi Lemak Wanjo Kampung Baru.","ShopeePay MY");
+   yes(spHawker!=null&&spHawker.getString("merchant").equals("Nasi Lemak Wanjo Kampung Baru")&&spHawker.getString("category").equals("Food & drinks")&&spHawker.getString("subcategory").equals("Hawker & Mamak"));
+
+   JSONObject spayHawker=PaymentParser.parse("Your SPayLater payment of RM 12.00 for your recent order at Ayam Penyet Bangsar Hawker has been processed.","Shopee (SPayLater / ShopeePay)");
+   yes(spayHawker!=null&&spayHawker.getString("merchant").equals("Ayam Penyet Bangsar Hawker")&&spayHawker.getString("category").equals("Food & drinks")&&spayHawker.getString("subcategory").equals("Hawker & Mamak"));
+
+   JSONObject spayRepay=PaymentParser.parse("Payment of RM 49.90 for SPayLater installment completed. Available credit limit: RM 1,500.00.","Shopee SPayLater");
+   yes(spayRepay!=null&&spayRepay.getString("category").equals("Loans, BNPL & Credit")&&spayRepay.getString("subcategory").equals("BNPL (SPayLater / GrabPayLater / Atome)"));
+
+   JSONObject atomeCoffee=PaymentParser.parse("Your Atome payment of RM 16.90 at Zus Coffee has succeeded. 1/3 instalment settled.","Atome BNPL");
+   yes(atomeCoffee!=null&&atomeCoffee.getString("merchant").equals("Zus Coffee")&&atomeCoffee.getString("category").equals("Food & drinks")&&atomeCoffee.getString("subcategory").equals("Coffee, Tea & Drinks"));
+
+   JSONObject payflexWarung=PaymentParser.parse("You have paid RM 12.00 to Warung Pak Mat using PayFlex.","Boost / Boost PayFlex");
+   yes(payflexWarung!=null&&payflexWarung.getString("merchant").equals("Warung Pak Mat")&&payflexWarung.getString("category").equals("Food & drinks")&&payflexWarung.getString("subcategory").equals("Hawker & Mamak"));
+
+   JSONObject lazBnpl=PaymentParser.parse("LazPayLater payment of RM 89.00 at LAZADA MY completed.","Lazada (LazPayLater)");
+   yes(lazBnpl!=null&&lazBnpl.getString("category").equals("Loans, BNPL & Credit")&&lazBnpl.getString("subcategory").equals("BNPL (SPayLater / GrabPayLater / Atome)"));
+
+   JSONObject setelPark=PaymentParser.parse("Setel Parking payment of RM 4.00 at KLCC Parking.","Setel");
+   yes(setelPark!=null&&setelPark.getString("category").equals("Transport")&&setelPark.getString("subcategory").equals("Parking"));
+
+   JSONObject easyMrt=PaymentParser.parse("Payment of RM 5.00 at EasyMRT via PayFlex succeeded.","Boost / Boost PayFlex");
+   yes(easyMrt!=null&&easyMrt.getString("category").equals("Transport")&&easyMrt.getString("subcategory").equals("Public Transit (MRT / LRT / Bus)"));
+
+   JSONObject s=Ledger.initial();
+   Ledger.apply(s,"account",new JSONObject().put("name","Maybank2u").put("type","bank").put("opening","1000.00"));
+   Ledger.apply(s,"account",new JSONObject().put("name","ShopeePay").put("type","wallet").put("opening","20.00"));
+   Ledger.apply(s,"account",new JSONObject().put("name","SPayLater").put("type","card").put("opening","0"));
+   JSONArray accts=s.getJSONArray("accounts");
+   String spId=Finance.matchAccountByName(accts,"ShopeePay MY","com.shopee.pay.my");
+   String bnplId=Finance.matchAccountByName(accts,"Shopee SPayLater","com.shopee.my");
+   String mbbId=Finance.matchAccountByName(accts,"Maybank2u","com.maybank2u.life");
+   yes(!spId.isEmpty()&&!bnplId.isEmpty()&&!spId.equals(bnplId));
+
+   long now=System.currentTimeMillis();
+   JSONObject reloadDraft=Extras.captureState(s,"com.shopee.pay.my","ShopeePay MY","k-reload","Top up RM 50.00 from Maybank2u successful.",now,now);
+   yes(reloadDraft!=null&&reloadDraft.optBoolean("autoRecorded")&&"transfer".equals(reloadDraft.optString("kind"))&&mbbId.equals(reloadDraft.optString("account"))&&spId.equals(reloadDraft.optString("to")));
+
+   JSONObject atomeDraft=Extras.captureState(s,"com.atome.my","com.atome.my","k-atome","Your Atome payment of RM 16.90 at Nasi Kandar Line Clear has succeeded.",now+1000,now+1000);
+   yes(atomeDraft!=null&&atomeDraft.optBoolean("autoRecorded")&&atomeDraft.getString("category").equals("Food & drinks")&&atomeDraft.getString("subcategory").equals("Hawker & Mamak"));
+  });
   System.out.println("RESULT: "+passed+" extended tests passed");
  }
 }

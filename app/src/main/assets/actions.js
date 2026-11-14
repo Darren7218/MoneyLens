@@ -1,4 +1,14 @@
 'use strict';
+let sourceGroup='all';
+function inferSourceGroup(a){
+  if(a.group&&a.group!=='other')return a.group;
+  const hay=(String(a.name||'')+' '+String(a.package||'')).toLowerCase();
+  if(/spaylater|shopeepay|atome|payflex|lazpaylater|tiktok|lazada|grab|boost/.test(hay)&&!/boostbank|boost bank/.test(hay))return 'bnpl';
+  if(/tng|touch|setel|bigpay|fave|shopback/.test(hay))return 'wallet';
+  if(/foodpanda/.test(hay))return 'delivery';
+  if(/maybank|mae|cimb|octo|mypb|public bank|rhb|hong leong|hlb|ambank|amonline|bank islam|bimb|uob|ocbc|hsbc|sc\.mobile|bsn|gxbank|aeonbank|aeon bank|rytbank|ryt bank|boostbank|boost bank/.test(hay))return 'bank';
+  return a.group||'other';
+}
 function modal(title,body){
   $('#modal-root').innerHTML=`<div class="modal-shade"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="dialog-title"><div class="sheet-handle"></div><header><h2 id="dialog-title">${esc(title)}</h2><button class="close" data-action="close" aria-label="Close">${icon('close')}</button></header>${body}</section></div>`;
   const f=$('.modal input:not([type=hidden]),.modal select,.modal button');
@@ -57,7 +67,19 @@ function quickNoteForm(id){
   if(!txRow)return;
   modalContext={id:txRow.id,merchant:txRow.merchant||'',oldCategory:txRow.category,account:txRow.account};
   const otherCount=sameMerchantCount(txRow.merchant,txRow.id);
-  modal('Edit purpose & category',`<form data-extra="quickNote"><div class="soft-card" style="margin-top:0"><strong>${esc(txRow.merchant||txRow.category)} · ${money(txRow.amount)}</strong><p class="note">${esc(txRow.date)} · ${esc(account(txRow.account).name)}</p></div>${field('Purpose / note','note',txRow.note||'','text','maxlength="500" placeholder="e.g. Toll to office, Lunch with client"')}${['expense','refund'].includes(txRow.kind)&&!txRow.splits?`<div class="form-grid">${categorySelect(txRow.category)}${subcategorySelect(txRow.category,txRow.subcategory||'')}</div>`:''}${otherCount>0&&txRow.merchant?check(`Also update ${otherCount} other transaction${otherCount===1?'':'s'} for "${esc(txRow.merchant)}" & remember category for future`,'applyHistory',txRow.category==='Miscellaneous'||txRow.category==='Other'):check('Remember category for future notifications from this merchant','applyHistory',txRow.category==='Miscellaneous'||txRow.category==='Other')}<div class="form-footer">${formFooter('Save purpose & category')}<button type="button" class="btn danger" data-action="quickRemove" data-id="${esc(txRow.id)}">${icon('trash')}Remove</button></div></form>`);
+  const quickCats=[
+    ['Hawker & Mamak','Food & drinks','Hawker & Mamak'],
+    ['Coffee & Tea','Food & drinks','Coffee, Tea & Drinks'],
+    ['Food Delivery','Food & drinks','Food Delivery (GrabFood / Foodpanda)'],
+    ['Groceries','Groceries','Supermarket & Hypermarket'],
+    ['99 Speedmart / KK','Groceries','Convenience Store (99 Speedmart / 7-Eleven / FamilyMart)'],
+    ['BNPL (SPayLater / Atome)','Loans, BNPL & Credit','BNPL (SPayLater / GrabPayLater / Atome)'],
+    ['Petrol / EV','Transport','Petrol & EV Charging'],
+    ['Toll / Transit','Transport','Toll (TNG / RFID / PayDirect)'],
+    ['Online Shopping','Shopping','Online Marketplace (Shopee / Lazada / TikTok)']
+  ];
+  const chipsHtml=['expense','refund'].includes(txRow.kind)&&!txRow.splits?`<div class="field-group"><label>${esc(tr('Quick category fix'))}</label><div class="chips quick-cat-chips">${quickCats.map(([lbl,c,sub])=>`<button type="button" class="chip ${txRow.subcategory===sub?'active':''}" data-action="quickCatPick" data-cat="${esc(c)}" data-sub="${esc(sub)}">${esc(tr(lbl))}</button>`).join('')}</div></div>`:'';
+  modal('Edit purpose & category',`<form data-extra="quickNote"><div class="soft-card" style="margin-top:0"><strong>${esc(txRow.merchant||txRow.category)} · ${money(txRow.amount)}</strong><p class="note">${esc(txRow.date)} · ${esc(account(txRow.account).name)}</p></div>${field('Purpose / note','note',txRow.note||'','text','maxlength="500" placeholder="e.g. Toll to office, Lunch with client"')}${chipsHtml}${['expense','refund'].includes(txRow.kind)&&!txRow.splits?`<div class="form-grid">${categorySelect(txRow.category)}${subcategorySelect(txRow.category,txRow.subcategory||'')}</div>`:''}${otherCount>0&&txRow.merchant?check(`Also update ${otherCount} other transaction${otherCount===1?'':'s'} for "${esc(txRow.merchant)}" & remember category for future`,'applyHistory',txRow.category==='Miscellaneous'||txRow.category==='Other'):check('Remember category for future notifications from this merchant','applyHistory',txRow.category==='Miscellaneous'||txRow.category==='Other')}<div class="form-footer">${formFooter('Save purpose & category')}<button type="button" class="btn danger" data-action="quickRemove" data-id="${esc(txRow.id)}">${icon('trash')}Remove</button></div></form>`);
 }
 
 function accountForm(){
@@ -100,13 +122,21 @@ function detail(id){
 }
 
 async function sources(){
+  sourceGroup='all';
   modal('Select payment apps','<p class="note">Loading apps…</p>');
   try{apps=await call('apps');renderSources('')}catch(e){modal('Select payment apps',`<p class="error">${esc(e.message)}</p>`)}
 }
 
 function renderSources(q){
   const map=new Map(state.sources.map(s=>[s.package,s]));
-  modal('Select payment apps',`<p class="note" style="margin-bottom:14px">Select payment apps and optionally link each app to a default MoneyLens account (e.g. TNG eWallet or Maybank).</p><div class="search">${icon('search')}<input id="source-search" placeholder="Find a bank or wallet" value="${esc(q)}" aria-label="Search apps"></div><div class="source-list">${apps.filter(a=>(a.name+' '+a.package).toLowerCase().includes(q.toLowerCase())).map(a=>{const src=map.get(a.package);return `<div class="source-row"><div class="grow">${esc(a.name)}<small>${esc(a.package)}</small>${src?`<select class="source-account" data-package="${esc(a.package)}" data-name="${esc(a.name)}" style="margin-top:6px;padding:6px 10px;min-height:34px;font-size:11px"><option value="">Auto-match account</option>${options(state.accounts.map(ac=>[ac.id,ac.name]),src.account||'')}</select>`:''}</div><input class="switch source-toggle" type="checkbox" data-package="${esc(a.package)}" data-name="${esc(a.name)}" aria-label="Capture ${esc(a.name)} notifications" ${src?'checked':''}></div>`}).join('')||'<p class="note">No matching installed apps.</p>'}</div><button class="btn full" style="margin-top:20px" data-action="close">${esc(tr('Done'))}</button>`);
+  const tabs=[['all','All apps'],['bnpl','BNPL'],['wallet','E-Wallets'],['bank','Banks'],['delivery','Delivery']];
+  const needle=String(q||'').toLowerCase();
+  const filtered=apps.filter(a=>{
+    const grp=inferSourceGroup(a);
+    if(sourceGroup!=='all'&&grp!==sourceGroup)return false;
+    return !needle||(a.name+' '+a.package).toLowerCase().includes(needle);
+  });
+  modal('Select payment apps',`<p class="note" style="margin-bottom:10px">Select payment apps, e-wallets, BNPL &amp; banks, and optionally link each app to a default MoneyLens account.</p><div class="chips" style="margin-bottom:10px">${tabs.map(([id,lbl])=>`<button type="button" class="chip ${sourceGroup===id?'active':''}" data-action="sourceGroup" data-id="${id}">${esc(tr(lbl))}</button>`).join('')}</div><div class="search">${icon('search')}<input id="source-search" placeholder="Find a bank, wallet or BNPL app" value="${esc(q)}" aria-label="Search apps"></div><div class="source-list">${filtered.map(a=>{const src=map.get(a.package),grp=inferSourceGroup(a),grpLabel=grp==='bnpl'?'BNPL':grp==='wallet'?'E-Wallet':grp==='bank'?'Bank':grp==='delivery'?'Delivery':'App';return `<div class="source-row"><div class="grow"><div class="flex" style="gap:6px;flex-wrap:wrap"><strong>${esc(a.name)}</strong>${grp!=='other'?`<span class="source-badge">${esc(grpLabel)}</span>`:''}${a.installed===false?`<span class="source-badge muted">${esc(tr('Not installed'))}</span>`:''}</div><small>${esc(a.package)}</small>${src?`<select class="source-account" data-package="${esc(a.package)}" data-name="${esc(a.name)}" style="margin-top:6px;padding:6px 10px;min-height:34px;font-size:11px"><option value="">Auto-match account</option>${options(state.accounts.map(ac=>[ac.id,ac.name]),src.account||'')}</select>`:''}</div><input class="switch source-toggle" type="checkbox" data-package="${esc(a.package)}" data-name="${esc(a.name)}" aria-label="Capture ${esc(a.name)} notifications" ${src?'checked':''}></div>`}).join('')||'<p class="note">No matching apps.</p>'}</div><button class="btn full" style="margin-top:20px" data-action="close">${esc(tr('Done'))}</button>`);
 }
 
 function categoriesModal(){
@@ -169,13 +199,27 @@ document.addEventListener('click',async e=>{
       case 'debtStrategy':debtStrategy=id==='snowball'?'snowball':'avalanche';render();break;
       case 'syncDebtReminder':await mutate('syncDebtReminder',{id},'Monthly bill reminder synced.');break;
       case 'presetDebt':{
-        const presets={ptptn:{name:'PTPTN Study Loan',type:'ptptn',balance:1500000,principal:1500000,minPayment:20000,aprBps:100,rateType:'flat',dueDay:25},spaylater:{name:'SPayLater BNPL',type:'bnpl',balance:60000,minPayment:15000,aprBps:0,rateType:'reducing',dueDay:10},creditcard:{name:'Credit Card Balance',type:'credit',balance:250000,minPayment:12500,aprBps:1800,rateType:'reducing',dueDay:15}};
+        const presets={ptptn:{name:'PTPTN Study Loan',type:'ptptn',balance:1500000,principal:1500000,minPayment:20000,aprBps:100,rateType:'flat',dueDay:25},spaylater:{name:'SPayLater BNPL',type:'bnpl',balance:60000,minPayment:15000,aprBps:0,rateType:'reducing',dueDay:10},payflex:{name:'Boost PayFlex',type:'bnpl',balance:40000,minPayment:10000,aprBps:0,rateType:'reducing',dueDay:1},creditcard:{name:'Credit Card Balance',type:'credit',balance:250000,minPayment:12500,aprBps:1800,rateType:'reducing',dueDay:15}};
         debtForm(presets[id]||{});break;
       }
       case 'presetReminder':{
-        const presets={ptptn:{name:'PTPTN Study Loan Repayment',reminderType:'ptptn',category:'Loans, BNPL & Credit',subcategory:'PTPTN Study Loan',amount:15000,frequency:'monthly',remindDaysBefore:3,remindTime:'09:00'},spaylater:{name:'SPayLater (Shopee BNPL)',reminderType:'bnpl',category:'Loans, BNPL & Credit',subcategory:'BNPL (SPayLater / GrabPayLater / Atome)',amount:5000,frequency:'monthly',remindDaysBefore:3,remindTime:'10:00'},grabpaylater:{name:'GrabPayLater Monthly Bill',reminderType:'bnpl',category:'Loans, BNPL & Credit',subcategory:'BNPL (SPayLater / GrabPayLater / Atome)',amount:5000,frequency:'monthly',remindDaysBefore:3,remindTime:'10:00'},atome:{name:'Atome BNPL Installment',reminderType:'bnpl',category:'Loans, BNPL & Credit',subcategory:'BNPL (SPayLater / GrabPayLater / Atome)',amount:5000,frequency:'everyXDays',intervalDays:30,remindDaysBefore:3,remindTime:'10:00'},creditcard:{name:'Credit Card Statement Due',reminderType:'credit',category:'Loans, BNPL & Credit',subcategory:'Credit Card Bill',amount:20000,frequency:'monthly',remindDaysBefore:3,remindTime:'09:00'}};
+        const presets={ptptn:{name:'PTPTN Study Loan Repayment',reminderType:'ptptn',category:'Loans, BNPL & Credit',subcategory:'PTPTN Study Loan',amount:15000,frequency:'monthly',remindDaysBefore:3,remindTime:'09:00'},spaylater:{name:'SPayLater (Shopee BNPL)',reminderType:'bnpl',category:'Loans, BNPL & Credit',subcategory:'BNPL (SPayLater / GrabPayLater / Atome)',amount:5000,frequency:'monthly',remindDaysBefore:3,remindTime:'10:00'},grabpaylater:{name:'GrabPayLater Monthly Bill',reminderType:'bnpl',category:'Loans, BNPL & Credit',subcategory:'BNPL (SPayLater / GrabPayLater / Atome)',amount:5000,frequency:'monthly',remindDaysBefore:3,remindTime:'10:00'},atome:{name:'Atome BNPL Installment',reminderType:'bnpl',category:'Loans, BNPL & Credit',subcategory:'BNPL (SPayLater / GrabPayLater / Atome)',amount:5000,frequency:'everyXDays',intervalDays:30,remindDaysBefore:3,remindTime:'10:00'},payflex:{name:'Boost PayFlex Monthly',reminderType:'bnpl',category:'Loans, BNPL & Credit',subcategory:'BNPL (SPayLater / GrabPayLater / Atome)',amount:5000,frequency:'monthly',remindDaysBefore:3,remindTime:'10:00'},lazpaylater:{name:'LazPayLater Monthly',reminderType:'bnpl',category:'Loans, BNPL & Credit',subcategory:'BNPL (SPayLater / GrabPayLater / Atome)',amount:5000,frequency:'monthly',remindDaysBefore:3,remindTime:'10:00'},creditcard:{name:'Credit Card Statement Due',reminderType:'credit',category:'Loans, BNPL & Credit',subcategory:'Credit Card Bill',amount:20000,frequency:'monthly',remindDaysBefore:3,remindTime:'09:00'}};
         billForm(presets[id]||{});break;
       }
+      case 'quickCatPick':{
+        const f=$('.modal form[data-extra="quickNote"]');
+        if(f&&f.elements.category){
+          const catName=b.dataset.cat||'',subName=b.dataset.sub||'';
+          f.elements.category.value=catName;
+          if($('#f-subcategory')){
+            $('#f-subcategory').innerHTML=subcatOptions(catName,subName);
+            $('#f-subcategory').value=subName;
+          }
+          [...f.querySelectorAll('.quick-cat-chips .chip')].forEach(c=>c.classList.toggle('active',c===b));
+        }
+        break;
+      }
+      case 'sourceGroup':{sourceGroup=id||'all';renderSources($('#source-search')?.value||'');break;}
       case 'testReminder':await mutate('testReminder',{id},'Test reminder notification posted!');break;
       case 'detail':detail(id);break;
       case 'editTx':{const txRow=state.transactions.find(x=>x.id===id);txForm({...txRow,key:cryptoId(),editId:txRow.id});break;}

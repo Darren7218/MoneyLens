@@ -252,18 +252,25 @@ public final class Extras {
  public static void autoPost(JSONObject s,JSONObject d)throws Exception{
   long amt=d.optLong("amount")>0?d.optLong("amount"):d.optLong("primaryAmount",0);
   if(!s.getJSONObject("settings").optBoolean("autoRecord",true)||amt<=0)return;
-  String acct=resolveAccount(s,d.optString("account",""),d.optString("source",""),d.optString("package",""));
+  String acct=resolveAccount(s,d.optString("account",""),d.optString("source",""),d.optString("package",""),d.optString("subcategory","").contains("BNPL")?(d.optString("source","")+" "+d.optString("merchant","")):"");
   String kind=d.optString("kind","expense");
   String to=d.optString("to","");
   if(kind.equals("transfer")&&(to.isEmpty()||to.equals(acct))){
    // A reload / own-account transfer is not spending. Work out both sides, or leave it in Inbox for review.
    JSONArray accounts=s.getJSONArray("accounts");
-   String hint=d.optString("transferHint","")+" "+d.optString("merchant","");
-   String other=Finance.matchAccountByName(accounts,hint,"",acct);
+   String fromHint=d.optString("transferFromHint","");
    String srcType="";for(int i=0;i<accounts.length();i++)if(accounts.getJSONObject(i).optString("id").equals(acct))srcType=accounts.getJSONObject(i).optString("type");
-   if(!other.isEmpty()){to=other;}
-   else if(d.optBoolean("reload")&&"wallet".equals(srcType)){d.put("reason","Wallet reload detected. Choose the account the money came from; it won't be counted as spending.");return;}
-   else{d.put("reason","Looks like a transfer between your own accounts. Choose both accounts; it won't be counted as spending.");return;}
+   if(!fromHint.isEmpty()&&(d.optBoolean("reload")||"wallet".equals(srcType))){
+    String fundedBy=Finance.matchAccountByName(accounts,fromHint,"",acct);
+    if(!fundedBy.isEmpty()){to=acct;acct=fundedBy;}
+    else{d.put("reason","Wallet reload from "+fromHint+" detected. Choose the account the money came from; it won't be counted as spending.");return;}
+   }else{
+    String hint=d.optString("transferHint","")+" "+d.optString("merchant","");
+    String other=Finance.matchAccountByName(accounts,hint,"",acct);
+    if(!other.isEmpty()){to=other;}
+    else if(d.optBoolean("reload")&&"wallet".equals(srcType)){d.put("reason","Wallet reload detected. Choose the account the money came from; it won't be counted as spending.");return;}
+    else{d.put("reason","Looks like a transfer between your own accounts. Choose both accounts; it won't be counted as spending.");return;}
+   }
    d.put("to",to);
   }
   String cat=d.optString("category","Miscellaneous");if(cat.isEmpty()||cat.equals("Other"))cat="Miscellaneous";
@@ -306,7 +313,7 @@ public final class Extras {
     if(!bName.isEmpty()&&!mLow.isEmpty()&&!mLow.equals("detected payment")&&(mLow.contains(bName)||bName.contains(mLow))){
      score+=50;
     }
-    for(String kw:new String[]{"ptptn","spaylater","grabpaylater","atome","tnb","tenaga nasional","unifi","air selangor","syabas","indah water","maxis","celcom","digi","astro","netflix"}){
+    for(String kw:new String[]{"ptptn","spaylater","shopee paylater","grabpaylater","atome","payflex","boost payflex","lazpaylater","tiktok paylater","tnb","tenaga nasional","unifi","time fibre","air selangor","syabas","indah water","maxis","celcom","digi","umobile","u mobile","astro","netflix"}){
      if((mLow.contains(kw)||subLow.contains(kw))&&(bName.contains(kw)||bSub.contains(kw))){score+=60;break;}
     }
     if(score==0&&!subLow.isEmpty()&&subLow.equals(bSub)&&("ptptn".equals(rType)||subLow.contains("ptptn")||subLow.contains("electricity")||subLow.contains("water")||subLow.contains("internet"))){
@@ -333,6 +340,7 @@ public final class Extras {
   boolean allowAll=s.getJSONObject("settings").optBoolean("captureAllSources",true);
   boolean isChatApp=pkg!=null&&pkg.matches("(?i).*(whatsapp|telegram|discord|messaging|mms|google\\.android\\.gm|facebook\\.orca|instagram|tencent\\.mm|line\\.android|viber|signal).*");
   if(!selected&&(!allowAll||isChatApp))return null;
+  if(!selected&&(label==null||label.isEmpty()||label.equals(pkg))){String known=PaymentParser.knownAppLabel(pkg);if(!known.isEmpty())label=known;}
   JSONObject d=PaymentParser.parse(text,label);if(d==null)return null;
   String instanceDigest=hex(java.security.MessageDigest.getInstance("SHA-256").digest((pkg+"|"+key+"|"+postTime+"|"+text).getBytes(java.nio.charset.StandardCharsets.UTF_8)));
   String contentDigest=hex(java.security.MessageDigest.getInstance("SHA-256").digest((pkg+"|"+text).getBytes(java.nio.charset.StandardCharsets.UTF_8)));
@@ -389,9 +397,14 @@ public final class Extras {
   }
   return null;
  }
- private static String resolveAccount(JSONObject s,String preferred,String sourceLabel,String pkg)throws JSONException{
+ private static String resolveAccount(JSONObject s,String preferred,String sourceLabel,String pkg)throws JSONException{return resolveAccount(s,preferred,sourceLabel,pkg,"");}
+ private static String resolveAccount(JSONObject s,String preferred,String sourceLabel,String pkg,String railHint)throws JSONException{
   JSONArray accounts=s.getJSONArray("accounts");
   if(!preferred.isEmpty())for(int i=0;i<accounts.length();i++)if(preferred.equals(accounts.getJSONObject(i).optString("id")))return preferred;
+  if(railHint!=null&&!railHint.isEmpty()){
+   String byRail=Finance.matchAccountByName(accounts,railHint,"");
+   if(!byRail.isEmpty())return byRail;
+  }
   String byName=Finance.matchAccountByName(accounts,sourceLabel,pkg);
   if(!byName.isEmpty())return byName;
   String last=s.getJSONObject("settings").optString("lastAccount","");

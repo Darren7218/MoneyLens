@@ -791,10 +791,31 @@ body.dark .card {
 .brand-aeon { background: #fce7f3; color: #9d174d; }
 .brand-boost { background: #fee2e2; color: #b91c1c; }
 .brand-setel { background: #dcfce7; color: #166534; }
+.brand-atome { background: #fef08a; color: #713f12; }
+.brand-ryt { background: #dbeafe; color: #1d4ed8; }
+.brand-lazada { background: #e0e7ff; color: #3730a3; }
+.brand-tiktok { background: #f3f4f6; color: #111827; }
+.brand-foodpanda { background: #fce7f3; color: #be185d; }
+.brand-wallet { background: #ccfbf1; color: #0f766e; }
+.brand-bank { background: #e8eefc; color: #1e40af; }
 body.dark .brand-gxbank { background: #2d1b59; color: #c4b5fd; }
 body.dark .brand-aeon { background: #4a1531; color: #f9a8d4; }
 body.dark .brand-boost { background: #451212; color: #fca5a5; }
 body.dark .brand-setel { background: #103520; color: #86efac; }
+body.dark .brand-atome { background: #3f330a; color: #fde047; }
+body.dark .brand-ryt { background: #172554; color: #93c5fd; }
+body.dark .brand-lazada { background: #1e1b4b; color: #a5b4fc; }
+body.dark .brand-tiktok { background: #27272a; color: #f4f4f5; }
+body.dark .brand-foodpanda { background: #500724; color: #f9a8d4; }
+body.dark .brand-wallet { background: #134e4a; color: #5eead4; }
+body.dark .brand-bank { background: #1e293b; color: #93c5fd; }
+.source-badge {
+  display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 99px;
+  font-size: 10px; font-weight: 700; background: var(--accent-soft); color: var(--accent);
+}
+.source-badge.muted { background: var(--soft); color: var(--muted); }
+.quick-cat-chips { margin: 4px 0 8px; gap: 6px; }
+.quick-cat-chips .chip { font-size: 11px; padding: 6px 10px; }
 .goal-pot {
   display: flex; flex-direction: column; gap: 10px;
 }

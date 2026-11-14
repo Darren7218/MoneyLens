@@ -561,28 +561,56 @@ public final class Finance {
  public static String matchAccountByName(JSONArray accounts,String label,String pkg,String excludeId)throws JSONException{
   if(accounts==null)return "";
   String hay=(String.valueOf(label)+" "+String.valueOf(pkg)).toLowerCase(Locale.ROOT);
-  String[][] aliases={
-   {"tng","touch","ewallet"},
-   {"maybank","mae","m2u"},
-   {"cimb","octo"},
-   {"public bank","pbe","pb engage"},
-   {"rhb"},
-   {"hong leong","hlb"},
-   {"ambank","amonline"},
-   {"bank islam","bimb"},
-   {"gxbank","gx bank"},
-   {"grab","grabpay"},
-   {"shopee","spaylater","shopeepay"},
-   {"boost"}
-  };
+  String bestId="";int bestLen=0;
   for(int i=0;i<accounts.length();i++){
    JSONObject a=accounts.getJSONObject(i);String name=a.optString("name","").toLowerCase(Locale.ROOT).trim();
    if(name.isEmpty()||a.optString("id").equals(excludeId))continue;
-   if(hay.contains(name))return a.getString("id");
-   for(String[] group:aliases){
-    boolean srcHas=false,acctHas=false;
-    for(String k:group){if(hay.contains(k))srcHas=true;if(name.contains(k))acctHas=true;}
-    if(srcHas&&acctHas)return a.getString("id");
+   if(hay.contains(name)&&name.length()>bestLen){bestId=a.getString("id");bestLen=name.length();}
+  }
+  if(!bestId.isEmpty())return bestId;
+  String[][] aliases={
+   {"spaylater","shopee paylater"},
+   {"shopeepay","shopee pay","com.shopee.pay.my"},
+   {"atome","com.atome.my"},
+   {"payflex","boost payflex"},
+   {"lazpaylater"},
+   {"tiktok paylater"},
+   {"tng","touch 'n go","touch","ewallet","tngdigital"},
+   {"mae","maybank2u","m2u","maybank"},
+   {"cimb octo","cimb","octo"},
+   {"mypb","pb engage","public bank","pbe"},
+   {"rhb"},
+   {"hlb connect","hong leong","hlb"},
+   {"amonline","ambank"},
+   {"bimb","bank islam"},
+   {"uob tmrw","uob"},
+   {"ocbc"},
+   {"hsbc"},
+   {"sc mobile","standard chartered"},
+   {"mybsn","bsn"},
+   {"gxbank","gx bank"},
+   {"aeon bank","aeonbank"},
+   {"ryt bank","rytbank"},
+   {"boost bank","myboostbank"},
+   {"bigpay","big pay"},
+   {"setel"},
+   {"grabpaylater","grab paylater"},
+   {"grabpay","grab"},
+   {"shopee"},
+   {"boost","myboost"},
+   {"foodpanda"},
+   {"lazada"},
+   {"fave","favepay"},
+   {"shopback"}
+  };
+  for(String[] group:aliases){
+   boolean srcHas=false;
+   for(String k:group)if(hay.contains(k)){srcHas=true;break;}
+   if(!srcHas)continue;
+   for(int i=0;i<accounts.length();i++){
+    JSONObject a=accounts.getJSONObject(i);String name=a.optString("name","").toLowerCase(Locale.ROOT).trim();
+    if(name.isEmpty()||a.optString("id").equals(excludeId))continue;
+    for(String k:group)if(name.contains(k))return a.getString("id");
    }
   }
   return "";

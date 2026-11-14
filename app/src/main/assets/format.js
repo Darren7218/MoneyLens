@@ -104,13 +104,20 @@ function brandBadge(src){
   let cls='brand-default';
   if(low.includes('tng')||low.includes('touch'))cls='brand-tng';
   else if(low.includes('maybank')||low.includes('mae'))cls='brand-maybank';
-  else if(low.includes('shopee')||low.includes('spaylater'))cls='brand-shopee';
+  else if(low.includes('spaylater')||low.includes('shopee'))cls='brand-shopee';
+  else if(low.includes('atome'))cls='brand-atome';
+  else if(low.includes('ryt'))cls='brand-ryt';
+  else if(low.includes('lazada')||low.includes('lazpaylater'))cls='brand-lazada';
+  else if(low.includes('tiktok'))cls='brand-tiktok';
+  else if(low.includes('foodpanda'))cls='brand-foodpanda';
+  else if(low.includes('bigpay')||low.includes('fave')||low.includes('shopback'))cls='brand-wallet';
   else if(low.includes('cimb')||low.includes('octo'))cls='brand-cimb';
   else if(low.includes('gxbank')||low.includes('gx'))cls='brand-gxbank';
   else if(low.includes('aeon'))cls='brand-aeon';
-  else if(low.includes('boost'))cls='brand-boost';
+  else if(low.includes('boost')||low.includes('payflex'))cls='brand-boost';
   else if(low.includes('setel'))cls='brand-setel';
   else if(low.includes('grab'))cls='brand-grab';
+  else if(/public bank|mypb|\brhb\b|hong leong|\bhlb\b|ambank|amonline|bank islam|bimb|\buob\b|ocbc|hsbc|standard chartered|sc mobile|bsn/.test(low))cls='brand-bank';
   return `<span class="brand-badge ${cls}">${icon('bell')}${esc(s)}</span>`;
 }
 function sameMerchantCount(merchant,excludeId,diffFromCat){

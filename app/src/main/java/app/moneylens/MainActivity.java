@@ -192,13 +192,17 @@ public final class MainActivity extends Activity {
     String listeners=Settings.Secure.getString(getContentResolver(),"enabled_notification_listeners");ComponentName ours=new ComponentName(this,CaptureService.class);boolean access=false;if(listeners!=null)for(String item:listeners.split(":"))if(ours.equals(ComponentName.unflattenFromString(item)))access=true;
     PowerManager pm=getSystemService(PowerManager.class);
     boolean batteryOk=pm!=null&&pm.isIgnoringBatteryOptimizations(getPackageName());
-    return new JSONObject().put("notificationAccess",access).put("listenerConnected",CaptureService.connected).put("schedulerRunning",KeepAliveService.running).put("batteryUnrestricted",batteryOk).put("biometricAvailable",isBiometricAvailable()).put("promptPermission",getSystemService(NotificationManager.class).areNotificationsEnabled()).put("overlayPermission",Settings.canDrawOverlays(this)).put("autoOpenOnBoot",getSharedPreferences("health",0).getBoolean("autoOpenOnBoot",true)).put("alwaysOnScheduler",getSharedPreferences("health",0).getBoolean("alwaysOnScheduler",true)).put("ecoCapture",!Vault.hasMeta(this)||Vault.fastBool(this,"ecoCapture",true)).put("error",getSharedPreferences("health",0).getString("error","")).put("version","0.8.0").put("autoBackup",getSharedPreferences("health",0).getBoolean("autoBackup",false)).put("backupSuccess",getSharedPreferences("health",0).getLong("backupSuccess",0)).put("backupError",getSharedPreferences("health",0).getString("backupError","")).put("recovery",new File(getNoBackupFilesDir(),"before-restore.vault").exists());
+    return new JSONObject().put("notificationAccess",access).put("listenerConnected",CaptureService.connected).put("schedulerRunning",KeepAliveService.running).put("batteryUnrestricted",batteryOk).put("biometricAvailable",isBiometricAvailable()).put("promptPermission",getSystemService(NotificationManager.class).areNotificationsEnabled()).put("overlayPermission",Settings.canDrawOverlays(this)).put("autoOpenOnBoot",getSharedPreferences("health",0).getBoolean("autoOpenOnBoot",true)).put("alwaysOnScheduler",getSharedPreferences("health",0).getBoolean("alwaysOnScheduler",true)).put("ecoCapture",!Vault.hasMeta(this)||Vault.fastBool(this,"ecoCapture",true)).put("error",getSharedPreferences("health",0).getString("error","")).put("version","0.9.0").put("autoBackup",getSharedPreferences("health",0).getBoolean("autoBackup",false)).put("backupSuccess",getSharedPreferences("health",0).getLong("backupSuccess",0)).put("backupError",getSharedPreferences("health",0).getString("backupError","")).put("recovery",new File(getNoBackupFilesDir(),"before-restore.vault").exists());
   }
   private JSONObject sendTestNotification()throws Exception{
     String[][] templates={
       {"my.com.tngdigital.ewallet","Touch 'n Go eWallet","PayDirect Toll Deduction","You have paid RM2.50 at DUKE TOLL PLAZA.","You have paid RM2.50 at DUKE TOLL PLAZA. Wallet balance: RM84.20. Never share your OTP/TAC with anyone."},
       {"com.maybank2u.life","MAE by Maybank2u","MAE QRPay","RM 15.50 at RESTORAN PELITA","RM 15.50 at RESTORAN PELITA. Available balance: RM 1,240.00. Do not share your Secure2u or TAC."},
-      {"com.shopee.my","Shopee SPayLater","SPayLater Payment","Payment of RM 49.90 for SPayLater installment completed.","Payment of RM 49.90 for SPayLater installment completed. Available credit limit: RM 1,500.00. Cashback earned: RM 1.00."},
+      {"com.shopee.pay.my","ShopeePay MY","ShopeePay Payment Successful","You have paid RM 8.50 at Nasi Lemak Wanjo Kampung Baru.","You have paid RM 8.50 at Nasi Lemak Wanjo Kampung Baru. ShopeePay balance: RM 64.50."},
+      {"com.shopee.my","Shopee (SPayLater / ShopeePay)","SPayLater Payment","Payment of RM 49.90 for SPayLater installment completed.","Payment of RM 49.90 for SPayLater installment completed. Available credit limit: RM 1,500.00. Cashback earned: RM 1.00."},
+      {"com.atome.my","Atome BNPL","Atome Instalment Confirmed","Your Atome payment of RM 16.90 at Zus Coffee has succeeded.","Your Atome payment of RM 16.90 at Zus Coffee has succeeded. 1/3 instalment settled."},
+      {"my.com.myboost","Boost / Boost PayFlex","Boost PayFlex QR Payment","You have paid RM 12.00 to Warung Pak Mat using PayFlex.","You have paid RM 12.00 to Warung Pak Mat using PayFlex. Boost Stars earned: 12."},
+      {"my.com.gxbank.mobile","GXBank","GXBank DuitNow QR","You paid RM 34.80 at 99 Speedmart via DuitNow QR.","You paid RM 34.80 at 99 Speedmart via DuitNow QR. Available balance: RM 820.10."},
       {"com.maybank2u.life","Maybank2u","JomPAY Payment","You have paid RM 150.00 to PTPTN Direct Debit.","You have paid RM 150.00 to PTPTN Direct Debit. Ref: 9928172. Never share your TAC with anyone."}
     };
     int idx=(testCursor++)%templates.length;
@@ -263,10 +267,29 @@ public final class MainActivity extends Activity {
         else if(method.equals("stopAutoBackup")){getSharedPreferences("health",0).edit().putBoolean("autoBackup",false).apply();result=true;}
         else if(method.equals("backupNow")){Automation.autoBackup(MainActivity.this,true);result=true;}
         else if(method.equals("diagnosticExport")){exportToast="Diagnostics exported.";pendingExport=args.getString("text").getBytes(StandardCharsets.UTF_8);runOnUiThread(()->launchExternal(new Intent(Intent.ACTION_CREATE_DOCUMENT).setType("text/plain").addCategory(Intent.CATEGORY_OPENABLE).putExtra(Intent.EXTRA_TITLE,"MoneyLens-Diagnostics.txt"),50));result=true;}
-        else if(method.equals("diagnostics"))result=new JSONObject().put("version","0.8.0").put("ecoCapture",!Vault.hasMeta(MainActivity.this)||Vault.fastBool(MainActivity.this,"ecoCapture",true)).put("mlClassifierLoaded",MlClassifier.isLoaded()).put("notificationAccess",status().getBoolean("notificationAccess")).put("listenerConnected",CaptureService.connected).put("schedulerRunning",KeepAliveService.running).put("lastCapture",Vault.read(MainActivity.this).optLong("lastCapture")).put("backupSuccess",status().getLong("backupSuccess")).put("workError",getSharedPreferences("health",0).getString("workError","")).put("pendingReviews",countPending()).put("networkPermission",false).put("counters",Health.snapshot(MainActivity.this));
+        else if(method.equals("diagnostics"))result=new JSONObject().put("version","0.9.0").put("ecoCapture",!Vault.hasMeta(MainActivity.this)||Vault.fastBool(MainActivity.this,"ecoCapture",true)).put("mlClassifierLoaded",MlClassifier.isLoaded()).put("notificationAccess",status().getBoolean("notificationAccess")).put("listenerConnected",CaptureService.connected).put("schedulerRunning",KeepAliveService.running).put("lastCapture",Vault.read(MainActivity.this).optLong("lastCapture")).put("backupSuccess",status().getLong("backupSuccess")).put("workError",getSharedPreferences("health",0).getString("workError","")).put("pendingReviews",countPending()).put("networkPermission",false).put("counters",Health.snapshot(MainActivity.this));
         else if(method.equals("apps")){
-          JSONArray apps=new JSONArray();List<ResolveInfo> list=getPackageManager().queryIntentActivities(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER),0);Set<String> seen=new HashSet<>();list.sort((a,b)->a.loadLabel(getPackageManager()).toString().compareToIgnoreCase(b.loadLabel(getPackageManager()).toString()));
-          for(ResolveInfo app:list){String pkg=app.activityInfo.packageName;if(pkg.equals(getPackageName())||!seen.add(pkg))continue;apps.put(new JSONObject().put("package",pkg).put("name",app.loadLabel(getPackageManager()).toString()));}result=apps;
+          JSONArray apps=new JSONArray();List<ResolveInfo> list=getPackageManager().queryIntentActivities(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER),0);Set<String> seen=new HashSet<>();
+          List<JSONObject> rows=new ArrayList<>();
+          for(ResolveInfo app:list){
+            String pkg=app.activityInfo.packageName;if(pkg.equals(getPackageName())||!seen.add(pkg))continue;
+            String[] known=PaymentParser.knownAppInfo(pkg);
+            String label=app.loadLabel(getPackageManager()).toString();
+            if((label==null||label.isEmpty()||label.equals(pkg))&&known!=null)label=known[1];
+            rows.add(new JSONObject().put("package",pkg).put("name",label).put("group",known!=null?known[2]:"other").put("installed",true));
+          }
+          for(String[] k:PaymentParser.KNOWN_APPS){
+            if(seen.add(k[0]))rows.add(new JSONObject().put("package",k[0]).put("name",k[1]).put("group",k[2]).put("installed",false));
+          }
+          rows.sort((a,b)->{
+            int ga=a.optString("group","other").equals("other")?1:0,gb=b.optString("group","other").equals("other")?1:0;
+            if(ga!=gb)return Integer.compare(ga,gb);
+            boolean ia=a.optBoolean("installed",true),ib=b.optBoolean("installed",true);
+            if(ia!=ib)return ia?-1:1;
+            return a.optString("name").compareToIgnoreCase(b.optString("name"));
+          });
+          for(JSONObject r:rows)apps.put(r);
+          result=apps;
         }else if(method.equals("notificationAccess")){runOnUiThread(()->startActivity(new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)));result=true;}
         else if(method.equals("overlayPermission")){runOnUiThread(()->{try{startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,android.net.Uri.parse("package:"+getPackageName())));}catch(Exception ignored){}});result=true;}
         else if(method.equals("promptPermission")){runOnUiThread(()->{if(Build.VERSION.SDK_INT>=33)requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"},5);else startActivity(new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE,getPackageName()));});result=true;}
