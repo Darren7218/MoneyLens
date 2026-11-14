@@ -1,0 +1,3448 @@
+{
+  "Bills & utilities||Condo Maintenance & Sinking Fund": [
+    {
+      "token": "sinking fund",
+      "weight": 2.5719
+    },
+    {
+      "token": "sinking",
+      "weight": 2.5719
+    },
+    {
+      "token": "fund",
+      "weight": 2.1729
+    },
+    {
+      "token": "condo",
+      "weight": 2.1725
+    },
+    {
+      "token": "maintenance",
+      "weight": 1.7725
+    },
+    {
+      "token": "condo maintenance",
+      "weight": 1.2108
+    },
+    {
+      "token": "maintenance fee",
+      "weight": 0.9483
+    },
+    {
+      "token": "00 sinking",
+      "weight": 0.9483
+    },
+    {
+      "token": "fund rm",
+      "weight": 0.9109
+    },
+    {
+      "token": "20 reference",
+      "weight": 0.7508
+    },
+    {
+      "token": "tropicana",
+      "weight": 0.7129
+    },
+    {
+      "token": "rounding adj",
+      "weight": 0.7109
+    }
+  ],
+  "Bills & utilities||Electricity (TNB)": [
+    {
+      "token": "tnb",
+      "weight": 4.9263
+    },
+    {
+      "token": "electricity",
+      "weight": 2.1429
+    },
+    {
+      "token": "power",
+      "weight": 2.0938
+    },
+    {
+      "token": "sarwak",
+      "weight": 1.3328
+    },
+    {
+      "token": "rate",
+      "weight": 1.3145
+    },
+    {
+      "token": "rate rm0",
+      "weight": 1.3145
+    },
+    {
+      "token": "energy",
+      "weight": 1.2781
+    },
+    {
+      "token": "tnb electricity",
+      "weight": 0.9692
+    },
+    {
+      "token": "units",
+      "weight": 0.943
+    },
+    {
+      "token": "rm0",
+      "weight": 0.8921
+    },
+    {
+      "token": "period",
+      "weight": 0.8412
+    },
+    {
+      "token": "june",
+      "weight": 0.8047
+    }
+  ],
+  "Bills & utilities||Home Internet & WiFi (Unifi / Time)": [
+    {
+      "token": "broadband",
+      "weight": 2.3378
+    },
+    {
+      "token": "internet",
+      "weight": 1.7435
+    },
+    {
+      "token": "bills",
+      "weight": 1.656
+    },
+    {
+      "token": "unifi broadband",
+      "weight": 1.6549
+    },
+    {
+      "token": "unifi",
+      "weight": 1.6488
+    },
+    {
+      "token": "xxxx",
+      "weight": 1.3874
+    },
+    {
+      "token": "bills utilities",
+      "weight": 1.2845
+    },
+    {
+      "token": "utilities",
+      "weight": 1.2348
+    },
+    {
+      "token": "oct",
+      "weight": 0.9475
+    },
+    {
+      "token": "oct 2026",
+      "weight": 0.9475
+    },
+    {
+      "token": "01 oct",
+      "weight": 0.8566
+    },
+    {
+      "token": "service id",
+      "weight": 0.8566
+    }
+  ],
+  "Bills & utilities||Mobile Postpaid & Prepaid": [
+    {
+      "token": "mobile",
+      "weight": 1.6795
+    },
+    {
+      "token": "postpaid",
+      "weight": 1.3431
+    },
+    {
+      "token": "telkom",
+      "weight": 1.2163
+    },
+    {
+      "token": "prepaid",
+      "weight": 1.0483
+    },
+    {
+      "token": "quantity rm",
+      "weight": 0.981
+    },
+    {
+      "token": "postpaid rm",
+      "weight": 0.9288
+    },
+    {
+      "token": "rm 149",
+      "weight": 0.8732
+    },
+    {
+      "token": "quantity",
+      "weight": 0.8567
+    },
+    {
+      "token": "maxis",
+      "weight": 0.7945
+    },
+    {
+      "token": "rm 50",
+      "weight": 0.7206
+    }
+  ],
+  "Bills & utilities||Streaming & App Subscriptions": [
+    {
+      "token": "quantity price",
+      "weight": 1.7608
+    },
+    {
+      "token": "quantity",
+      "weight": 1.5799
+    },
+    {
+      "token": "subscription",
+      "weight": 1.5258
+    },
+    {
+      "token": "price rm",
+      "weight": 1.3343
+    },
+    {
+      "token": "15 jun",
+      "weight": 1.3095
+    },
+    {
+      "token": "utility",
+      "weight": 1.2822
+    },
+    {
+      "token": "streaming",
+      "weight": 1.209
+    },
+    {
+      "token": "streaming subscription",
+      "weight": 1.209
+    },
+    {
+      "token": "spotify",
+      "weight": 1.0528
+    },
+    {
+      "token": "latest",
+      "weight": 1.0421
+    },
+    {
+      "token": "latest streaming",
+      "weight": 1.0421
+    },
+    {
+      "token": "19 september",
+      "weight": 1.0274
+    }
+  ],
+  "Bills & utilities||Water & Sewerage (Air Selangor / IWK)": [
+    {
+      "token": "water",
+      "weight": 1.6012
+    },
+    {
+      "token": "charges",
+      "weight": 0.932
+    },
+    {
+      "token": "sewerage",
+      "weight": 0.9046
+    },
+    {
+      "token": "adjustment 05",
+      "weight": 0.8067
+    },
+    {
+      "token": "sen adjustment",
+      "weight": 0.773
+    },
+    {
+      "token": "thank choosing",
+      "weight": 0.7156
+    },
+    {
+      "token": "choosing",
+      "weight": 0.6754
+    },
+    {
+      "token": "tendered 300",
+      "weight": 0.6722
+    }
+  ],
+  "Education||Books & Stationery": [
+    {
+      "token": "stationery",
+      "weight": 2.0532
+    },
+    {
+      "token": "books",
+      "weight": 1.7566
+    },
+    {
+      "token": "learning",
+      "weight": 1.3741
+    },
+    {
+      "token": "book",
+      "weight": 1.0615
+    },
+    {
+      "token": "09000 alor",
+      "weight": 1.0254
+    },
+    {
+      "token": "world",
+      "weight": 0.9966
+    },
+    {
+      "token": "hub",
+      "weight": 0.9937
+    },
+    {
+      "token": "haven",
+      "weight": 0.9217
+    },
+    {
+      "token": "chnge rm",
+      "weight": 0.8384
+    },
+    {
+      "token": "sbttl",
+      "weight": 0.7914
+    },
+    {
+      "token": "00 sbttl",
+      "weight": 0.7914
+    }
+  ],
+  "Education||Higher Education & Tuition": [
+    {
+      "token": "universiti",
+      "weight": 2.4641
+    },
+    {
+      "token": "rm2",
+      "weight": 1.6889
+    },
+    {
+      "token": "tuition",
+      "weight": 1.4755
+    },
+    {
+      "token": "kolej universiti",
+      "weight": 1.4283
+    },
+    {
+      "token": "kolej",
+      "weight": 1.4283
+    },
+    {
+      "token": "ferri",
+      "weight": 1.4116
+    },
+    {
+      "token": "lda",
+      "weight": 1.2384
+    },
+    {
+      "token": "rm1",
+      "weight": 1.1912
+    },
+    {
+      "token": "semester",
+      "weight": 1.1892
+    },
+    {
+      "token": "asia",
+      "weight": 1.0832
+    },
+    {
+      "token": "technology",
+      "weight": 1.0668
+    },
+    {
+      "token": "tuition fee",
+      "weight": 1.0234
+    }
+  ],
+  "Education||School & Childcare Fees": [
+    {
+      "token": "school",
+      "weight": 2.0322
+    },
+    {
+      "token": "chl",
+      "weight": 1.9733
+    },
+    {
+      "token": "fees",
+      "weight": 1.8543
+    },
+    {
+      "token": "kindergarten",
+      "weight": 1.639
+    },
+    {
+      "token": "childcare",
+      "weight": 1.497
+    },
+    {
+      "token": "school fees",
+      "weight": 1.2003
+    },
+    {
+      "token": "aug 2026",
+      "weight": 1.2003
+    },
+    {
+      "token": "aug",
+      "weight": 1.1724
+    },
+    {
+      "token": "00 ttl",
+      "weight": 1.1626
+    },
+    {
+      "token": "ttl pybl",
+      "weight": 1.1626
+    },
+    {
+      "token": "00 tuitn",
+      "weight": 1.1626
+    },
+    {
+      "token": "tuitn",
+      "weight": 1.1626
+    }
+  ],
+  "Education||Upskilling & Certification": [
+    {
+      "token": "course",
+      "weight": 2.0373
+    },
+    {
+      "token": "certification",
+      "weight": 1.873
+    },
+    {
+      "token": "institute",
+      "weight": 1.4033
+    },
+    {
+      "token": "centre",
+      "weight": 1.288
+    },
+    {
+      "token": "workshop",
+      "weight": 1.084
+    },
+    {
+      "token": "digital",
+      "weight": 1.0551
+    },
+    {
+      "token": "online",
+      "weight": 0.9503
+    },
+    {
+      "token": "rm 999",
+      "weight": 0.911
+    },
+    {
+      "token": "sembilan",
+      "weight": 0.8943
+    },
+    {
+      "token": "negeri sembilan",
+      "weight": 0.8943
+    },
+    {
+      "token": "negeri",
+      "weight": 0.8722
+    },
+    {
+      "token": "__________________________________",
+      "weight": 0.8015
+    }
+  ],
+  "Entertainment & travel||Flights & Transport": [
+    {
+      "token": "booking",
+      "weight": 1.8881
+    },
+    {
+      "token": "flight",
+      "weight": 1.4956
+    },
+    {
+      "token": "ticket",
+      "weight": 1.234
+    },
+    {
+      "token": "express",
+      "weight": 1.1231
+    },
+    {
+      "token": "airasia",
+      "weight": 1.0277
+    },
+    {
+      "token": "rm 125",
+      "weight": 0.8034
+    },
+    {
+      "token": "leong connect",
+      "weight": 0.719
+    },
+    {
+      "token": "leong",
+      "weight": 0.719
+    },
+    {
+      "token": "hong leong",
+      "weight": 0.719
+    },
+    {
+      "token": "hong",
+      "weight": 0.719
+    },
+    {
+      "token": "connect",
+      "weight": 0.6911
+    },
+    {
+      "token": "sentral",
+      "weight": 0.6337
+    }
+  ],
+  "Entertainment & travel||Games & Hobbies": [
+    {
+      "token": "hobbies",
+      "weight": 2.7601
+    },
+    {
+      "token": "games",
+      "weight": 2.615
+    },
+    {
+      "token": "gamezone",
+      "weight": 1.5755
+    },
+    {
+      "token": "travel",
+      "weight": 0.967
+    },
+    {
+      "token": "2026 1x",
+      "weight": 0.9248
+    },
+    {
+      "token": "club",
+      "weight": 0.8871
+    },
+    {
+      "token": "using maybank",
+      "weight": 0.8328
+    },
+    {
+      "token": "flight",
+      "weight": 0.8267
+    },
+    {
+      "token": "store",
+      "weight": 0.8265
+    },
+    {
+      "token": "board",
+      "weight": 0.7479
+    },
+    {
+      "token": "00 1x",
+      "weight": 0.7191
+    },
+    {
+      "token": "using",
+      "weight": 0.6954
+    }
+  ],
+  "Entertainment & travel||Hotel & Holiday Stay": [
+    {
+      "token": "resort",
+      "weight": 3.2355
+    },
+    {
+      "token": "hotel",
+      "weight": 2.0421
+    },
+    {
+      "token": "stay",
+      "weight": 1.9025
+    },
+    {
+      "token": "room",
+      "weight": 1.4916
+    },
+    {
+      "token": "sands",
+      "weight": 1.3606
+    },
+    {
+      "token": "sands resort",
+      "weight": 1.3606
+    },
+    {
+      "token": "nights rm",
+      "weight": 1.088
+    },
+    {
+      "token": "nights",
+      "weight": 1.0367
+    },
+    {
+      "token": "reference",
+      "weight": 1.0328
+    },
+    {
+      "token": "safiya",
+      "weight": 0.9162
+    },
+    {
+      "token": "vista",
+      "weight": 0.9049
+    },
+    {
+      "token": "tree",
+      "weight": 0.7995
+    }
+  ],
+  "Entertainment & travel||Movies, Concerts & Events": [
+    {
+      "token": "cinemas",
+      "weight": 1.6465
+    },
+    {
+      "token": "festival",
+      "weight": 1.4946
+    },
+    {
+      "token": "chang3",
+      "weight": 1.4554
+    },
+    {
+      "token": "00 chang3",
+      "weight": 1.4554
+    },
+    {
+      "token": "concert",
+      "weight": 1.1762
+    },
+    {
+      "token": "mall",
+      "weight": 1.1601
+    },
+    {
+      "token": "00 c4sh",
+      "weight": 1.1587
+    },
+    {
+      "token": "bus",
+      "weight": 1.1196
+    },
+    {
+      "token": "c4sh",
+      "weight": 1.1062
+    },
+    {
+      "token": "tickets",
+      "weight": 1.086
+    },
+    {
+      "token": "lido",
+      "weight": 1.0367
+    },
+    {
+      "token": "night",
+      "weight": 0.8811
+    }
+  ],
+  "Family & gifts||Charity & Donations": [
+    {
+      "token": "charity",
+      "weight": 2.2729
+    },
+    {
+      "token": "donation",
+      "weight": 1.8925
+    },
+    {
+      "token": "fund",
+      "weight": 1.4958
+    },
+    {
+      "token": "rm 00",
+      "weight": 1.3628
+    },
+    {
+      "token": "family",
+      "weight": 1.2709
+    },
+    {
+      "token": "hand",
+      "weight": 1.2284
+    },
+    {
+      "token": "hope",
+      "weight": 1.1603
+    },
+    {
+      "token": "hope charity",
+      "weight": 1.1603
+    },
+    {
+      "token": "kids",
+      "weight": 1.1246
+    },
+    {
+      "token": "2026 donation",
+      "weight": 0.83
+    },
+    {
+      "token": "00 thank",
+      "weight": 0.8287
+    },
+    {
+      "token": "rm 100",
+      "weight": 0.8246
+    }
+  ],
+  "Family & gifts||Childcare & Family Support": [
+    {
+      "token": "kids",
+      "weight": 1.2208
+    },
+    {
+      "token": "itemized",
+      "weight": 0.9354
+    },
+    {
+      "token": "itemized charges",
+      "weight": 0.9354
+    },
+    {
+      "token": "charges",
+      "weight": 0.792
+    },
+    {
+      "token": "rm 400",
+      "weight": 0.7834
+    },
+    {
+      "token": "2026 itemized",
+      "weight": 0.7443
+    },
+    {
+      "token": "family gifts",
+      "weight": 0.6877
+    },
+    {
+      "token": "03 nov",
+      "weight": 0.6843
+    },
+    {
+      "token": "learning centre",
+      "weight": 0.6709
+    },
+    {
+      "token": "services rm",
+      "weight": 0.6527
+    },
+    {
+      "token": "happy",
+      "weight": 0.6206
+    }
+  ],
+  "Family & gifts||Festive (Angpao / Duit Raya) & Gifts": [
+    {
+      "token": "gifts",
+      "weight": 2.4856
+    },
+    {
+      "token": "angpao",
+      "weight": 2.2103
+    },
+    {
+      "token": "raya",
+      "weight": 1.9852
+    },
+    {
+      "token": "txn",
+      "weight": 1.6858
+    },
+    {
+      "token": "gift",
+      "weight": 1.6208
+    },
+    {
+      "token": "hadiah",
+      "weight": 1.6036
+    },
+    {
+      "token": "raya rm",
+      "weight": 1.3156
+    },
+    {
+      "token": "festive",
+      "weight": 1.1164
+    },
+    {
+      "token": "2026 angpao",
+      "weight": 1.0509
+    },
+    {
+      "token": "sen rm",
+      "weight": 0.9572
+    },
+    {
+      "token": "00 sub",
+      "weight": 0.874
+    },
+    {
+      "token": "round sen",
+      "weight": 0.8568
+    }
+  ],
+  "Family & gifts||Parents Allowance": [
+    {
+      "token": "house",
+      "weight": 1.4259
+    },
+    {
+      "token": "ch4nge",
+      "weight": 1.2523
+    },
+    {
+      "token": "00 ch4nge",
+      "weight": 1.2523
+    },
+    {
+      "token": "gift",
+      "weight": 1.2351
+    },
+    {
+      "token": "c4sh",
+      "weight": 1.1781
+    },
+    {
+      "token": "encik",
+      "weight": 1.0489
+    },
+    {
+      "token": "l1ne1",
+      "weight": 1.0448
+    },
+    {
+      "token": "00 l1ne2",
+      "weight": 1.0448
+    },
+    {
+      "token": "l1ne2",
+      "weight": 1.0448
+    },
+    {
+      "token": "code description",
+      "weight": 0.929
+    },
+    {
+      "token": "20 april",
+      "weight": 0.9069
+    },
+    {
+      "token": "16100 kota",
+      "weight": 0.8943
+    }
+  ],
+  "Family & gifts||Zakat & Fitrah": [
+    {
+      "token": "zakat",
+      "weight": 2.572
+    },
+    {
+      "token": "gift fund",
+      "weight": 1.7791
+    },
+    {
+      "token": "zakat fitrah",
+      "weight": 1.6803
+    },
+    {
+      "token": "fitrah",
+      "weight": 1.6803
+    },
+    {
+      "token": "gift",
+      "weight": 1.4022
+    },
+    {
+      "token": "shop",
+      "weight": 1.3236
+    },
+    {
+      "token": "fund",
+      "weight": 1.2718
+    },
+    {
+      "token": "2026 reference",
+      "weight": 0.8233
+    },
+    {
+      "token": "fitrah 5kg",
+      "weight": 0.6883
+    },
+    {
+      "token": "5kg rm",
+      "weight": 0.6883
+    },
+    {
+      "token": "5kg",
+      "weight": 0.6656
+    },
+    {
+      "token": "rm 50",
+      "weight": 0.5739
+    }
+  ],
+  "Fees & charges||Bank & Transfer Fee": [
+    {
+      "token": "transfer",
+      "weight": 2.5818
+    },
+    {
+      "token": "transfer fee",
+      "weight": 2.0786
+    },
+    {
+      "token": "bank",
+      "weight": 1.8585
+    },
+    {
+      "token": "bank transfer",
+      "weight": 1.8263
+    },
+    {
+      "token": "alor setar",
+      "weight": 1.3413
+    },
+    {
+      "token": "setar",
+      "weight": 1.3413
+    },
+    {
+      "token": "alor",
+      "weight": 1.3022
+    },
+    {
+      "token": "transfers",
+      "weight": 1.1122
+    },
+    {
+      "token": "fee",
+      "weight": 1.0995
+    },
+    {
+      "token": "05400 alor",
+      "weight": 0.8132
+    },
+    {
+      "token": "rhb",
+      "weight": 0.7969
+    },
+    {
+      "token": "maybank mae",
+      "weight": 0.7091
+    }
+  ],
+  "Fees & charges||Foreign Currency Fee": [
+    {
+      "token": "currency",
+      "weight": 2.083
+    },
+    {
+      "token": "currency fee",
+      "weight": 2.083
+    },
+    {
+      "token": "foreign",
+      "weight": 2.083
+    },
+    {
+      "token": "foreign currency",
+      "weight": 2.083
+    },
+    {
+      "token": "pty",
+      "weight": 1.5588
+    },
+    {
+      "token": "berjaya cukai",
+      "weight": 1.3485
+    },
+    {
+      "token": "12 nov",
+      "weight": 1.1674
+    },
+    {
+      "token": "fee",
+      "weight": 1.0781
+    },
+    {
+      "token": "perkhidmatan rm",
+      "weight": 0.8777
+    },
+    {
+      "token": "pembayaran 12",
+      "weight": 0.856
+    },
+    {
+      "token": "boleh",
+      "weight": 0.8371
+    },
+    {
+      "token": "aug",
+      "weight": 0.82
+    }
+  ],
+  "Fees & charges||Late Payment Fee": [
+    {
+      "token": "late",
+      "weight": 2.6508
+    },
+    {
+      "token": "fee",
+      "weight": 1.1922
+    },
+    {
+      "token": "lebih masihi",
+      "weight": 1.0834
+    },
+    {
+      "token": "masihi",
+      "weight": 1.0834
+    },
+    {
+      "token": "lebih",
+      "weight": 1.0834
+    },
+    {
+      "token": "bayaran lebih",
+      "weight": 1.0834
+    },
+    {
+      "token": "denda bayaran",
+      "weight": 1.0361
+    },
+    {
+      "token": "denda",
+      "weight": 1.0361
+    },
+    {
+      "token": "services",
+      "weight": 0.8426
+    },
+    {
+      "token": "tng ewallet",
+      "weight": 0.7865
+    },
+    {
+      "token": "pembayaran anda",
+      "weight": 0.7753
+    },
+    {
+      "token": "atas pembayaran",
+      "weight": 0.7753
+    }
+  ],
+  "Food & drinks||Coffee, Tea & Drinks": [
+    {
+      "token": "tea",
+      "weight": 3.0985
+    },
+    {
+      "token": "coffee",
+      "weight": 1.9404
+    },
+    {
+      "token": "received 20",
+      "weight": 1.3599
+    },
+    {
+      "token": "café",
+      "weight": 1.3007
+    },
+    {
+      "token": "rm6",
+      "weight": 1.2926
+    },
+    {
+      "token": "latte",
+      "weight": 1.2814
+    },
+    {
+      "token": "espresso",
+      "weight": 1.1711
+    },
+    {
+      "token": "charge 10",
+      "weight": 0.8822
+    },
+    {
+      "token": "2026 reference",
+      "weight": 0.867
+    },
+    {
+      "token": "iced",
+      "weight": 0.8497
+    },
+    {
+      "token": "10 rm",
+      "weight": 0.8066
+    }
+  ],
+  "Food & drinks||Fast Food": [
+    {
+      "token": "burger",
+      "weight": 1.9334
+    },
+    {
+      "token": "mcdonald",
+      "weight": 1.8125
+    },
+    {
+      "token": "rm 00",
+      "weight": 1.6648
+    },
+    {
+      "token": "bites",
+      "weight": 1.5971
+    },
+    {
+      "token": "burger king",
+      "weight": 1.5251
+    },
+    {
+      "token": "king",
+      "weight": 1.3835
+    },
+    {
+      "token": "order",
+      "weight": 1.1123
+    },
+    {
+      "token": "thank dining",
+      "weight": 1.105
+    },
+    {
+      "token": "dining",
+      "weight": 1.0767
+    },
+    {
+      "token": "method",
+      "weight": 0.9461
+    }
+  ],
+  "Food & drinks||Food Delivery (GrabFood / Foodpanda)": [
+    {
+      "token": "foodpanda",
+      "weight": 3.1145
+    },
+    {
+      "token": "grabfood",
+      "weight": 2.7362
+    },
+    {
+      "token": "order",
+      "weight": 2.6758
+    },
+    {
+      "token": "smartbank",
+      "weight": 1.2908
+    },
+    {
+      "token": "roti",
+      "weight": 1.2367
+    },
+    {
+      "token": "roti canai",
+      "weight": 1.1409
+    },
+    {
+      "token": "canai",
+      "weight": 1.1409
+    },
+    {
+      "token": "rm 18",
+      "weight": 1.1191
+    },
+    {
+      "token": "gst",
+      "weight": 1.0591
+    },
+    {
+      "token": "rm 14",
+      "weight": 1.0201
+    },
+    {
+      "token": "satay",
+      "weight": 0.9832
+    },
+    {
+      "token": "sen round",
+      "weight": 0.9785
+    }
+  ],
+  "Food & drinks||Groceries & Snacks": [
+    {
+      "token": "bakery",
+      "weight": 3.5392
+    },
+    {
+      "token": "grocery",
+      "weight": 1.6064
+    },
+    {
+      "token": "teh",
+      "weight": 1.1625
+    },
+    {
+      "token": "rm 00",
+      "weight": 1.0866
+    },
+    {
+      "token": "rm25 00",
+      "weight": 1.0459
+    },
+    {
+      "token": "kacang",
+      "weight": 1.0288
+    },
+    {
+      "token": "rm25",
+      "weight": 0.9813
+    },
+    {
+      "token": "semari",
+      "weight": 0.9787
+    }
+  ],
+  "Food & drinks||Hawker & Mamak": [
+    {
+      "token": "mamak",
+      "weight": 2.7465
+    },
+    {
+      "token": "hawker",
+      "weight": 2.729
+    },
+    {
+      "token": "kedai mamak",
+      "weight": 1.549
+    },
+    {
+      "token": "canai",
+      "weight": 1.2883
+    },
+    {
+      "token": "roti canai",
+      "weight": 1.2883
+    },
+    {
+      "token": "bayar",
+      "weight": 1.2583
+    },
+    {
+      "token": "roti",
+      "weight": 1.1768
+    },
+    {
+      "token": "lemak",
+      "weight": 1.1205
+    },
+    {
+      "token": "nasi lemak",
+      "weight": 1.1205
+    },
+    {
+      "token": "nasi",
+      "weight": 1.1205
+    },
+    {
+      "token": "ayam",
+      "weight": 0.9998
+    },
+    {
+      "token": "rm20 00",
+      "weight": 0.8068
+    }
+  ],
+  "Food & drinks||Restaurant & Cafe": [
+    {
+      "token": "cafe",
+      "weight": 1.4505
+    },
+    {
+      "token": "10200 pulau",
+      "weight": 1.1134
+    },
+    {
+      "token": "pulau",
+      "weight": 1.0225
+    },
+    {
+      "token": "pulau pinang",
+      "weight": 1.0225
+    },
+    {
+      "token": "00 rm",
+      "weight": 0.969
+    },
+    {
+      "token": "pinang",
+      "weight": 0.953
+    },
+    {
+      "token": "items",
+      "weight": 0.749
+    },
+    {
+      "token": "2026 items",
+      "weight": 0.6152
+    }
+  ],
+  "Groceries||Convenience Store (99 Speedmart / 7-Eleven / FamilyMart)": [
+    {
+      "token": "speedmart",
+      "weight": 1.6048
+    },
+    {
+      "token": "99 speedmart",
+      "weight": 1.6048
+    },
+    {
+      "token": "pack",
+      "weight": 1.5538
+    },
+    {
+      "token": "familymart",
+      "weight": 1.515
+    },
+    {
+      "token": "rm17",
+      "weight": 0.8462
+    },
+    {
+      "token": "00 pack",
+      "weight": 0.8352
+    },
+    {
+      "token": "jln",
+      "weight": 0.7755
+    },
+    {
+      "token": "using maybank",
+      "weight": 0.7326
+    }
+  ],
+  "Groceries||Household & Cleaning Supplies": [
+    {
+      "token": "supplies",
+      "weight": 2.8571
+    },
+    {
+      "token": "groceries",
+      "weight": 1.6767
+    },
+    {
+      "token": "fresh",
+      "weight": 1.35
+    },
+    {
+      "token": "cleaning",
+      "weight": 1.2746
+    },
+    {
+      "token": "billing",
+      "weight": 1.0081
+    },
+    {
+      "token": "iwk",
+      "weight": 0.9228
+    },
+    {
+      "token": "mart",
+      "weight": 0.9146
+    },
+    {
+      "token": "senang",
+      "weight": 0.9105
+    },
+    {
+      "token": "00 cleaning",
+      "weight": 0.8891
+    },
+    {
+      "token": "vista",
+      "weight": 0.8783
+    },
+    {
+      "token": "jln",
+      "weight": 0.8483
+    },
+    {
+      "token": "household",
+      "weight": 0.8151
+    }
+  ],
+  "Groceries||Supermarket & Hypermarket": [
+    {
+      "token": "supermarket",
+      "weight": 2.4068
+    },
+    {
+      "token": "hypermarket",
+      "weight": 2.1693
+    },
+    {
+      "token": "semangat",
+      "weight": 1.5179
+    },
+    {
+      "token": "market",
+      "weight": 1.2769
+    },
+    {
+      "token": "cold storage",
+      "weight": 1.1857
+    },
+    {
+      "token": "storage",
+      "weight": 1.1857
+    },
+    {
+      "token": "storage supermarket",
+      "weight": 1.1857
+    },
+    {
+      "token": "kedai semangat",
+      "weight": 1.1456
+    },
+    {
+      "token": "cold",
+      "weight": 1.1266
+    },
+    {
+      "token": "pasar bakiti",
+      "weight": 0.9969
+    },
+    {
+      "token": "bakiti",
+      "weight": 0.9969
+    },
+    {
+      "token": "bread",
+      "weight": 0.9855
+    }
+  ],
+  "Groceries||Wet Market & Fresh Produce": [
+    {
+      "token": "fresh",
+      "weight": 3.2593
+    },
+    {
+      "token": "market",
+      "weight": 2.515
+    },
+    {
+      "token": "segar",
+      "weight": 1.8786
+    },
+    {
+      "token": "pasar",
+      "weight": 1.5637
+    },
+    {
+      "token": "hijau",
+      "weight": 1.3549
+    },
+    {
+      "token": "rm27",
+      "weight": 1.2767
+    },
+    {
+      "token": "rm27 50",
+      "weight": 1.2767
+    },
+    {
+      "token": "500g",
+      "weight": 1.0668
+    },
+    {
+      "token": "uda",
+      "weight": 0.9057
+    }
+  ],
+  "Health & medical||Clinic & GP": [
+    {
+      "token": "clinic",
+      "weight": 2.5451
+    },
+    {
+      "token": "general",
+      "weight": 1.8803
+    },
+    {
+      "token": "klinik",
+      "weight": 1.7558
+    },
+    {
+      "token": "medical center",
+      "weight": 1.5899
+    },
+    {
+      "token": "general practice",
+      "weight": 1.5615
+    },
+    {
+      "token": "practice",
+      "weight": 1.5001
+    },
+    {
+      "token": "center",
+      "weight": 1.4418
+    },
+    {
+      "token": "consultation",
+      "weight": 1.2138
+    },
+    {
+      "token": "plus",
+      "weight": 1.0008
+    },
+    {
+      "token": "klinik dr",
+      "weight": 0.9981
+    },
+    {
+      "token": "medical",
+      "weight": 0.9384
+    },
+    {
+      "token": "medication",
+      "weight": 0.9256
+    }
+  ],
+  "Health & medical||Dental & Optical": [
+    {
+      "token": "dental",
+      "weight": 2.1731
+    },
+    {
+      "token": "vision",
+      "weight": 1.8841
+    },
+    {
+      "token": "clinic",
+      "weight": 1.6913
+    },
+    {
+      "token": "optical",
+      "weight": 1.6018
+    },
+    {
+      "token": "smile",
+      "weight": 1.4046
+    },
+    {
+      "token": "eye",
+      "weight": 1.2834
+    },
+    {
+      "token": "thank",
+      "weight": 1.1551
+    },
+    {
+      "token": "01 sep",
+      "weight": 1.1072
+    },
+    {
+      "token": "2026 jul",
+      "weight": 1.0453
+    },
+    {
+      "token": "jul 13",
+      "weight": 1.0453
+    },
+    {
+      "token": "glasses",
+      "weight": 0.9902
+    },
+    {
+      "token": "dental clinic",
+      "weight": 0.9272
+    }
+  ],
+  "Health & medical||Full Medical Checkup (LHDN)": [
+    {
+      "token": "medical",
+      "weight": 4.0067
+    },
+    {
+      "token": "checkup",
+      "weight": 3.0475
+    },
+    {
+      "token": "medical checkup",
+      "weight": 2.8726
+    },
+    {
+      "token": "clinic",
+      "weight": 2.1199
+    },
+    {
+      "token": "klinik",
+      "weight": 1.4961
+    },
+    {
+      "token": "2026 medical",
+      "weight": 1.3982
+    },
+    {
+      "token": "rm 250",
+      "weight": 0.919
+    },
+    {
+      "token": "klinik medis",
+      "weight": 0.8504
+    },
+    {
+      "token": "medis",
+      "weight": 0.8504
+    },
+    {
+      "token": "checkup lhdn",
+      "weight": 0.7497
+    },
+    {
+      "token": "medical centre",
+      "weight": 0.7418
+    }
+  ],
+  "Health & medical||Gym, Sports & Fitness": [
+    {
+      "token": "gym",
+      "weight": 3.3886
+    },
+    {
+      "token": "fitness centre",
+      "weight": 1.8434
+    },
+    {
+      "token": "sportz",
+      "weight": 1.7787
+    },
+    {
+      "token": "fitness",
+      "weight": 1.7743
+    },
+    {
+      "token": "academy",
+      "weight": 1.3488
+    },
+    {
+      "token": "elite",
+      "weight": 1.3401
+    },
+    {
+      "token": "centre",
+      "weight": 1.3272
+    },
+    {
+      "token": "membership",
+      "weight": 1.3161
+    },
+    {
+      "token": "sports",
+      "weight": 1.137
+    },
+    {
+      "token": "rm200 00",
+      "weight": 1.0005
+    },
+    {
+      "token": "11 jun",
+      "weight": 0.9848
+    },
+    {
+      "token": "rm200",
+      "weight": 0.9787
+    }
+  ],
+  "Health & medical||Hospital & Specialist": [
+    {
+      "token": "specialist",
+      "weight": 4.122
+    },
+    {
+      "token": "specialist clinic",
+      "weight": 1.912
+    },
+    {
+      "token": "clinic",
+      "weight": 1.7272
+    },
+    {
+      "token": "hospital",
+      "weight": 1.2819
+    },
+    {
+      "token": "centre",
+      "weight": 1.1023
+    },
+    {
+      "token": "general",
+      "weight": 0.9769
+    },
+    {
+      "token": "12 june",
+      "weight": 0.843
+    },
+    {
+      "token": "medical centre",
+      "weight": 0.827
+    },
+    {
+      "token": "2026 transaction",
+      "weight": 0.736
+    },
+    {
+      "token": "june 2026",
+      "weight": 0.6607
+    },
+    {
+      "token": "june",
+      "weight": 0.6607
+    },
+    {
+      "token": "dr tan",
+      "weight": 0.6529
+    }
+  ],
+  "Health & medical||Pharmacy & Medicine": [
+    {
+      "token": "pharmacy",
+      "weight": 3.163
+    },
+    {
+      "token": "tablets",
+      "weight": 1.5067
+    },
+    {
+      "token": "obat",
+      "weight": 1.387
+    },
+    {
+      "token": "produk",
+      "weight": 1.2955
+    },
+    {
+      "token": "harga rm",
+      "weight": 1.256
+    },
+    {
+      "token": "tablet",
+      "weight": 1.2225
+    },
+    {
+      "token": "tablet harga",
+      "weight": 1.2225
+    },
+    {
+      "token": "harga",
+      "weight": 1.1501
+    },
+    {
+      "token": "25 jul",
+      "weight": 0.9814
+    },
+    {
+      "token": "500mg",
+      "weight": 0.9281
+    },
+    {
+      "token": "healthy",
+      "weight": 0.8647
+    },
+    {
+      "token": "charge rm1",
+      "weight": 0.8514
+    }
+  ],
+  "Housing & property||Cukai Pintu & Cukai Tanah": [
+    {
+      "token": "cukai",
+      "weight": 2.2489
+    },
+    {
+      "token": "tanah",
+      "weight": 2.2177
+    },
+    {
+      "token": "pintu",
+      "weight": 1.9399
+    },
+    {
+      "token": "cukai pintu",
+      "weight": 1.9399
+    },
+    {
+      "token": "cukai tanah",
+      "weight": 1.7154
+    },
+    {
+      "token": "property",
+      "weight": 1.7119
+    },
+    {
+      "token": "1xx",
+      "weight": 1.6697
+    },
+    {
+      "token": "surau",
+      "weight": 1.4379
+    },
+    {
+      "token": "bharu",
+      "weight": 1.2384
+    },
+    {
+      "token": "kota bharu",
+      "weight": 1.2384
+    },
+    {
+      "token": "management",
+      "weight": 1.1697
+    },
+    {
+      "token": "pru",
+      "weight": 1.0995
+    }
+  ],
+  "Housing & property||Furniture & Appliances": [
+    {
+      "token": "setar",
+      "weight": 2.1857
+    },
+    {
+      "token": "alor setar",
+      "weight": 2.1857
+    },
+    {
+      "token": "alor",
+      "weight": 2.1478
+    },
+    {
+      "token": "kedai",
+      "weight": 1.5498
+    },
+    {
+      "token": "choice",
+      "weight": 0.9278
+    },
+    {
+      "token": "pembayaran tunai",
+      "weight": 0.886
+    },
+    {
+      "token": "tunai berjaya",
+      "weight": 0.886
+    },
+    {
+      "token": "living",
+      "weight": 0.8763
+    },
+    {
+      "token": "2026 barang",
+      "weight": 0.8441
+    },
+    {
+      "token": "berjaya",
+      "weight": 0.8405
+    },
+    {
+      "token": "jumlah rm",
+      "weight": 0.8196
+    },
+    {
+      "token": "barang",
+      "weight": 0.8118
+    }
+  ],
+  "Housing & property||Home Loan / Mortgage": [
+    {
+      "token": "home loan",
+      "weight": 1.8929
+    },
+    {
+      "token": "home",
+      "weight": 1.3805
+    },
+    {
+      "token": "bulanan",
+      "weight": 1.3058
+    },
+    {
+      "token": "rumah",
+      "weight": 1.2835
+    },
+    {
+      "token": "loan",
+      "weight": 1.2255
+    },
+    {
+      "token": "jln",
+      "weight": 1.1043
+    },
+    {
+      "token": "mortgage",
+      "weight": 1.0989
+    },
+    {
+      "token": "pejabat pembangunan",
+      "weight": 1.0117
+    },
+    {
+      "token": "pembangunan",
+      "weight": 1.0117
+    },
+    {
+      "token": "pembiayaan rumah",
+      "weight": 0.9566
+    },
+    {
+      "token": "pejabat",
+      "weight": 0.9564
+    },
+    {
+      "token": "2026 home",
+      "weight": 0.9026
+    }
+  ],
+  "Housing & property||Home Repair & Maintenance": [
+    {
+      "token": "home",
+      "weight": 2.1588
+    },
+    {
+      "token": "fix",
+      "weight": 1.3874
+    },
+    {
+      "token": "bengkel",
+      "weight": 1.3359
+    },
+    {
+      "token": "perbaikan",
+      "weight": 1.3273
+    },
+    {
+      "token": "plumbing",
+      "weight": 1.2377
+    },
+    {
+      "token": "improvement",
+      "weight": 1.1736
+    },
+    {
+      "token": "home improvement",
+      "weight": 1.1736
+    },
+    {
+      "token": "ending 1234",
+      "weight": 1.1535
+    },
+    {
+      "token": "rumah",
+      "weight": 1.0975
+    },
+    {
+      "token": "account ending",
+      "weight": 1.0694
+    },
+    {
+      "token": "ending",
+      "weight": 1.0694
+    },
+    {
+      "token": "maintenance",
+      "weight": 1.0678
+    }
+  ],
+  "Housing & property||Rent": [
+    {
+      "token": "rent",
+      "weight": 3.4201
+    },
+    {
+      "token": "rentals",
+      "weight": 2.3124
+    },
+    {
+      "token": "property",
+      "weight": 1.8303
+    },
+    {
+      "token": "monthly rent",
+      "weight": 1.0065
+    },
+    {
+      "token": "property rentals",
+      "weight": 0.9837
+    },
+    {
+      "token": "00 jumlah",
+      "weight": 0.9591
+    },
+    {
+      "token": "2026 rent",
+      "weight": 0.9058
+    },
+    {
+      "token": "berjaya 22",
+      "weight": 0.9
+    },
+    {
+      "token": "park",
+      "weight": 0.8986
+    },
+    {
+      "token": "2026 lot",
+      "weight": 0.8829
+    },
+    {
+      "token": "cukai perkhidmatan",
+      "weight": 0.8652
+    },
+    {
+      "token": "22 feb",
+      "weight": 0.8537
+    }
+  ],
+  "Insurance & Takaful||Education Insurance": [
+    {
+      "token": "insurance",
+      "weight": 3.456
+    },
+    {
+      "token": "takaful",
+      "weight": 2.8942
+    },
+    {
+      "token": "education insurance",
+      "weight": 1.5639
+    },
+    {
+      "token": "policy",
+      "weight": 1.4369
+    },
+    {
+      "token": "education",
+      "weight": 1.3575
+    },
+    {
+      "token": "takaful education",
+      "weight": 1.2836
+    },
+    {
+      "token": "insurance fee",
+      "weight": 1.2462
+    },
+    {
+      "token": "premium",
+      "weight": 1.1307
+    },
+    {
+      "token": "ins policy",
+      "weight": 1.0235
+    },
+    {
+      "token": "ed ins",
+      "weight": 1.0235
+    },
+    {
+      "token": "ins",
+      "weight": 0.9809
+    },
+    {
+      "token": "elite",
+      "weight": 0.9239
+    }
+  ],
+  "Insurance & Takaful||Life Insurance / Takaful": [
+    {
+      "token": "takaful",
+      "weight": 3.6653
+    },
+    {
+      "token": "life",
+      "weight": 2.4437
+    },
+    {
+      "token": "insurance",
+      "weight": 1.976
+    },
+    {
+      "token": "policy",
+      "weight": 1.9112
+    },
+    {
+      "token": "premium",
+      "weight": 1.5404
+    },
+    {
+      "token": "life insurance",
+      "weight": 1.4457
+    },
+    {
+      "token": "00 takaful",
+      "weight": 1.108
+    },
+    {
+      "token": "rakyat",
+      "weight": 1.0752
+    },
+    {
+      "token": "renewal",
+      "weight": 0.9778
+    },
+    {
+      "token": "policy renewal",
+      "weight": 0.8933
+    },
+    {
+      "token": "16 oct",
+      "weight": 0.8608
+    },
+    {
+      "token": "address",
+      "weight": 0.8597
+    }
+  ],
+  "Insurance & Takaful||Medical & Health Card": [
+    {
+      "token": "xxxx",
+      "weight": 2.0505
+    },
+    {
+      "token": "health",
+      "weight": 1.6879
+    },
+    {
+      "token": "xxxx xxxx",
+      "weight": 1.4902
+    },
+    {
+      "token": "takaful",
+      "weight": 1.46
+    },
+    {
+      "token": "card",
+      "weight": 1.09
+    },
+    {
+      "token": "aia",
+      "weight": 0.9817
+    },
+    {
+      "token": "health card",
+      "weight": 0.9553
+    },
+    {
+      "token": "asnb",
+      "weight": 0.8651
+    },
+    {
+      "token": "thank business",
+      "weight": 0.827
+    },
+    {
+      "token": "business",
+      "weight": 0.801
+    },
+    {
+      "token": "plus",
+      "weight": 0.7859
+    },
+    {
+      "token": "visit www",
+      "weight": 0.705
+    }
+  ],
+  "Insurance & Takaful||Personal Accident": [
+    {
+      "token": "takaful",
+      "weight": 1.244
+    },
+    {
+      "token": "00 takaful",
+      "weight": 1.2118
+    },
+    {
+      "token": "pa 2026",
+      "weight": 1.0848
+    },
+    {
+      "token": "kesihatan",
+      "weight": 1.062
+    },
+    {
+      "token": "personal",
+      "weight": 1.0441
+    },
+    {
+      "token": "accident",
+      "weight": 0.9508
+    },
+    {
+      "token": "takauf",
+      "weight": 0.9377
+    },
+    {
+      "token": "takaf",
+      "weight": 0.9377
+    },
+    {
+      "token": "pelindungan",
+      "weight": 0.9377
+    },
+    {
+      "token": "takaful pelindungan",
+      "weight": 0.9377
+    },
+    {
+      "token": "2026 1n5",
+      "weight": 0.8671
+    }
+  ],
+  "Investments & savings||ASB / Tabung Haji": [
+    {
+      "token": "asb",
+      "weight": 3.0908
+    },
+    {
+      "token": "haji",
+      "weight": 2.5632
+    },
+    {
+      "token": "tabung haji",
+      "weight": 2.4814
+    },
+    {
+      "token": "tabung",
+      "weight": 2.4814
+    },
+    {
+      "token": "asb savings",
+      "weight": 1.5973
+    },
+    {
+      "token": "investments",
+      "weight": 1.5235
+    },
+    {
+      "token": "savings",
+      "weight": 1.3625
+    },
+    {
+      "token": "chnge 50",
+      "weight": 1.0292
+    },
+    {
+      "token": "chnge",
+      "weight": 0.925
+    },
+    {
+      "token": "00 chnge",
+      "weight": 0.925
+    },
+    {
+      "token": "rm 00",
+      "weight": 0.9091
+    },
+    {
+      "token": "abstract",
+      "weight": 0.8331
+    }
+  ],
+  "Investments & savings||EPF Voluntary (i-Saraan)": [
+    {
+      "token": "epf",
+      "weight": 3.2974
+    },
+    {
+      "token": "saraan",
+      "weight": 2.3719
+    },
+    {
+      "token": "contribution",
+      "weight": 1.8236
+    },
+    {
+      "token": "smart",
+      "weight": 1.5001
+    },
+    {
+      "token": "voluntary",
+      "weight": 1.246
+    },
+    {
+      "token": "voluntary contribution",
+      "weight": 1.246
+    },
+    {
+      "token": "rhb",
+      "weight": 1.204
+    },
+    {
+      "token": "rm 000",
+      "weight": 1.063
+    },
+    {
+      "token": "rm 500",
+      "weight": 1.0205
+    },
+    {
+      "token": "member",
+      "weight": 0.8957
+    },
+    {
+      "token": "epf voluntary",
+      "weight": 0.8402
+    },
+    {
+      "token": "saraan contribution",
+      "weight": 0.808
+    }
+  ],
+  "Investments & savings||PRS (Private Retirement Scheme)": [
+    {
+      "token": "prs",
+      "weight": 3.7362
+    },
+    {
+      "token": "simpanan persaraan",
+      "weight": 1.6332
+    },
+    {
+      "token": "persaraan prs",
+      "weight": 1.6332
+    },
+    {
+      "token": "persaraan",
+      "weight": 1.6332
+    },
+    {
+      "token": "simpanan",
+      "weight": 1.5583
+    },
+    {
+      "token": "retirement",
+      "weight": 1.4276
+    },
+    {
+      "token": "pru",
+      "weight": 1.182
+    },
+    {
+      "token": "epf",
+      "weight": 1.15
+    },
+    {
+      "token": "future",
+      "weight": 1.1178
+    },
+    {
+      "token": "aia",
+      "weight": 1.1148
+    },
+    {
+      "token": "savings",
+      "weight": 0.8581
+    },
+    {
+      "token": "sst 10",
+      "weight": 0.8487
+    }
+  ],
+  "Investments & savings||SSPN Savings": [
+    {
+      "token": "savings",
+      "weight": 3.4134
+    },
+    {
+      "token": "sspn savings",
+      "weight": 2.4328
+    },
+    {
+      "token": "sspn",
+      "weight": 2.4328
+    },
+    {
+      "token": "investment",
+      "weight": 1.8638
+    },
+    {
+      "token": "savings investment",
+      "weight": 1.1956
+    },
+    {
+      "token": "asnb",
+      "weight": 1.0888
+    },
+    {
+      "token": "pru life",
+      "weight": 1.0311
+    },
+    {
+      "token": "price sspn",
+      "weight": 0.8759
+    },
+    {
+      "token": "savings rm",
+      "weight": 0.8759
+    },
+    {
+      "token": "reference",
+      "weight": 0.8695
+    },
+    {
+      "token": "inquiries 123",
+      "weight": 0.8552
+    }
+  ],
+  "Investments & savings||Stocks, ETF & Crypto": [
+    {
+      "token": "etf",
+      "weight": 2.1995
+    },
+    {
+      "token": "crypto",
+      "weight": 1.7724
+    },
+    {
+      "token": "stocks",
+      "weight": 1.7028
+    },
+    {
+      "token": "investment",
+      "weight": 1.6419
+    },
+    {
+      "token": "aia",
+      "weight": 1.1253
+    },
+    {
+      "token": "holdings",
+      "weight": 0.9404
+    },
+    {
+      "token": "spaylater",
+      "weight": 0.9104
+    },
+    {
+      "token": "global",
+      "weight": 0.8273
+    },
+    {
+      "token": "100 units",
+      "weight": 0.8129
+    },
+    {
+      "token": "units rm",
+      "weight": 0.8129
+    },
+    {
+      "token": "quick",
+      "weight": 0.784
+    }
+  ],
+  "Loans, BNPL & Credit||BNPL (SPayLater / GrabPayLater / Atome)": [
+    {
+      "token": "bnpl",
+      "weight": 3.1573
+    },
+    {
+      "token": "spaylater",
+      "weight": 2.4934
+    },
+    {
+      "token": "atome",
+      "weight": 2.0614
+    },
+    {
+      "token": "grabpaylater",
+      "weight": 1.9097
+    },
+    {
+      "token": "tyres",
+      "weight": 1.2101
+    },
+    {
+      "token": "14 jun",
+      "weight": 1.0352
+    },
+    {
+      "token": "shop",
+      "weight": 0.8364
+    },
+    {
+      "token": "bnpl installment",
+      "weight": 0.7991
+    },
+    {
+      "token": "room",
+      "weight": 0.7763
+    },
+    {
+      "token": "atome purchase",
+      "weight": 0.6583
+    }
+  ],
+  "Loans, BNPL & Credit||Credit Card Bill": [
+    {
+      "token": "credit card",
+      "weight": 1.693
+    },
+    {
+      "token": "rm 500",
+      "weight": 1.4563
+    },
+    {
+      "token": "card",
+      "weight": 1.4337
+    },
+    {
+      "token": "credit",
+      "weight": 1.4163
+    },
+    {
+      "token": "fee rm",
+      "weight": 1.0946
+    },
+    {
+      "token": "fee",
+      "weight": 0.7795
+    },
+    {
+      "token": "tel 06",
+      "weight": 0.7729
+    },
+    {
+      "token": "70300 tel",
+      "weight": 0.7729
+    }
+  ],
+  "Loans, BNPL & Credit||Hire Purchase / Installment": [
+    {
+      "token": "installment",
+      "weight": 2.1233
+    },
+    {
+      "token": "installment rm",
+      "weight": 1.2931
+    },
+    {
+      "token": "credit",
+      "weight": 1.1616
+    },
+    {
+      "token": "ansuran",
+      "weight": 1.1422
+    },
+    {
+      "token": "iwk",
+      "weight": 1.0729
+    },
+    {
+      "token": "cyber",
+      "weight": 0.9871
+    },
+    {
+      "token": "sst 00",
+      "weight": 0.9422
+    },
+    {
+      "token": "asnb",
+      "weight": 0.9117
+    },
+    {
+      "token": "hire purchase",
+      "weight": 0.892
+    },
+    {
+      "token": "hire",
+      "weight": 0.892
+    },
+    {
+      "token": "pru",
+      "weight": 0.8472
+    },
+    {
+      "token": "completed",
+      "weight": 0.8316
+    }
+  ],
+  "Loans, BNPL & Credit||PTPTN Study Loan": [
+    {
+      "token": "ptptn",
+      "weight": 4.9602
+    },
+    {
+      "token": "loan",
+      "weight": 2.8117
+    },
+    {
+      "token": "ptptn loan",
+      "weight": 1.6594
+    },
+    {
+      "token": "ptptn study",
+      "weight": 1.2566
+    },
+    {
+      "token": "study loan",
+      "weight": 1.2566
+    },
+    {
+      "token": "study",
+      "weight": 1.2104
+    },
+    {
+      "token": "thank",
+      "weight": 0.891
+    },
+    {
+      "token": "ptptn ptptn",
+      "weight": 0.7556
+    },
+    {
+      "token": "rm 80",
+      "weight": 0.7229
+    },
+    {
+      "token": "services",
+      "weight": 0.6704
+    },
+    {
+      "token": "adj",
+      "weight": 0.6625
+    },
+    {
+      "token": "adj rm",
+      "weight": 0.6625
+    }
+  ],
+  "Loans, BNPL & Credit||Personal Loan": [
+    {
+      "token": "pembiayaan",
+      "weight": 2.2715
+    },
+    {
+      "token": "personal loan",
+      "weight": 2.1297
+    },
+    {
+      "token": "personal",
+      "weight": 1.9799
+    },
+    {
+      "token": "loan",
+      "weight": 1.3378
+    },
+    {
+      "token": "pejabat pembiayaan",
+      "weight": 1.0867
+    },
+    {
+      "token": "rhb",
+      "weight": 0.8914
+    },
+    {
+      "token": "nota bayaran",
+      "weight": 0.8196
+    },
+    {
+      "token": "credit",
+      "weight": 0.8046
+    },
+    {
+      "token": "untuk pembiayaan",
+      "weight": 0.7627
+    },
+    {
+      "token": "rm 200",
+      "weight": 0.7111
+    }
+  ],
+  "Shopping||Beauty, Skincare & Grooming": [
+    {
+      "token": "skincare",
+      "weight": 2.7611
+    },
+    {
+      "token": "grooming",
+      "weight": 2.5636
+    },
+    {
+      "token": "beauty",
+      "weight": 2.4276
+    },
+    {
+      "token": "skin",
+      "weight": 2.0648
+    },
+    {
+      "token": "salon",
+      "weight": 1.7915
+    },
+    {
+      "token": "okt",
+      "weight": 1.2053
+    },
+    {
+      "token": "okt 2026",
+      "weight": 1.2053
+    },
+    {
+      "token": "kecantikan",
+      "weight": 1.175
+    },
+    {
+      "token": "treatment",
+      "weight": 1.0409
+    },
+    {
+      "token": "parlor",
+      "weight": 1.0142
+    },
+    {
+      "token": "grooming parlor",
+      "weight": 1.0142
+    },
+    {
+      "token": "skin care",
+      "weight": 1.0023
+    }
+  ],
+  "Shopping||Clothing, Bags & Footwear": [
+    {
+      "token": "footwear",
+      "weight": 1.177
+    },
+    {
+      "token": "kasih kerana",
+      "weight": 0.905
+    },
+    {
+      "token": "kerana",
+      "weight": 0.905
+    },
+    {
+      "token": "jumlah harga",
+      "weight": 0.905
+    },
+    {
+      "token": "rm0",
+      "weight": 0.9006
+    },
+    {
+      "token": "adjustment rm0",
+      "weight": 0.8891
+    },
+    {
+      "token": "rm0 05",
+      "weight": 0.8891
+    },
+    {
+      "token": "kain",
+      "weight": 0.8825
+    },
+    {
+      "token": "bayaran",
+      "weight": 0.8484
+    },
+    {
+      "token": "hartamas",
+      "weight": 0.7988
+    },
+    {
+      "token": "sri hartamas",
+      "weight": 0.7988
+    }
+  ],
+  "Shopping||Electronics & Gadgets": [
+    {
+      "token": "price rm",
+      "weight": 1.5095
+    },
+    {
+      "token": "tech",
+      "weight": 1.1695
+    },
+    {
+      "token": "galore",
+      "weight": 1.1565
+    },
+    {
+      "token": "gadget galore",
+      "weight": 1.1565
+    },
+    {
+      "token": "gadget",
+      "weight": 1.1565
+    },
+    {
+      "token": "price",
+      "weight": 1.1041
+    },
+    {
+      "token": "jan 2026",
+      "weight": 0.9678
+    },
+    {
+      "token": "jan",
+      "weight": 0.9678
+    },
+    {
+      "token": "harga rm",
+      "weight": 0.9545
+    },
+    {
+      "token": "kit",
+      "weight": 0.9194
+    }
+  ],
+  "Shopping||Home & Living": [
+    {
+      "token": "home",
+      "weight": 2.0635
+    },
+    {
+      "token": "hardware",
+      "weight": 1.7159
+    },
+    {
+      "token": "home furnishings",
+      "weight": 1.397
+    },
+    {
+      "token": "furnishings",
+      "weight": 1.397
+    },
+    {
+      "token": "garden",
+      "weight": 1.1628
+    },
+    {
+      "token": "kitchen",
+      "weight": 0.9994
+    },
+    {
+      "token": "ch4nge rm",
+      "weight": 0.947
+    },
+    {
+      "token": "shop",
+      "weight": 0.9144
+    },
+    {
+      "token": "00 ch4nge",
+      "weight": 0.787
+    },
+    {
+      "token": "ch4nge",
+      "weight": 0.787
+    },
+    {
+      "token": "mae",
+      "weight": 0.6988
+    }
+  ],
+  "Shopping||Online Marketplace (Shopee / Lazada / TikTok)": [
+    {
+      "token": "lazada",
+      "weight": 2.6728
+    },
+    {
+      "token": "tiktok",
+      "weight": 2.3039
+    },
+    {
+      "token": "shopee",
+      "weight": 2.1986
+    },
+    {
+      "token": "price rm",
+      "weight": 1.2581
+    },
+    {
+      "token": "alor",
+      "weight": 1.0846
+    },
+    {
+      "token": "order",
+      "weight": 0.9316
+    },
+    {
+      "token": "price",
+      "weight": 0.924
+    },
+    {
+      "token": "05 oct",
+      "weight": 0.8739
+    },
+    {
+      "token": "setar",
+      "weight": 0.8471
+    },
+    {
+      "token": "alor setar",
+      "weight": 0.8471
+    },
+    {
+      "token": "2026 1x",
+      "weight": 0.8185
+    }
+  ],
+  "Taxes & government||Government Service & Stamp Duty": [
+    {
+      "token": "govt",
+      "weight": 2.173
+    },
+    {
+      "token": "government",
+      "weight": 2.1486
+    },
+    {
+      "token": "duty",
+      "weight": 1.8721
+    },
+    {
+      "token": "stamp",
+      "weight": 1.8721
+    },
+    {
+      "token": "stamp duty",
+      "weight": 1.8721
+    },
+    {
+      "token": "state",
+      "weight": 1.6092
+    },
+    {
+      "token": "pejabat",
+      "weight": 1.5481
+    },
+    {
+      "token": "services",
+      "weight": 1.546
+    },
+    {
+      "token": "bharu",
+      "weight": 1.2264
+    },
+    {
+      "token": "kota bharu",
+      "weight": 1.2264
+    },
+    {
+      "token": "permit",
+      "weight": 1.1755
+    },
+    {
+      "token": "kota",
+      "weight": 0.9592
+    }
+  ],
+  "Taxes & government||JPJ / Renewals / Summons": [
+    {
+      "token": "jpj",
+      "weight": 3.5739
+    },
+    {
+      "token": "summon",
+      "weight": 1.9417
+    },
+    {
+      "token": "spk",
+      "weight": 1.4898
+    },
+    {
+      "token": "jpj alor",
+      "weight": 1.4844
+    },
+    {
+      "token": "office",
+      "weight": 1.4807
+    },
+    {
+      "token": "summon office",
+      "weight": 1.2113
+    },
+    {
+      "token": "government summon",
+      "weight": 1.2113
+    },
+    {
+      "token": "setar",
+      "weight": 0.9756
+    },
+    {
+      "token": "alor setar",
+      "weight": 0.9756
+    },
+    {
+      "token": "alor",
+      "weight": 0.9354
+    },
+    {
+      "token": "rm 210",
+      "weight": 0.9145
+    },
+    {
+      "token": "government",
+      "weight": 0.9025
+    }
+  ],
+  "Taxes & government||LHDN Income Tax / PCB": [
+    {
+      "token": "income",
+      "weight": 1.1317
+    },
+    {
+      "token": "agency",
+      "weight": 0.8916
+    },
+    {
+      "token": "00 pcb",
+      "weight": 0.8798
+    },
+    {
+      "token": "pcb",
+      "weight": 0.8798
+    },
+    {
+      "token": "charges income",
+      "weight": 0.8798
+    }
+  ],
+  "Transport||Car Loan Installment": [
+    {
+      "token": "car loan",
+      "weight": 2.1686
+    },
+    {
+      "token": "financing",
+      "weight": 2.0923
+    },
+    {
+      "token": "car",
+      "weight": 2.0572
+    },
+    {
+      "token": "loan",
+      "weight": 1.874
+    },
+    {
+      "token": "installment",
+      "weight": 1.6065
+    },
+    {
+      "token": "angsuran",
+      "weight": 1.3995
+    },
+    {
+      "token": "automotive",
+      "weight": 1.3782
+    },
+    {
+      "token": "loan installment",
+      "weight": 1.3615
+    },
+    {
+      "token": "kenderaan",
+      "weight": 1.1357
+    },
+    {
+      "token": "angsuran kenderaan",
+      "weight": 1.1357
+    },
+    {
+      "token": "autofin",
+      "weight": 1.1
+    },
+    {
+      "token": "rm 600",
+      "weight": 0.9421
+    }
+  ],
+  "Transport||E-Hailing (Grab / AirAsia Ride)": [
+    {
+      "token": "ride",
+      "weight": 4.6864
+    },
+    {
+      "token": "grab",
+      "weight": 4.0641
+    },
+    {
+      "token": "airasia ride",
+      "weight": 2.4877
+    },
+    {
+      "token": "airasia",
+      "weight": 2.3913
+    },
+    {
+      "token": "rm17",
+      "weight": 1.0246
+    },
+    {
+      "token": "grab taxi",
+      "weight": 1.0186
+    },
+    {
+      "token": "taxi",
+      "weight": 1.0186
+    },
+    {
+      "token": "location",
+      "weight": 0.959
+    },
+    {
+      "token": "confirmation",
+      "weight": 0.9385
+    },
+    {
+      "token": "jbr",
+      "weight": 0.8972
+    },
+    {
+      "token": "ride 11",
+      "weight": 0.8757
+    },
+    {
+      "token": "location taman",
+      "weight": 0.7955
+    }
+  ],
+  "Transport||Parking": [
+    {
+      "token": "parking",
+      "weight": 2.4168
+    },
+    {
+      "token": "park",
+      "weight": 2.4048
+    },
+    {
+      "token": "rmxx",
+      "weight": 2.1394
+    },
+    {
+      "token": "rmxx 00",
+      "weight": 1.0697
+    },
+    {
+      "token": "rmxx 50",
+      "weight": 1.0697
+    },
+    {
+      "token": "xxx",
+      "weight": 1.0697
+    },
+    {
+      "token": "xxx xx",
+      "weight": 1.0697
+    },
+    {
+      "token": "lido",
+      "weight": 0.9655
+    },
+    {
+      "token": "xxxx",
+      "weight": 0.8367
+    },
+    {
+      "token": "subttl rmxx",
+      "weight": 0.7843
+    },
+    {
+      "token": "subttl",
+      "weight": 0.7503
+    },
+    {
+      "token": "transport",
+      "weight": 0.7437
+    }
+  ],
+  "Transport||Petrol & EV Charging": [
+    {
+      "token": "motors",
+      "weight": 0.9906
+    },
+    {
+      "token": "penyata tunai",
+      "weight": 0.9247
+    },
+    {
+      "token": "jenis penyata",
+      "weight": 0.9247
+    },
+    {
+      "token": "penyata",
+      "weight": 0.9247
+    },
+    {
+      "token": "tunai jumlah",
+      "weight": 0.9247
+    },
+    {
+      "token": "putih",
+      "weight": 0.8084
+    },
+    {
+      "token": "pasir putih",
+      "weight": 0.8084
+    },
+    {
+      "token": "point",
+      "weight": 0.8074
+    },
+    {
+      "token": "jenis",
+      "weight": 0.8031
+    },
+    {
+      "token": "berjaya terima",
+      "weight": 0.7516
+    },
+    {
+      "token": "pasir",
+      "weight": 0.7448
+    },
+    {
+      "token": "transaksi",
+      "weight": 0.7357
+    }
+  ],
+  "Transport||Public Transit (MRT / LRT / Bus)": [
+    {
+      "token": "bus",
+      "weight": 3.7941
+    },
+    {
+      "token": "lrt",
+      "weight": 3.5648
+    },
+    {
+      "token": "fare",
+      "weight": 2.2887
+    },
+    {
+      "token": "station",
+      "weight": 2.0269
+    },
+    {
+      "token": "mrt",
+      "weight": 1.3957
+    },
+    {
+      "token": "fare rm",
+      "weight": 1.3778
+    },
+    {
+      "token": "ticket",
+      "weight": 1.3681
+    },
+    {
+      "token": "rm 50",
+      "weight": 1.2309
+    },
+    {
+      "token": "rm 00",
+      "weight": 1.1245
+    },
+    {
+      "token": "24 feb",
+      "weight": 0.9249
+    },
+    {
+      "token": "adult fare",
+      "weight": 0.9173
+    },
+    {
+      "token": "adult",
+      "weight": 0.9173
+    }
+  ],
+  "Transport||Road Tax & Motor Insurance": [
+    {
+      "token": "insurance",
+      "weight": 2.424
+    },
+    {
+      "token": "motor",
+      "weight": 2.1423
+    },
+    {
+      "token": "road",
+      "weight": 1.6683
+    },
+    {
+      "token": "motor insurance",
+      "weight": 1.6569
+    },
+    {
+      "token": "auto",
+      "weight": 1.2553
+    },
+    {
+      "token": "alor",
+      "weight": 0.9907
+    },
+    {
+      "token": "2026 road",
+      "weight": 0.9828
+    },
+    {
+      "token": "cover",
+      "weight": 0.8199
+    },
+    {
+      "token": "rm 1500",
+      "weight": 0.7263
+    },
+    {
+      "token": "aug 2026",
+      "weight": 0.7014
+    },
+    {
+      "token": "abc",
+      "weight": 0.6959
+    }
+  ],
+  "Transport||Toll (TNG / RFID / PayDirect)": [
+    {
+      "token": "toll",
+      "weight": 4.1284
+    },
+    {
+      "token": "paydirect",
+      "weight": 1.7076
+    },
+    {
+      "token": "expressway",
+      "weight": 1.5511
+    },
+    {
+      "token": "tng",
+      "weight": 1.0659
+    },
+    {
+      "token": "rfid",
+      "weight": 1.0619
+    },
+    {
+      "token": "cyber",
+      "weight": 0.9441
+    },
+    {
+      "token": "transactions service",
+      "weight": 0.8886
+    },
+    {
+      "token": "maxis",
+      "weight": 0.8667
+    },
+    {
+      "token": "07 aug",
+      "weight": 0.8662
+    },
+    {
+      "token": "transactions",
+      "weight": 0.8509
+    },
+    {
+      "token": "toll plaza",
+      "weight": 0.833
+    },
+    {
+      "token": "lrt",
+      "weight": 0.806
+    }
+  ],
+  "Transport||Vehicle Maintenance & Service": [
+    {
+      "token": "auto",
+      "weight": 2.2812
+    },
+    {
+      "token": "bengkel",
+      "weight": 2.1257
+    },
+    {
+      "token": "service",
+      "weight": 1.9087
+    },
+    {
+      "token": "00 rm",
+      "weight": 1.5423
+    },
+    {
+      "token": "kota bharu",
+      "weight": 1.4299
+    },
+    {
+      "token": "bharu",
+      "weight": 1.4299
+    },
+    {
+      "token": "mesin",
+      "weight": 1.1921
+    },
+    {
+      "token": "tire",
+      "weight": 1.1344
+    },
+    {
+      "token": "kota",
+      "weight": 1.1216
+    },
+    {
+      "token": "motor",
+      "weight": 1.109
+    },
+    {
+      "token": "auto care",
+      "weight": 1.0882
+    },
+    {
+      "token": "check",
+      "weight": 1.0504
+    }
+  ]
+}

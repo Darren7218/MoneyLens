@@ -1,0 +1,430 @@
+{
+  "oracle_merchant_only": {
+    "cat_acc": 0.4394,
+    "subcat_acc": 0.3601
+  },
+  "payment_notifications": {
+    "merchant_match": 0.8506,
+    "parsed_rate": 0.9878,
+    "cat_acc": 0.8506,
+    "n": 328,
+    "amount_exact": 0.9756,
+    "subcat_acc": 0.7957
+  },
+  "total_samples": 858,
+  "thermal_receipts": {
+    "merchant_match": 0.7358,
+    "date_exact": 0.8604,
+    "cat_acc": 0.9151,
+    "n": 530,
+    "amount_exact": 0.9755,
+    "subcat_acc": 0.8358
+  },
+  "holdout_split_end_to_end": {
+    "cat_acc": 0.8364,
+    "n": 165,
+    "subcat_acc": 0.7394
+  },
+  "sample_misses": [
+    {
+      "expected_merchant": "FINANCE ONE Sdn Bhd",
+      "expected_cat": "Loans, BNPL & Credit / Credit Card Bill",
+      "expected_amt": 451505,
+      "got_cat": "Fees & charges / Late Payment Fee",
+      "source_type": "thermal_receipt",
+      "got_merchant": "FINANCE ONE",
+      "parsed": true,
+      "got_amt": 451505
+    },
+    {
+      "expected_merchant": "SMARTFINANCE Sdn Bhd",
+      "expected_cat": "Loans, BNPL & Credit / Credit Card Bill",
+      "expected_amt": 826005,
+      "got_cat": "Fees & charges / Late Payment Fee",
+      "source_type": "thermal_receipt",
+      "got_merchant": "SMARTFINANCE",
+      "parsed": true,
+      "got_amt": 826005
+    },
+    {
+      "expected_merchant": "Elite Home Maintenance",
+      "expected_cat": "Housing & property / Home Repair & Maintenance",
+      "expected_amt": 53501,
+      "got_cat": "Food & drinks / Restaurant & Cafe",
+      "source_type": "thermal_receipt",
+      "got_merchant": "Elite Home Maintenance",
+      "parsed": true,
+      "got_amt": 53501
+    },
+    {
+      "expected_merchant": "Ahmad & Co Carpentry",
+      "expected_cat": "Shopping / Home & Living",
+      "expected_amt": 40725,
+      "got_cat": "Food & drinks / Restaurant & Cafe",
+      "source_type": "thermal_receipt",
+      "got_merchant": "Ahmad & Co Carpentry",
+      "parsed": true,
+      "got_amt": 40725
+    },
+    {
+      "expected_merchant": "House Delights Kitchen",
+      "expected_cat": "Shopping / Home & Living",
+      "expected_amt": 21675,
+      "got_cat": "Food & drinks / Restaurant & Cafe",
+      "source_type": "thermal_receipt",
+      "got_merchant": "House Delights Kitchen",
+      "parsed": true,
+      "got_amt": 21675
+    },
+    {
+      "expected_merchant": "PETALING JAYA WATER & SEWERAGE BOARD",
+      "expected_cat": "Fees & charges / Late Payment Fee",
+      "expected_amt": 2750,
+      "got_cat": "Bills & utilities / Water & Sewerage (Air Selangor / IWK)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "PETALING JAYA WATER & SEWERAGE BOARD",
+      "parsed": true,
+      "got_amt": 2750
+    },
+    {
+      "expected_merchant": "Matahari Supermarket",
+      "expected_cat": "Food & drinks / Groceries & Snacks",
+      "expected_amt": 1590,
+      "got_cat": "Groceries / Supermarket & Hypermarket",
+      "source_type": "payment_notification",
+      "got_merchant": "Matahari Supermarket",
+      "parsed": true,
+      "got_amt": 1590
+    },
+    {
+      "expected_merchant": "TechWaves Johor",
+      "expected_cat": "Shopping / Electronics & Gadgets",
+      "expected_amt": 35000,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "payment_notification",
+      "got_merchant": "TechWaves Johor",
+      "parsed": true,
+      "got_amt": 35000
+    },
+    {
+      "expected_merchant": "TalenTakaful",
+      "expected_cat": "Insurance & Takaful / Personal Accident",
+      "expected_amt": 17500,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "payment_notification",
+      "got_merchant": "TalenTakaful",
+      "parsed": true,
+      "got_amt": 17500
+    },
+    {
+      "expected_merchant": "Book Haven",
+      "expected_cat": "Education / Books & Stationery",
+      "expected_amt": 7925,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "payment_notification",
+      "got_merchant": "Book Haven",
+      "parsed": true,
+      "got_amt": 7925
+    },
+    {
+      "expected_merchant": "Sinar Cafe",
+      "expected_cat": "Family & gifts / Parents Allowance",
+      "expected_amt": 12550,
+      "got_cat": "Food & drinks / Restaurant & Cafe",
+      "source_type": "payment_notification",
+      "got_merchant": "Sinar Cafe",
+      "parsed": true,
+      "got_amt": 12550
+    },
+    {
+      "expected_merchant": "Penang Old Town Souvenirs",
+      "expected_cat": "Family & gifts / Parents Allowance",
+      "expected_amt": 15000,
+      "got_cat": "Food & drinks / Coffee, Tea & Drinks",
+      "source_type": "payment_notification",
+      "got_merchant": "Penang Old Town Souvenirs",
+      "parsed": true,
+      "got_amt": 15000
+    },
+    {
+      "expected_merchant": "TopToy Games",
+      "expected_cat": "Entertainment & travel / Games & Hobbies",
+      "expected_amt": 4990,
+      "got_cat": "Other income / ",
+      "source_type": "payment_notification",
+      "got_merchant": "FPX to TopToy Games, Kota Kinabalu",
+      "parsed": true,
+      "got_amt": 4990
+    },
+    {
+      "expected_merchant": "AirAsia Express",
+      "expected_cat": "Entertainment & travel / Flights & Transport",
+      "expected_amt": 34950,
+      "got_cat": " / ",
+      "source_type": "payment_notification",
+      "got_merchant": "",
+      "parsed": false,
+      "got_amt": 0
+    },
+    {
+      "expected_merchant": "TNG eWallet",
+      "expected_cat": "Investments & savings / SSPN Savings",
+      "expected_amt": 150000,
+      "got_cat": "Other income / ",
+      "source_type": "payment_notification",
+      "got_merchant": "TNG eWallet for your SSPN Savings investment",
+      "parsed": true,
+      "got_amt": 150000
+    },
+    {
+      "expected_merchant": "Asian Food Emporium",
+      "expected_cat": "Fees & charges / Foreign Currency Fee",
+      "expected_amt": 11072,
+      "got_cat": "Food & drinks / Restaurant & Cafe",
+      "source_type": "payment_notification",
+      "got_merchant": "Asian Food Emporium",
+      "parsed": true,
+      "got_amt": 11072
+    },
+    {
+      "expected_merchant": "Kedai Buah-buahan Kota Kinabalu",
+      "expected_cat": "Food & drinks / Food Delivery (GrabFood / Foodpanda)",
+      "expected_amt": 3745,
+      "got_cat": "Food & drinks / Food Delivery (GrabFood / Foodpanda)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "Kedai Buah-buahan Kota Kinabalu",
+      "parsed": true,
+      "got_amt": 3500
+    },
+    {
+      "expected_merchant": "Kedai Satay Kampung",
+      "expected_cat": "Food & drinks / Food Delivery (GrabFood / Foodpanda)",
+      "expected_amt": 2438,
+      "got_cat": "Food & drinks / Food Delivery (GrabFood / Foodpanda)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "Kedai Satay Kampung",
+      "parsed": true,
+      "got_amt": 2300
+    },
+    {
+      "expected_merchant": "Kedai Roti Canai",
+      "expected_cat": "Food & drinks / Food Delivery (GrabFood / Foodpanda)",
+      "expected_amt": 1908,
+      "got_cat": "Food & drinks / Hawker & Mamak",
+      "source_type": "payment_notification",
+      "got_merchant": "Kopi O",
+      "parsed": true,
+      "got_amt": 1500
+    },
+    {
+      "expected_merchant": "Pasaran Makanan Kota Kinabalu",
+      "expected_cat": "Food & drinks / Food Delivery (GrabFood / Foodpanda)",
+      "expected_amt": 1484,
+      "got_cat": "Food & drinks / Food Delivery (GrabFood / Foodpanda)",
+      "source_type": "payment_notification",
+      "got_merchant": "Air Limau",
+      "parsed": true,
+      "got_amt": 1200
+    },
+    {
+      "expected_merchant": "Pejabat Pasar Sentral",
+      "expected_cat": "Groceries / Household & Cleaning Supplies",
+      "expected_amt": 2650,
+      "got_cat": "Food & drinks / Hawker & Mamak",
+      "source_type": "payment_notification",
+      "got_merchant": "Pejabat Pasar Sentral",
+      "parsed": true,
+      "got_amt": 2650
+    },
+    {
+      "expected_merchant": "Bengkel Damansara Jaya Groceries",
+      "expected_cat": "Groceries / Household & Cleaning Supplies",
+      "expected_amt": 3200,
+      "got_cat": "Transport / Vehicle Maintenance & Service",
+      "source_type": "payment_notification",
+      "got_merchant": "Bengkel Damansara Jaya Groceries",
+      "parsed": true,
+      "got_amt": 3200
+    },
+    {
+      "expected_merchant": "Pejabat Bujang Motors",
+      "expected_cat": "Transport / Petrol & EV Charging",
+      "expected_amt": 8500,
+      "got_cat": "Taxes & government / Government Service & Stamp Duty",
+      "source_type": "payment_notification",
+      "got_merchant": "Pejabat Bujang Motors",
+      "parsed": true,
+      "got_amt": 8500
+    },
+    {
+      "expected_merchant": "Grab",
+      "expected_cat": "Transport / E-Hailing (Grab / AirAsia Ride)",
+      "expected_amt": 1625,
+      "got_cat": "Transport / E-Hailing (Grab / AirAsia Ride)",
+      "source_type": "payment_notification",
+      "got_merchant": "Pejabat Grab",
+      "parsed": true,
+      "got_amt": 1500
+    },
+    {
+      "expected_merchant": "Grab",
+      "expected_cat": "Transport / E-Hailing (Grab / AirAsia Ride)",
+      "expected_amt": 1980,
+      "got_cat": "Transport / E-Hailing (Grab / AirAsia Ride)",
+      "source_type": "payment_notification",
+      "got_merchant": "Pejabat Grab",
+      "parsed": true,
+      "got_amt": 1800
+    },
+    {
+      "expected_merchant": "Kedai Raya Harian",
+      "expected_cat": "Housing & property / Rent",
+      "expected_amt": 22000,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "payment_notification",
+      "got_merchant": "Kedai Raya Harian",
+      "parsed": true,
+      "got_amt": 22000
+    },
+    {
+      "expected_merchant": "Bengkel Bengkel Betull",
+      "expected_cat": "Housing & property / Home Repair & Maintenance",
+      "expected_amt": 50000,
+      "got_cat": "Transport / Vehicle Maintenance & Service",
+      "source_type": "payment_notification",
+      "got_merchant": "Penyertaan: Bengkel Bengkel Betull",
+      "parsed": true,
+      "got_amt": 50000
+    },
+    {
+      "expected_merchant": "Bengkel Pembaikan Dalam Rumah",
+      "expected_cat": "Housing & property / Home Repair & Maintenance",
+      "expected_amt": 18000,
+      "got_cat": "Transport / Vehicle Maintenance & Service",
+      "source_type": "payment_notification",
+      "got_merchant": "Penyertaan: Bengkel Pembaikan Dalam Rumah",
+      "parsed": true,
+      "got_amt": 18000
+    },
+    {
+      "expected_merchant": "Salon Anisa, Cheras",
+      "expected_cat": "Shopping / Beauty, Skincare & Grooming",
+      "expected_amt": 1000,
+      "got_cat": "Fees & charges / Foreign Currency Fee",
+      "source_type": "payment_notification",
+      "got_merchant": "Salon Anisa, Cheras",
+      "parsed": true,
+      "got_amt": 1000
+    },
+    {
+      "expected_merchant": "PEJABAT OBAT YUSOF",
+      "expected_cat": "Health & medical / Pharmacy & Medicine",
+      "expected_amt": 3750,
+      "got_cat": "Transport / Vehicle Maintenance & Service",
+      "source_type": "thermal_receipt",
+      "got_merchant": "BENGKEL JALAN BANGSAR",
+      "parsed": true,
+      "got_amt": 3750
+    },
+    {
+      "expected_merchant": "Pejabat Warisan",
+      "expected_cat": "Family & gifts / Parents Allowance",
+      "expected_amt": 140000,
+      "got_cat": "Family & gifts / Parents Allowance",
+      "source_type": "thermal_receipt",
+      "got_merchant": "Pejabat Warisan",
+      "parsed": true,
+      "got_amt": 125000
+    },
+    {
+      "expected_merchant": "Klinik Simpanan Persaraan PRS",
+      "expected_cat": "Investments & savings / PRS (Private Retirement Scheme)",
+      "expected_amt": 120000,
+      "got_cat": "Health & medical / Clinic & GP",
+      "source_type": "payment_notification",
+      "got_merchant": "Notis Pembayaran",
+      "parsed": true,
+      "got_amt": 120000
+    },
+    {
+      "expected_merchant": "Bengkel Simpanan Persaraan PRS",
+      "expected_cat": "Investments & savings / PRS (Private Retirement Scheme)",
+      "expected_amt": 150000,
+      "got_cat": "Transport / Vehicle Maintenance & Service",
+      "source_type": "payment_notification",
+      "got_merchant": "Berita Bayaran PRS",
+      "parsed": true,
+      "got_amt": 150000
+    },
+    {
+      "expected_merchant": "Klinik Kesihatan Subang",
+      "expected_cat": "Fees & charges / Foreign Currency Fee",
+      "expected_amt": 1500,
+      "got_cat": "Health & medical / Clinic & GP",
+      "source_type": "payment_notification",
+      "got_merchant": "Notifikasi Pembayaran",
+      "parsed": true,
+      "got_amt": 1500
+    },
+    {
+      "expected_merchant": "Pasukuan Boleh Bengkel",
+      "expected_cat": "Fees & charges / Foreign Currency Fee",
+      "expected_amt": 875,
+      "got_cat": "Transport / Vehicle Maintenance & Service",
+      "source_type": "thermal_receipt",
+      "got_merchant": "Pasukuan Boleh Bengkel",
+      "parsed": true,
+      "got_amt": 875
+    },
+    {
+      "expected_merchant": "Bengkel Tani Alat Merkuri",
+      "expected_cat": "Fees & charges / Late Payment Fee",
+      "expected_amt": 1500,
+      "got_cat": "Transport / Vehicle Maintenance & Service",
+      "source_type": "payment_notification",
+      "got_merchant": "Perkhidmatan: Bengkel Tani Alat Merkuri",
+      "parsed": true,
+      "got_amt": 1500
+    },
+    {
+      "expected_merchant": "Klinik Healthcare Makmur",
+      "expected_cat": "Fees & charges / Late Payment Fee",
+      "expected_amt": 2000,
+      "got_cat": "Health & medical / Clinic & GP",
+      "source_type": "thermal_receipt",
+      "got_merchant": "Klinik Healthcare Makmur",
+      "parsed": true,
+      "got_amt": 2000
+    },
+    {
+      "expected_merchant": "99 Speedmart",
+      "expected_cat": "Groceries / Convenience Store (99 Speedmart / 7-Eleven / FamilyMart)",
+      "expected_amt": 4800,
+      "got_cat": "Food & drinks / Coffee, Tea & Drinks",
+      "source_type": "thermal_receipt",
+      "got_merchant": "3. 5-Pack Coffee x 1",
+      "parsed": true,
+      "got_amt": 4800
+    },
+    {
+      "expected_merchant": "Sab Grocery & Supplies",
+      "expected_cat": "Groceries / Household & Cleaning Supplies",
+      "expected_amt": 15830,
+      "got_cat": "Bills & utilities / Electricity (TNB)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "SAB",
+      "parsed": true,
+      "got_amt": 15830
+    },
+    {
+      "expected_merchant": "Alor Setar Toll Plaza",
+      "expected_cat": "Transport / Toll (TNG / RFID / PayDirect)",
+      "expected_amt": 315,
+      "got_cat": "Transport / Toll (TNG / RFID / PayDirect)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "TOLL PAYMENT",
+      "parsed": true,
+      "got_amt": 0
+    }
+  ]
+}

@@ -302,9 +302,12 @@ body.privacy-blur .money:not(.unblur) { filter: blur(8px); user-select: none; tr
 .main-grid { display: grid; grid-template-columns: 1.25fr 1fr; gap: 16px; }
 .metric-line { display: flex; justify-content: space-between; align-items: flex-end; margin: 16px 0 12px; }
 .metric-line strong { font-size: 30px; font-weight: 700; letter-spacing: -1px; }
-.progress { height: 8px; background: var(--soft); border-radius: 20px; overflow: hidden; }
+.progress { position: relative; height: 8px; background: var(--soft); border-radius: 20px; overflow: hidden; }
 .progress span { display: block; height: 100%; background: var(--green); border-radius: 20px; transition: width 0.3s ease; }
 .progress.over span { background: var(--red); }
+.progress .pace-tick { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--ink); opacity: 0.45; transform: translateX(-1px); pointer-events: none; }
+.tag.pace-fast { background: var(--peach); color: var(--ink); }
+.tag.pace-over { background: var(--peach); color: var(--red); }
 .budget-foot { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; margin-top: 9px; font-weight: 500; }
 .hint { background: var(--soft); color: var(--green); padding: 12px 15px; font-size: 12px; line-height: 1.55; border-radius: 14px; margin-top: 15px; font-weight: 500; }
 .hint.warn { background: var(--peach); color: var(--red); }
@@ -550,8 +553,9 @@ body.dark .switch { background: #364037; }
 .welcome { padding: 22px; background: var(--soft); border-radius: 20px; margin-bottom: 14px; }
 .welcome h2 { font-size: 18px; margin-bottom: 7px; }
 .welcome p { font-size: 12px; color: var(--muted); line-height: 1.65; margin-bottom: 14px; }
-.segmented { display: flex; gap: 4px; background: var(--soft); padding: 4px; border-radius: 14px; margin-bottom: 8px; }
-.segmented button { flex: 1; min-height: 36px; border: 0; border-radius: 11px; background: none; color: var(--muted); font-size: 12px; font-weight: 600; }
+.segmented { display: flex; gap: 4px; background: var(--soft); padding: 4px; border-radius: 14px; margin-bottom: 8px; overflow-x: auto; scrollbar-width: none; }
+.segmented::-webkit-scrollbar { display: none; }
+.segmented button { flex: 1 0 auto; min-height: 36px; padding: 0 10px; border: 0; border-radius: 11px; background: none; color: var(--muted); font-size: 12px; font-weight: 600; white-space: nowrap; }
 .segmented button.active { background: var(--surface); color: var(--green); box-shadow: var(--shadow-sm); font-weight: 700; }
 .note { font-size: 11px; color: var(--muted); line-height: 1.65; }
 .full { width: 100%; }

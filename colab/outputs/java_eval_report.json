@@ -1,0 +1,430 @@
+{
+  "oracle_merchant_only": {
+    "cat_acc": 0.2557,
+    "subcat_acc": 0.1872
+  },
+  "payment_notifications": {
+    "merchant_match": 0.6737,
+    "parsed_rate": 0.9474,
+    "cat_acc": 0.2842,
+    "n": 95,
+    "amount_exact": 0.8947,
+    "subcat_acc": 0.2526
+  },
+  "total_samples": 219,
+  "thermal_receipts": {
+    "merchant_match": 0.8226,
+    "date_exact": 0.9516,
+    "cat_acc": 0.3871,
+    "n": 124,
+    "amount_exact": 0.9194,
+    "subcat_acc": 0.2984
+  },
+  "holdout_split_end_to_end": {
+    "cat_acc": 0.2877,
+    "n": 73,
+    "subcat_acc": 0.2329
+  },
+  "sample_misses": [
+    {
+      "expected_merchant": "Nasi Lemak Mamak D'Pasar Baru",
+      "expected_cat": "Food & drinks / Hawker & Mamak",
+      "expected_amt": 1500,
+      "got_cat": "Other income / ",
+      "source_type": "payment_notification",
+      "got_merchant": "Nasi Lemak Mamak D'Pasar Baru",
+      "parsed": true,
+      "got_amt": 1500
+    },
+    {
+      "expected_merchant": "Yi Fang Tea Co",
+      "expected_cat": "Food & drinks / Restaurant & Cafe",
+      "expected_amt": 1061,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "Yi Fang Tea Co",
+      "parsed": true,
+      "got_amt": 0
+    },
+    {
+      "expected_merchant": "Mamak Restaurant",
+      "expected_cat": "Food & drinks / Restaurant & Cafe",
+      "expected_amt": 844,
+      "got_cat": "Food & drinks / Hawker & Mamak",
+      "source_type": "thermal_receipt",
+      "got_merchant": "Mamak Restaurant",
+      "parsed": true,
+      "got_amt": 0
+    },
+    {
+      "expected_merchant": "FastFood Master",
+      "expected_cat": "Food & drinks / Fast Food",
+      "expected_amt": 1750,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "payment_notification",
+      "got_merchant": "Detected payment",
+      "parsed": true,
+      "got_amt": 1750
+    },
+    {
+      "expected_merchant": "Kedai Makanan & Minuman Sejuta Rasa",
+      "expected_cat": "Food & drinks / Food Delivery (GrabFood / Foodpanda)",
+      "expected_amt": 1745,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "Kedai Makanan & Minuman Sejuta Rasa",
+      "parsed": true,
+      "got_amt": 1745
+    },
+    {
+      "expected_merchant": "Cafe Kedai Makan",
+      "expected_cat": "Food & drinks / Groceries & Snacks",
+      "expected_amt": 1000,
+      "got_cat": "Food & drinks / Hawker & Mamak",
+      "source_type": "thermal_receipt",
+      "got_merchant": "Cafe Kedai Makan",
+      "parsed": true,
+      "got_amt": 1007
+    },
+    {
+      "expected_merchant": "CASA KULIM SARAWAK",
+      "expected_cat": "Groceries / Supermarket & Hypermarket",
+      "expected_amt": 2494,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "CASA KULIM SARAWAK",
+      "parsed": true,
+      "got_amt": 2494
+    },
+    {
+      "expected_merchant": "Jaya Grocer",
+      "expected_cat": "Groceries / Supermarket & Hypermarket",
+      "expected_amt": 1500,
+      "got_cat": "Other income / ",
+      "source_type": "payment_notification",
+      "got_merchant": "Boost for your purchase at Jaya Grocer",
+      "parsed": true,
+      "got_amt": 1500
+    },
+    {
+      "expected_merchant": "SARIKEH SELANG",
+      "expected_cat": "Groceries / Supermarket & Hypermarket",
+      "expected_amt": 4060,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "SARIKEH SELANG",
+      "parsed": true,
+      "got_amt": 4060
+    },
+    {
+      "expected_merchant": "Kedai Runcit Haji Juha",
+      "expected_cat": "Groceries / Convenience Store (99 Speedmart / 7-Eleven / FamilyMart)",
+      "expected_amt": 1850,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "Kedai Runcit Haji Juha",
+      "parsed": true,
+      "got_amt": 1850
+    },
+    {
+      "expected_merchant": "Minimart Jaya",
+      "expected_cat": "Groceries / Convenience Store (99 Speedmart / 7-Eleven / FamilyMart)",
+      "expected_amt": 2850,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "payment_notification",
+      "got_merchant": "Minimart Jaya",
+      "parsed": true,
+      "got_amt": 2850
+    },
+    {
+      "expected_merchant": "Pasar Bangsar Utama",
+      "expected_cat": "Groceries / Wet Market & Fresh Produce",
+      "expected_amt": 2631,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "Pasar Bangsar Utama",
+      "parsed": true,
+      "got_amt": 2631
+    },
+    {
+      "expected_merchant": "Pusat Tani Teras",
+      "expected_cat": "Groceries / Wet Market & Fresh Produce",
+      "expected_amt": 1500,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "payment_notification",
+      "got_merchant": "Tani Teras",
+      "parsed": true,
+      "got_amt": 1500
+    },
+    {
+      "expected_merchant": "Haji Ahmad's Corner Store",
+      "expected_cat": "Groceries / Wet Market & Fresh Produce",
+      "expected_amt": 3630,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "Haji Ahmad's Corner Store",
+      "parsed": true,
+      "got_amt": 3630
+    },
+    {
+      "expected_merchant": "Petrolia Bakery",
+      "expected_cat": "Groceries / Household & Cleaning Supplies",
+      "expected_amt": 2310,
+      "got_cat": "Food & drinks / Restaurant & Cafe",
+      "source_type": "thermal_receipt",
+      "got_merchant": "PETROLIA BAKERY",
+      "parsed": true,
+      "got_amt": 2310
+    },
+    {
+      "expected_merchant": "MRT Groceries",
+      "expected_cat": "Groceries / Household & Cleaning Supplies",
+      "expected_amt": 1850,
+      "got_cat": "Other income / ",
+      "source_type": "payment_notification",
+      "got_merchant": "MRT Groceries has been received",
+      "parsed": true,
+      "got_amt": 1850
+    },
+    {
+      "expected_merchant": "Homies Cleaning Store",
+      "expected_cat": "Groceries / Household & Cleaning Supplies",
+      "expected_amt": 1625,
+      "got_cat": "Taxes & government / LHDN Income Tax / PCB",
+      "source_type": "thermal_receipt",
+      "got_merchant": "HOMIES CLEANING STORE",
+      "parsed": true,
+      "got_amt": 1625
+    },
+    {
+      "expected_merchant": "STASION AUTOMOBIL MELAKA",
+      "expected_cat": "Transport / Petrol & EV Charging",
+      "expected_amt": 510,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "STASION AUTOMOBIL MELAKA",
+      "parsed": true,
+      "got_amt": 510
+    },
+    {
+      "expected_merchant": "Ulu Damansara Bus Terminal",
+      "expected_cat": "Transport / Public Transit (MRT / LRT / Bus)",
+      "expected_amt": 120,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "payment_notification",
+      "got_merchant": "Ulu Damansara Bus Terminal (Ulu Damansara Bus Terminal), RM 1.20",
+      "parsed": true,
+      "got_amt": 120
+    },
+    {
+      "expected_merchant": "JCK Travel Service",
+      "expected_cat": "Transport / E-Hailing (Grab / AirAsia Ride)",
+      "expected_amt": 610,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "payment_notification",
+      "got_merchant": "JCK Travel Service",
+      "parsed": true,
+      "got_amt": 610
+    },
+    {
+      "expected_merchant": "Seremban Taxi Service",
+      "expected_cat": "Transport / E-Hailing (Grab / AirAsia Ride)",
+      "expected_amt": 725,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "payment_notification",
+      "got_merchant": "Seremban Taxi Service",
+      "parsed": true,
+      "got_amt": 725
+    },
+    {
+      "expected_merchant": "AUTOFAST SERVICE Sdn Bhd",
+      "expected_cat": "Transport / Vehicle Maintenance & Service",
+      "expected_amt": 7300,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "AUTOFAST SERVICE",
+      "parsed": true,
+      "got_amt": 7300
+    },
+    {
+      "expected_merchant": "AUTOFAST SERVICE Sdn Bhd",
+      "expected_cat": "Transport / Vehicle Maintenance & Service",
+      "expected_amt": 7000,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "payment_notification",
+      "got_merchant": "AUTOFAST SERVICE",
+      "parsed": true,
+      "got_amt": 7000
+    },
+    {
+      "expected_merchant": "AUTO FAST SERVICE",
+      "expected_cat": "Transport / Vehicle Maintenance & Service",
+      "expected_amt": 7875,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "AUTO FAST SERVICE",
+      "parsed": true,
+      "got_amt": 7875
+    },
+    {
+      "expected_merchant": "Angkasa Motor",
+      "expected_cat": "Transport / Road Tax & Motor Insurance",
+      "expected_amt": 81650,
+      "got_cat": "Taxes & government / JPJ / Renewals / Summons",
+      "source_type": "thermal_receipt",
+      "got_merchant": "* Road Tax Payment",
+      "parsed": true,
+      "got_amt": 81650
+    },
+    {
+      "expected_merchant": "MULTILINES Pte Ltd",
+      "expected_cat": "Transport / Road Tax & Motor Insurance",
+      "expected_amt": 56600,
+      "got_cat": "Other income / ",
+      "source_type": "payment_notification",
+      "got_merchant": "MULTILINES Pte Ltd",
+      "parsed": true,
+      "got_amt": 56600
+    },
+    {
+      "expected_merchant": "Greenyard Transport",
+      "expected_cat": "Transport / Road Tax & Motor Insurance",
+      "expected_amt": 81650,
+      "got_cat": "Taxes & government / JPJ / Renewals / Summons",
+      "source_type": "thermal_receipt",
+      "got_merchant": "* Road Tax Payment",
+      "parsed": true,
+      "got_amt": 81650
+    },
+    {
+      "expected_merchant": "Bumi Perkasa Motors",
+      "expected_cat": "Transport / Car Loan Installment",
+      "expected_amt": 105005,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "Bumi Perkasa Motors",
+      "parsed": true,
+      "got_amt": 105005
+    },
+    {
+      "expected_merchant": "Standard Chartered Bank",
+      "expected_cat": "Transport / Car Loan Installment",
+      "expected_amt": 200000,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "payment_notification",
+      "got_merchant": "Detected payment",
+      "parsed": true,
+      "got_amt": 200000
+    },
+    {
+      "expected_merchant": "Standard Chartered Bank",
+      "expected_cat": "Transport / Car Loan Installment",
+      "expected_amt": 250000,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "payment_notification",
+      "got_merchant": "Detected payment",
+      "parsed": true,
+      "got_amt": 250000
+    },
+    {
+      "expected_merchant": "BIL PUTERI UTILITY SERVICES SDN BHD",
+      "expected_cat": "Bills & utilities / Electricity (TNB)",
+      "expected_amt": 14691,
+      "got_cat": "Bills & utilities / Electricity (TNB)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "BIL PUTERI UTILITY SERVICES",
+      "parsed": true,
+      "got_amt": 0
+    },
+    {
+      "expected_merchant": "Sistem Elektrik Utama SDN BHD",
+      "expected_cat": "Bills & utilities / Electricity (TNB)",
+      "expected_amt": 17250,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "payment_notification",
+      "got_merchant": "Sistem Elektrik Utama",
+      "parsed": true,
+      "got_amt": 17250
+    },
+    {
+      "expected_merchant": "Jomaya Internet Services",
+      "expected_cat": "Bills & utilities / Home Internet & WiFi (Unifi / Time)",
+      "expected_amt": 6500,
+      "got_cat": "Other income / ",
+      "source_type": "payment_notification",
+      "got_merchant": "Jomaya Internet Services",
+      "parsed": true,
+      "got_amt": 6500
+    },
+    {
+      "expected_merchant": "Timewarp Digital Services",
+      "expected_cat": "Bills & utilities / Home Internet & WiFi (Unifi / Time)",
+      "expected_amt": 7645,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "Timewarp Digital Services",
+      "parsed": true,
+      "got_amt": 7645
+    },
+    {
+      "expected_merchant": "Sarawak Cellular Services",
+      "expected_cat": "Bills & utilities / Mobile Postpaid & Prepaid",
+      "expected_amt": 5310,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "Sarawak Cellular Services",
+      "parsed": true,
+      "got_amt": 5310
+    },
+    {
+      "expected_merchant": "Sarawak Cellular Services",
+      "expected_cat": "Bills & utilities / Mobile Postpaid & Prepaid",
+      "expected_amt": 3800,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "payment_notification",
+      "got_merchant": "Detected payment",
+      "parsed": true,
+      "got_amt": 3800
+    },
+    {
+      "expected_merchant": "Telekom Malaysia",
+      "expected_cat": "Bills & utilities / Mobile Postpaid & Prepaid",
+      "expected_amt": 2100,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "Nota: Telekom Malaysia",
+      "parsed": true,
+      "got_amt": 2100
+    },
+    {
+      "expected_merchant": "Cinema Paradise",
+      "expected_cat": "Bills & utilities / Streaming & App Subscriptions",
+      "expected_amt": 2000,
+      "got_cat": "Entertainment & travel / Movies, Concerts & Events",
+      "source_type": "thermal_receipt",
+      "got_merchant": "Cinema Paradise",
+      "parsed": true,
+      "got_amt": 2000
+    },
+    {
+      "expected_merchant": "KOLEKTOR MASYARAKAT",
+      "expected_cat": "Bills & utilities / Condo Maintenance & Sinking Fund",
+      "expected_amt": 4345,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "KOLEKTOR MASYARAKAT | 55100 BANGSAR, KUALALUMPUR",
+      "parsed": true,
+      "got_amt": 4345
+    },
+    {
+      "expected_merchant": "KOLEKTOR MASYARAKAT",
+      "expected_cat": "Bills & utilities / Condo Maintenance & Sinking Fund",
+      "expected_amt": 4345,
+      "got_cat": "Other income / ",
+      "source_type": "payment_notification",
+      "got_merchant": "KOLEKTOR MASYARAKAT",
+      "parsed": true,
+      "got_amt": 4345
+    }
+  ]
+}

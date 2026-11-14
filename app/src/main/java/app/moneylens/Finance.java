@@ -13,15 +13,142 @@ public final class Finance {
  public static LocalDate advance(LocalDate d,String frequency,int anchor){switch(frequency){case "daily":return d.plusDays(1);case "weekly":return d.plusWeeks(1);case "everyXDays":return d.plusDays(Math.max(1,anchor));case "yearly":return anchored(YearMonth.from(d).plusYears(1),anchor);default:return anchored(YearMonth.from(d).plusMonths(1),anchor);}}
  public static long balance(JSONObject s,String account,String through)throws Exception{long total=0;JSONArray rows=s.getJSONArray("transactions");for(int i=0;i<rows.length();i++){JSONObject t=rows.getJSONObject(i);if(t.optBoolean("voided")||t.getString("date").compareTo(through)>0)continue;JSONArray p=t.getJSONArray("postings");for(int j=0;j<p.length();j++){JSONObject e=p.getJSONObject(j);if(e.getString("account").equals(account))total=Math.addExact(total,e.getLong("amount"));}}return total;}
  public static long income(JSONObject s,LocalDate from,LocalDate until)throws Exception{long n=0;JSONArray tx=s.getJSONArray("transactions");for(int i=0;i<tx.length();i++){JSONObject t=tx.getJSONObject(i);if(!t.optBoolean("voided")&&t.getString("kind").equals("income")&&t.getString("date").compareTo(from.toString())>=0&&t.getString("date").compareTo(until.toString())<0)n+=t.getLong("amount");}return n;}
- public static long spend(JSONObject s,String category,LocalDate from,LocalDate until)throws Exception{long total=0;JSONArray rows=s.getJSONArray("transactions");for(int i=0;i<rows.length();i++){JSONObject t=rows.getJSONObject(i);String d=t.getString("date");if(t.optBoolean("voided")||d.compareTo(from.toString())<0||d.compareTo(until.toString())>=0)continue;JSONArray p=t.getJSONArray("postings");for(int j=0;j<p.length();j++){JSONObject e=p.getJSONObject(j);if(e.getString("account").startsWith("expense:")&&(category.isEmpty()||e.getString("account").equals("expense:"+category)))total=Math.addExact(total,e.getLong("amount"));}}return total;}
+ public static long spend(JSONObject s,String category,LocalDate from,LocalDate until)throws Exception{return spend(s,category,"",from,until);}
+ public static long spend(JSONObject s,String category,String subcategory,LocalDate from,LocalDate until)throws Exception{
+  long total=0;String sub=subcategory==null?"":subcategory.trim();
+  JSONArray rows=s.getJSONArray("transactions");
+  for(int i=0;i<rows.length();i++){
+   JSONObject t=rows.getJSONObject(i);String d=t.getString("date");
+   if(t.optBoolean("voided")||d.compareTo(from.toString())<0||d.compareTo(until.toString())>=0)continue;
+   if(!sub.isEmpty()&&!t.optString("subcategory","").trim().equalsIgnoreCase(sub))continue;
+   JSONArray p=t.getJSONArray("postings");
+   for(int j=0;j<p.length();j++){
+    JSONObject e=p.getJSONObject(j);
+    if(e.getString("account").startsWith("expense:")&&(category.isEmpty()||e.getString("account").equals("expense:"+category)))total=Math.addExact(total,e.getLong("amount"));
+   }
+  }
+  return total;
+ }
  public static JSONObject budget(JSONObject s,JSONObject b,LocalDate on)throws Exception{
   int day=s.getJSONObject("settings").optInt("cycleDay",1);LocalDate current=start(on,day),end=next(current,day),first=start(LocalDate.parse(b.optString("createdDate",current.toString())),day);if(first.isAfter(current))first=current;
+  String cat=b.getString("category"),sub=b.optString("subcategory","").trim();
   long carry=0,limit=b.getLong("limit");boolean rollover=b.optBoolean("rollover");JSONArray history=b.optJSONArray("history");int count=0;
   for(LocalDate cycle=first;!cycle.isAfter(current)&&count++<1200;cycle=next(cycle,day)){
    long effective=limit;boolean roll=rollover;if(history!=null)for(int j=0;j<history.length();j++){JSONObject h=history.getJSONObject(j);if(h.getString("start").compareTo(cycle.toString())<=0){effective=h.getLong("limit");roll=h.optBoolean("rollover");}}
-   long available=Math.addExact(effective,roll?carry:0);if(cycle.equals(current)){long spent=spend(s,b.getString("category"),current,end);return new JSONObject().put("id",b.getString("id")).put("category",b.getString("category")).put("limit",effective).put("carry",roll?carry:0).put("available",available).put("spent",spent).put("remaining",available-spent).put("start",current.toString()).put("end",end.toString());}
-   carry=Math.max(0,available-spend(s,b.getString("category"),cycle,next(cycle,day)));
+   long available=Math.addExact(effective,roll?carry:0);
+   if(cycle.equals(current)){
+    long spent=spend(s,cat,sub,current,end);
+    long totalDays=Math.max(1L,ChronoUnit.DAYS.between(current,end));
+    long elapsedDays=on.isBefore(current)?0L:!on.isBefore(end)?totalDays:Math.min(totalDays,ChronoUnit.DAYS.between(current,on)+1L);
+    int pacePct=(int)Math.round(elapsedDays*100.0/totalDays);
+    int spentPct=available>0?(int)Math.min(999L,Math.round(spent*100.0/available)):0;
+    long expectedSpend=Math.round(available*(elapsedDays/(double)totalDays));
+    String paceStatus=spent>available?"over":(elapsedDays>0&&spent>0&&spentPct>pacePct+10)?"fast":"on_track";
+    return new JSONObject().put("id",b.getString("id")).put("category",cat).put("subcategory",sub).put("limit",effective).put("carry",roll?carry:0).put("available",available).put("spent",spent).put("remaining",available-spent).put("start",current.toString()).put("end",end.toString()).put("elapsedDays",elapsedDays).put("totalDays",totalDays).put("pacePct",pacePct).put("spentPct",spentPct).put("expectedSpend",expectedSpend).put("paceStatus",paceStatus);
+   }
+   carry=Math.max(0,available-spend(s,cat,sub,cycle,next(cycle,day)));
   }throw new IllegalArgumentException("Budget history exceeds 100 years.");
+ }
+ /** Builds a weekly budget pace nudge message when at least one budget exists; null if nothing to report. */
+ public static JSONObject weeklyBudgetNudge(JSONObject s,LocalDate on)throws Exception{
+  JSONArray list=s.optJSONArray("budgets");
+  if(list==null||list.length()==0)return null;
+  JSONObject worst=null;int worstScore=-1;
+  for(int i=0;i<list.length();i++){
+   JSONObject row=budget(s,list.getJSONObject(i),on);
+   String st=row.optString("paceStatus","on_track");
+   int score=("over".equals(st)?2000:"fast".equals(st)?1000:0)+row.optInt("spentPct",0);
+   if(score>worstScore){worstScore=score;worst=row;}
+  }
+  if(worst==null)return null;
+  boolean ms=s.optJSONObject("settings")!=null&&"ms".equals(s.getJSONObject("settings").optString("lang","en"));
+  String label=worst.getString("category")+(worst.optString("subcategory","").isEmpty()?"":" › "+worst.getString("subcategory"));
+  String st=worst.optString("paceStatus","on_track");
+  int sp=worst.optInt("spentPct",0),pp=worst.optInt("pacePct",0);
+  String title=ms?"Semakan kadar bajet mingguan":"Weekly budget pace check-in";
+  String body=ms
+   ?("over".equals(st)?(label+" telah melebihi bajet ("+sp+"% digunakan)."):"fast".equals(st)?(label+" dibelanjakan lebih cepat daripada kadar: "+sp+"% digunakan pada "+pp+"% kitaran."):("Semua bajet mengikut kadar. Tertinggi ialah "+label+" pada "+sp+"% ("+pp+"% kitaran)."))
+   :("over".equals(st)?(label+" is over budget ("+sp+"% used)."):"fast".equals(st)?(label+" is spending ahead of pace: "+sp+"% used with "+pp+"% of your cycle elapsed."):("All budgets are on pace. Highest is "+label+" at "+sp+"% used ("+pp+"% of cycle)."));
+  String wk=on.get(java.time.temporal.IsoFields.WEEK_BASED_YEAR)+"-W"+on.get(java.time.temporal.IsoFields.WEEK_OF_WEEK_BASED_YEAR);
+  return new JSONObject().put("key","weekly-nudge:"+wk).put("title",title).put("body",body).put("category",worst.getString("category")).put("subcategory",worst.optString("subcategory","")).put("paceStatus",st).put("spentPct",sp).put("pacePct",pp);
+ }
+ /** Computes cycle summary, category shares, top merchants and budget adherence for the cycle containing `on`. */
+ public static JSONObject cycleRecap(JSONObject s,LocalDate on)throws Exception{
+  int day=s.getJSONObject("settings").optInt("cycleDay",1);
+  LocalDate from=start(on,day),until=next(from,day),prevFrom=anchored(YearMonth.from(from).minusMonths(1),day);
+  long totalSpent=spend(s,"",from,until),totalIncome=income(s,from,until),prevSpent=spend(s,"",prevFrom,from);
+  long netSaved=Math.subtractExact(totalIncome,totalSpent);
+  int savingsRatePct=totalIncome>0?(int)Math.round((netSaved*100.0)/totalIncome):0;
+  Map<String,Long> catTotals=new LinkedHashMap<>(),merchTotals=new LinkedHashMap<>();
+  Map<String,Integer> merchCounts=new LinkedHashMap<>();
+  JSONArray tx=s.getJSONArray("transactions");
+  for(int i=0;i<tx.length();i++){
+   JSONObject t=tx.getJSONObject(i);
+   String d=t.optString("date","");
+   if(t.optBoolean("voided")||d.compareTo(from.toString())<0||d.compareTo(until.toString())>=0)continue;
+   JSONArray p=t.getJSONArray("postings");
+   long txExp=0;
+   for(int j=0;j<p.length();j++){
+    JSONObject e=p.getJSONObject(j);
+    if(e.getString("account").startsWith("expense:")){
+     String c=e.getString("account").substring(8);
+     long v=e.getLong("amount");
+     catTotals.put(c,catTotals.getOrDefault(c,0L)+v);
+     txExp+=v;
+    }
+   }
+   if(txExp!=0){
+    String m=t.optString("merchant","").trim();
+    if(m.isEmpty())m=t.optString("category","General");
+    merchTotals.put(m,merchTotals.getOrDefault(m,0L)+txExp);
+    merchCounts.put(m,merchCounts.getOrDefault(m,0)+1);
+   }
+  }
+  List<Map.Entry<String,Long>> catList=new ArrayList<>(catTotals.entrySet());
+  catList.removeIf(e->e.getValue()<=0);
+  catList.sort((a,b)->Long.compare(b.getValue(),a.getValue()));
+  long catSum=0;for(Map.Entry<String,Long> e:catList)catSum+=e.getValue();
+  JSONArray topCategories=new JSONArray();
+  for(int i=0;i<Math.min(10,catList.size());i++){
+   Map.Entry<String,Long> e=catList.get(i);
+   int share=catSum>0?(int)Math.round(e.getValue()*100.0/catSum):0;
+   topCategories.put(new JSONObject().put("category",e.getKey()).put("amount",e.getValue()).put("sharePct",share));
+  }
+  List<Map.Entry<String,Long>> merchList=new ArrayList<>(merchTotals.entrySet());
+  merchList.removeIf(e->e.getValue()<=0);
+  merchList.sort((a,b)->Long.compare(b.getValue(),a.getValue()));
+  JSONArray topMerchants=new JSONArray();
+  for(int i=0;i<Math.min(8,merchList.size());i++){
+   Map.Entry<String,Long> e=merchList.get(i);
+   topMerchants.put(new JSONObject().put("merchant",e.getKey()).put("amount",e.getValue()).put("count",merchCounts.getOrDefault(e.getKey(),1)));
+  }
+  JSONArray budgetRows=new JSONArray(),rawBudgets=s.optJSONArray("budgets");
+  int under=0,over=0;
+  if(rawBudgets!=null){
+   for(int i=0;i<rawBudgets.length();i++){
+    JSONObject row=budget(s,rawBudgets.getJSONObject(i),from);
+    budgetRows.put(row);
+    if(row.getLong("remaining")<0)over++;else under++;
+   }
+  }
+  JSONObject tax=calculateTax(s,null,on.getYear());
+  return new JSONObject()
+   .put("start",from.toString())
+   .put("end",until.minusDays(1).toString())
+   .put("nextCycleStart",until.toString())
+   .put("totalIncome",totalIncome)
+   .put("totalSpent",totalSpent)
+   .put("previousSpent",prevSpent)
+   .put("spentDelta",totalSpent-prevSpent)
+   .put("netSaved",netSaved)
+   .put("savingsRatePct",savingsRatePct)
+   .put("topCategories",topCategories)
+   .put("topMerchants",topMerchants)
+   .put("budgets",budgetRows)
+   .put("underBudgetCount",under)
+   .put("overBudgetCount",over)
+   .put("claimableCount",tax.getJSONArray("claimableItems").length())
+   .put("netTaxPayable",tax.getLong("netTaxPayable"));
  }
  public static JSONObject report(JSONObject s,LocalDate on)throws Exception{
   int day=s.getJSONObject("settings").optInt("cycleDay",1);LocalDate from=start(on,day),until=next(from,day),prev=anchored(YearMonth.from(from).minusMonths(1),day);int elapsed=(int)ChronoUnit.DAYS.between(from,on)+1;LocalDate prevUntil=prev.plusDays(elapsed);if(prevUntil.isAfter(from))prevUntil=from;
@@ -29,10 +156,10 @@ public final class Finance {
   for(int i=0;i<accounts.length();i++){JSONObject a=accounts.getJSONObject(i);long n=balance(s,a.getString("id"),on.toString());if(a.getString("type").equals("card"))debt+=Math.max(0,-n);else liquid+=n;}
   for(int i=0;i<billRows.length();i++){JSONObject b=billRows.getJSONObject(i);if(!b.optBoolean("paid")&&!b.optBoolean("cancelled")&&!b.optString("kind").equals("transfer")&&b.getString("date").compareTo(until.toString())<0)commitments+=b.getLong("amount");}
   for(int i=0;i<goalRows.length();i++)reserved+=goalRows.getJSONObject(i).optLong("saved");
-  JSONArray b=s.getJSONArray("budgets");for(int i=0;i<b.length();i++){JSONObject row=budget(s,b.getJSONObject(i),on);budgets.put(row);budgetRemaining+=Math.max(0,row.getLong("remaining"));}
+  JSONArray b=s.getJSONArray("budgets");Set<String> topCats=new HashSet<>();List<JSONObject> budgetRows=new ArrayList<>();for(int i=0;i<b.length();i++){JSONObject row=budget(s,b.getJSONObject(i),on);budgets.put(row);budgetRows.add(row);if(row.optString("subcategory","").isEmpty())topCats.add(row.getString("category"));}for(JSONObject row:budgetRows){if(row.optString("subcategory","").isEmpty()||!topCats.contains(row.getString("category")))budgetRemaining+=Math.max(0,row.getLong("remaining"));}
   JSONArray tx=s.getJSONArray("transactions"),receivables=new JSONArray();for(int i=0;i<tx.length();i++){JSONObject t=tx.getJSONObject(i);if(t.optBoolean("voided")||!t.getString("kind").equals("shared"))continue;long remaining=balance(s,"receivable:"+t.getString("id"),on.toString());if(remaining>0){owed+=remaining;receivables.put(new JSONObject().put("id",t.getString("id")).put("person",t.optString("person")).put("merchant",t.optString("merchant")).put("remaining",remaining));}}
   JSONArray months=new JSONArray();for(int i=5;i>=0;i--){LocalDate m=anchored(YearMonth.from(from).minusMonths(i),day),e=next(m,day);months.put(new JSONObject().put("start",m.toString()).put("spent",spend(s,"",m,e)).put("income",income(s,m,e)));}
-  return new JSONObject().put("start",from.toString()).put("end",until.toString()).put("spent",spend(s,"",from,on.plusDays(1))).put("previousComparable",spend(s,"",prev,prevUntil)).put("budgets",budgets).put("dailyAllowance",budgetRemaining/Math.max(1,ChronoUnit.DAYS.between(on,until))).put("liquid",liquid).put("cardReserve",debt).put("billsReserve",commitments).put("goalReserve",reserved).put("availableToSpend",Math.max(0,liquid-debt-commitments-reserved)).put("owed",owed).put("receivables",receivables).put("months",months).put("subscriptions",subscriptions(s)).put("taxEstimate",calculateTax(s,null,on.getYear()));
+  return new JSONObject().put("start",from.toString()).put("end",until.toString()).put("spent",spend(s,"",from,on.plusDays(1))).put("previousComparable",spend(s,"",prev,prevUntil)).put("budgets",budgets).put("dailyAllowance",budgetRemaining/Math.max(1,ChronoUnit.DAYS.between(on,until))).put("liquid",liquid).put("cardReserve",debt).put("billsReserve",commitments).put("goalReserve",reserved).put("availableToSpend",Math.max(0,liquid-debt-commitments-reserved)).put("owed",owed).put("receivables",receivables).put("months",months).put("subscriptions",subscriptions(s)).put("taxEstimate",calculateTax(s,null,on.getYear())).put("debtPlan",debtPlan(s,on)).put("recurringIncome",recurringIncome(s,on)).put("forecast",forecast(s,on,30)).put("recap",cycleRecap(s,on));
  }
  public static JSONObject calculateTax(JSONObject s,JSONObject override,int year)throws Exception{
   JSONObject prof=override!=null?override:s.getJSONObject("settings").optJSONObject("taxProfile");
@@ -46,19 +173,20 @@ public final class Finance {
    long amt=t.getLong("amount");
    String cat=t.optString("category",""),sub=t.optString("subcategory",""),low=(cat+" "+sub+" "+t.optString("merchant","")+" "+t.optString("note","")).toLowerCase(Locale.ROOT);
    String bucket="";
-   if(cat.startsWith("Health")||low.contains("clinic")||low.contains("hospital")||low.contains("medical")||low.contains("pharmacy")||low.contains("dental")){
-    if(low.contains("gym")||low.contains("sport")||low.contains("fitness")||low.contains("badminton")||low.contains("futsal")){ledSports+=amt;bucket="Sports & Gym";}
+   boolean isSport=PaymentParser.has(low,"sports?|gym|fitness|badminton|futsal|pickleball|decathlon|al-ikhsan|alikhsan|marathon");
+   if(cat.startsWith("Health")||PaymentParser.has(low,"clinic|klinik|hospital|medical|pharmacy|farmasi|dental|dentist|pergigian|pathlab|bp healthcare|gribbles|optometrist|gleneagles|kpj|columbia asia")){
+    if(isSport){ledSports+=amt;bucket="Sports & Gym";}
     else{ledMedical+=amt;bucket="Medical & Health";}
-   }else if(low.contains("gym")||low.contains("sport")||low.contains("decathlon")){ledSports+=amt;bucket="Sports & Gym";}
-   if(cat.equals("Education")||low.contains("tuition")||low.contains("university")||low.contains("upskill")||low.contains("course")){ledEducation+=amt;if(bucket.isEmpty())bucket="Education";}
-   if(low.contains("unifi")||low.contains("time fibre")||low.contains("maxis")||low.contains("celcom")||low.contains("digi")||low.contains("yes 5g")||low.contains("umobile")||low.contains("book")||low.contains("popular")||low.contains("kinokuniya")||low.contains("laptop")||low.contains("smartphone")||sub.contains("Internet")||sub.contains("Mobile")||sub.contains("Books")||sub.contains("Electronics")){ledLifestyle+=amt;if(bucket.isEmpty())bucket="Lifestyle (Tech / Books / WiFi)";}
-   if(cat.equals("Insurance & Takaful")||low.contains("takaful")||low.contains("prudential")||low.contains("great eastern")||low.contains("aia")||low.contains("allianz")||low.contains("etiqa")){
-    if(sub.contains("Medical")||sub.contains("Education")||low.contains("medical card")||low.contains("health")){ledMedIns+=amt;if(bucket.isEmpty())bucket="Medical & Edu Insurance";}
+   }else if(isSport){ledSports+=amt;bucket="Sports & Gym";}
+   if(cat.equals("Education")||PaymentParser.has(low,"tuition|university|universiti|upskill|course|coursera|udemy|certification")){ledEducation+=amt;if(bucket.isEmpty())bucket="Education";}
+   if(sub.contains("Internet")||sub.contains("Mobile")||sub.contains("Books")||sub.contains("Electronics")||PaymentParser.has(low,"unifi|time fibre|time internet|maxis|celcom|digi|celcomdigi|yes 5g|umobile|books?|bookstore|bookshop|popular|kinokuniya|bookxcess|tsutaya|mph|laptop|macbook|smartphone|iphone|ipad|tablet|machines|harvey norman|all it|thundermatch|senheng")){ledLifestyle+=amt;if(bucket.isEmpty())bucket="Lifestyle (Tech / Books / WiFi)";}
+   if(cat.equals("Insurance & Takaful")||PaymentParser.has(low,"takaful|prudential|prubsn|great eastern|aia|allianz|etiqa|zurich|manulife")){
+    if(sub.contains("Medical")||sub.contains("Education")||low.contains("medical card")||PaymentParser.has(low,"health")){ledMedIns+=amt;if(bucket.isEmpty())bucket="Medical & Edu Insurance";}
     else{ledLifeIns+=amt;if(bucket.isEmpty())bucket="Life Insurance / Takaful";}
    }
-   if(low.contains("sspn")||low.contains("prs")||low.contains("ev charging")){ledSspnPrs+=amt;if(bucket.isEmpty())bucket="SSPN / PRS / EV";}
-   if(low.contains("zakat")||low.contains("fitrah")){ledZakat+=amt;if(bucket.isEmpty())bucket="Zakat / Fitrah Rebate";}
-   if(low.contains("lhdn")||low.contains("pcb")||low.contains("cp38")||sub.contains("LHDN")){ledPcb+=amt;if(bucket.isEmpty())bucket="LHDN / PCB Paid";}
+   if(PaymentParser.has(low,"sspn|prs|ev charging|gentari|chargev|jomcharge|chargenow|dc handal|shell recharge|evconnection|tesla supercharger")){ledSspnPrs+=amt;if(bucket.isEmpty())bucket="SSPN / PRS / EV";}
+   if(PaymentParser.has(low,"zakat|fitrah")){ledZakat+=amt;if(bucket.isEmpty())bucket="Zakat / Fitrah Rebate";}
+   if(PaymentParser.has(low,"lhdn|pcb|cp38")||sub.contains("LHDN")){ledPcb+=amt;if(bucket.isEmpty())bucket="LHDN / PCB Paid";}
    if(!bucket.isEmpty()&&claimableItems.length()<50){
     claimableItems.put(new JSONObject().put("id",t.optString("id")).put("date",t.optString("date")).put("merchant",t.optString("merchant",cat)).put("category",cat).put("subcategory",sub).put("bucket",bucket).put("amount",amt));
    }
@@ -142,6 +270,128 @@ public final class Finance {
   for(List<JSONObject> rows:groups.values()){rows.sort(Comparator.comparing(x->x.optString("date")));if(rows.size()<3)continue;JSONObject a=rows.get(rows.size()-3),b=rows.get(rows.size()-2),c=rows.get(rows.size()-1);long gap1=ChronoUnit.DAYS.between(LocalDate.parse(a.getString("date")),LocalDate.parse(b.getString("date"))),gap2=ChronoUnit.DAYS.between(LocalDate.parse(b.getString("date")),LocalDate.parse(c.getString("date")));boolean weekly=gap1>=6&&gap1<=8&&gap2>=6&&gap2<=8,monthly=gap1>=26&&gap1<=33&&gap2>=26&&gap2<=33;if((weekly||monthly)&&a.getLong("amount")==c.getLong("amount")&&b.getLong("amount")==c.getLong("amount")){boolean exists=false;JSONArray bills=s.getJSONArray("bills");for(int i=0;i<bills.length();i++)if(bills.getJSONObject(i).optString("name").equalsIgnoreCase(c.getString("merchant")))exists=true;if(!exists)out.put(new JSONObject().put("name",c.getString("merchant")).put("amount",c.getLong("amount")).put("account",c.getString("account")).put("category",c.getString("category")).put("frequency",weekly?"weekly":"monthly").put("date",(weekly?LocalDate.parse(c.getString("date")).plusWeeks(1):LocalDate.parse(c.getString("date")).plusMonths(1)).toString()));}}
   return out;
  }
+ public static JSONArray recurringIncome(JSONObject s)throws Exception{return recurringIncome(s,LocalDate.now());}
+ /** Detects recurring salary/income from 3+ regular credits at weekly or monthly cadence. */
+ public static JSONArray recurringIncome(JSONObject s,LocalDate on)throws Exception{
+  Map<String,List<JSONObject>> groups=new LinkedHashMap<>();
+  JSONArray tx=s.getJSONArray("transactions"),out=new JSONArray();
+  for(int i=0;i<tx.length();i++){
+   JSONObject t=tx.getJSONObject(i);
+   if(t.optBoolean("voided")||!"income".equals(t.optString("kind")))continue;
+   String label=t.optString("merchant","").trim();
+   if(label.isEmpty())label=t.optString("category","Salary").trim();
+   if(label.isEmpty())continue;
+   String k=label.toLowerCase(Locale.ROOT)+"|"+t.optString("account","");
+   groups.computeIfAbsent(k,x->new ArrayList<>()).add(t);
+  }
+  JSONObject payday=s.optJSONObject("settings")!=null?s.getJSONObject("settings").optJSONObject("payday"):null;
+  String payName=payday!=null?payday.optString("name",""): "";
+  for(List<JSONObject> rows:groups.values()){
+   rows.sort(Comparator.comparing(x->x.optString("date")));
+   if(rows.size()<3)continue;
+   JSONObject a=rows.get(rows.size()-3),b=rows.get(rows.size()-2),c=rows.get(rows.size()-1);
+   LocalDate da=LocalDate.parse(a.getString("date")),db=LocalDate.parse(b.getString("date")),dc=LocalDate.parse(c.getString("date"));
+   long gap1=ChronoUnit.DAYS.between(da,db),gap2=ChronoUnit.DAYS.between(db,dc);
+   boolean weekly=gap1>=6&&gap1<=8&&gap2>=6&&gap2<=8,monthly=gap1>=26&&gap1<=33&&gap2>=26&&gap2<=33;
+   if(!weekly&&!monthly)continue;
+   long amtA=a.getLong("amount"),amtB=b.getLong("amount"),amtC=c.getLong("amount");
+   if(amtC<=0||Math.abs(amtA-amtC)*20>amtC||Math.abs(amtB-amtC)*20>amtC)continue;
+   int dom=dc.getDayOfMonth();
+   String freq=weekly?"weekly":"monthly";
+   LocalDate nextDate=advance(dc,freq,dom);
+   while(nextDate.isBefore(on))nextDate=advance(nextDate,freq,dom);
+   String name=c.optString("merchant","").trim();if(name.isEmpty())name=c.optString("category","Salary");
+   out.put(new JSONObject().put("name",name).put("amount",amtC).put("account",c.getString("account")).put("frequency",freq).put("dayOfMonth",dom).put("nextDate",nextDate.toString()).put("isCurrentPayday",!payName.isEmpty()&&payName.equalsIgnoreCase(name)));
+  }
+  return out;
+ }
+ /** Projects liquid cash balance forward over a rolling N-day horizon using unpaid bills and configured payday. */
+ public static JSONObject forecast(JSONObject s,LocalDate on,int days)throws Exception{
+  int horizon=Math.max(1,Math.min(90,days));
+  LocalDate until=on.plusDays(horizon);
+  long starting=0;
+  JSONArray accounts=s.getJSONArray("accounts");
+  Set<String> cardIds=new HashSet<>();
+  for(int i=0;i<accounts.length();i++){
+   JSONObject a=accounts.getJSONObject(i);
+   String id=a.getString("id");
+   if("card".equals(a.optString("type")))cardIds.add(id);
+   else starting=Math.addExact(starting,balance(s,id,on.toString()));
+  }
+  Map<LocalDate,List<JSONObject>> dayEvents=new TreeMap<>();
+  JSONArray bills=s.optJSONArray("bills");
+  if(bills!=null){
+   for(int i=0;i<bills.length();i++){
+    JSONObject b=bills.getJSONObject(i);
+    if(b.optBoolean("paid")||b.optBoolean("cancelled"))continue;
+    String kind=b.optString("kind","expense");
+    if("transfer".equals(kind)&&!cardIds.contains(b.optString("to","")))continue;
+    LocalDate due=LocalDate.parse(b.getString("date"));
+    String freq=b.optString("frequency",b.optBoolean("monthly")?"monthly":"once");
+    int anchor="everyXDays".equals(freq)?b.optInt("intervalDays",30):b.optInt("anchorDay",due.getDayOfMonth());
+    long amt=b.getLong("amount");
+    if(due.isBefore(on)){
+     dayEvents.computeIfAbsent(on,x->new ArrayList<>()).add(new JSONObject().put("date",on.toString()).put("label",b.optString("name","Bill")).put("kind","outflow").put("amount",amt).put("overdue",true));
+     if("once".equals(freq))continue;
+     int guard=0;while(!due.isAfter(on)&&guard++<120)due=advance(due,freq,anchor);
+    }
+    int guard=0;
+    while(!due.isAfter(until)&&guard++<60){
+     dayEvents.computeIfAbsent(due,x->new ArrayList<>()).add(new JSONObject().put("date",due.toString()).put("label",b.optString("name","Bill")).put("kind","outflow").put("amount",amt).put("overdue",false));
+     if("once".equals(freq))break;
+     due=advance(due,freq,anchor);
+    }
+   }
+  }
+  JSONObject payday=s.optJSONObject("settings")!=null?s.getJSONObject("settings").optJSONObject("payday"):null;
+  if(payday!=null&&payday.optLong("amount",0L)>0){
+   String freq="weekly".equals(payday.optString("frequency"))?"weekly":"monthly";
+   int dom=Math.max(1,Math.min(31,payday.optInt("dayOfMonth",1)));
+   LocalDate pd=payday.has("nextDate")&&!payday.optString("nextDate").isEmpty()?LocalDate.parse(payday.getString("nextDate")):anchored(YearMonth.from(on),dom);
+   int guard=0;while(pd.isBefore(on)&&guard++<120)pd=advance(pd,freq,dom);
+   long pAmt=payday.getLong("amount");
+   String pName=payday.optString("name","Payday");
+   guard=0;
+   while(!pd.isAfter(until)&&guard++<20){
+    dayEvents.computeIfAbsent(pd,x->new ArrayList<>()).add(new JSONObject().put("date",pd.toString()).put("label",pName).put("kind","inflow").put("amount",pAmt).put("overdue",false));
+    pd=advance(pd,freq,dom);
+   }
+  }
+  long running=starting,totalIn=0,totalOut=0,lowest=starting;
+  String lowestDate=on.toString(),firstNegDate="";
+  JSONArray events=new JSONArray(),daily=new JSONArray();
+  for(int step=0;step<=horizon;step++){
+   LocalDate d=on.plusDays(step);
+   long dayIn=0,dayOut=0;
+   List<JSONObject> evs=dayEvents.get(d);
+   if(evs!=null){
+    for(JSONObject ev:evs){
+     long amt=ev.getLong("amount");
+     if("inflow".equals(ev.getString("kind"))){running=Math.addExact(running,amt);dayIn+=amt;totalIn+=amt;}
+     else{running=Math.subtractExact(running,amt);dayOut+=amt;totalOut+=amt;}
+     ev.put("balanceAfter",running);
+     events.put(ev);
+    }
+   }
+   if(running<lowest){lowest=running;lowestDate=d.toString();}
+   if(firstNegDate.isEmpty()&&running<0)firstNegDate=d.toString();
+   daily.put(new JSONObject().put("date",d.toString()).put("balance",running).put("inflow",dayIn).put("outflow",dayOut));
+  }
+  return new JSONObject()
+   .put("startDate",on.toString())
+   .put("endDate",until.toString())
+   .put("startingBalance",starting)
+   .put("endingBalance",running)
+   .put("totalInflows",totalIn)
+   .put("totalOutflows",totalOut)
+   .put("lowestBalance",lowest)
+   .put("lowestDate",lowestDate)
+   .put("hasNegativeWarning",lowest<0)
+   .put("firstNegativeDate",firstNegDate)
+   .put("hasConfiguredPayday",payday!=null&&payday.optLong("amount",0L)>0)
+   .put("events",events)
+   .put("daily",daily);
+ }
  public static JSONObject suggest(JSONObject s,JSONObject draft)throws Exception{
   String pkg=draft.optString("package",""),sourceLabel=draft.optString("source",""),merchant=draft.optString("merchant","").trim(),merchantLow=merchant.toLowerCase(Locale.ROOT);
   long amt=draft.optLong("amount")>0?draft.optLong("amount"):draft.optLong("primaryAmount",0);
@@ -158,8 +408,9 @@ public final class Finance {
    String matchedAcct=matchAccountByName(accounts,sourceLabel,pkg);
    if(!matchedAcct.isEmpty())draft.put("account",matchedAcct);
   }
-  if(draft.optString("category").isEmpty()||draft.optString("category").equals("Other")){
-   String[] cs=PaymentParser.classify(merchant,sourceLabel+" "+pkg,"");
+  String curCat=draft.optString("category","");
+  if(curCat.isEmpty()||curCat.equals("Other")||curCat.equals("Miscellaneous")){
+   String[] cs=PaymentParser.classify(merchant,sourceLabel+" "+pkg,draft.optString("note",""));
    draft.put("category",cs[0]);
    if(draft.optString("subcategory").isEmpty()&&!cs[1].isEmpty())draft.put("subcategory",cs[1]);
   }
@@ -180,16 +431,25 @@ public final class Finance {
    }
   }
   if(merchantMatch==null)merchantMatch=fallbackMerchantMatch;
+  String afterClsCat=draft.optString("category","");
+  boolean draftUncat=afterClsCat.isEmpty()||afterClsCat.equals("Other")||afterClsCat.equals("Miscellaneous");
   if(exactMatch!=null){
    String c=exactMatch.optString("category","Miscellaneous");
    if((c.equals("Miscellaneous")||c.equals("Other"))&&merchantMatch!=null)c=merchantMatch.optString("category",c);
-   draft.put("category",c).put("historyMatch","exact").put("needsNote",false);
-   if(!exactMatch.optString("subcategory").isEmpty())draft.put("subcategory",exactMatch.getString("subcategory"));
+   if((!c.equals("Other")&&!c.equals("Miscellaneous"))||draftUncat){
+    draft.put("category",c);
+    if(!exactMatch.optString("subcategory").isEmpty())draft.put("subcategory",exactMatch.getString("subcategory"));
+   }
+   draft.put("historyMatch","exact").put("needsNote",false);
    if(draft.optString("account").isEmpty()&&hasAccount(accounts,exactMatch.optString("account")))draft.put("account",exactMatch.getString("account"));
    if(!exactMatch.optString("note").isEmpty()&&draft.optString("note").isEmpty())draft.put("note",exactMatch.getString("note"));
   }else if(merchantMatch!=null){
-   draft.put("category",merchantMatch.optString("category","Miscellaneous")).put("historyMatch","merchant").put("needsNote",true);
-   if(!merchantMatch.optString("subcategory").isEmpty())draft.put("subcategory",merchantMatch.getString("subcategory"));
+   String mc=merchantMatch.optString("category","Miscellaneous");
+   if((!mc.equals("Other")&&!mc.equals("Miscellaneous"))||draftUncat){
+    draft.put("category",mc);
+    if(!merchantMatch.optString("subcategory").isEmpty())draft.put("subcategory",merchantMatch.getString("subcategory"));
+   }
+   draft.put("historyMatch","merchant").put("needsNote",true);
    if(draft.optString("account").isEmpty()&&hasAccount(accounts,merchantMatch.optString("account")))draft.put("account",merchantMatch.getString("account"));
   }else{
    if(draft.optString("category").isEmpty()||draft.optString("category").equals("Other"))draft.put("category","Miscellaneous");
@@ -205,7 +465,8 @@ public final class Finance {
   for(int i=0;i<accounts.length();i++)if(id.equals(accounts.getJSONObject(i).optString("id")))return true;
   return false;
  }
- public static String matchAccountByName(JSONArray accounts,String label,String pkg)throws JSONException{
+ public static String matchAccountByName(JSONArray accounts,String label,String pkg)throws JSONException{return matchAccountByName(accounts,label,pkg,"");}
+ public static String matchAccountByName(JSONArray accounts,String label,String pkg,String excludeId)throws JSONException{
   if(accounts==null)return "";
   String hay=(String.valueOf(label)+" "+String.valueOf(pkg)).toLowerCase(Locale.ROOT);
   String[][] aliases={
@@ -224,7 +485,7 @@ public final class Finance {
   };
   for(int i=0;i<accounts.length();i++){
    JSONObject a=accounts.getJSONObject(i);String name=a.optString("name","").toLowerCase(Locale.ROOT).trim();
-   if(name.isEmpty())continue;
+   if(name.isEmpty()||a.optString("id").equals(excludeId))continue;
    if(hay.contains(name))return a.getString("id");
    for(String[] group:aliases){
     boolean srcHas=false,acctHas=false;
@@ -233,5 +494,129 @@ public final class Finance {
    }
   }
   return "";
+ }
+ public static JSONObject debtPlan(JSONObject s)throws Exception{return debtPlan(s,LocalDate.now());}
+ public static JSONObject debtPlan(JSONObject s,LocalDate on)throws Exception{
+  long extra=s.optJSONObject("settings")!=null?s.getJSONObject("settings").optLong("debtExtraMonthly",0L):0L;
+  return debtPlan(s,extra,on);
+ }
+ /** Simulates Debt Avalanche (highest APR first) vs Snowball (smallest balance first), supporting 0% BNPL, flat Ujrah (e.g. PTPTN 1%) and reducing credit balances. */
+ public static JSONObject debtPlan(JSONObject s,long extraMonthly,LocalDate on)throws Exception{
+  long extra=Math.max(0L,extraMonthly);
+  JSONArray raw=s.optJSONArray("debts");
+  List<JSONObject> active=new ArrayList<>();
+  long totalBalance=0,totalMin=0;
+  if(raw!=null){
+   for(int i=0;i<raw.length();i++){
+    JSONObject d=raw.getJSONObject(i);
+    long bal=d.optLong("balance",0L);
+    if(bal>0){active.add(d);totalBalance=Math.addExact(totalBalance,bal);totalMin=Math.addExact(totalMin,Math.max(1L,d.optLong("minPayment",1L)));}
+   }
+  }
+  JSONObject av=simulateDebt(active,extra,on,true),sb=simulateDebt(active,extra,on,false);
+  JSONArray list=new JSONArray();
+  JSONObject avById=av.getJSONObject("perDebt"),sbById=sb.getJSONObject("perDebt");
+  if(raw!=null){
+   for(int i=0;i<raw.length();i++){
+    JSONObject d=new JSONObject(raw.getJSONObject(i).toString());
+    String id=d.getString("id");
+    if(avById.has(id))d.put("avalanche",avById.getJSONObject(id));
+    if(sbById.has(id))d.put("snowball",sbById.getJSONObject(id));
+    list.put(d);
+   }
+  }
+  long saved=Math.max(0L,sb.getLong("totalInterest")-av.getLong("totalInterest"));
+  String rec=saved>0||av.getInt("months")<sb.getInt("months")?"avalanche":"snowball";
+  return new JSONObject()
+   .put("debts",list)
+   .put("activeCount",active.size())
+   .put("totalBalance",totalBalance)
+   .put("totalMinPayment",totalMin)
+   .put("extraMonthly",extra)
+   .put("monthlyBudget",active.isEmpty()?0L:Math.addExact(totalMin,extra))
+   .put("avalanche",av)
+   .put("snowball",sb)
+   .put("interestSavedByAvalanche",saved)
+   .put("recommended",rec);
+ }
+ private static JSONObject simulateDebt(List<JSONObject> active,long extra,LocalDate on,boolean avalanche)throws Exception{
+  int n=active.size();
+  if(n==0)return new JSONObject().put("strategy",avalanche?"avalanche":"snowball").put("months",0).put("payoffDate",on.toString()).put("totalInterest",0L).put("totalPaid",0L).put("stalled",false).put("order",new JSONArray()).put("schedule",new JSONArray()).put("perDebt",new JSONObject());
+  long[] initBal=new long[n],rem=new long[n],principal=new long[n],minPay=new long[n],debtInt=new long[n];
+  int[] apr=new int[n],payMonth=new int[n];
+  boolean[] flat=new boolean[n];
+  String[] ids=new String[n],names=new String[n];
+  long totalMin=0;
+  for(int i=0;i<n;i++){
+   JSONObject d=active.get(i);
+   ids[i]=d.getString("id");names[i]=d.optString("name","Debt");
+   initBal[i]=d.getLong("balance");rem[i]=initBal[i];
+   principal[i]=d.optLong("principal",initBal[i])>0?d.optLong("principal"):initBal[i];
+   minPay[i]=Math.max(1L,d.optLong("minPayment",1L));
+   apr[i]=Math.max(0,d.optInt("aprBps",0));
+   flat[i]="flat".equals(d.optString("rateType","reducing"));
+   totalMin=Math.addExact(totalMin,minPay[i]);
+  }
+  Integer[] order=new Integer[n];for(int i=0;i<n;i++)order[i]=i;
+  Arrays.sort(order,(a,b)->{
+   if(avalanche){
+    int c=Integer.compare(apr[b],apr[a]);if(c!=0)return c;
+    return Long.compare(initBal[a],initBal[b]);
+   }else{
+    int c=Long.compare(initBal[a],initBal[b]);if(c!=0)return c;
+    return Integer.compare(apr[b],apr[a]);
+   }
+  });
+  long poolBudget=Math.addExact(totalMin,extra),totalInterest=0,totalPaid=0;
+  int months=0;boolean stalled=false;
+  JSONArray schedule=new JSONArray();
+  for(int m=1;m<=600;m++){
+   boolean any=false;for(int i=0;i<n;i++)if(rem[i]>0){any=true;break;}
+   if(!any)break;
+   months=m;
+   long monthInt=0,monthPaid=0;
+   JSONArray paidOff=new JSONArray();
+   for(int i=0;i<n;i++){
+    if(rem[i]<=0)continue;
+    long intr=apr[i]==0?0L:Math.round((flat[i]?principal[i]:rem[i])*(apr[i]/120000.0));
+    rem[i]=Math.addExact(rem[i],intr);debtInt[i]+=intr;totalInterest+=intr;monthInt+=intr;
+   }
+   for(int idx:order){
+    if(rem[idx]<=0)continue;
+    long p=Math.min(rem[idx],minPay[idx]);
+    rem[idx]-=p;monthPaid+=p;
+    if(rem[idx]==0&&payMonth[idx]==0){payMonth[idx]=m;paidOff.put(names[idx]);}
+   }
+   long snowball=Math.max(0L,poolBudget-monthPaid);
+   for(int idx:order){
+    if(snowball<=0)break;
+    if(rem[idx]<=0)continue;
+    long p=Math.min(rem[idx],snowball);
+    rem[idx]-=p;monthPaid+=p;snowball-=p;
+    if(rem[idx]==0&&payMonth[idx]==0){payMonth[idx]=m;paidOff.put(names[idx]);}
+   }
+   totalPaid+=monthPaid;
+   long remTotal=0;for(int i=0;i<n;i++)remTotal+=rem[i];
+   if(m==600&&remTotal>0)stalled=true;
+   if(m<=24||remTotal==0||paidOff.length()>0){
+    schedule.put(new JSONObject().put("month",m).put("date",anchored(YearMonth.from(on).plusMonths(m),on.getDayOfMonth()).toString()).put("paid",monthPaid).put("interest",monthInt).put("remaining",remTotal).put("paidOff",paidOff));
+   }
+  }
+  JSONArray orderArr=new JSONArray();for(int idx:order)orderArr.put(new JSONObject().put("id",ids[idx]).put("name",names[idx]).put("balance",initBal[idx]).put("aprBps",apr[idx]).put("payoffMonth",payMonth[idx]));
+  JSONObject perDebt=new JSONObject();
+  for(int i=0;i<n;i++){
+   int pm=payMonth[i]>0?payMonth[i]:months;
+   perDebt.put(ids[i],new JSONObject().put("payoffMonth",payMonth[i]).put("payoffDate",anchored(YearMonth.from(on).plusMonths(pm),on.getDayOfMonth()).toString()).put("interest",debtInt[i]).put("remainingAtCap",rem[i]));
+  }
+  return new JSONObject()
+   .put("strategy",avalanche?"avalanche":"snowball")
+   .put("months",months)
+   .put("payoffDate",anchored(YearMonth.from(on).plusMonths(months),on.getDayOfMonth()).toString())
+   .put("totalInterest",totalInterest)
+   .put("totalPaid",totalPaid)
+   .put("stalled",stalled)
+   .put("order",orderArr)
+   .put("schedule",schedule)
+   .put("perDebt",perDebt);
  }
 }

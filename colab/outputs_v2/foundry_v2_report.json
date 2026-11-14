@@ -1,0 +1,786 @@
+{
+  "total_seconds": 968.2,
+  "generation": {
+    "model": "Qwen/Qwen2.5-32B-Instruct-AWQ",
+    "prompts": 370,
+    "valid": 858,
+    "dropped": 578,
+    "drop_reasons": {
+      "bad_amount": 560,
+      "json_error": 15,
+      "leak_or_foreign": 3
+    },
+    "gen_seconds": 565.9
+  },
+  "dataset_counts": {
+    "total": 858,
+    "train": 693,
+    "val": 165,
+    "by_source": {
+      "thermal_receipt": 530,
+      "payment_notification": 328
+    },
+    "by_category": {
+      "Food & drinks": 74,
+      "Groceries": 58,
+      "Transport": 93,
+      "Bills & utilities": 57,
+      "Loans, BNPL & Credit": 54,
+      "Housing & property": 64,
+      "Shopping": 66,
+      "Health & medical": 80,
+      "Insurance & Takaful": 43,
+      "Education": 48,
+      "Family & gifts": 48,
+      "Entertainment & travel": 39,
+      "Investments & savings": 66,
+      "Taxes & government": 36,
+      "Fees & charges": 32
+    }
+  },
+  "tfidf_linear_sparse_export": {
+    "vocab_word": 4500,
+    "vocab_char": 4500,
+    "unpruned_with_merchant": {
+      "cat_acc": 0.897,
+      "subcat_acc": 0.8545,
+      "subcat_macro_f1": 0.8364
+    },
+    "unpruned_raw_only": {
+      "cat_acc": 0.8848,
+      "subcat_acc": 0.8545,
+      "subcat_macro_f1": 0.8497
+    },
+    "pruned_with_merchant": {
+      "cat_acc": 0.9091,
+      "subcat_acc": 0.8606,
+      "subcat_macro_f1": 0.8508
+    },
+    "pruned_raw_only": {
+      "cat_acc": 0.903,
+      "subcat_acc": 0.8667,
+      "subcat_macro_f1": 0.8683
+    },
+    "export_bytes": 1071125,
+    "active_features": 8966,
+    "nonzero_weights": 70795,
+    "lexicon_subcategories_covered": 73,
+    "full_model_export_bytes": 1158367
+  },
+  "distilbert_74sub_student": {
+    "backbone": "distilbert-base-multilingual-cased",
+    "target_mode": "subcategory_74",
+    "amp_dtype": "bf16",
+    "num_classes": 73,
+    "epochs": 24,
+    "best_epoch": 14,
+    "train_seconds": 45.3,
+    "with_merchant_category_acc": 0.8667,
+    "with_merchant_target_acc": 0.8364,
+    "with_merchant_target_macro_f1": 0.8067,
+    "raw_text_only_category_acc": 0.8606,
+    "raw_text_only_target_acc": 0.8303,
+    "raw_text_only_target_macro_f1": 0.803,
+    "inference_ms_per_sample_gpu": 0.436,
+    "per_category_raw_acc": {
+      "Bills & utilities": {
+        "n": 12,
+        "raw_cat_acc": 0.9167
+      },
+      "Education": {
+        "n": 8,
+        "raw_cat_acc": 0.875
+      },
+      "Entertainment & travel": {
+        "n": 7,
+        "raw_cat_acc": 1.0
+      },
+      "Family & gifts": {
+        "n": 9,
+        "raw_cat_acc": 1.0
+      },
+      "Fees & charges": {
+        "n": 7,
+        "raw_cat_acc": 0.7143
+      },
+      "Food & drinks": {
+        "n": 14,
+        "raw_cat_acc": 0.9286
+      },
+      "Groceries": {
+        "n": 12,
+        "raw_cat_acc": 0.6667
+      },
+      "Health & medical": {
+        "n": 15,
+        "raw_cat_acc": 1.0
+      },
+      "Housing & property": {
+        "n": 12,
+        "raw_cat_acc": 0.75
+      },
+      "Insurance & Takaful": {
+        "n": 8,
+        "raw_cat_acc": 0.875
+      },
+      "Investments & savings": {
+        "n": 12,
+        "raw_cat_acc": 0.75
+      },
+      "Loans, BNPL & Credit": {
+        "n": 10,
+        "raw_cat_acc": 0.9
+      },
+      "Shopping": {
+        "n": 13,
+        "raw_cat_acc": 0.7692
+      },
+      "Taxes & government": {
+        "n": 7,
+        "raw_cat_acc": 1.0
+      },
+      "Transport": {
+        "n": 19,
+        "raw_cat_acc": 0.8421
+      }
+    },
+    "epoch_history": [
+      {
+        "epoch": 1,
+        "loss": 4.2842,
+        "merch_acc": 0.0182,
+        "raw_acc": 0.0061,
+        "raw_cat_acc": 0.0788
+      },
+      {
+        "epoch": 2,
+        "loss": 4.0521,
+        "merch_acc": 0.1758,
+        "raw_acc": 0.1515,
+        "raw_cat_acc": 0.2242
+      },
+      {
+        "epoch": 3,
+        "loss": 2.9,
+        "merch_acc": 0.5212,
+        "raw_acc": 0.5091,
+        "raw_cat_acc": 0.6182
+      },
+      {
+        "epoch": 4,
+        "loss": 1.2598,
+        "merch_acc": 0.7333,
+        "raw_acc": 0.7333,
+        "raw_cat_acc": 0.7758
+      },
+      {
+        "epoch": 5,
+        "loss": 0.6127,
+        "merch_acc": 0.7818,
+        "raw_acc": 0.7636,
+        "raw_cat_acc": 0.8
+      },
+      {
+        "epoch": 6,
+        "loss": 0.507,
+        "merch_acc": 0.7939,
+        "raw_acc": 0.7758,
+        "raw_cat_acc": 0.8121
+      },
+      {
+        "epoch": 7,
+        "loss": 0.4707,
+        "merch_acc": 0.8061,
+        "raw_acc": 0.8,
+        "raw_cat_acc": 0.8303
+      },
+      {
+        "epoch": 8,
+        "loss": 0.459,
+        "merch_acc": 0.7939,
+        "raw_acc": 0.7939,
+        "raw_cat_acc": 0.8242
+      },
+      {
+        "epoch": 9,
+        "loss": 0.4525,
+        "merch_acc": 0.8121,
+        "raw_acc": 0.8121,
+        "raw_cat_acc": 0.8424
+      },
+      {
+        "epoch": 10,
+        "loss": 0.4477,
+        "merch_acc": 0.8182,
+        "raw_acc": 0.8182,
+        "raw_cat_acc": 0.8485
+      },
+      {
+        "epoch": 11,
+        "loss": 0.4442,
+        "merch_acc": 0.8182,
+        "raw_acc": 0.8121,
+        "raw_cat_acc": 0.8485
+      },
+      {
+        "epoch": 12,
+        "loss": 0.4413,
+        "merch_acc": 0.8182,
+        "raw_acc": 0.8121,
+        "raw_cat_acc": 0.8424
+      },
+      {
+        "epoch": 13,
+        "loss": 0.4393,
+        "merch_acc": 0.8242,
+        "raw_acc": 0.8182,
+        "raw_cat_acc": 0.8485
+      },
+      {
+        "epoch": 14,
+        "loss": 0.4368,
+        "merch_acc": 0.8364,
+        "raw_acc": 0.8303,
+        "raw_cat_acc": 0.8606
+      },
+      {
+        "epoch": 15,
+        "loss": 0.4355,
+        "merch_acc": 0.8303,
+        "raw_acc": 0.8242,
+        "raw_cat_acc": 0.8545
+      },
+      {
+        "epoch": 16,
+        "loss": 0.4346,
+        "merch_acc": 0.8303,
+        "raw_acc": 0.8242,
+        "raw_cat_acc": 0.8545
+      },
+      {
+        "epoch": 17,
+        "loss": 0.4333,
+        "merch_acc": 0.8303,
+        "raw_acc": 0.8242,
+        "raw_cat_acc": 0.8545
+      },
+      {
+        "epoch": 18,
+        "loss": 0.4324,
+        "merch_acc": 0.8303,
+        "raw_acc": 0.8242,
+        "raw_cat_acc": 0.8545
+      },
+      {
+        "epoch": 19,
+        "loss": 0.4326,
+        "merch_acc": 0.8303,
+        "raw_acc": 0.8242,
+        "raw_cat_acc": 0.8545
+      },
+      {
+        "epoch": 20,
+        "loss": 0.4319,
+        "merch_acc": 0.8364,
+        "raw_acc": 0.8242,
+        "raw_cat_acc": 0.8545
+      },
+      {
+        "epoch": 21,
+        "loss": 0.4315,
+        "merch_acc": 0.8303,
+        "raw_acc": 0.8242,
+        "raw_cat_acc": 0.8545
+      },
+      {
+        "epoch": 22,
+        "loss": 0.4314,
+        "merch_acc": 0.8364,
+        "raw_acc": 0.8242,
+        "raw_cat_acc": 0.8545
+      },
+      {
+        "epoch": 23,
+        "loss": 0.4312,
+        "merch_acc": 0.8303,
+        "raw_acc": 0.8242,
+        "raw_cat_acc": 0.8545
+      },
+      {
+        "epoch": 24,
+        "loss": 0.4315,
+        "merch_acc": 0.8303,
+        "raw_acc": 0.8242,
+        "raw_cat_acc": 0.8545
+      }
+    ]
+  },
+  "xlmr_74sub_student": {
+    "backbone": "xlm-roberta-base",
+    "target_mode": "subcategory_74",
+    "amp_dtype": "bf16",
+    "num_classes": 73,
+    "epochs": 24,
+    "best_epoch": 24,
+    "train_seconds": 70.8,
+    "with_merchant_category_acc": 0.9212,
+    "with_merchant_target_acc": 0.8545,
+    "with_merchant_target_macro_f1": 0.8347,
+    "raw_text_only_category_acc": 0.9212,
+    "raw_text_only_target_acc": 0.8545,
+    "raw_text_only_target_macro_f1": 0.8321,
+    "inference_ms_per_sample_gpu": 0.529,
+    "per_category_raw_acc": {
+      "Bills & utilities": {
+        "n": 12,
+        "raw_cat_acc": 0.9167
+      },
+      "Education": {
+        "n": 8,
+        "raw_cat_acc": 0.875
+      },
+      "Entertainment & travel": {
+        "n": 7,
+        "raw_cat_acc": 1.0
+      },
+      "Family & gifts": {
+        "n": 9,
+        "raw_cat_acc": 0.8889
+      },
+      "Fees & charges": {
+        "n": 7,
+        "raw_cat_acc": 0.7143
+      },
+      "Food & drinks": {
+        "n": 14,
+        "raw_cat_acc": 1.0
+      },
+      "Groceries": {
+        "n": 12,
+        "raw_cat_acc": 0.9167
+      },
+      "Health & medical": {
+        "n": 15,
+        "raw_cat_acc": 1.0
+      },
+      "Housing & property": {
+        "n": 12,
+        "raw_cat_acc": 0.75
+      },
+      "Insurance & Takaful": {
+        "n": 8,
+        "raw_cat_acc": 0.875
+      },
+      "Investments & savings": {
+        "n": 12,
+        "raw_cat_acc": 1.0
+      },
+      "Loans, BNPL & Credit": {
+        "n": 10,
+        "raw_cat_acc": 0.8
+      },
+      "Shopping": {
+        "n": 13,
+        "raw_cat_acc": 1.0
+      },
+      "Taxes & government": {
+        "n": 7,
+        "raw_cat_acc": 1.0
+      },
+      "Transport": {
+        "n": 19,
+        "raw_cat_acc": 0.9474
+      }
+    },
+    "epoch_history": [
+      {
+        "epoch": 1,
+        "loss": 4.295,
+        "merch_acc": 0.0242,
+        "raw_acc": 0.0242,
+        "raw_cat_acc": 0.0848
+      },
+      {
+        "epoch": 2,
+        "loss": 4.1782,
+        "merch_acc": 0.2242,
+        "raw_acc": 0.2303,
+        "raw_cat_acc": 0.4788
+      },
+      {
+        "epoch": 3,
+        "loss": 3.0875,
+        "merch_acc": 0.503,
+        "raw_acc": 0.4727,
+        "raw_cat_acc": 0.6788
+      },
+      {
+        "epoch": 4,
+        "loss": 1.9964,
+        "merch_acc": 0.6061,
+        "raw_acc": 0.5758,
+        "raw_cat_acc": 0.7636
+      },
+      {
+        "epoch": 5,
+        "loss": 1.3138,
+        "merch_acc": 0.7333,
+        "raw_acc": 0.7394,
+        "raw_cat_acc": 0.8485
+      },
+      {
+        "epoch": 6,
+        "loss": 0.9123,
+        "merch_acc": 0.7758,
+        "raw_acc": 0.7636,
+        "raw_cat_acc": 0.8727
+      },
+      {
+        "epoch": 7,
+        "loss": 0.6557,
+        "merch_acc": 0.8424,
+        "raw_acc": 0.8182,
+        "raw_cat_acc": 0.8909
+      },
+      {
+        "epoch": 8,
+        "loss": 0.5527,
+        "merch_acc": 0.8485,
+        "raw_acc": 0.8364,
+        "raw_cat_acc": 0.903
+      },
+      {
+        "epoch": 9,
+        "loss": 0.5081,
+        "merch_acc": 0.8364,
+        "raw_acc": 0.8485,
+        "raw_cat_acc": 0.9152
+      },
+      {
+        "epoch": 10,
+        "loss": 0.4869,
+        "merch_acc": 0.8364,
+        "raw_acc": 0.8485,
+        "raw_cat_acc": 0.9152
+      },
+      {
+        "epoch": 11,
+        "loss": 0.4748,
+        "merch_acc": 0.8364,
+        "raw_acc": 0.8485,
+        "raw_cat_acc": 0.9152
+      },
+      {
+        "epoch": 12,
+        "loss": 0.4702,
+        "merch_acc": 0.8364,
+        "raw_acc": 0.8424,
+        "raw_cat_acc": 0.9091
+      },
+      {
+        "epoch": 13,
+        "loss": 0.4639,
+        "merch_acc": 0.8364,
+        "raw_acc": 0.8485,
+        "raw_cat_acc": 0.9152
+      },
+      {
+        "epoch": 14,
+        "loss": 0.4592,
+        "merch_acc": 0.8424,
+        "raw_acc": 0.8485,
+        "raw_cat_acc": 0.9212
+      },
+      {
+        "epoch": 15,
+        "loss": 0.4552,
+        "merch_acc": 0.8545,
+        "raw_acc": 0.8545,
+        "raw_cat_acc": 0.9212
+      },
+      {
+        "epoch": 16,
+        "loss": 0.4531,
+        "merch_acc": 0.8545,
+        "raw_acc": 0.8485,
+        "raw_cat_acc": 0.9152
+      },
+      {
+        "epoch": 17,
+        "loss": 0.452,
+        "merch_acc": 0.8545,
+        "raw_acc": 0.8545,
+        "raw_cat_acc": 0.9212
+      },
+      {
+        "epoch": 18,
+        "loss": 0.4505,
+        "merch_acc": 0.8545,
+        "raw_acc": 0.8485,
+        "raw_cat_acc": 0.9152
+      },
+      {
+        "epoch": 19,
+        "loss": 0.4494,
+        "merch_acc": 0.8545,
+        "raw_acc": 0.8485,
+        "raw_cat_acc": 0.9152
+      },
+      {
+        "epoch": 20,
+        "loss": 0.4483,
+        "merch_acc": 0.8545,
+        "raw_acc": 0.8545,
+        "raw_cat_acc": 0.9212
+      },
+      {
+        "epoch": 21,
+        "loss": 0.4484,
+        "merch_acc": 0.8545,
+        "raw_acc": 0.8545,
+        "raw_cat_acc": 0.9212
+      },
+      {
+        "epoch": 22,
+        "loss": 0.4477,
+        "merch_acc": 0.8545,
+        "raw_acc": 0.8545,
+        "raw_cat_acc": 0.9212
+      },
+      {
+        "epoch": 23,
+        "loss": 0.4482,
+        "merch_acc": 0.8545,
+        "raw_acc": 0.8545,
+        "raw_cat_acc": 0.9212
+      },
+      {
+        "epoch": 24,
+        "loss": 0.4478,
+        "merch_acc": 0.8545,
+        "raw_acc": 0.8545,
+        "raw_cat_acc": 0.9212
+      }
+    ]
+  },
+  "xlmr_15cat_student": {
+    "backbone": "xlm-roberta-base",
+    "target_mode": "category_15",
+    "amp_dtype": "bf16",
+    "num_classes": 15,
+    "epochs": 20,
+    "best_epoch": 20,
+    "train_seconds": 59.0,
+    "with_merchant_category_acc": 0.897,
+    "with_merchant_target_acc": 0.897,
+    "with_merchant_target_macro_f1": 0.885,
+    "raw_text_only_category_acc": 0.903,
+    "raw_text_only_target_acc": 0.903,
+    "raw_text_only_target_macro_f1": 0.8947,
+    "inference_ms_per_sample_gpu": 0.516,
+    "per_category_raw_acc": {
+      "Bills & utilities": {
+        "n": 12,
+        "raw_cat_acc": 0.9167
+      },
+      "Education": {
+        "n": 8,
+        "raw_cat_acc": 0.875
+      },
+      "Entertainment & travel": {
+        "n": 7,
+        "raw_cat_acc": 0.8571
+      },
+      "Family & gifts": {
+        "n": 9,
+        "raw_cat_acc": 0.8889
+      },
+      "Fees & charges": {
+        "n": 7,
+        "raw_cat_acc": 0.7143
+      },
+      "Food & drinks": {
+        "n": 14,
+        "raw_cat_acc": 1.0
+      },
+      "Groceries": {
+        "n": 12,
+        "raw_cat_acc": 0.9167
+      },
+      "Health & medical": {
+        "n": 15,
+        "raw_cat_acc": 1.0
+      },
+      "Housing & property": {
+        "n": 12,
+        "raw_cat_acc": 0.6667
+      },
+      "Insurance & Takaful": {
+        "n": 8,
+        "raw_cat_acc": 0.875
+      },
+      "Investments & savings": {
+        "n": 12,
+        "raw_cat_acc": 0.8333
+      },
+      "Loans, BNPL & Credit": {
+        "n": 10,
+        "raw_cat_acc": 0.8
+      },
+      "Shopping": {
+        "n": 13,
+        "raw_cat_acc": 1.0
+      },
+      "Taxes & government": {
+        "n": 7,
+        "raw_cat_acc": 1.0
+      },
+      "Transport": {
+        "n": 19,
+        "raw_cat_acc": 1.0
+      }
+    },
+    "epoch_history": [
+      {
+        "epoch": 1,
+        "loss": 2.653,
+        "merch_acc": 0.3818,
+        "raw_acc": 0.3515,
+        "raw_cat_acc": 0.3515
+      },
+      {
+        "epoch": 2,
+        "loss": 1.6584,
+        "merch_acc": 0.7212,
+        "raw_acc": 0.7091,
+        "raw_cat_acc": 0.7091
+      },
+      {
+        "epoch": 3,
+        "loss": 0.9516,
+        "merch_acc": 0.8364,
+        "raw_acc": 0.8303,
+        "raw_cat_acc": 0.8303
+      },
+      {
+        "epoch": 4,
+        "loss": 0.6352,
+        "merch_acc": 0.8788,
+        "raw_acc": 0.8606,
+        "raw_cat_acc": 0.8606
+      },
+      {
+        "epoch": 5,
+        "loss": 0.487,
+        "merch_acc": 0.8909,
+        "raw_acc": 0.8788,
+        "raw_cat_acc": 0.8788
+      },
+      {
+        "epoch": 6,
+        "loss": 0.4025,
+        "merch_acc": 0.8909,
+        "raw_acc": 0.8848,
+        "raw_cat_acc": 0.8848
+      },
+      {
+        "epoch": 7,
+        "loss": 0.3733,
+        "merch_acc": 0.8727,
+        "raw_acc": 0.8606,
+        "raw_cat_acc": 0.8606
+      },
+      {
+        "epoch": 8,
+        "loss": 0.3662,
+        "merch_acc": 0.8909,
+        "raw_acc": 0.897,
+        "raw_cat_acc": 0.897
+      },
+      {
+        "epoch": 9,
+        "loss": 0.3417,
+        "merch_acc": 0.8788,
+        "raw_acc": 0.8788,
+        "raw_cat_acc": 0.8788
+      },
+      {
+        "epoch": 10,
+        "loss": 0.3352,
+        "merch_acc": 0.897,
+        "raw_acc": 0.8909,
+        "raw_cat_acc": 0.8909
+      },
+      {
+        "epoch": 11,
+        "loss": 0.3304,
+        "merch_acc": 0.897,
+        "raw_acc": 0.8909,
+        "raw_cat_acc": 0.8909
+      },
+      {
+        "epoch": 12,
+        "loss": 0.3254,
+        "merch_acc": 0.903,
+        "raw_acc": 0.8909,
+        "raw_cat_acc": 0.8909
+      },
+      {
+        "epoch": 13,
+        "loss": 0.326,
+        "merch_acc": 0.897,
+        "raw_acc": 0.903,
+        "raw_cat_acc": 0.903
+      },
+      {
+        "epoch": 14,
+        "loss": 0.3241,
+        "merch_acc": 0.897,
+        "raw_acc": 0.903,
+        "raw_cat_acc": 0.903
+      },
+      {
+        "epoch": 15,
+        "loss": 0.323,
+        "merch_acc": 0.8909,
+        "raw_acc": 0.903,
+        "raw_cat_acc": 0.903
+      },
+      {
+        "epoch": 16,
+        "loss": 0.323,
+        "merch_acc": 0.897,
+        "raw_acc": 0.903,
+        "raw_cat_acc": 0.903
+      },
+      {
+        "epoch": 17,
+        "loss": 0.3225,
+        "merch_acc": 0.897,
+        "raw_acc": 0.903,
+        "raw_cat_acc": 0.903
+      },
+      {
+        "epoch": 18,
+        "loss": 0.3223,
+        "merch_acc": 0.897,
+        "raw_acc": 0.903,
+        "raw_cat_acc": 0.903
+      },
+      {
+        "epoch": 19,
+        "loss": 0.3239,
+        "merch_acc": 0.897,
+        "raw_acc": 0.903,
+        "raw_cat_acc": 0.903
+      },
+      {
+        "epoch": 20,
+        "loss": 0.3216,
+        "merch_acc": 0.897,
+        "raw_acc": 0.903,
+        "raw_cat_acc": 0.903
+      }
+    ]
+  }
+}

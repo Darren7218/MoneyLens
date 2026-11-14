@@ -1,0 +1,90 @@
+[RETRAIN] TRAINING: {"detail": "Running TF-IDF + DistilBERT 15-Category & 73-Subcategory on existing 219-sample corpus"}
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/100 [00:00<?, ?it/s]Loading weights: 100%|██████████| 100/100 [00:00<00:00, 6783.39it/s]
+[transformers] [1mDistilBertForSequenceClassification LOAD REPORT[0m from: distilbert-base-multilingual-cased
+Key                     | Status     | 
+------------------------+------------+-
+vocab_layer_norm.weight | UNEXPECTED | 
+vocab_layer_norm.bias   | UNEXPECTED | 
+vocab_transform.bias    | UNEXPECTED | 
+vocab_transform.weight  | UNEXPECTED | 
+vocab_projector.bias    | UNEXPECTED | 
+pre_classifier.bias     | MISSING    | 
+pre_classifier.weight   | MISSING    | 
+classifier.bias         | MISSING    | 
+classifier.weight       | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[category_15] Ep 01/25 | loss=2.7053 | merch_acc=0.1096 | raw_acc=0.1096 | cat=0.1096
+[category_15] Ep 02/25 | loss=2.5878 | merch_acc=0.1370 | raw_acc=0.1096 | cat=0.1096
+[category_15] Ep 03/25 | loss=2.2232 | merch_acc=0.1370 | raw_acc=0.1507 | cat=0.1507
+[category_15] Ep 04/25 | loss=1.8531 | merch_acc=0.2329 | raw_acc=0.2466 | cat=0.2466
+[category_15] Ep 05/25 | loss=1.1653 | merch_acc=0.2740 | raw_acc=0.2603 | cat=0.2603
+[category_15] Ep 06/25 | loss=0.6773 | merch_acc=0.2877 | raw_acc=0.3425 | cat=0.3425
+[category_15] Ep 07/25 | loss=0.4983 | merch_acc=0.3288 | raw_acc=0.3288 | cat=0.3288
+[category_15] Ep 08/25 | loss=0.4006 | merch_acc=0.3288 | raw_acc=0.3973 | cat=0.3973
+[category_15] Ep 09/25 | loss=0.3588 | merch_acc=0.3973 | raw_acc=0.4110 | cat=0.4110
+[category_15] Ep 10/25 | loss=0.3405 | merch_acc=0.3836 | raw_acc=0.3973 | cat=0.3973
+[category_15] Ep 13/25 | loss=0.3283 | merch_acc=0.4110 | raw_acc=0.4247 | cat=0.4247
+[category_15] Ep 15/25 | loss=0.3254 | merch_acc=0.3425 | raw_acc=0.3973 | cat=0.3973
+[category_15] Ep 20/25 | loss=0.3228 | merch_acc=0.3836 | raw_acc=0.3973 | cat=0.3973
+[category_15] Ep 25/25 | loss=0.3226 | merch_acc=0.3836 | raw_acc=0.3973 | cat=0.3973
+Loading weights:   0%|          | 0/100 [00:00<?, ?it/s]Loading weights: 100%|██████████| 100/100 [00:00<00:00, 6002.41it/s]
+[transformers] [1mDistilBertForSequenceClassification LOAD REPORT[0m from: distilbert-base-multilingual-cased
+Key                     | Status     | 
+------------------------+------------+-
+vocab_layer_norm.weight | UNEXPECTED | 
+vocab_layer_norm.bias   | UNEXPECTED | 
+vocab_transform.bias    | UNEXPECTED | 
+vocab_transform.weight  | UNEXPECTED | 
+vocab_projector.bias    | UNEXPECTED | 
+pre_classifier.bias     | MISSING    | 
+pre_classifier.weight   | MISSING    | 
+classifier.bias         | MISSING    | 
+classifier.weight       | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[subcategory_73] Ep 01/40 | loss=4.2923 | merch_acc=0.0000 | raw_acc=0.0000 | cat=0.0411
+[subcategory_73] Ep 02/40 | loss=4.2374 | merch_acc=0.0137 | raw_acc=0.0137 | cat=0.0274
+[subcategory_73] Ep 03/40 | loss=3.9238 | merch_acc=0.0548 | raw_acc=0.0685 | cat=0.0959
+[subcategory_73] Ep 04/40 | loss=3.3293 | merch_acc=0.0822 | raw_acc=0.1370 | cat=0.1644
+[subcategory_73] Ep 05/40 | loss=2.5126 | merch_acc=0.1507 | raw_acc=0.1644 | cat=0.1918
+[subcategory_73] Ep 06/40 | loss=1.6901 | merch_acc=0.2329 | raw_acc=0.2466 | cat=0.2740
+[subcategory_73] Ep 07/40 | loss=1.0370 | merch_acc=0.3288 | raw_acc=0.3973 | cat=0.4384
+[subcategory_73] Ep 08/40 | loss=0.6867 | merch_acc=0.3973 | raw_acc=0.4247 | cat=0.4384
+[subcategory_73] Ep 09/40 | loss=0.5344 | merch_acc=0.3836 | raw_acc=0.4384 | cat=0.4384
+[subcategory_73] Ep 10/40 | loss=0.4950 | merch_acc=0.3836 | raw_acc=0.4384 | cat=0.4384
+[subcategory_73] Ep 11/40 | loss=0.4660 | merch_acc=0.4110 | raw_acc=0.4384 | cat=0.4384
+[subcategory_73] Ep 12/40 | loss=0.4581 | merch_acc=0.4110 | raw_acc=0.4384 | cat=0.4384
+[subcategory_73] Ep 13/40 | loss=0.4518 | merch_acc=0.4247 | raw_acc=0.4384 | cat=0.4384
+[subcategory_73] Ep 15/40 | loss=0.4453 | merch_acc=0.4247 | raw_acc=0.4384 | cat=0.4384
+[subcategory_73] Ep 16/40 | loss=0.4426 | merch_acc=0.4247 | raw_acc=0.4384 | cat=0.4384
+[subcategory_73] Ep 17/40 | loss=0.4416 | merch_acc=0.4247 | raw_acc=0.4384 | cat=0.4384
+[subcategory_73] Ep 18/40 | loss=0.4396 | merch_acc=0.4247 | raw_acc=0.4384 | cat=0.4384
+[subcategory_73] Ep 19/40 | loss=0.4383 | merch_acc=0.4247 | raw_acc=0.4384 | cat=0.4384
+[subcategory_73] Ep 20/40 | loss=0.4360 | merch_acc=0.4247 | raw_acc=0.4384 | cat=0.4384
+[subcategory_73] Ep 21/40 | loss=0.4352 | merch_acc=0.4247 | raw_acc=0.4384 | cat=0.4384
+[subcategory_73] Ep 22/40 | loss=0.4338 | merch_acc=0.4247 | raw_acc=0.4384 | cat=0.4384
+[subcategory_73] Ep 23/40 | loss=0.4334 | merch_acc=0.4247 | raw_acc=0.4384 | cat=0.4384
+[subcategory_73] Ep 24/40 | loss=0.4348 | merch_acc=0.4247 | raw_acc=0.4384 | cat=0.4384
+[subcategory_73] Ep 25/40 | loss=0.4322 | merch_acc=0.4247 | raw_acc=0.4384 | cat=0.4521
+[subcategory_73] Ep 26/40 | loss=0.4328 | merch_acc=0.4247 | raw_acc=0.4384 | cat=0.4384
+[subcategory_73] Ep 27/40 | loss=0.4316 | merch_acc=0.4247 | raw_acc=0.4384 | cat=0.4384
+[subcategory_73] Ep 28/40 | loss=0.4307 | merch_acc=0.4247 | raw_acc=0.4384 | cat=0.4384
+[subcategory_73] Ep 29/40 | loss=0.4312 | merch_acc=0.4247 | raw_acc=0.4384 | cat=0.4384
+[subcategory_73] Ep 30/40 | loss=0.4296 | merch_acc=0.4247 | raw_acc=0.4384 | cat=0.4384
+[subcategory_73] Ep 31/40 | loss=0.4303 | merch_acc=0.4247 | raw_acc=0.4384 | cat=0.4384
+[subcategory_73] Ep 32/40 | loss=0.4302 | merch_acc=0.4247 | raw_acc=0.4384 | cat=0.4384
+[subcategory_73] Ep 33/40 | loss=0.4298 | merch_acc=0.4247 | raw_acc=0.4384 | cat=0.4384
+[subcategory_73] Ep 34/40 | loss=0.4295 | merch_acc=0.4247 | raw_acc=0.4384 | cat=0.4384
+[subcategory_73] Ep 35/40 | loss=0.4302 | merch_acc=0.4247 | raw_acc=0.4384 | cat=0.4384
+[subcategory_73] Ep 36/40 | loss=0.4293 | merch_acc=0.4247 | raw_acc=0.4384 | cat=0.4384
+[subcategory_73] Ep 37/40 | loss=0.4299 | merch_acc=0.4247 | raw_acc=0.4384 | cat=0.4384
+[subcategory_73] Ep 38/40 | loss=0.4301 | merch_acc=0.4247 | raw_acc=0.4384 | cat=0.4384
+[subcategory_73] Ep 39/40 | loss=0.4288 | merch_acc=0.4247 | raw_acc=0.4384 | cat=0.4384
+[subcategory_73] Ep 40/40 | loss=0.4299 | merch_acc=0.4247 | raw_acc=0.4384 | cat=0.4384
+[RETRAIN] DONE: {"total_samples": 219}

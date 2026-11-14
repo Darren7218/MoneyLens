@@ -1,0 +1,430 @@
+{
+  "oracle_merchant_only": {
+    "cat_acc": 0.3438,
+    "subcat_acc": 0.2692
+  },
+  "payment_notifications": {
+    "merchant_match": 0.8506,
+    "parsed_rate": 0.9878,
+    "cat_acc": 0.4634,
+    "n": 328,
+    "amount_exact": 0.9756,
+    "subcat_acc": 0.4085
+  },
+  "total_samples": 858,
+  "thermal_receipts": {
+    "merchant_match": 0.7358,
+    "date_exact": 0.8604,
+    "cat_acc": 0.4566,
+    "n": 530,
+    "amount_exact": 0.9755,
+    "subcat_acc": 0.3774
+  },
+  "holdout_split_end_to_end": {
+    "cat_acc": 0.5152,
+    "n": 165,
+    "subcat_acc": 0.4182
+  },
+  "sample_misses": [
+    {
+      "expected_merchant": "Subang Delights",
+      "expected_cat": "Food & drinks / Food Delivery (GrabFood / Foodpanda)",
+      "expected_amt": 1882,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "Subang Delights",
+      "parsed": true,
+      "got_amt": 1882
+    },
+    {
+      "expected_merchant": "TWG Tea",
+      "expected_cat": "Food & drinks / Coffee, Tea & Drinks",
+      "expected_amt": 2083,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "TWG Tea",
+      "parsed": true,
+      "got_amt": 2083
+    },
+    {
+      "expected_merchant": "SUNNY GROCER & BAKERIES",
+      "expected_cat": "Food & drinks / Groceries & Snacks",
+      "expected_amt": 2605,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "SUNNY GROCER & BAKERIES",
+      "parsed": true,
+      "got_amt": 2605
+    },
+    {
+      "expected_merchant": "EASY GROCERIE & BAKERS",
+      "expected_cat": "Food & drinks / Groceries & Snacks",
+      "expected_amt": 1590,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "EASY GROCERIE & BAKERS",
+      "parsed": true,
+      "got_amt": 1590
+    },
+    {
+      "expected_merchant": "MINI MART",
+      "expected_cat": "Groceries / Supermarket & Hypermarket",
+      "expected_amt": 1177,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "MINI MART",
+      "parsed": true,
+      "got_amt": 1177
+    },
+    {
+      "expected_merchant": "KUCHING GROCERIES",
+      "expected_cat": "Groceries / Supermarket & Hypermarket",
+      "expected_amt": 1098,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "KUCHING GROCERIES",
+      "parsed": true,
+      "got_amt": 1098
+    },
+    {
+      "expected_merchant": "SARAWAK MARKET",
+      "expected_cat": "Groceries / Supermarket & Hypermarket",
+      "expected_amt": 1165,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "SARAWAK MARKET",
+      "parsed": true,
+      "got_amt": 1165
+    },
+    {
+      "expected_merchant": "Pusat Segar Bangsar",
+      "expected_cat": "Groceries / Wet Market & Fresh Produce",
+      "expected_amt": 3005,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "Item: Fresh Pineapples x 2",
+      "parsed": true,
+      "got_amt": 3005
+    },
+    {
+      "expected_merchant": "Segar Segar Market",
+      "expected_cat": "Groceries / Wet Market & Fresh Produce",
+      "expected_amt": 4505,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "Segar Segar Market",
+      "parsed": true,
+      "got_amt": 4505
+    },
+    {
+      "expected_merchant": "Bunga Segar Market & Groceries",
+      "expected_cat": "Groceries / Wet Market & Fresh Produce",
+      "expected_amt": 4155,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "Bunga Segar Market & Groceries",
+      "parsed": true,
+      "got_amt": 4155
+    },
+    {
+      "expected_merchant": "Segar Utama Market",
+      "expected_cat": "Groceries / Wet Market & Fresh Produce",
+      "expected_amt": 2455,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "Segar Utama Market",
+      "parsed": true,
+      "got_amt": 2455
+    },
+    {
+      "expected_merchant": "Shah Cleaning Supplies",
+      "expected_cat": "Groceries / Household & Cleaning Supplies",
+      "expected_amt": 2993,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "Shah Cleaning Supplies",
+      "parsed": true,
+      "got_amt": 2993
+    },
+    {
+      "expected_merchant": "Clean & Tidy Supplies",
+      "expected_cat": "Groceries / Household & Cleaning Supplies",
+      "expected_amt": 3940,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "Clean & Tidy Supplies",
+      "parsed": true,
+      "got_amt": 3940
+    },
+    {
+      "expected_merchant": "Fresh Home Supplies",
+      "expected_cat": "Groceries / Household & Cleaning Supplies",
+      "expected_amt": 1630,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "Fresh Home Supplies",
+      "parsed": true,
+      "got_amt": 1630
+    },
+    {
+      "expected_merchant": "Hygiene Mart",
+      "expected_cat": "Groceries / Household & Cleaning Supplies",
+      "expected_amt": 3465,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "Hygiene Mart",
+      "parsed": true,
+      "got_amt": 3465
+    },
+    {
+      "expected_merchant": "Damansara Trans",
+      "expected_cat": "Transport / Public Transit (MRT / LRT / Bus)",
+      "expected_amt": 215,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "Damansara Trans",
+      "parsed": true,
+      "got_amt": 215
+    },
+    {
+      "expected_merchant": "Bus Rapid Selangor",
+      "expected_cat": "Transport / Public Transit (MRT / LRT / Bus)",
+      "expected_amt": 270,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "Bus Rapid Selangor",
+      "parsed": true,
+      "got_amt": 270
+    },
+    {
+      "expected_merchant": "ASEAN Motors Service",
+      "expected_cat": "Transport / Vehicle Maintenance & Service",
+      "expected_amt": 14335,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "ASEAN Motors Service",
+      "parsed": true,
+      "got_amt": 14335
+    },
+    {
+      "expected_merchant": "Kuantan Auto Care",
+      "expected_cat": "Transport / Vehicle Maintenance & Service",
+      "expected_amt": 18320,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "Kuantan Auto Care",
+      "parsed": true,
+      "got_amt": 18320
+    },
+    {
+      "expected_merchant": "AutoLoans Solutions",
+      "expected_cat": "Transport / Car Loan Installment",
+      "expected_amt": 134505,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "AutoLoans Solutions",
+      "parsed": true,
+      "got_amt": 134505
+    },
+    {
+      "expected_merchant": "CarMax Financing",
+      "expected_cat": "Transport / Car Loan Installment",
+      "expected_amt": 139995,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "CarMax Financing",
+      "parsed": true,
+      "got_amt": 139995
+    },
+    {
+      "expected_merchant": "AutoFin Credit",
+      "expected_cat": "Transport / Car Loan Installment",
+      "expected_amt": 150705,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "AutoFin Credit",
+      "parsed": true,
+      "got_amt": 150705
+    },
+    {
+      "expected_merchant": "PENANG CITY WATERS",
+      "expected_cat": "Bills & utilities / Water & Sewerage (Air Selangor / IWK)",
+      "expected_amt": 28765,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "PENANG CITY WATERS",
+      "parsed": true,
+      "got_amt": 28765
+    },
+    {
+      "expected_merchant": "GEORGETOWN URBAN UTILITY SERVICES",
+      "expected_cat": "Bills & utilities / Water & Sewerage (Air Selangor / IWK)",
+      "expected_amt": 33305,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "GEORGETOWN URBAN UTILITY SERVICES",
+      "parsed": true,
+      "got_amt": 33305
+    },
+    {
+      "expected_merchant": "PENANG WATER MANAGEMENT",
+      "expected_cat": "Bills & utilities / Water & Sewerage (Air Selangor / IWK)",
+      "expected_amt": 28035,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "PENANG WATER MANAGEMENT",
+      "parsed": true,
+      "got_amt": 28035
+    },
+    {
+      "expected_merchant": "TIME BILLS & UTILITIES",
+      "expected_cat": "Bills & utilities / Home Internet & WiFi (Unifi / Time)",
+      "expected_amt": 20680,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "CUSTOMER NAME: Lee Siong Bin",
+      "parsed": true,
+      "got_amt": 20680
+    },
+    {
+      "expected_merchant": "JOHOR BILLS & UTILS",
+      "expected_cat": "Bills & utilities / Home Internet & WiFi (Unifi / Time)",
+      "expected_amt": 18165,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "JOHOR BILLS & UTILS",
+      "parsed": true,
+      "got_amt": 18165
+    },
+    {
+      "expected_merchant": "SUNSMART BILLS & UTILITIES",
+      "expected_cat": "Bills & utilities / Home Internet & WiFi (Unifi / Time)",
+      "expected_amt": 15905,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "SUNSMART BILLS & UTILITIES",
+      "parsed": true,
+      "got_amt": 15905
+    },
+    {
+      "expected_merchant": "TELKOM MOBILE",
+      "expected_cat": "Bills & utilities / Mobile Postpaid & Prepaid",
+      "expected_amt": 16380,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "TELKOM MOBILE",
+      "parsed": true,
+      "got_amt": 16380
+    },
+    {
+      "expected_merchant": "DiGiCOM",
+      "expected_cat": "Bills & utilities / Mobile Postpaid & Prepaid",
+      "expected_amt": 3280,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "DiGiCOM",
+      "parsed": true,
+      "got_amt": 3280
+    },
+    {
+      "expected_merchant": "PAY & GO",
+      "expected_cat": "Bills & utilities / Streaming & App Subscriptions",
+      "expected_amt": 14161,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "PAY & GO",
+      "parsed": true,
+      "got_amt": 14161
+    },
+    {
+      "expected_merchant": "EASYFINANCIAL Sdn Bhd",
+      "expected_cat": "Loans, BNPL & Credit / Credit Card Bill",
+      "expected_amt": 376005,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "EASYFINANCIAL",
+      "parsed": true,
+      "got_amt": 376005
+    },
+    {
+      "expected_merchant": "FINANCE ONE Sdn Bhd",
+      "expected_cat": "Loans, BNPL & Credit / Credit Card Bill",
+      "expected_amt": 451505,
+      "got_cat": "Fees & charges / Late Payment Fee",
+      "source_type": "thermal_receipt",
+      "got_merchant": "FINANCE ONE",
+      "parsed": true,
+      "got_amt": 451505
+    },
+    {
+      "expected_merchant": "BANGSAR FINANCIAL SERVICES",
+      "expected_cat": "Loans, BNPL & Credit / Credit Card Bill",
+      "expected_amt": 539505,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "CREDIT CARD PAYMENT RECEIPT",
+      "parsed": true,
+      "got_amt": 539505
+    },
+    {
+      "expected_merchant": "SMARTFINANCE Sdn Bhd",
+      "expected_cat": "Loans, BNPL & Credit / Credit Card Bill",
+      "expected_amt": 826005,
+      "got_cat": "Fees & charges / Late Payment Fee",
+      "source_type": "thermal_receipt",
+      "got_merchant": "SMARTFINANCE",
+      "parsed": true,
+      "got_amt": 826005
+    },
+    {
+      "expected_merchant": "CREDIT SERVICES KL",
+      "expected_cat": "Loans, BNPL & Credit / Hire Purchase / Installment",
+      "expected_amt": 252505,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "CREDIT SERVICES KL",
+      "parsed": true,
+      "got_amt": 252505
+    },
+    {
+      "expected_merchant": "ADVANCE LOANS Sdn Bhd",
+      "expected_cat": "Loans, BNPL & Credit / Hire Purchase / Installment",
+      "expected_amt": 176755,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "ADVANCE LOANS",
+      "parsed": true,
+      "got_amt": 176755
+    },
+    {
+      "expected_merchant": "PAYMATE CREDIT",
+      "expected_cat": "Loans, BNPL & Credit / Hire Purchase / Installment",
+      "expected_amt": 121505,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "PAYMATE CREDIT",
+      "parsed": true,
+      "got_amt": 121505
+    },
+    {
+      "expected_merchant": "FINANCE SERVICES 2012",
+      "expected_cat": "Loans, BNPL & Credit / Hire Purchase / Installment",
+      "expected_amt": 91005,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "FINANCE SERVICES 2012",
+      "parsed": true,
+      "got_amt": 91005
+    },
+    {
+      "expected_merchant": "Melaka Property Rentals",
+      "expected_cat": "Housing & property / Rent",
+      "expected_amt": 132205,
+      "got_cat": "Miscellaneous / Auto-Captured (Uncategorized)",
+      "source_type": "thermal_receipt",
+      "got_merchant": "Melaka Property Rentals",
+      "parsed": true,
+      "got_amt": 132205
+    }
+  ]
+}

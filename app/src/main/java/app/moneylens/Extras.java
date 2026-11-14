@@ -94,6 +94,26 @@ public final class Extras {
     Ledger.post(s,txArgs);
     return true;
    }
+   case "unlinkBill":{
+    JSONObject t=Ledger.find(s.getJSONArray("transactions"),a.getString("id"));
+    if(!t.has("billId"))return true;
+    JSONObject bill=null;try{bill=Ledger.find(s.getJSONArray("bills"),t.getString("billId"));}catch(IllegalArgumentException ignored){}
+    if(bill!=null&&t.has("billDate")){
+     String due=t.getString("billDate"),f=bill.optString("frequency",bill.optBoolean("monthly")?"monthly":"once");
+     String next=f.equals("once")?due:Finance.advance(LocalDate.parse(due),f,bill.optInt("anchorDay",LocalDate.parse(due).getDayOfMonth())).toString();
+     if(f.equals("once")&&bill.optBoolean("paid"))bill.put("paid",false);
+     else if(bill.getString("date").equals(next))bill.put("date",due);
+    }
+    t.remove("billId");t.remove("billDate");
+    return true;
+   }
+   case "unmergeDuplicate":{
+    JSONObject d=Ledger.find(s.getJSONArray("drafts"),a.getString("id"));
+    if(!d.has("duplicateOf"))return true;
+    d.remove("duplicateOf");d.remove("transactionId");d.put("state","review").put("revision",d.optInt("revision",1)+1);
+    autoPost(s,d);
+    return true;
+   }
    case "deleteExtra":{String table=a.getString("table");if(!Arrays.asList("rules","favorites","customCategories").contains(table))throw new IllegalArgumentException("Invalid item.");if(table.equals("rules"))rememberRules(s);JSONArray rows=s.getJSONArray(table);for(int i=rows.length()-1;i>=0;i--)if(rows.getJSONObject(i).getString("id").equals(a.getString("id")))rows.remove(i);return true;}
    case "draft":{JSONObject d=new JSONObject(a.toString()).put("id",a.optString("id",Ledger.id())).put("state","review").put("revision",1).put("created",System.currentTimeMillis());boolean auto=d.optBoolean("autoCapture");d.remove("autoCapture");d.remove("text");Finance.suggest(s,d);s.getJSONArray("drafts").put(d);if(auto)autoPost(s,d);return true;}
    case "linkDraft":{JSONObject d=Ledger.find(s.getJSONArray("drafts"),a.getString("id"));JSONObject t=Ledger.find(s.getJSONArray("transactions"),a.getString("transactionId"));if(t.optBoolean("voided"))throw new IllegalArgumentException("Choose a current transaction.");if(!d.optString("state").equals("review"))return true;d.put("state","linked").put("transactionId",t.getString("id"));if(d.has("receiptId")&&!t.has("receiptId"))t.put("receiptId",d.getString("receiptId"));return true;}
@@ -130,6 +150,29 @@ public final class Extras {
     updateMerchantHistory(s,name(a,"merchant",120),name(a,"category",60),a.optString("subcategory",""),a.optString("account",""));
     return true;
    }
+   case "debt":debt(s,a);return true;
+   case "debtExtra":{
+    String raw=a.optString("extraMonthly","0").trim();
+    long extra=raw.isEmpty()||raw.equals("0")||raw.equals("0.00")?0L:Ledger.minor(raw);
+    s.getJSONObject("settings").put("debtExtraMonthly",extra);
+    return true;
+   }
+   case "syncDebtReminder":syncDebtReminder(s,Ledger.find(s.getJSONArray("debts"),a.getString("id")));return true;
+   case "setPayday":{
+    String pName=name(a,"name",80),acct=a.optString("account","").trim();
+    if(acct.isEmpty())acct=s.getJSONArray("accounts").getJSONObject(0).getString("id");
+    else Ledger.find(s.getJSONArray("accounts"),acct);
+    long amt=a.has("amountMinor")?a.getLong("amountMinor"):Ledger.minor(a.getString("amount"));
+    if(amt<=0||amt>Ledger.MAX)throw new IllegalArgumentException("Payday amount must be positive.");
+    int dom=Math.max(1,Math.min(31,a.optInt("dayOfMonth",1)));
+    String freq="weekly".equals(a.optString("frequency"))?"weekly":"monthly";
+    String nextDate=a.optString("nextDate","").trim();
+    if(!nextDate.isEmpty())LocalDate.parse(nextDate);
+    else{LocalDate now=LocalDate.now();LocalDate d=Finance.anchored(YearMonth.from(now),dom);if(d.isBefore(now))d=Finance.advance(d,freq,dom);nextDate=d.toString();}
+    s.getJSONObject("settings").put("cycleDay",dom).put("payday",new JSONObject().put("name",pName).put("amount",amt).put("account",acct).put("frequency",freq).put("dayOfMonth",dom).put("nextDate",nextDate));
+    return true;
+   }
+   case "clearPayday":s.getJSONObject("settings").remove("payday");return true;
    default:return false;
   }
  }
@@ -168,7 +211,9 @@ public final class Extras {
  }
  public static void budget(JSONObject s,JSONObject a)throws Exception{
   LocalDate now=LocalDate.now();String bid=a.optString("id",Ledger.id());JSONObject old=null;try{old=Ledger.find(s.getJSONArray("budgets"),bid);}catch(IllegalArgumentException ignored){}
+  String sub=Ledger.str(a,"subcategory",80);
   JSONObject b=new JSONObject().put("id",bid).put("category",name(a,"category",60)).put("limit",Ledger.minor(a.getString("amount"))).put("rollover",a.optBoolean("rollover")).put("createdDate",old==null?now.toString():old.optString("createdDate",now.toString()));
+  if(!sub.isEmpty())b.put("subcategory",sub);
   JSONArray history=old==null?new JSONArray():old.optJSONArray("history");if(history==null)history=new JSONArray().put(new JSONObject().put("start",old.optString("createdDate",now.toString())).put("limit",old.getLong("limit")).put("rollover",old.optBoolean("rollover")));
   String cycle=Finance.start(now,s.getJSONObject("settings").optInt("cycleDay",1)).toString();for(int i=history.length()-1;i>=0;i--)if(history.getJSONObject(i).getString("start").equals(cycle))history.remove(i);history.put(new JSONObject().put("start",cycle).put("limit",b.getLong("limit")).put("rollover",b.optBoolean("rollover")));b.put("history",history);Ledger.upsert(s,"budgets",b);
  }
@@ -196,7 +241,17 @@ public final class Extras {
   String acct=resolveAccount(s,d.optString("account",""),d.optString("source",""),d.optString("package",""));
   String kind=d.optString("kind","expense");
   String to=d.optString("to","");
-  if(kind.equals("transfer")&&(to.isEmpty()||to.equals(acct)))kind="expense";
+  if(kind.equals("transfer")&&(to.isEmpty()||to.equals(acct))){
+   // A reload / own-account transfer is not spending. Work out both sides, or leave it in Inbox for review.
+   JSONArray accounts=s.getJSONArray("accounts");
+   String hint=d.optString("transferHint","")+" "+d.optString("merchant","");
+   String other=Finance.matchAccountByName(accounts,hint,"",acct);
+   String srcType="";for(int i=0;i<accounts.length();i++)if(accounts.getJSONObject(i).optString("id").equals(acct))srcType=accounts.getJSONObject(i).optString("type");
+   if(!other.isEmpty()){to=other;}
+   else if(d.optBoolean("reload")&&"wallet".equals(srcType)){d.put("reason","Wallet reload detected. Choose the account the money came from; it won't be counted as spending.");return;}
+   else{d.put("reason","Looks like a transfer between your own accounts. Choose both accounts; it won't be counted as spending.");return;}
+   d.put("to",to);
+  }
   String cat=d.optString("category","Miscellaneous");if(cat.isEmpty()||cat.equals("Other"))cat="Miscellaneous";
   String sub=d.optString("subcategory","");
   String dt=d.optString("date",LocalDate.now().toString());
@@ -231,6 +286,7 @@ public final class Extras {
     String bName=b.optString("name","").toLowerCase(Locale.ROOT).trim();
     String bSub=b.optString("subcategory","").toLowerCase(Locale.ROOT).trim();
     String rType=b.optString("reminderType","bill");
+    if(b.optLong("amount")!=amt&&!b.optBoolean("variable"))continue;
     int score=0;
     if(!bName.isEmpty()&&!mLow.isEmpty()&&!mLow.equals("detected payment")&&(mLow.contains(bName)||bName.contains(mLow))){
      score+=50;
@@ -249,6 +305,9 @@ public final class Extras {
    }
    return best;
   }catch(Exception e){return null;}
+ }
+ public static boolean shouldPromptDraft(boolean quiet,JSONObject settings,JSONObject d,boolean notificationsEnabled){
+  return notificationsEnabled&&!quiet&&!settings.optBoolean("digest")&&d!=null&&!d.has("duplicateOf");
  }
  public static JSONObject captureState(JSONObject s,String pkg,String label,String key,String text,long now)throws Exception{
   return captureState(s,pkg,label,key,text,now,now);
@@ -276,10 +335,44 @@ public final class Extras {
   if(pending>=500)throw new IllegalStateException("Review your Inbox before capturing more payments.");
   while(drafts.length()>=1000){int remove=-1;for(int i=0;i<drafts.length();i++)if(!drafts.getJSONObject(i).optString("state").equals("review")){remove=i;break;}if(remove<0)break;drafts.remove(remove);}
   for(int i=drafts.length()-1;i>=0;i--){JSONObject other=drafts.getJSONObject(i);if(d.optLong("amount")>0&&other.optLong("amount")==d.optLong("amount")&&now-other.optLong("created")<300000)d.put("reason",d.getString("reason")+" A similar recent amount exists; check for a duplicate.");}
-  d.put("package",pkg);Finance.suggest(s,d);drafts.put(d);
-  autoPost(s,d);
+  d.put("package",pkg).put("capturedAt",now);Finance.suggest(s,d);drafts.put(d);
+  JSONObject twin=findCrossSourceTwin(s,d,pkg,now);
+  if(twin!=null){
+   String twinTx=twin.getString("transactionId");
+   d.put("state","linked").put("duplicateOf",twinTx).put("transactionId",twinTx).put("reason","Same amount reported by "+twin.optString("source","another app")+" within 3 minutes, so it was not recorded twice. Tap \"Not a duplicate\" if these were separate payments.");
+   try{JSONObject t=Ledger.find(s.getJSONArray("transactions"),twinTx);t.put("alsoSeenFrom",label==null?pkg:label);}catch(IllegalArgumentException ignored){}
+  }else{
+   autoPost(s,d);
+   if(d.optBoolean("autoRecorded")&&"transfer".equals(d.optString("kind"))){
+    // The wallet side of a reload may have arrived first and be waiting in Inbox; fold it into this transfer.
+    for(int i=0;i<drafts.length();i++){
+     JSONObject o=drafts.getJSONObject(i);
+     if(o==d||!"review".equals(o.optString("state"))||!"transfer".equals(o.optString("kind"))||o.optLong("amount")!=d.optLong("amount"))continue;
+     if(pkg==null||pkg.equals(o.optString("package"))||Math.abs(now-o.optLong("capturedAt",Long.MIN_VALUE/2))>180_000L)continue;
+     o.put("state","linked").put("duplicateOf",d.getString("transactionId")).put("transactionId",d.getString("transactionId")).put("reason","Matched to the transfer reported by "+d.optString("source","your bank")+".");
+    }
+   }
+  }
   seen.put(new JSONObject().put("hash",instanceDigest).put("contentHash",contentDigest).put("time",now));while(seen.length()>5000)seen.remove(0);
   s.put("lastCapture",now).put("revision",s.optLong("revision")+1);Ledger.validate(s);return d;
+ }
+ /** Finds an auto-recorded draft from a different app with the same amount captured within 3 minutes (e.g. TNG + linked bank card both alerting). */
+ static JSONObject findCrossSourceTwin(JSONObject s,JSONObject d,String pkg,long now)throws JSONException{
+  long amt=d.optLong("amount");
+  if(amt<=0||pkg==null||!s.getJSONObject("settings").optBoolean("autoRecord",true))return null;
+  JSONArray drafts=s.getJSONArray("drafts");
+  for(int i=drafts.length()-1;i>=0;i--){
+   JSONObject o=drafts.getJSONObject(i);
+   if(o==d||!o.optBoolean("autoRecorded")||o.has("duplicateOf")||o.optLong("amount")!=amt)continue;
+   if(pkg.equals(o.optString("package"))||!o.has("capturedAt"))continue;
+   if(Math.abs(now-o.optLong("capturedAt"))>180_000L)continue;
+   if(!o.optString("kind","expense").equals(d.optString("kind","expense")))continue;
+   String txId=o.optString("transactionId","");
+   if(txId.isEmpty())continue;
+   try{if(Ledger.find(s.getJSONArray("transactions"),txId).optBoolean("voided"))continue;}catch(IllegalArgumentException e){continue;}
+   return o;
+  }
+  return null;
  }
  private static String resolveAccount(JSONObject s,String preferred,String sourceLabel,String pkg)throws JSONException{
   JSONArray accounts=s.getJSONArray("accounts");
@@ -291,4 +384,47 @@ public final class Extras {
   return accounts.getJSONObject(0).getString("id");
  }
  public static String hex(byte[] b){StringBuilder s=new StringBuilder();for(byte x:b)s.append(String.format("%02x",x));return s.toString();}
+ /** Saves or updates a debt item for Avalanche/Snowball payoff planning. */
+ static void debt(JSONObject s,JSONObject a)throws Exception{
+  String id=a.optString("id","").trim();if(id.isEmpty())id=Ledger.id();
+  String debtName=name(a,"name",80);
+  String type=a.optString("type","loan").trim().toLowerCase(Locale.ROOT);
+  if(!Arrays.asList("bnpl","ptptn","credit","loan").contains(type))type="loan";
+  String balRaw=a.getString("balance").trim();
+  long bal=balRaw.equals("0")||balRaw.equals("0.00")?0L:Ledger.minor(balRaw);
+  long minPay=Ledger.minor(a.getString("minPayment").trim());
+  String aprRaw=a.optString("apr","0").trim();
+  int aprBps=aprRaw.isEmpty()?0:new BigDecimal(aprRaw).movePointRight(2).setScale(0,java.math.RoundingMode.HALF_UP).intValueExact();
+  if(aprBps<0||aprBps>10000)throw new IllegalArgumentException("Annual interest rate must be 0–100%.");
+  String rateType="flat".equals(a.optString("rateType","reducing"))?"flat":"reducing";
+  String prinRaw=a.optString("principal","").trim();
+  long principal=prinRaw.isEmpty()||prinRaw.equals("0")||prinRaw.equals("0.00")?bal:Ledger.minor(prinRaw);
+  int dueDay=Math.max(1,Math.min(31,a.optInt("dueDay",1)));
+  String account=a.optString("account","").trim();
+  if(!account.isEmpty())Ledger.find(s.getJSONArray("accounts"),account);
+  else account=s.getJSONArray("accounts").getJSONObject(0).getString("id");
+  String billId=a.optString("billId","").trim();
+  if(billId.isEmpty()){try{billId=Ledger.find(s.getJSONArray("debts"),id).optString("billId","");}catch(IllegalArgumentException ignored){}}
+  JSONObject row=new JSONObject().put("id",id).put("name",debtName).put("type",type).put("balance",bal).put("principal",principal).put("minPayment",minPay).put("aprBps",aprBps).put("rateType",rateType).put("dueDay",dueDay).put("account",account);
+  if(!billId.isEmpty())row.put("billId",billId);
+  Ledger.upsert(s,"debts",row);
+  if(a.optBoolean("createReminder"))syncDebtReminder(s,row);
+ }
+ /** Creates or updates a recurring monthly bill reminder linked to a debt item. */
+ static void syncDebtReminder(JSONObject s,JSONObject debtRow)throws Exception{
+  String billId=debtRow.optString("billId","").trim();
+  JSONObject existing=null;
+  if(!billId.isEmpty()){try{existing=Ledger.find(s.getJSONArray("bills"),billId);}catch(IllegalArgumentException ignored){billId="";}}
+  if(billId.isEmpty())billId=Ledger.id();
+  int dueDay=Math.max(1,Math.min(31,debtRow.optInt("dueDay",1)));
+  LocalDate now=LocalDate.now();
+  LocalDate due=Finance.anchored(YearMonth.from(now),dueDay);
+  if(due.isBefore(now))due=Finance.anchored(YearMonth.from(now).plusMonths(1),dueDay);
+  String type=debtRow.optString("type","loan");
+  String rType="ptptn".equals(type)?"ptptn":"credit".equals(type)?"credit":"bnpl".equals(type)?"bnpl":"bill";
+  String sub="ptptn".equals(type)?"PTPTN Study Loan":"bnpl".equals(type)?"BNPL (SPayLater / GrabPayLater / Atome)":"credit".equals(type)?"Credit Card Bill":"Personal Loan";
+  JSONObject args=new JSONObject().put("id",billId).put("name",debtRow.getString("name")).put("amount",BigDecimal.valueOf(debtRow.getLong("minPayment"),2).toPlainString()).put("date",existing!=null?existing.getString("date"):due.toString()).put("account",debtRow.optString("account",s.getJSONArray("accounts").getJSONObject(0).getString("id"))).put("category","Loans, BNPL & Credit").put("subcategory",sub).put("frequency","monthly").put("remindDaysBefore",3).put("remindTime","09:00").put("reminderType",rType);
+  bill(s,args);
+  debtRow.put("billId",billId);
+ }
 }

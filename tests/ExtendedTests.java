@@ -49,6 +49,127 @@ public final class ExtendedTests {
   test("DuitNow QR, FPX, JomPAY and GXBank notifications parse merchant and category",()->{JSONObject dn=PaymentParser.parse("DuitNow QR payment of RM 14.50 to GERAI NASI LEMAK ANTARABANGSA was successful.","com.maybank2u.life");yes(dn!=null);eq(dn.getLong("amount"),1450);yes(dn.getString("kind").equals("expense"));yes(dn.getString("merchant").equals("GERAI NASI LEMAK ANTARABANGSA"));yes(dn.getString("category").equals("Food & drinks"));JSONObject jom=PaymentParser.parse("JomPAY payment of RM 185.20 to TENAGA NASIONAL (Biller Code: 5454) is successful.","com.cimb.octomy");yes(jom!=null);eq(jom.getLong("amount"),18520);yes(jom.getString("merchant").equals("TENAGA NASIONAL"));yes(jom.getString("category").equals("Bills & utilities"));yes(jom.getString("subcategory").equals("Electricity (TNB)"));JSONObject fpx=PaymentParser.parse("FPX payment of MYR 89.00. Seller: POPULAR BOOK CO. Never share your OTP.","com.rhbgroup.rhbmobilebanking");yes(fpx!=null);eq(fpx.getLong("amount"),8900);yes(fpx.getString("merchant").equals("POPULAR BOOK CO"));yes(fpx.getString("category").equals("Education"));});
   test("Auto-captured payment auto-matches scheduled PTPTN or BNPL bill and advances due date",()->{JSONObject s=Ledger.initial();Ledger.apply(s,"account",new JSONObject().put("name","Maybank").put("type","bank").put("opening","2000"));String mbbId=s.getJSONArray("accounts").getJSONObject(1).getString("id");String dueToday=LocalDate.now().toString();Ledger.apply(s,"bill",new JSONObject().put("id","ptptn-bill").put("name","PTPTN Study Loan Repayment").put("amount","150.00").put("account",mbbId).put("date",dueToday).put("category","Loans, BNPL & Credit").put("subcategory","PTPTN Study Loan").put("frequency","monthly").put("reminderType","ptptn"));JSONObject cap=Extras.captureState(s,"com.maybank2u.life","Maybank MAE","k-ptptn","You have paid RM 150.00 to PTPTN BAYARAN BALIK PINJAMAN.",50000L);yes(cap!=null&&cap.optBoolean("autoRecorded"));yes(cap.optString("matchedBillId").equals("ptptn-bill"));JSONObject txRow=Ledger.find(s.getJSONArray("transactions"),cap.getString("transactionId"));yes(txRow.getString("account").equals(mbbId));yes(txRow.getString("billId").equals("ptptn-bill"));JSONObject updatedBill=Ledger.find(s.getJSONArray("bills"),"ptptn-bill");yes(!updatedBill.getString("date").equals(dueToday));});
   test("1-tap payBillAuto and LHDN monthly paycheck + claimable audit list",()->{JSONObject s=Ledger.initial();String due=LocalDate.now().toString();Ledger.apply(s,"bill",new JSONObject().put("id","b-spay").put("name","SPayLater").put("amount","75.00").put("account","cash").put("date",due).put("category","Loans, BNPL & Credit").put("subcategory","BNPL (SPayLater / GrabPayLater / Atome)").put("frequency","everyXDays").put("intervalDays",30));Ledger.apply(s,"payBillAuto",new JSONObject().put("id","b-spay"));JSONObject b=Ledger.find(s.getJSONArray("bills"),"b-spay");yes(b.getString("date").equals(LocalDate.now().plusDays(30).toString()));int yr=LocalDate.now().getYear();Ledger.apply(s,"transaction",tx("expense","199.00").put("date",yr+"-05-10").put("category","Health & medical").put("subcategory","Gym, Sports & Fitness").put("merchant","DECATHLON MY"));Ledger.apply(s,"taxProfile",new JSONObject().put("monthlyBaseSalary","5000").put("epfRate","11").put("monthlyPcb","100"));JSONObject est=Finance.calculateTax(s,null,yr);eq(est.getJSONObject("monthlyPaycheck").getLong("grossMonthly"),5000_00L);eq(est.getJSONObject("monthlyPaycheck").getLong("epfMonthly"),550_00L);yes(est.getJSONObject("monthlyPaycheck").getLong("netTakeHomeMonthly")>4000_00L);yes(est.getJSONArray("claimableItems").length()>=1);});
+  test("Cross-source twin alerts are merged once; Not a duplicate records it",()->{JSONObject s=Ledger.initial();JSONObject a=Extras.captureState(s,"my.com.tngdigital.ewallet","TNG eWallet","k-a","You have paid RM23.40 at MYNEWS KLCC",1_000_000L);yes(a!=null&&a.optBoolean("autoRecorded"));JSONObject b=Extras.captureState(s,"com.maybank2u.life","Maybank MAE","k-b","Card transaction RM23.40 at TNG DIGITAL approved",1_090_000L);yes(b!=null);yes(b.optString("duplicateOf").equals(a.getString("transactionId")));yes(!b.optBoolean("autoRecorded"));eq(spending(s),2340);JSONObject c=Extras.captureState(s,"com.cimb.octomy","CIMB","k-c","You have paid RM23.40 at MYNEWS KLCC",1_500_000L);yes(c!=null&&c.optBoolean("autoRecorded"));eq(spending(s),4680);Ledger.apply(s,"unmergeDuplicate",new JSONObject().put("id",b.getString("id")));eq(spending(s),7020);Ledger.validate(s);});
+  test("Bill auto-match requires matching amount unless variable; unlinkBill restores due date",()->{JSONObject s=Ledger.initial();String due=LocalDate.now().toString();Ledger.apply(s,"bill",new JSONObject().put("id","tnb").put("name","TNB").put("amount","120.00").put("account","cash").put("date",due).put("category","Bills & utilities").put("subcategory","Electricity (TNB)").put("frequency","monthly"));JSONObject miss=Extras.captureState(s,"com.maybank2u.life","Maybank","k1","JomPAY payment of RM 15.00 to TENAGA NASIONAL is successful.",10_000L);yes(!miss.has("matchedBillId"));JSONObject hit=Extras.captureState(s,"com.maybank2u.life","Maybank","k2","JomPAY payment of RM 120.00 to TENAGA NASIONAL is successful.",900_000L);yes(hit.optString("matchedBillId").equals("tnb"));JSONObject bill=Ledger.find(s.getJSONArray("bills"),"tnb");yes(!bill.getString("date").equals(due));Ledger.apply(s,"unlinkBill",new JSONObject().put("id",hit.getString("transactionId")));yes(bill.getString("date").equals(due));yes(!Ledger.find(s.getJSONArray("transactions"),hit.getString("transactionId")).has("billId"));eq(spending(s),13500);});
+  test("TNG reload from bank is a transfer, not spending, and both alerts fold into one record",()->{JSONObject s=Ledger.initial();Ledger.apply(s,"account",new JSONObject().put("name","Maybank").put("type","bank").put("opening","500"));Ledger.apply(s,"account",new JSONObject().put("name","TNG eWallet").put("type","wallet").put("opening","10"));String mbb=s.getJSONArray("accounts").getJSONObject(1).getString("id"),tng=s.getJSONArray("accounts").getJSONObject(2).getString("id");JSONObject w=Extras.captureState(s,"my.com.tngdigital.ewallet","TNG eWallet","r1","Reload of RM50.00 is successful.",2_000_000L);yes(w!=null&&!w.optBoolean("autoRecorded"));yes(w.getString("state").equals("review"));JSONObject b=Extras.captureState(s,"com.maybank2u.life","Maybank MAE","r2","You have transferred RM50.00 to TNG eWallet.",2_060_000L);yes(b!=null&&b.optBoolean("autoRecorded"));JSONObject t=Ledger.find(s.getJSONArray("transactions"),b.getString("transactionId"));yes(t.getString("kind").equals("transfer"));yes(t.getString("account").equals(mbb));yes(t.getString("to").equals(tng));eq(spending(s),0);eq(Finance.balance(s,tng,"9999-12-31"),6000);yes(Ledger.find(s.getJSONArray("drafts"),w.getString("id")).getString("state").equals("linked"));});
+  test("Debt planner compares Avalanche vs Snowball for BNPL, flat PTPTN Ujrah and card, and syncs reminder",()->{JSONObject s=Ledger.initial();Ledger.apply(s,"debt",new JSONObject().put("id","bnpl").put("name","SPayLater").put("type","bnpl").put("balance","600.00").put("minPayment","100.00").put("apr","0").put("rateType","reducing").put("dueDay",10));Ledger.apply(s,"debt",new JSONObject().put("id","card").put("name","Credit Card").put("type","credit").put("balance","2000.00").put("minPayment","100.00").put("apr","18").put("rateType","reducing").put("dueDay",15));Ledger.apply(s,"debt",new JSONObject().put("id","ptptn").put("name","PTPTN Ujrah").put("type","ptptn").put("balance","1200.00").put("principal","1200.00").put("minPayment","100.00").put("apr","1.00").put("rateType","flat").put("dueDay",25));Ledger.apply(s,"debtExtra",new JSONObject().put("extraMonthly","300.00"));JSONObject dp=Finance.debtPlan(s,LocalDate.of(2026,1,1));eq(dp.getLong("totalBalance"),3800_00L);eq(dp.getLong("monthlyBudget"),600_00L);JSONObject av=dp.getJSONObject("avalanche"),sb=dp.getJSONObject("snowball");yes(av.getLong("totalInterest")<sb.getLong("totalInterest"));yes(dp.getLong("interestSavedByAvalanche")>0);yes(av.getJSONArray("order").getJSONObject(0).getString("id").equals("card"));yes(sb.getJSONArray("order").getJSONObject(0).getString("id").equals("bnpl"));Ledger.apply(s,"syncDebtReminder",new JSONObject().put("id","ptptn"));JSONObject pt=Ledger.find(s.getJSONArray("debts"),"ptptn");yes(pt.has("billId"));JSONObject bill=Ledger.find(s.getJSONArray("bills"),pt.getString("billId"));yes(bill.getString("reminderType").equals("ptptn"));Ledger.apply(s,"deletePlan",new JSONObject().put("table","debts").put("id","bnpl"));eq(s.getJSONArray("debts").length(),2);});
+  test("Recurring income detection sets payday + cycleDay and 30-day forecast warns on shortfall before payday",()->{JSONObject s=Ledger.initial();Ledger.apply(s,"account",new JSONObject().put("name","Maybank").put("type","bank").put("opening","400"));String mbb=s.getJSONArray("accounts").getJSONObject(1).getString("id");for(String dt:new String[]{"2026-01-25","2026-02-25","2026-03-25"})Ledger.apply(s,"transaction",new JSONObject().put("key",Ledger.id()).put("kind","income").put("amount","5000.00").put("account",mbb).put("category","Salary").put("merchant","ACME SDN BHD").put("date",dt));Ledger.apply(s,"transaction",new JSONObject().put("key",Ledger.id()).put("kind","expense").put("amount","14800.00").put("account",mbb).put("category","Housing & property").put("merchant","Prior spend").put("date","2026-03-30"));JSONArray inc=Finance.recurringIncome(s,LocalDate.of(2026,4,1));eq(inc.length(),1);JSONObject cand=inc.getJSONObject(0);eq(cand.getInt("dayOfMonth"),25);Ledger.apply(s,"setPayday",new JSONObject().put("name",cand.getString("name")).put("amountMinor",cand.getLong("amount")).put("account",cand.getString("account")).put("frequency",cand.getString("frequency")).put("dayOfMonth",cand.getInt("dayOfMonth")).put("nextDate","2026-04-25"));eq(s.getJSONObject("settings").getInt("cycleDay"),25);Ledger.apply(s,"bill",new JSONObject().put("name","Rent").put("amount","1200.00").put("account",mbb).put("date","2026-04-10").put("frequency","monthly"));JSONObject fc=Finance.forecast(s,LocalDate.of(2026,4,1),30);eq(fc.getLong("startingBalance"),200_00L);yes(fc.getBoolean("hasNegativeWarning"));yes(fc.getString("firstNegativeDate").equals("2026-04-10"));eq(fc.getLong("lowestBalance"),-1000_00L);eq(fc.getLong("endingBalance"),4000_00L);eq(fc.getLong("totalInflows"),5000_00L);eq(fc.getLong("totalOutflows"),1200_00L);eq(fc.getJSONArray("daily").length(),31);});
+  test("Subcategory budgets isolate spend, track elapsed pace and generate weekly nudge",()->{JSONObject s=Ledger.initial();LocalDate on=LocalDate.of(2026,5,5);Ledger.apply(s,"budget",new JSONObject().put("id","b-all").put("category","Food & drinks").put("amount","500.00"));Ledger.apply(s,"budget",new JSONObject().put("id","b-sub").put("category","Food & drinks").put("subcategory","Hawker & Mamak").put("amount","100.00"));Ledger.apply(s,"transaction",tx("expense","60.00").put("category","Food & drinks").put("subcategory","Hawker & Mamak").put("date","2026-05-03"));Ledger.apply(s,"transaction",tx("expense","40.00").put("category","Food & drinks").put("subcategory","Restaurant & Cafe").put("date","2026-05-04"));JSONObject rSub=Finance.budget(s,Ledger.find(s.getJSONArray("budgets"),"b-sub"),on);eq(rSub.getLong("spent"),60_00L);eq(rSub.getLong("remaining"),40_00L);eq(rSub.getInt("spentPct"),60);yes(rSub.getString("paceStatus").equals("fast"));JSONObject rAll=Finance.budget(s,Ledger.find(s.getJSONArray("budgets"),"b-all"),on);eq(rAll.getLong("spent"),100_00L);JSONObject rep=Finance.report(s,on);eq(rep.getLong("dailyAllowance"),400_00L/java.time.temporal.ChronoUnit.DAYS.between(on,LocalDate.of(2026,6,1)));JSONObject nudge=Finance.weeklyBudgetNudge(s,on);yes(nudge!=null&&nudge.getString("subcategory").equals("Hawker & Mamak"));yes(nudge.getString("body").contains("ahead of pace"));});
+  test("Cycle recap summarizes savings rate, top categories, top merchants and LHDN claimables",()->{JSONObject s=Ledger.initial();Ledger.apply(s,"transaction",new JSONObject().put("key",Ledger.id()).put("kind","income").put("amount","5000.00").put("account","cash").put("category","Salary").put("merchant","Employer").put("date","2026-06-05"));Ledger.apply(s,"transaction",tx("expense","1200.00").put("category","Food & drinks").put("merchant","Village Grocer").put("date","2026-06-08"));Ledger.apply(s,"transaction",tx("expense","300.00").put("category","Health & medical").put("subcategory","Pharmacy & Medicine").put("merchant","Watsons").put("date","2026-06-12"));JSONObject rc=Finance.cycleRecap(s,LocalDate.of(2026,6,15));eq(rc.getLong("totalIncome"),5000_00L);eq(rc.getLong("totalSpent"),1500_00L);eq(rc.getLong("netSaved"),3500_00L);eq(rc.getInt("savingsRatePct"),70);yes(rc.getJSONArray("topCategories").getJSONObject(0).getString("category").equals("Food & drinks"));yes(rc.getJSONArray("topMerchants").getJSONObject(0).getString("merchant").equals("Village Grocer"));yes(rc.getInt("claimableCount")>=1);});
+  test("Bahasa Melayu setting localizes weekly budget nudge and rejects unsupported language",()->{JSONObject s=Ledger.initial();yes(s.getJSONObject("settings").getString("lang").equals("en"));rejects(()->Ledger.apply(s,"settings",new JSONObject().put("lang","fr")));Ledger.apply(s,"settings",new JSONObject().put("lang","ms"));yes(s.getJSONObject("settings").getString("lang").equals("ms"));LocalDate on=LocalDate.of(2026,5,5);Ledger.apply(s,"budget",new JSONObject().put("id","b-ms").put("category","Food & drinks").put("amount","100.00"));Ledger.apply(s,"transaction",tx("expense","60.00").put("category","Food & drinks").put("date","2026-05-03"));JSONObject nudge=Finance.weeklyBudgetNudge(s,on);yes(nudge!=null&&nudge.getString("title").equals("Semakan kadar bajet mingguan")&&nudge.getString("body").contains("lebih cepat daripada kadar"));});
+  test("OCR header noise filtering, split-line amount, 5-sen rounding and item classification",()->{
+   JSONObject r1=ReceiptParser.parse("SIMPLIFIED TAX INVOICE\nLOT 12 JALAN MERU\n41050 KLANG SELANGOR\nTEL: 03-3362 6863\n99 SPEEDMART SDN BHD (519537-X)\n15 Oct 2026\nSubtotal RM 12.48\nTOTAL RM 12.48\nRounding Adj +0.02\nTOTAL AFTER ROUNDING RM 12.50\nCash RM 50.00\nChange RM 37.50");
+   yes(r1.getString("merchant").equals("99 SPEEDMART"));
+   eq(r1.getLong("amount"),1250);
+   yes(r1.getString("date").equals("2026-10-15"));
+   yes(r1.getString("category").equals("Groceries"));
+   yes(r1.getString("subcategory").equals("Convenience Store (99 Speedmart / 7-Eleven / FamilyMart)"));
+   JSONObject r2=ReceiptParser.parse("TAX INVOICE\nSYARIKAT PERNIAGAAN CAHAYA SDN BHD\nDate: 20/10/2026\nPANADOL ACTIFAST 20S  15.90\nVITAMIN C 30.00\nTOTAL PAYABLE (RM)\n45.90");
+   yes(r2.getString("merchant").equals("SYARIKAT PERNIAGAAN CAHAYA"));
+   eq(r2.getLong("amount"),4590);
+   yes(r2.getString("date").equals("2026-10-20"));
+   yes(r2.getString("category").equals("Health & medical"));
+   yes(r2.getString("subcategory").equals("Pharmacy & Medicine"));
+   JSONObject r3=ReceiptParser.parse("Kopi Kiosk\nTotal RM12.48\nRounding Adj 0.02\nTotal RM12.50");
+   eq(r3.getLong("amount"),1250);
+  });
+  test("PaymentParser gateway stripping, SSM normalization and Malaysian taxonomy",()->{
+   JSONObject tnb=PaymentParser.parse("Paid RM88.00 to FPX*TENAGA NASIONAL BERHAD (419026-U) via DuitNow","Bank");
+   yes(tnb.getString("merchant").equals("TENAGA NASIONAL"));
+   yes(tnb.getString("category").equals("Bills & utilities")&&tnb.getString("subcategory").equals("Electricity (TNB)"));
+   JSONObject kopi=PaymentParser.parse("Payment of RM15.90 at IPAY88 * ORIENTAL KOPI SDN BHD successful","Wallet");
+   yes(kopi.getString("merchant").equals("ORIENTAL KOPI"));
+   yes(kopi.getString("category").equals("Food & drinks")&&kopi.getString("subcategory").equals("Hawker & Mamak"));
+   JSONObject diy=PaymentParser.parse("You have paid RM32.50 at MR. DIY (M) SDN BHD","TNG");
+   yes(diy.getString("merchant").equals("MR. DIY (M)"));
+   yes(diy.getString("category").equals("Shopping")&&diy.getString("subcategory").equals("Home & Living"));
+   JSONObject mac=PaymentParser.parse("Paid RM2999.00 at MACHINES SDN BHD","Bank");
+   yes(mac.getString("category").equals("Shopping")&&mac.getString("subcategory").equals("Electronics & Gadgets"));
+   JSONObject lab=PaymentParser.parse("Paid RM180.00 at PATHLAB HEALTH","Bank");
+   yes(lab.getString("category").equals("Health & medical")&&lab.getString("subcategory").equals("Full Medical Checkup (LHDN)"));
+   JSONObject ev=PaymentParser.parse("Paid RM24.00 at JOMCHARGE EV","Wallet");
+   yes(ev.getString("category").equals("Transport")&&ev.getString("subcategory").equals("Petrol & EV Charging"));
+  });
+  test("CsvImport auto-classifies uncategorized rows via rules, ledger history and PaymentParser",()->{
+   JSONObject s=Ledger.initial();
+   Ledger.apply(s,"transaction",tx("expense","42.00").put("merchant","Special Bistro").put("category","Entertainment & travel").put("subcategory","Movies, Concerts & Events"));
+   Ledger.apply(s,"rule",new JSONObject().put("match","grabfood").put("category","Family & gifts").put("subcategory","Childcare & Family Support").put("priority",25));
+   JSONObject map=imported().put("note",3);
+   String csv="Date,Amount,Merchant,Note\n2026-10-01,42.00,Special Bistro,\n2026-10-02,19.50,GrabFood Malaysia,\n2026-10-03,14.80,FPX*99 SPEEDMART,\n2026-10-04,129.00,Unknown Corner Stall,Unifi bill payment";
+   JSONArray rows=CsvImport.preview(csv,map,s);
+   yes(rows.getJSONObject(0).getString("category").equals("Entertainment & travel"));
+   yes(rows.getJSONObject(1).getString("category").equals("Family & gifts")&&rows.getJSONObject(1).getString("subcategory").equals("Childcare & Family Support"));
+   yes(rows.getJSONObject(2).getString("category").equals("Groceries")&&rows.getJSONObject(2).getString("subcategory").equals("Convenience Store (99 Speedmart / 7-Eleven / FamilyMart)"));
+   yes(rows.getJSONObject(3).getString("category").equals("Bills & utilities")&&rows.getJSONObject(3).getString("subcategory").equals("Home Internet & WiFi (Unifi / Time)"));
+  });
+  test("LHDN relief detection covers Machines, BookXcess, Pathlab, Al-Ikhsan and Gentari EV charging",()->{
+   JSONObject s=Ledger.initial();int yr=LocalDate.now().getYear();
+   Ledger.apply(s,"transaction",tx("expense","3000.00").put("date",yr+"-02-01").put("category","Shopping").put("subcategory","Electronics & Gadgets").put("merchant","Machines"));
+   Ledger.apply(s,"transaction",tx("expense","120.00").put("date",yr+"-02-05").put("category","Education").put("subcategory","Books & Stationery").put("merchant","BookXcess"));
+   Ledger.apply(s,"transaction",tx("expense","250.00").put("date",yr+"-02-10").put("category","Health & medical").put("subcategory","Full Medical Checkup (LHDN)").put("merchant","Pathlab"));
+   Ledger.apply(s,"transaction",tx("expense","180.00").put("date",yr+"-02-15").put("category","Health & medical").put("subcategory","Gym, Sports & Fitness").put("merchant","Al-Ikhsan"));
+   Ledger.apply(s,"transaction",tx("expense","45.00").put("date",yr+"-02-20").put("category","Transport").put("subcategory","Petrol & EV Charging").put("merchant","Gentari"));
+   JSONObject det=Finance.calculateTax(s,null,yr).getJSONObject("ledgerDetected");
+   eq(det.getLong("lifestyle"),3120_00L);
+   eq(det.getLong("medical"),250_00L);
+   eq(det.getLong("sports"),180_00L);
+   eq(det.getLong("sspnPrs"),45_00L);
+  });
+  test("Receipt Net Amount extraction, header cleanup and purchase confirmation expense guard",()->{
+   JSONObject r1=ReceiptParser.parse("Yi Fang Tea Co\nDate: 02/02/2026\nSubtotal: RM 10.50\nService Tax: RM 0.105\nNet Amount: RM 10.61");
+   eq(r1.getLong("amount"),1061);
+   yes(r1.getString("merchant").equals("Yi Fang Tea Co"));
+   yes(r1.getString("date").equals("2026-02-02"));
+   JSONObject r2=ReceiptParser.parse("Nota: Telekom Malaysia\nDate: 11/03/2026\nAmount Due: RM 53.10");
+   yes(r2.getString("merchant").equals("Telekom Malaysia"));
+   eq(r2.getLong("amount"),5310);
+   JSONObject p1=PaymentParser.parse("Payment received from Boost for your purchase at Jaya Grocer\nReference: TXN-20260707\nPaid Amount: RM 15.00","Boost");
+   yes(p1!=null);
+   yes(p1.getString("kind").equals("expense"));
+   yes(p1.getString("merchant").equals("Jaya Grocer"));
+   eq(p1.getLong("amount"),1500);
+   yes(p1.getString("category").equals("Groceries"));
+   JSONObject inc=PaymentParser.parse("DuitNow transfer of RM 250.00 received from Ahmad","Maybank");
+   yes(inc!=null&&inc.getString("kind").equals("income")&&inc.getLong("amount")==25000);
+  });
+  test("MlClassifier sparse TF-IDF fallback classifies unseen SMEs safely and respects confidence threshold",()->{
+   String mockModel="{\"version\":1,\"classes\":[\"Transport||Vehicle Maintenance & Service\",\"Education||Books & Stationery\"],\"intercepts\":[0.0,0.0],\"features\":{\"w:tukar\":[2.0,0,[[0,2.5]]],\"w:minyak\":[2.0,0,[[0,2.5]]],\"w:servis\":[2.0,0,[[0,2.5]]],\"c: servis \":[2.0,1,[[0,2.0]]],\"w:buku\":[2.0,0,[[1,2.5]]],\"w:latihan\":[2.0,0,[[1,2.5]]]}}";
+   yes(MlClassifier.loadFromStream(new ByteArrayInputStream(mockModel.getBytes(java.nio.charset.StandardCharsets.UTF_8))));
+   try{
+    MlClassifier.Prediction p=MlClassifier.predict("Syarikat Kejuruteraan Jaya","Tukar minyak enjin dan servis penuh kereta RM180.00");
+    yes(p!=null&&p.category.equals("Transport")&&p.subcategory.equals("Vehicle Maintenance & Service")&&p.probability>0.7);
+    String[] cls=PaymentParser.classify("Syarikat Kejuruteraan Jaya","Receipt scan","Tukar minyak enjin dan servis penuh kereta RM180.00");
+    yes(cls[0].equals("Transport")&&cls[1].equals("Vehicle Maintenance & Service"));
+    String[] unk=PaymentParser.classify("KEDAI SERBANEKA XYZ","TNG","paid rm9.90 at kedai serbaneka xyz");
+    yes(unk[0].equals("Miscellaneous"));
+   }finally{
+    MlClassifier.clear();
+   }
+  });
+  test("Malaysian integer RM receipts, Tunai-Baki fallback, BM multi-line notifications and address filtering",()->{
+   JSONObject intRm=ReceiptParser.parse("KEDAI RIAH\nLot 8, Jalan Cheras\n22 Jun 2026\nAngpao Raya: RM 100\nCukai Perkhidmatan: RM 10\nJumlah Perlu Dibayar: RM 110\nBayaran Berjaya");
+   eq(intRm.getLong("amount"),11000);
+   JSONObject bayaran=ReceiptParser.parse("Kedai Pembiayaan Tunai\n20 NOVEMBER 2026\nBayaran RM 1200.00\nTunai: RM 1250.00\nBaki Kembali: RM 50.00");
+   eq(bayaran.getLong("amount"),120000);
+   JSONObject cashDiff=ReceiptParser.parse("Bengkel AutoZone Sdn Bhd\nNo. 10, Jalan Setia\n10/01/2026\nAngsuran Kenderaan\nTunai: RM 2,300.00\nBaki: RM 0.00");
+   eq(cashDiff.getLong("amount"),230000);
+   JSONObject sari=ReceiptParser.parse("Sari Garden, Cheras\n4/10/2026\nProduk Kecantikan: RM 40.50\nTunai: RM 50.00\nBaki: RM 9.50");
+   eq(sari.getLong("amount"),4050);
+   JSONObject addrGuard=ReceiptParser.parse("Electricity Power Sdn Bhd\nNo. 12, Jalan LRT\n47500 Petaling Jaya\n19/08/2026\nElectricity Bill RM 450.00\nGrand Total RM 450.00");
+   yes(addrGuard.getString("category").equals("Bills & utilities")&&addrGuard.getString("subcategory").equals("Electricity (TNB)"));
+   JSONObject bmMulti=PaymentParser.parse("Bayaran Berjaya: RM 26.50\nPejabat Pasar Sentral\nKod Transaksi: 123","Bank");
+   yes(bmMulti!=null&&bmMulti.getString("merchant").equals("Pejabat Pasar Sentral"));
+   JSONObject bmLabel=PaymentParser.parse("Bayaran Berjaya\nTarikh: 04 Okt 2026\nBayaran kepada: Salon Anisa, Cheras\nCukai Perkhidmatan: RM 10.00","Bank");
+   yes(bmLabel!=null&&bmLabel.getString("merchant").equals("Salon Anisa, Cheras")&&bmLabel.getLong("amount")==1000);
+   JSONObject lotSkip=PaymentParser.parse("You have paid RM125.50 to Lot 12, Jalan Pinang, George Town for your purchase at Sinar Cafe.","Bank");
+   yes(lotSkip!=null&&lotSkip.getString("merchant").equals("Sinar Cafe"));
+   JSONObject set=new JSONObject().put("digest",false);
+   JSONObject dr=new JSONObject().put("id","d1");
+   yes(Extras.shouldPromptDraft(false,set,dr,true));
+   yes(!Extras.shouldPromptDraft(true,set,dr,true));
+   yes(!Extras.shouldPromptDraft(false,set,dr,false));
+   yes(!Extras.shouldPromptDraft(false,set,new JSONObject().put("id","d2").put("duplicateOf","tx1"),true));
+  });
   System.out.println("RESULT: "+passed+" extended tests passed");
  }
 }

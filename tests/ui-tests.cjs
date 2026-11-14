@@ -4,7 +4,7 @@ const elements=new Map();function el(){return{innerHTML:'',textContent:'',classL
 const document={body:el(),querySelector(s){if(!elements.has(s))elements.set(s,el());return elements.get(s)},addEventListener(){},querySelectorAll(){return[]}};
 const fixture=JSON.parse(fs.readFileSync('build/preview-fixture.json','utf8'));
 const ctx=vm.createContext({document,window:{MONEYLENS_PREVIEW:fixture,scrollTo(){}},console,Date,Math,Map,Set,JSON,Promise,setTimeout(){},clearTimeout(){},crypto:{randomUUID(){return'test-key'}},FormData:class{}});
-vm.runInContext(fs.readFileSync('app/src/main/assets/app.js','utf8'),ctx);
+for(const f of ['i18n.js','format.js','views/home.js','views/plan.js','views/transactions.js','views/settings.js','actions.js','app.js'])vm.runInContext(fs.readFileSync('app/src/main/assets/'+f,'utf8'),ctx,{filename:f});
 let passed=0;function check(name,fn){fn();passed++;console.log('PASS '+name)}
 for(const page of ['home','transactions','inbox','plan','accounts','settings'])check('Render '+page,()=>{vm.runInContext(`page='${page}';render()`,ctx);const html=elements.get('#app').innerHTML;assert(html.includes('<main'));assert(!html.includes('NaN'));assert(!html.includes('undefined'));assert(html.length>2500)});
 for(const tab of ['budgets','bills','goals'])check('Render plan '+tab,()=>{vm.runInContext(`page='plan';planTab='${tab}';render()`,ctx);assert(elements.get('#app').innerHTML.includes('section'))});

@@ -5,3 +5,7 @@ app/build/
 *.jks
 *.keystore
 node_modules/
+colab/outputs_v2/moneylens_classifier.json
+colab/outputs_v2/moneylens_classifier_holdout.json
+colab/outputs_v2/java_eval_v2_hybrid_ml.json
+colab/outputs_v2/java_eval_v2_prod_asset.json

@@ -59,21 +59,30 @@ public final class Automation {
  }
 
  public static boolean fireReminderNotification(Context c,JSONObject b,boolean isTest){
+  boolean ms=false;
+  try{ms="ms".equals(Vault.read(c).getJSONObject("settings").optString("lang","en"));}catch(Exception ignored){}
+  return fireReminderNotification(c,b,isTest,ms);
+ }
+ public static boolean fireReminderNotification(Context c,JSONObject b,boolean isTest,boolean ms){
   try{
    NotificationManager nm=c.getSystemService(NotificationManager.class);
    if(nm==null||!nm.areNotificationsEnabled())return false;
-   NotificationChannel ch=new NotificationChannel("reminders_high","BNPL, PTPTN & Bill Due Alerts",NotificationManager.IMPORTANCE_HIGH);
-   ch.setDescription("High-priority payment due alerts for BNPL, PTPTN, credit cards, and bills.");
+   NotificationChannel ch=new NotificationChannel("reminders_high",ms?"Makluman BNPL, PTPTN & Bil":"BNPL, PTPTN & Bill Due Alerts",NotificationManager.IMPORTANCE_HIGH);
+   ch.setDescription(ms?"Peringatan keutamaan tinggi untuk bayaran BNPL, PTPTN, kad kredit dan bil.":"High-priority payment due alerts for BNPL, PTPTN, credit cards, and bills.");
    nm.createNotificationChannel(ch);
    String id=b.getString("id"),name=b.getString("name"),dueStr=b.getString("date");
    LocalDate due=LocalDate.parse(dueStr),today=LocalDate.now();
    long daysDiff=ChronoUnit.DAYS.between(today,due);
    String amtStr="RM "+BigDecimal.valueOf(b.getLong("amount"),2).toPlainString();
    String rType=b.optString("reminderType","bill");
-   String prefix="bnpl".equals(rType)?"BNPL Due Reminder":"ptptn".equals(rType)?"PTPTN Repayment Reminder":"credit".equals(rType)?"Credit Card Due Reminder":"Payment Due Reminder";
-   String status=daysDiff<0?("OVERDUE by "+Math.abs(daysDiff)+" day(s)"):daysDiff==0?"Due TODAY":("Due in "+daysDiff+" day(s) ("+dueStr+")");
-   String title=(isTest?"[Test] ":"")+prefix+" · "+name;
-   String body=amtStr+" · "+status+". Tap 'Mark Paid' to record in 1 tap or pay via your bank/TNG.";
+   String prefix=ms
+    ?("bnpl".equals(rType)?"Peringatan Bayaran BNPL":"ptptn".equals(rType)?"Peringatan Bayaran PTPTN":"credit".equals(rType)?"Peringatan Kad Kredit":"Peringatan Bil")
+    :("bnpl".equals(rType)?"BNPL Due Reminder":"ptptn".equals(rType)?"PTPTN Repayment Reminder":"credit".equals(rType)?"Credit Card Due Reminder":"Payment Due Reminder");
+   String status=ms
+    ?(daysDiff<0?("TERTUNGGAK "+Math.abs(daysDiff)+" hari"):daysDiff==0?"Perlu dibayar HARI INI":("Tamat tempoh dalam "+daysDiff+" hari ("+dueStr+")"))
+    :(daysDiff<0?("OVERDUE by "+Math.abs(daysDiff)+" day(s)"):daysDiff==0?"Due TODAY":("Due in "+daysDiff+" day(s) ("+dueStr+")"));
+   String title=(isTest?(ms?"[Ujian] ":"[Test] "):"")+prefix+" · "+name;
+   String body=amtStr+" · "+status+(ms?". Ketik 'Tanda Dibayar' untuk rekod serta-merta atau bayar melalui bank/TNG.":". Tap 'Mark Paid' to record in 1 tap or pay via your bank/TNG.");
    int notifId=Math.abs(("rem_notif:"+id).hashCode());
 
    Intent open=new Intent(c,MainActivity.class).putExtra("screen","plan").setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -96,9 +105,9 @@ public final class Automation {
     .setContentIntent(pOpen)
     .setVisibility(Notification.VISIBILITY_PUBLIC)
     .setAutoCancel(true)
-    .addAction(new Notification.Action.Builder(null,"Mark Paid",pPayNow).build())
-    .addAction(new Notification.Action.Builder(null,"Snooze 1h",pSnooze).build())
-    .addAction(new Notification.Action.Builder(null,"Dismiss cycle",pDismiss).build())
+    .addAction(new Notification.Action.Builder(null,ms?"Tanda Dibayar":"Mark Paid",pPayNow).build())
+    .addAction(new Notification.Action.Builder(null,ms?"Tunda 1j":"Snooze 1h",pSnooze).build())
+    .addAction(new Notification.Action.Builder(null,ms?"Abaikan kitaran":"Dismiss cycle",pDismiss).build())
     .build();
    nm.notify(notifId,n);
    return true;
@@ -107,12 +116,13 @@ public final class Automation {
 
  public static void run(Context c)throws Exception{
   checkDueReminders(c);
-  JSONObject s=Vault.read(c),prefs=s.getJSONObject("settings");LocalDate now=LocalDate.now();if(!quiet(prefs)){
+  JSONObject s=Vault.read(c),prefs=s.getJSONObject("settings");LocalDate now=LocalDate.now();boolean ms="ms".equals(prefs.optString("lang","en"));if(!quiet(prefs)){
    JSONArray drafts=s.getJSONArray("drafts");int count=0;for(int i=0;i<drafts.length();i++)if(drafts.getJSONObject(i).optString("state").equals("review"))count++;
-   if(prefs.optBoolean("digest")){if(count>0&&LocalTime.now().getHour()>=prefs.optInt("digestHour",19))alert(c,"digest:"+now,"Your MoneyLens check-in",count+" suggestions are waiting for your review.","inbox");}
+   if(prefs.optBoolean("digest")){if(count>0&&LocalTime.now().getHour()>=prefs.optInt("digestHour",19))alert(c,"digest:"+now,ms?"Semakan MoneyLens anda":"Your MoneyLens check-in",ms?(count+" cadangan menunggu semakan anda."):(count+" suggestions are waiting for your review."),"inbox");}
    else for(int i=0;i<drafts.length();i++){JSONObject d=drafts.getJSONObject(i);if(d.optString("state").equals("review")&&!d.optBoolean("prompted"))CaptureService.showPrompt(c,d);}
-   if(prefs.optBoolean("reminders",true)){JSONArray bills=s.getJSONArray("bills");for(int i=0;i<bills.length();i++){JSONObject b=bills.getJSONObject(i);if(b.optBoolean("paid")||b.optBoolean("cancelled"))continue;String cancel=b.optString("cancelDate");if(!cancel.isEmpty()&&!LocalDate.parse(cancel).isAfter(now.plusDays(2)))alert(c,"cancel:"+b.getString("id")+":"+cancel,"Subscription reminder","A cancellation deadline is approaching. Check Plan.","plan");}}
-   if(prefs.optBoolean("budgetAlerts",true)){JSONObject r=Finance.report(s,now);JSONArray b=r.getJSONArray("budgets");int threshold=prefs.optInt("threshold",80);for(int i=0;i<b.length();i++){JSONObject row=b.getJSONObject(i);if(row.getLong("available")>0&&row.getLong("spent")*100>=row.getLong("available")*threshold)alert(c,"budget:"+row.getString("id")+":"+row.getString("start")+":"+threshold,"Budget check-in","A category has reached your alert threshold. Open Plan for details.","plan");}}
+   if(prefs.optBoolean("reminders",true)){JSONArray bills=s.getJSONArray("bills");for(int i=0;i<bills.length();i++){JSONObject b=bills.getJSONObject(i);if(b.optBoolean("paid")||b.optBoolean("cancelled"))continue;String cancel=b.optString("cancelDate");if(!cancel.isEmpty()&&!LocalDate.parse(cancel).isAfter(now.plusDays(2)))alert(c,"cancel:"+b.getString("id")+":"+cancel,ms?"Peringatan langganan":"Subscription reminder",ms?"Tarikh akhir pembatalan semakin hampir. Semak Rancang.":"A cancellation deadline is approaching. Check Plan.","plan");}}
+   if(prefs.optBoolean("budgetAlerts",true)){JSONObject r=Finance.report(s,now);JSONArray b=r.getJSONArray("budgets");int threshold=prefs.optInt("threshold",80);for(int i=0;i<b.length();i++){JSONObject row=b.getJSONObject(i);if(row.getLong("available")>0&&row.getLong("spent")*100>=row.getLong("available")*threshold)alert(c,"budget:"+row.getString("id")+":"+row.getString("start")+":"+threshold,ms?"Semakan bajet":"Budget check-in",ms?"Kategori telah mencapai ambang amaran anda. Buka Rancang untuk butiran.":"A category has reached your alert threshold. Open Plan for details.","plan");}}
+   if(prefs.optBoolean("weeklyBudgetNudge",false)){JSONObject nudge=Finance.weeklyBudgetNudge(s,now);if(nudge!=null)alert(c,nudge.getString("key"),nudge.getString("title"),nudge.getString("body"),"plan");}
   }
   autoBackup(c,false);MoneyWidget.refresh(c);
   AlarmReceiver.scheduleNext(c);

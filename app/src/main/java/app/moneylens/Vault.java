@@ -55,8 +55,35 @@ public final class Vault {
     JSONObject d=Extras.captureState(s,pkg,label,key,text,postTime,System.currentTimeMillis());
     if(d==null)return null;
     write(c,s);
-    try{MoneyWidget.refresh(c);}catch(Exception ignored){}
+    try{MoneyWidget.refresh(c,s);}catch(Exception ignored){}
     return d;
   }
+  /** Single read-modify-write notification pipeline to minimize vault encryption and flash churn. */
+  public static synchronized JSONObject captureNotification(Context c,String pkg,String fallbackLabel,String key,String text,long postTime,boolean visibleUnlocked,boolean isTest,boolean canNotify)throws Exception{
+    JSONObject s=read(c),settings=s.getJSONObject("settings");
+    if(!settings.optBoolean("captureWhileLocked",true)&&!visibleUnlocked)return new JSONObject().put("status","locked");
+    String label=fallbackLabel;
+    boolean selected=isTest;JSONArray sources=s.getJSONArray("sources");
+    for(int i=0;i<sources.length();i++){JSONObject src=sources.getJSONObject(i);if(src.getString("package").equals(pkg)){selected=true;label=src.optString("name",label);break;}}
+    boolean allowAll=settings.optBoolean("captureAllSources",true);
+    boolean isChatApp=!isTest&&pkg!=null&&pkg.matches("(?i).*(whatsapp|telegram|discord|messaging|mms|google\\.android\\.gm|facebook\\.orca|instagram|tencent\\.mm|line\\.android|viber|signal).*");
+    if(!selected&&(!allowAll||isChatApp))return new JSONObject().put("status","filtered");
+    if(!selected){
+      try{android.content.pm.PackageManager pm=c.getPackageManager();CharSequence appLabel=pm.getApplicationLabel(pm.getApplicationInfo(pkg,0));if(appLabel!=null&&appLabel.length()>0)label=appLabel.toString();}catch(Exception ignored){}
+    }
+    JSONObject d=Extras.captureState(s,pkg,label,key,text,postTime,System.currentTimeMillis());
+    if(d==null)return null;
+    boolean prompt=Extras.shouldPromptDraft(Automation.quiet(settings),settings,d,canNotify);
+    if(prompt&&!d.optBoolean("autoRecorded"))d.put("prompted",true);
+    write(c,s);
+    try{MoneyWidget.refresh(c,s);}catch(Exception ignored){}
+    return new JSONObject().put("status","captured").put("draft",d).put("settings",settings).put("shouldPrompt",prompt);
+  }
   public static String hex(byte[] b){return Extras.hex(b);}
+  public static void initClassifier(Context c){
+    if(c==null||MlClassifier.isLoaded())return;
+    for(String asset:new String[]{"moneylens_classifier.json.gz","moneylens_classifier.json"}){
+      try(InputStream in=c.getAssets().open(asset)){if(MlClassifier.loadFromStream(in))return;}catch(Exception ignored){}
+    }
+  }
 }

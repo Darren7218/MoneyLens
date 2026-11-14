@@ -1,0 +1,416 @@
+'use strict';
+function modal(title,body){
+  $('#modal-root').innerHTML=`<div class="modal-shade"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="dialog-title"><div class="sheet-handle"></div><header><h2 id="dialog-title">${esc(title)}</h2><button class="close" data-action="close" aria-label="Close">${icon('close')}</button></header>${body}</section></div>`;
+  const f=$('.modal input:not([type=hidden]),.modal select,.modal button');
+  if(f)setTimeout(()=>f.focus(),100);
+}
+function close(){if(busy)return;$('#modal-root').innerHTML='';modalContext={}}
+
+function txForm(data={}){
+  const merged={account:data.draftId?'':state.settings.lastAccount,category:state.settings.lastCategory||'Miscellaneous',...data};
+  const kind=merged.kind||'expense';
+  modalContext={...merged,kind,key:merged.key||cryptoId()};
+  const acctRows=state.accounts.map(a=>[a.id,a.name]);
+  const catRows=kind==='income'?[['Salary','Salary'],['Other income','Other income']]:activeCategories().map(c=>[c[0],tr(c[0])]);
+  const selCat=merged.category||catRows[0][0];
+  const prevCount=merged.editId&&merged.merchant?sameMerchantCount(merged.merchant,merged.editId):0;
+  const chips=kind==='reimbursement'
+    ? '<span class="chip active">Repayment received</span>'
+    : `${['expense','income','transfer','refund'].map(k=>`<button type="button" class="chip ${kind===k?'active':''}" data-kind="${k}">${k[0].toUpperCase()+k.slice(1)}</button>`).join('')}${kind==='shared'?'<span class="chip active">Shared expense</span>':''}`;
+  const evidence=merged.amountCandidates?.length>1?`<p class="note">Amounts found: ${merged.amountCandidates.map(money).join(' · ')}. Choose the actual payment amount above.</p>`:'';
+  const thumb=merged.receiptId?`<img class="receipt-thumb" src="/receipt/${esc(merged.receiptId)}" alt="Attached receipt">`:'';
+  const subRow=(!kind||['expense','refund','shared'].includes(kind))?subcategorySelect(selCat,merged.subcategory||''):'';
+  const sharedRows=kind==='shared'?`${field('Your own share (RM)','ownAmount',merged.ownAmount||'0','text','required inputmode="decimal"')}${field('Who owes the rest?','person',merged.person||'','text','required maxlength="80"')}`:'';
+  const tagsField=field('Tags · comma separated','tags',Array.isArray(merged.tags)?merged.tags.join(', '):merged.tags||'','text','maxlength="200" placeholder="work, holiday"');
+  const splitsBox=(!kind||['expense','refund'].includes(kind))?`<details ${merged.splits?.length?'open':''}><summary>Split across categories</summary><div id="split-rows">${(Array.isArray(merged.splits)?merged.splits:[]).map(splitRow).join('')}</div>${actionButton('Add category split','addSplit')}<p class="note">Splits must add up to the full payment above.</p></details>`:'';
+  const fxBox=`<details ${merged.originalCurrency?'open':''}><summary>Foreign currency details</summary><div class="form-grid">${field('Original currency','originalCurrency',merged.originalCurrency||'','text','maxlength="3" placeholder="USD"')}${field('Original amount','originalAmount',merged.originalAmount||'','text','inputmode="decimal"')}</div>${field('Included conversion fees (MYR)','foreignFee',merged.foreignFee||'0','text','inputmode="decimal"')}<p class="note">Enter the actual settled MYR amount at the top, including any fees. The implied rate is saved with this record.</p></details>`;
+  const historyCheck=prevCount>0?check(`Update ${prevCount} previous "${esc(merged.merchant)}" transaction${prevCount===1?'':'s'} to this category & remember for future`,'applyHistory',merged.category==='Miscellaneous'||merged.category==='Other'):'';
+  const ruleCheck=check('Remember merchant category and account for next time','rememberRule',!!merged.editId&&(merged.category==='Miscellaneous'||merged.category==='Other'));
+  const title=merged.draftId?'Review payment':merged.editId?'Edit transaction':merged.billId?'Record bill payment':'Add transaction';
+  modal(title,`<form id="transaction-form"><div class="chips">${chips}</div><div class="amount-input"><span>RM</span><input name="amount" id="f-amount" inputmode="decimal" aria-label="Amount in MYR" placeholder="0.00" value="${merged.amount?esc(typeof merged.amount==='number'?amount(merged.amount):merged.amount):''}" required pattern="[0-9]+([.][0-9]{1,2})?" autocomplete="off"></div>${merged.reason?`<div class="hint" style="margin:0">${esc(merged.reason)}</div>`:''}<div class="form-grid">${select(kind==='transfer'?'From account':'Account','account',merged.draftId?[['','Choose account'],...acctRows]:acctRows,merged.account||(merged.draftId?'':state.accounts[0].id))}${kind==='transfer'?select('To account','to',acctRows,merged.to||state.accounts[1]?.id):select('Category','category',catRows,selCat)}</div>${field(kind==='transfer'?'Description':'Merchant / description','merchant',merged.merchant||'','text','maxlength="120"')}${field('Date','date',merged.date||today(),'date','required')}<div><label for="f-note">Note <span class="muted">· optional</span></label><textarea id="f-note" name="note" maxlength="500" placeholder="Anything worth remembering?">${esc(merged.note||'')}</textarea></div>${evidence}${thumb}${subRow}${sharedRows}${tagsField}${splitsBox}${fxBox}${historyCheck}${ruleCheck}<div class="error" role="alert"></div><div class="form-footer"><button class="btn" type="submit">${icon('check')}${merged.editId?'Save changes':'Record transaction'}</button></div><p class="note">${kind==='transfer'?'A transfer moves money without adding an expense.':kind==='refund'?'A refund reduces spending in the selected category.':'Only confirmed records affect your balance.'}</p></form>`);
+}
+
+function splitRow(s={}){
+  return `<div class="split-row">${select('Split category','splitCategory',activeCategories().map(c=>[c[0],tr(c[0])]),s.category||'Miscellaneous')}${field('RM','splitAmount',s.amount||'','text','inputmode="decimal" required')}<button type="button" class="row-menu" data-action="removeSplit" aria-label="Remove split">${icon('close')}</button></div>`;
+}
+
+function enrichTransaction(args,form){
+  args.rememberRule=!!form.elements.rememberRule?.checked;
+  args.applyHistory=!!form.elements.applyHistory?.checked;
+  args.tags=(args.tags||'').split(',').map(x=>x.trim()).filter(Boolean);
+  const rows=[...form.querySelectorAll('.split-row')];
+  if(rows.length)args.splits=rows.map(row=>({category:row.querySelector('select').value,amount:row.querySelector('input').value}));
+  delete args.splitCategory;
+  delete args.splitAmount;
+  if(!args.originalCurrency&&!args.originalAmount){
+    delete args.originalCurrency;delete args.originalAmount;delete args.foreignFee;
+  }else{
+    if(!args.originalCurrency||!Number.isFinite(Number(args.originalAmount))||Number(args.originalAmount)<=0)throw new Error('Enter both the original currency and a positive amount.');
+    if(!/^\d+([.]\d{1,2})?$/.test(args.foreignFee)||Number(args.foreignFee)>Number(args.amount))throw new Error('Included fees must be between zero and the MYR total.');
+    args.exchangeRate=((Number(args.amount)-Number(args.foreignFee))/Number(args.originalAmount)).toFixed(8);
+  }
+}
+
+function quickNoteForm(id){
+  const txRow=state.transactions.find(x=>x.id===id);
+  if(!txRow)return;
+  modalContext={id:txRow.id,merchant:txRow.merchant||'',oldCategory:txRow.category,account:txRow.account};
+  const otherCount=sameMerchantCount(txRow.merchant,txRow.id);
+  modal('Edit purpose & category',`<form data-extra="quickNote"><div class="soft-card" style="margin-top:0"><strong>${esc(txRow.merchant||txRow.category)} · ${money(txRow.amount)}</strong><p class="note">${esc(txRow.date)} · ${esc(account(txRow.account).name)}</p></div>${field('Purpose / note','note',txRow.note||'','text','maxlength="500" placeholder="e.g. Toll to office, Lunch with client"')}${['expense','refund'].includes(txRow.kind)&&!txRow.splits?`<div class="form-grid">${categorySelect(txRow.category)}${subcategorySelect(txRow.category,txRow.subcategory||'')}</div>`:''}${otherCount>0&&txRow.merchant?check(`Also update ${otherCount} other transaction${otherCount===1?'':'s'} for "${esc(txRow.merchant)}" & remember category for future`,'applyHistory',txRow.category==='Miscellaneous'||txRow.category==='Other'):check('Remember category for future notifications from this merchant','applyHistory',txRow.category==='Miscellaneous'||txRow.category==='Other')}<div class="form-footer">${formFooter('Save purpose & category')}<button type="button" class="btn danger" data-action="quickRemove" data-id="${esc(txRow.id)}">${icon('trash')}Remove</button></div></form>`);
+}
+
+function accountForm(){
+  modalContext={};
+  modal('Add an account',`<form id="account-form">${field('Account name','name','','text','required maxlength="60" placeholder="e.g. Maybank or TNG"')}${select('Account type','type',[['bank','Bank account'],['wallet','E-wallet'],['cash','Cash'],['card','Credit card']],'bank')}${field('Opening balance / card amount owed (RM)','opening','','text','inputmode="decimal" placeholder="0.00"')}<p class="note">For a credit card, enter the amount you owe. Opening balances are not income or spending.</p><div class="error" role="alert"></div><button class="btn">Create account</button></form>`);
+}
+
+function budgetForm(b={}){
+  modalContext=b;
+  const catName=b.category||categories[0][0];
+  modal(b.id?'Edit budget':'Create a budget',`<form id="budget-form">${select('Category','category',activeCategories().map(c=>[c[0],tr(c[0])]),catName)}${subcategorySelect(catName,b.subcategory||'')}${field('Amount per cycle (RM)','amount',b.limit?amount(b.limit):'','text','required inputmode="decimal" placeholder="500.00"')}${check('Carry unused budget into the next cycle','rollover',!!b.rollover)}<div class="error" role="alert"></div><button class="btn">Save budget</button>${b.id?`<button type="button" class="btn ghost" data-action="deletePlan" data-table="budgets" data-id="${esc(b.id)}">Remove budget</button>`:''}</form>`);
+}
+
+function billForm(b={}){
+  modalContext=b;
+  const catVal=b.category||'Loans, BNPL & Credit';
+  const freqVal=b.frequency||(b.monthly===false?'once':'monthly');
+  modal(b.id?'Edit reminder / bill':'Schedule BNPL, PTPTN or bill reminder',`<form id="bill-form">${field('Reminder / bill name','name',b.name||'','text','required maxlength="80" placeholder="e.g. SPayLater, PTPTN Study Loan, Unifi"')}${select('Reminder type','reminderType',[['bnpl','BNPL (SPayLater / GrabPayLater / Atome)'],['ptptn','PTPTN Study Loan'],['credit','Credit Card Statement'],['bill','Regular Bill / Utility / Subscription']],b.reminderType||'bill')}<div class="form-grid">${field('Amount (RM)','amount',b.amount?amount(b.amount):'','text','required inputmode="decimal" placeholder="150.00"')}${field('Next due date','date',b.date||today(),'date','required')}</div><div class="form-grid">${acctSelect(b.account)}${categorySelect(catVal)}</div>${subcategorySelect(catVal,b.subcategory||'')}<div class="form-grid">${select('Repeat schedule','frequency',[['monthly','Monthly (same day each month)'],['everyXDays','Every X days (custom interval)'],['weekly','Weekly'],['daily','Daily'],['yearly','Yearly'],['once','One time only']],freqVal)}${field('Custom interval (days, for Every X days)','intervalDays',b.intervalDays||30,'number','min="1" max="365"')}</div><div class="form-grid">${field('Pay before due date: remind me (days before)','remindDaysBefore',b.remindDaysBefore??3,'number','min="0" max="30" required')}${field('Notification timeslot (24h)','remindTime',b.remindTime||'09:00','time','required')}</div>${check('Amount varies — confirm actual payment later','variable',b.variable)}${check('This is a subscription','subscription',b.subscription)}${field('Cancellation reminder date · optional','cancelDate',b.cancelDate||'','date')}${formFooter('Save reminder schedule')}${b.id?`<div class="tools-grid" style="margin-top:10px">${actionButton('Test alert now','testReminder',b.id)}${actionButton(b.cancelled?'Resume schedule':'Pause reminders','cancelBill',b.id,'ghost')}${actionButton('Delete reminder','deleteBillExtra',b.id,'danger')}</div>`:''}</form>`);
+}
+
+function goalForm(g={}){
+  modalContext=g;
+  modal(g.id?'Update your goal':'Create a savings goal',`<form id="goal-form">${field('What are you saving for?','name',g.name||'','text','required maxlength="80" placeholder="e.g. New desktop PC"')}${field('Target (RM)','target',g.target?amount(g.target):'','text','required inputmode="decimal"')}${field('Already earmarked (RM)','saved',g.saved?amount(g.saved):'0','text','inputmode="decimal"')}<p class="note">This tracks progress only. It does not move or spend money.</p><div class="error" role="alert"></div><button class="btn">Save goal</button>${g.id?`<button type="button" class="btn ghost" data-action="deletePlan" data-table="goals" data-id="${esc(g.id)}">Remove goal</button>`:''}</form>`);
+}
+
+function debtForm(d={}){
+  modalContext=d;
+  const aprVal=d.aprBps!==undefined?(d.aprBps/100).toFixed(2):(d.apr??'0');
+  modal(d.id?'Edit debt':'Add BNPL, PTPTN or loan',`<form data-extra="debt">${field('Debt name','name',d.name||'','text','required maxlength="80" placeholder="e.g. PTPTN Ujrah, SPayLater, Maybank Card"')}<div class="form-grid">${select('Debt type','type',[['ptptn','PTPTN Study Loan'],['bnpl','BNPL (SPayLater / Atome / Grab)'],['credit','Credit Card Balance'],['loan','Car / Personal Loan']],d.type||'ptptn')}${field('Due day of month (1–31)','dueDay',d.dueDay??1,'number','min="1" max="31" required')}</div><div class="form-grid">${field('Remaining balance (RM)','balance',d.balance!==undefined?amount(d.balance):'','text','required inputmode="decimal" placeholder="1500.00"')}${field('Monthly minimum (RM)','minPayment',d.minPayment?amount(d.minPayment):'','text','required inputmode="decimal" placeholder="150.00"')}</div><div class="form-grid">${field('Annual rate / Ujrah (%)','apr',aprVal,'number','step="0.01" min="0" max="100"')}${select('Rate method','rateType',[['reducing','Reducing balance (Cards / Standard)'],['flat','Flat / Fixed principal (PTPTN Ujrah)']],d.rateType||'reducing')}</div><div class="form-grid">${field('Original principal (RM · optional for flat rate)','principal',d.principal?amount(d.principal):'','text','inputmode="decimal"')}${acctSelect(d.account)}</div>${check('Create or update monthly bill reminder','createReminder',!!d.createReminder||!!d.billId)}${formFooter('Save debt')}${d.id?`<button type="button" class="btn ghost" data-action="deletePlan" data-table="debts" data-id="${esc(d.id)}">Remove debt</button>`:''}</form>`);
+}
+
+function detail(id){
+  const txRow=state.transactions.find(x=>x.id===id);
+  if(!txRow)return;
+  modalContext=txRow;
+  const footer=['opening','adjustment'].includes(txRow.kind)
+    ? actionButton('Remove adjustment','quickRemove',id,'danger')
+    : `<button class="btn" data-action="editTx" data-id="${esc(txRow.id)}">${icon('edit')}Edit</button><button class="btn secondary" data-action="quickNote" data-id="${esc(txRow.id)}">Edit purpose / category</button><button class="btn danger" data-action="quickRemove" data-id="${esc(txRow.id)}">${icon('trash')}Remove</button>`;
+  modal('Transaction details',`<div class="detail-total money">${txRow.kind==='expense'?'−':''}${money(txRow.amount)}</div>${[['Description',txRow.merchant||txRow.category],['Type',txRow.kind],['Account',account(txRow.account).name],...(txRow.kind==='transfer'?[['To',account(txRow.to).name]]:[['Category',tr(txRow.category)+(txRow.subcategory?' › '+txRow.subcategory:'')]]),['Date',dateLabel(txRow.date)],['Note',txRow.note||'—']].map(([l,v])=>`<div class="detail-line"><span>${l}</span><span>${esc(v)}</span></div>`).join('')}<div class="form-footer">${footer}</div>${txRow.kind==='expense'?`<button class="btn ghost full" style="margin-top:12px" data-action="refundTx" data-id="${esc(txRow.id)}">Record a refund</button>`:''}<div class="tools-grid section-space">${actionButton('Repeat','repeat',id)}${actionButton('Make favorite','favoriteFrom',id)}${actionButton('Correction history','history',id)}</div>${txRow.receiptId?`<img class="receipt-full" src="/receipt/${esc(txRow.receiptId)}" alt="Saved receipt">`:''}${txRow.splits?`<details open><summary>Category split</summary>${txRow.splits.map(s=>`<p>${esc(s.category)} · RM ${esc(s.amount)}</p>`).join('')}</details>`:''}${txRow.originalCurrency?`<p class="note">${esc(txRow.originalCurrency)} ${esc(txRow.originalAmount)} · settled ${money(txRow.amount)} · included fee RM ${esc(txRow.foreignFee||'0')} · implied MYR rate ${esc(txRow.exchangeRate||'—')}</p>`:''}${txRow.person?`<p class="note">Shared with ${esc(txRow.person)} · your share RM ${esc(txRow.ownAmount)}</p>`:''}${txRow.tags?.length?`<p class="note">${esc(Array.isArray(txRow.tags)?txRow.tags.join(' · '):txRow.tags)}</p>`:''}`);
+}
+
+async function sources(){
+  modal('Select payment apps','<p class="note">Loading apps…</p>');
+  try{apps=await call('apps');renderSources('')}catch(e){modal('Select payment apps',`<p class="error">${esc(e.message)}</p>`)}
+}
+
+function renderSources(q){
+  const map=new Map(state.sources.map(s=>[s.package,s]));
+  modal('Select payment apps',`<p class="note" style="margin-bottom:14px">Select payment apps and optionally link each app to a default MoneyLens account (e.g. TNG eWallet or Maybank).</p><div class="search">${icon('search')}<input id="source-search" placeholder="Find a bank or wallet" value="${esc(q)}" aria-label="Search apps"></div><div class="source-list">${apps.filter(a=>(a.name+' '+a.package).toLowerCase().includes(q.toLowerCase())).map(a=>{const src=map.get(a.package);return `<div class="source-row"><div class="grow">${esc(a.name)}<small>${esc(a.package)}</small>${src?`<select class="source-account" data-package="${esc(a.package)}" data-name="${esc(a.name)}" style="margin-top:6px;padding:6px 10px;min-height:34px;font-size:11px"><option value="">Auto-match account</option>${options(state.accounts.map(ac=>[ac.id,ac.name]),src.account||'')}</select>`:''}</div><input class="switch source-toggle" type="checkbox" data-package="${esc(a.package)}" data-name="${esc(a.name)}" aria-label="Capture ${esc(a.name)} notifications" ${src?'checked':''}></div>`}).join('')||'<p class="note">No matching installed apps.</p>'}</div><button class="btn full" style="margin-top:20px" data-action="close">${esc(tr('Done'))}</button>`);
+}
+
+function categoriesModal(){
+  const active=activeCategories();
+  modal('Categories & Subcategories',`<p class="note">Add new categories or subcategories, or tap ✕ on any category or subcategory chip to remove it.</p><div class="stack" style="gap:12px"><form data-extra="addSubcategory" class="soft-card" style="margin:0"><h3>Add a subcategory</h3><div class="form-grid">${select('Under category','category',active.map(c=>[c[0],tr(c[0])]),active[0]?.[0]||'Food & drinks')}${field('New subcategory name','subcategory','','text','required maxlength="80" placeholder="e.g. Bubble Tea, Tol PLUS"')}</div>${formFooter('Add subcategory')}</form><form data-extra="category" class="soft-card" style="margin:0"><h3>Add a main category</h3><div class="form-grid">${field('New category name','name','','text','required maxlength="60" placeholder="e.g. Pets & Vet"')}${select('Icon','icon',[['wallet','Wallet'],['heart','Heart'],['food','Food'],['car','Car'],['target','Goal'],['bag','Shopping'],['bolt','Utilities'],['shield','Shield']],'wallet')}</div>${select('Color','color',[['sage','Sage'],['peach','Peach'],['purple','Lavender'],['blue','Blue']],'sage')}${formFooter('Add category')}</form><div class="review-list" style="max-height:340px">${active.map(c=>{
+    const subs=subcategoriesFor(c[0]);
+    return `<div class="plan-row" style="padding:10px 0"><div class="flex between"><strong>${esc(tr(c[0]))}</strong><button type="button" class="row-menu" data-action="removeCategory" data-name="${esc(c[0])}" title="Remove category ${esc(c[0])}">✕</button></div><div class="category-chips" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px">${subs.map(s=>`<span class="tag" style="display:inline-flex;align-items:center;gap:4px">${esc(s)}<button type="button" data-action="removeSubcategory" data-category="${esc(c[0])}" data-subcategory="${esc(s)}" style="border:0;background:transparent;padding:0 2px;cursor:pointer;font-size:11px;line-height:1" title="Remove subcategory">✕</button></span>`).join('')||'<span class="muted" style="font-size:11px">No subcategories</span>'}</div></div>`;
+  }).join('')}</div></div>`);
+}
+
+function scanDialog(){modal('Scan a receipt',`<p class="note">Choose a clear image or take a photo. Recognition runs on your device. Check the suggested total, date and merchant before recording.</p>${select('Text model','ocrLanguage',[['latin','English / Bahasa Melayu'],['chinese','Chinese + Latin']],'latin')}<div class="tools-grid">${actionButton('Take photo','receiptCamera')}${actionButton('Choose image','receiptPick')}</div>`)}
+function showRecap(rc){modal(tr('Cycle Recap & Report'),recapMarkup(rc));}
+function insights(){
+  const r=reportData;if(!r){toast('Open the Android app to calculate reports.');return}
+  const max=Math.max(1,...r.months.map(m=>m.spent));
+  modal('Your money, in perspective',`<div class="tools-grid" style="margin-bottom:10px">${actionButton(tr('Cycle Recap'),'openRecap')}${actionButton(tr('Export PDF Report'),'exportPdf','','ghost')}</div><p class="eyebrow muted">${esc(r.start)} — ${esc(r.end)} · END EXCLUSIVE</p><div class="insight-grid"><div class="soft-card"><p>Available estimate</p><strong class="money metric">${money(r.availableToSpend)}</strong></div><div class="soft-card"><p>Spent to today</p><strong class="money metric">${signedMoney(r.spent)}</strong></div></div><h3>Six budget cycles</h3><div class="bar-chart" role="img" aria-label="Spending in six cycles">${r.months.map(m=>`<div><span>${signedMoney(m.spent)}</span><i style="height:${Math.max(2,Math.max(0,m.spent)/max*110)}px"></i><small>${esc(dateLabel(m.start))}</small></div>`).join('')}</div><p class="note">Current cycle is incomplete. Comparable prior-cycle spending through the same number of days: ${signedMoney(r.previousComparable)}.</p><h3>Cash flow by cycle</h3>${r.months.map(m=>`<div class="detail-line"><span>${esc(dateLabel(m.start))}</span><span>In ${money(m.income)} · out ${signedMoney(m.spent)}<br>Net ${signedMoney((m.income||0)-m.spent)}</span></div>`).join('')}<h3>What is reserved?</h3>${[['Liquid account balances',r.liquid],['Card and installment debt',-r.cardReserve],['Unpaid bills before cycle end',-r.billsReserve],['Earmarked goals',-r.goalReserve]].map(([label,n])=>`<div class="detail-line"><span>${label}</span><span>${signedMoney(n)}</span></div>`).join('')}<p class="note">Estimate from recorded balances only. Card repayment plans are excluded from bill reserves because the card debt is already reserved. Check missing opening balances and reconcile regularly.</p><h3>Category spending this cycle</h3>${categories.map(c=>[c[0],spendFor(c[0])]).filter(c=>c[1]).map(c=>`<div class="detail-line"><span>${esc(tr(c[0]))}</span><span>${signedMoney(c[1])}</span></div>`).join('')}`);
+}
+function favoriteForm(t={}){modalContext=t;modal('Quick favorite',`<form data-extra="favorite">${field('Favorite name','name',t.name||t.merchant||'','text','required maxlength="80"')}${field('Amount (RM)','amount',typeof t.amount==='number'?amount(t.amount):t.amount||'','text','required inputmode="decimal"')}${acctSelect(t.account)}${categorySelect(t.category)}${field('Merchant','merchant',t.merchant||'','text','maxlength="120"')}${formFooter('Save favorite')}</form>`)}
+function showFavorites(){modal('Quick favorites',`${state.favorites.map(f=>`<div class="setting-row"><div class="grow"><h3>${esc(f.name)}</h3><p>RM ${esc(f.amount)} · ${esc(tr(f.category))} · ${esc(account(f.account).name)}</p></div>${actionButton('Use','useFavorite',f.id)}${actionButton('Edit','editFavorite',f.id,'ghost')}${actionButton('Remove','deleteFavorite',f.id,'ghost')}</div>`).join('')||'<p class="note">Save common purchases for one-tap entry on Home and the Android app icon.</p>'}${actionButton('Create favorite','editFavorite')}`)}
+function ruleForm(r={}){modalContext=r;modal('Merchant suggestion rule',`<form data-extra="rule">${field('Merchant contains','match',r.match||'','text','required maxlength="120" placeholder="e.g. Grab"')}${categorySelect(r.category)}${subcategorySelect(r.category||'Miscellaneous',r.subcategory||'')}${select('Suggest account','account',[['','Leave for me to choose'],...state.accounts.map(a=>[a.id,a.name])],r.account||'')}${select('Limit to source','source',[['','Any source'],...state.sources.map(s=>[s.package,s.name])],r.source||'')}${field('Priority (0–100)','priority',r.priority??10,'number','min="0" max="100"')}${check('Enabled','enabled',r.enabled!==false)}<p class="note">Preview: future merchants containing “${esc(r.match||'your text')}” get these suggestions. Saved transactions stay as recorded.</p><div id="rule-preview" class="note"></div>${formFooter('Save rule')}</form>`)}
+function automationForm(){const s=state.settings;modal('Reminders & privacy',`<form data-extra="automation">${check('Automatically record notifications using history / Miscellaneous','autoRecord',s.autoRecord!==false)}${check('Read payment notifications from all bank & wallet apps','captureAllSources',s.captureAllSources!==false)}${check('Always-on persistent task scheduler (auto-restarts unless Force Stopped)','alwaysOnScheduler',s.alwaysOnScheduler!==false)}${check('Auto-open MoneyLens when phone restarts','autoOpenOnBoot',s.autoOpenOnBoot!==false)}${check('BNPL, PTPTN, bill and cancellation reminders','reminders',s.reminders!==false)}${check('Budget threshold alerts','budgetAlerts',s.budgetAlerts!==false)}${check('Weekly budget pace nudge (respects quiet hours)','weeklyBudgetNudge',!!s.weeklyBudgetNudge)}${field('Budget alert threshold (%)','threshold',s.threshold||80,'number','min="1" max="100" required')}${check('One daily Inbox digest instead of individual prompts','digest',s.digest)}${field('Digest hour (0–23)','digestHour',s.digestHour??19,'number','min="0" max="23" required')}${check('Quiet hours','quietEnabled',s.quietEnabled)}<div class="form-grid">${field('Quiet from hour','quietStart',s.quietStart??22,'number','min="0" max="23" required')}${field('Quiet until hour','quietEnd',s.quietEnd??8,'number','min="0" max="23" required')}</div>${check('Show available estimate on home-screen widget','widgetAmounts',s.widgetAmounts)}${check('Capture while MoneyLens is closed or locked','captureWhileLocked',s.captureWhileLocked!==false)}<p class="note">Always-on task scheduler keeps auto-capture and BNPL/PTPTN due reminders active continuously across restarts.</p>${formFooter('Save preferences')}</form>`)}
+window.csvLoaded=info=>{importInfo=info;const rows=[[-1,'Not mapped'],...info.headers.map((h,i)=>[i,h||'Column '+(i+1)])];const guess=name=>info.headers.findIndex(h=>h.toLowerCase().includes(name));modal('Map your statement columns',`<form data-extra="csvMap"><p class="note">${info.count} rows. Choose how your file maps to MoneyLens, then review before saving.</p>${['date','amount','merchant','category','kind','note'].map(k=>select(k[0].toUpperCase()+k.slice(1)+' column',k,rows,guess(k))).join('')}${acctSelect()}${select('Date format','dateFormat',[['iso','YYYY-MM-DD'],['dmy','DD/MM/YYYY'],['mdy','MM/DD/YYYY']],'iso')}${select('Default transaction type','defaultKind',[['expense','Expense'],['income','Income'],['refund','Refund']],'expense')}${check('Signed amounts: negative expenses, positive income','signed')}<details><summary>First rows</summary><pre class="csv-sample">${esc(info.sample.map(r=>r.join(' | ')).join('\n'))}</pre></details>${formFooter('Preview import')}</form>`)};
+function csvReview(rows){importPreview=rows;modal('Review CSV import',`<form data-extra="csvCommit"><p class="note">Possible duplicates start unchecked. Re-imported rows are blocked. Transfers need manual entry.</p><div class="review-list">${rows.map((r,i)=>`<label class="import-row"><input type="checkbox" name="row" value="${i}" ${r.error||r.duplicate?'disabled':r.possibleDuplicate?'':'checked'}><span><strong>${esc(r.merchant||'Row '+r.row)} ${r.amount?'· RM '+esc(r.amount):''}</strong><small>${esc(r.error||(r.date+' · '+r.kind+' · '+r.category))}</small>${r.duplicate?'<b>Already imported</b>':r.possibleDuplicate?'<b>Possible duplicate — check manually</b>':''}</span></label>`).join('')}</div>${formFooter('Import selected rows')}</form>`)}
+function batchForm(){const ds=state.drafts.filter(d=>d.state==='review').slice(0,100);modal('Review selected payments',`<form data-extra="batch"><p class="note">Choose payments with correct amount and category. The account below applies to every selected payment.</p>${acctSelect()}<div class="review-list">${ds.map(d=>`<label class="import-row"><input type="checkbox" name="draft" value="${esc(d.id)}" ${d.amount>0?'':'disabled'}><span><strong>${esc(d.merchant)} · ${money(d.amount)}</strong><small>${esc(d.category)} · ${esc(d.date)} · ${esc(d.reason)}</small></span></label>`).join('')}</div>${formFooter('Record selected payments')}${actionButton('Ignore selected','ignoreSelected','','ghost')}</form>`)}
+function linkForm(id,bill=false){modalContext={id};modal(bill?'Match an existing payment':'Already recorded?',`<form data-extra="${bill?'matchBill':'linkDraft'}"><p class="note">Choose the same payment already in your ledger. This links the record without creating another expense.</p>${select('Recorded transaction','transactionId',validTx().filter(t=>!['opening','adjustment'].includes(t.kind)).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,200).map(t=>[t.id,t.date+' · '+(t.merchant||t.category)+' · '+money(t.amount)]),'')}${formFooter('Link payment')}</form>`)}
+
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('button,[data-action="detail"]');
+  if(!b||b.disabled)return;
+  if(b.dataset.page){page=b.dataset.page;render();window.scrollTo(0,0);return}
+  if(b.dataset.filter){filter=b.dataset.filter;render();return}
+  if(b.dataset.plan){planTab=b.dataset.plan;render();return}
+  if(b.dataset.kind){const data=Object.fromEntries(new FormData($('#transaction-form')).entries());txForm({...modalContext,...data,kind:b.dataset.kind});return}
+  const action=b.dataset.action,id=b.dataset.id;if(!action)return;
+  try{
+    switch(action){
+      case 'retry':await window.nativeRefresh();break;
+      case 'close':close();break;
+      case 'add':txForm();break;
+      case 'setAccent':{const acc=b.dataset.accent||'emerald';state.settings.accent=acc;render();if(window.MoneyLensNative)await mutate('settings',{accent:acc},`Theme set to ${acc}.`);break;}
+      case 'toggleBlur':{const next=!state.settings.privacyBlur;state.settings.privacyBlur=next;render();if(window.MoneyLensNative)await mutate('settings',{privacyBlur:next},next?'Balances hidden for privacy.':'Balances visible.');break;}
+      case 'transfer':if(state.accounts.length<2){toast('Add a second account to make a transfer.');accountForm();}else txForm({kind:'transfer'});break;
+      case 'prevMonth':monthOffset--;render();break;
+      case 'nextMonth':monthOffset++;render();break;
+      case 'selectCalDay':{const d=b.dataset.date;if(advancedFilters.exactDate===d)delete advancedFilters.exactDate;else advancedFilters.exactDate=d;render();break;}
+      case 'filterCat':{const c=b.dataset.cat;delete advancedFilters.needsNote;if(!c||advancedFilters.category===c)delete advancedFilters.category;else advancedFilters.category=c;render();break;}
+      case 'filterNeedsNote':{delete advancedFilters.category;if(advancedFilters.needsNote)delete advancedFilters.needsNote;else advancedFilters.needsNote=true;render();break;}
+      case 'clearFilters':advancedFilters={};render();break;
+      case 'addAccount':accountForm();break;
+      case 'addBudget':budgetForm();break;
+      case 'editBudget':budgetForm(state.budgets.find(x=>x.id===id));break;
+      case 'addBill':billForm();break;
+      case 'editBill':billForm(state.bills.find(x=>x.id===id));break;
+      case 'addGoal':goalForm();break;
+      case 'editGoal':goalForm(state.goals.find(x=>x.id===id));break;
+      case 'addDebt':debtForm();break;
+      case 'editDebt':debtForm((state.debts||[]).find(x=>x.id===id)||{});break;
+      case 'debtStrategy':debtStrategy=id==='snowball'?'snowball':'avalanche';render();break;
+      case 'syncDebtReminder':await mutate('syncDebtReminder',{id},'Monthly bill reminder synced.');break;
+      case 'presetDebt':{
+        const presets={ptptn:{name:'PTPTN Study Loan',type:'ptptn',balance:1500000,principal:1500000,minPayment:20000,aprBps:100,rateType:'flat',dueDay:25},spaylater:{name:'SPayLater BNPL',type:'bnpl',balance:60000,minPayment:15000,aprBps:0,rateType:'reducing',dueDay:10},creditcard:{name:'Credit Card Balance',type:'credit',balance:250000,minPayment:12500,aprBps:1800,rateType:'reducing',dueDay:15}};
+        debtForm(presets[id]||{});break;
+      }
+      case 'presetReminder':{
+        const presets={ptptn:{name:'PTPTN Study Loan Repayment',reminderType:'ptptn',category:'Loans, BNPL & Credit',subcategory:'PTPTN Study Loan',amount:15000,frequency:'monthly',remindDaysBefore:3,remindTime:'09:00'},spaylater:{name:'SPayLater (Shopee BNPL)',reminderType:'bnpl',category:'Loans, BNPL & Credit',subcategory:'BNPL (SPayLater / GrabPayLater / Atome)',amount:5000,frequency:'monthly',remindDaysBefore:3,remindTime:'10:00'},grabpaylater:{name:'GrabPayLater Monthly Bill',reminderType:'bnpl',category:'Loans, BNPL & Credit',subcategory:'BNPL (SPayLater / GrabPayLater / Atome)',amount:5000,frequency:'monthly',remindDaysBefore:3,remindTime:'10:00'},atome:{name:'Atome BNPL Installment',reminderType:'bnpl',category:'Loans, BNPL & Credit',subcategory:'BNPL (SPayLater / GrabPayLater / Atome)',amount:5000,frequency:'everyXDays',intervalDays:30,remindDaysBefore:3,remindTime:'10:00'},creditcard:{name:'Credit Card Statement Due',reminderType:'credit',category:'Loans, BNPL & Credit',subcategory:'Credit Card Bill',amount:20000,frequency:'monthly',remindDaysBefore:3,remindTime:'09:00'}};
+        billForm(presets[id]||{});break;
+      }
+      case 'testReminder':await mutate('testReminder',{id},'Test reminder notification posted!');break;
+      case 'detail':detail(id);break;
+      case 'editTx':{const txRow=state.transactions.find(x=>x.id===id);txForm({...txRow,key:cryptoId(),editId:txRow.id});break;}
+      case 'refundTx':{const txRow=state.transactions.find(x=>x.id===id);txForm({kind:'refund',amount:txRow.amount,merchant:'Refund · '+(txRow.merchant||txRow.category),account:txRow.account,category:txRow.category,subcategory:txRow.subcategory,originalId:txRow.id});break;}
+      case 'quickNote':quickNoteForm(id);break;
+      case 'applyHistoryYes':await mutate('updateMerchantHistory',modalContext,'Updated previous records and saved rule for future.');close();break;
+      case 'quickRemove':await mutate('void',{id},'Transaction removed.');if($('#modal-root').innerHTML)close();break;
+      case 'confirmVoid':modal('Remove this transaction?',`<p class="note">Its effect on balances and budgets will be reversed. The record remains in the correction history.</p><div class="form-footer" style="margin-top:20px"><button class="btn ghost" data-action="close">Keep it</button><button class="btn danger" data-action="void" data-id="${esc(id)}">Remove</button></div>`);break;
+      case 'void':await mutate('void',{id});modal('Transaction removed',`<p class="note">Your balances and budgets have been updated.</p><div class="form-footer" style="margin-top:20px"><button class="btn ghost" data-action="undoVoid" data-id="${esc(id)}">Undo removal</button><button class="btn" data-action="close">${esc(tr('Done'))}</button></div>`);break;
+      case 'undoVoid':await mutate('void',{id,restore:true},'Transaction restored.');close();break;
+      case 'unlinkBill':await mutate('unlinkBill',{id},'Bill link removed. The payment is kept and the bill due date is restored.');break;
+      case 'unmergeDuplicate':await mutate('unmergeDuplicate',{id},'Recorded as a separate payment.');break;
+      case 'payBill':{const bill=state.bills.find(x=>x.id===id);txForm({kind:bill.kind||'expense',to:bill.to,merchant:bill.name,amount:bill.amount,account:bill.account,category:bill.category,subcategory:bill.subcategory,date:today(),billId:id,billDate:bill.date});break;}
+      case 'cancelBill':{const bill=state.bills.find(x=>x.id===id);await mutate('cancelBill',{id,cancelled:!bill.cancelled},'Plan updated.');close();break;}
+      case 'deleteBillExtra':await mutate('deletePlan',{table:'bills',id},'Reminder removed.');close();break;
+      case 'deletePlan':await mutate('deletePlan',{table:b.dataset.table,id},'Plan removed.');close();break;
+      case 'subscription':billForm({...reportData.subscriptions[Number(id)],subscription:true});break;
+      case 'review':{const d=state.drafts.find(x=>x.id===id);txForm({...d,draftId:id,draftRevision:d.revision||1});break;}
+      case 'ignore':await mutate('ignore',{id},'Suggestion ignored.');break;
+      case 'sample':await mutate('sample',{autoCapture:state.settings.autoRecord!==false},state.settings.autoRecord!==false?'Sample payment auto-recorded.':'Sample suggestion added.');break;
+      case 'testNotification':await mutate('testNotification',{},'Test payment notification sent & auto-recorded!');break;
+      case 'captureSettings':page='settings';render();break;
+      case 'access':await call('notificationAccess');break;
+      case 'prompts':await call('promptPermission');break;
+      case 'overlayPermission':await call('overlayPermission');break;
+      case 'batteryOptimization':await call('batteryOptimization');break;
+      case 'sources':await sources();break;
+      case 'backup':await call('backup');break;
+      case 'restore':await call('restore');break;
+      case 'csvExport':await call('csvExport');break;
+      case 'exportPdf':await call('exportPdf',{date:period().start});break;
+      case 'openRecap':{const rc=(window.MoneyLensNative&&monthOffset!==0)?await call('cycleRecap',{date:period().start}):null;showRecap(rc);break;}
+      case 'insights':insights();break;
+      case 'openTaxPlan':page='plan';planTab='tax';render();window.scrollTo(0,0);break;
+      case 'openDebtPlan':page='plan';planTab='debts';render();window.scrollTo(0,0);break;
+      case 'openBnplPlan':page='plan';planTab='bills';render();window.scrollTo(0,0);break;
+      case 'setPayday':{
+        const cand=(reportData?.recurringIncome||[])[Number(id)];
+        if(cand)await mutate('setPayday',{name:cand.name,amountMinor:cand.amount,account:cand.account,frequency:cand.frequency,dayOfMonth:cand.dayOfMonth,nextDate:cand.nextDate},`Payday & budget cycle synced to day ${cand.dayOfMonth}.`);
+        break;
+      }
+      case 'clearPayday':await mutate('clearPayday',{},'Payday schedule cleared.');break;
+      case 'recordMonthlySalary':{
+        const p=state.settings.taxProfile||{};
+        const est=reportData?.taxEstimate||computeLocalTax(p);
+        const mp=est.monthlyPaycheck||computeLocalTax(p).monthlyPaycheck;
+        const salSen=mp.netTakeHomeMonthly>0?mp.netTakeHomeMonthly:mp.grossMonthly;
+        txForm({kind:'income',category:'Salary',merchant:'Monthly Net Salary (Take-Home)',amount:salSen>0?salSen:undefined,note:`Gross ${money(mp.grossMonthly)} · EPF ${money(mp.epfMonthly)} · PCB ${money(mp.pcbMonthly)}`});
+        break;
+      }
+      case 'autoFillTaxReliefs':{
+        const det=reportData?.taxEstimate?.ledgerDetected||{};
+        const form=$('#tax-profile-form');
+        if(form){
+          for(const k of ['lifestyle','sports','medical','lifeInsurance','medicalInsurance','education','sspnPrs','zakat']){
+            if(det[k]!==undefined&&form.elements[k])form.elements[k].value=(det[k]/100).toFixed(2);
+          }
+          toast('Filled reliefs from your recorded expenses. Tap Calculate & Save to apply.');
+        }
+        break;
+      }
+      case 'categories':categoriesModal();break;
+      case 'removeCategory':await mutate('removeCategory',{name:b.dataset.name},`Removed category "${b.dataset.name}".`);categoriesModal();break;
+      case 'removeSubcategory':await mutate('removeSubcategory',{category:b.dataset.category,subcategory:b.dataset.subcategory},`Removed subcategory "${b.dataset.subcategory}".`);categoriesModal();break;
+      case 'scan':scanDialog();break;
+      case 'receiptPick':case 'receiptCamera':await call(action,{language:$('.modal select').value});close();break;
+      case 'paste':modal('Paste payment text',`<form data-extra="paste"><label for="pasteText">Notification or receipt text</label><textarea name="text" id="pasteText" maxlength="4000" required rows="6" placeholder="Paste the payment message here"></textarea><p class="note">Automatically parses and records the payment into your ledger.</p>${formFooter('Record payment')}</form>`);break;
+      case 'addSplit':$('#split-rows').insertAdjacentHTML('beforeend',splitRow());break;
+      case 'removeSplit':b.closest('.split-row').remove();break;
+      case 'shared':txForm({kind:'shared'});break;
+      case 'repay':{const r=reportData.receivables.find(x=>x.id===id);txForm({kind:'reimbursement',amount:r.remaining,reimbursementFor:id,merchant:'Repayment · '+r.person,category:'Repayment'});break;}
+      case 'repeat':{const txRow=state.transactions.find(x=>x.id===id);if(['reimbursement','opening','adjustment'].includes(txRow.kind)){toast('Use the account reconciliation or repayment workflow for this record.');break}txForm({kind:txRow.kind,amount:txRow.amount,account:txRow.account,to:txRow.to,category:txRow.category,subcategory:txRow.subcategory,merchant:txRow.merchant,tags:txRow.tags,splits:txRow.splits,person:txRow.person,ownAmount:txRow.ownAmount,date:today()});break;}
+      case 'favoriteFrom':favoriteForm(state.transactions.find(x=>x.id===id));break;
+      case 'useFavorite':{const f=state.favorites.find(x=>x.id===id);txForm({...f,kind:'expense',date:today(),key:cryptoId()});break;}
+      case 'favorites':showFavorites();break;
+      case 'editFavorite':favoriteForm(state.favorites.find(f=>f.id===id)||{});break;
+      case 'deleteFavorite':await mutate('deleteExtra',{table:'favorites',id});close();break;
+      case 'rules':modal('Merchant rules',`${state.rules.map(r=>`<div class="setting-row"><div class="grow"><h3>${esc(r.match)}</h3><p>${esc(tr(r.category))}${r.subcategory?' › '+esc(r.subcategory):''} · ${r.enabled?'Enabled':'Paused'} · priority ${r.priority}</p></div>${actionButton('Edit','editRule',r.id)}${actionButton('Delete','deleteRule',r.id,'ghost')}</div>`).join('')||'<p class="note">Teach MoneyLens your own merchant suggestions.</p>'}${actionButton('Add rule','editRule')}${state.ruleHistory?.length?actionButton('Undo last rule change','undoRule','','ghost'):''}`);break;
+      case 'editRule':ruleForm(state.rules.find(r=>r.id===id)||{});break;
+      case 'undoRule':await mutate('undoRule',{},'Last rule change undone.');close();break;
+      case 'deleteRule':await mutate('deleteExtra',{table:'rules',id});close();break;
+      case 'automation':automationForm();break;
+      case 'autoBackup':case 'backupNow':case 'stopAutoBackup':await call(action);await window.nativeRefresh();break;
+      case 'csvPick':await call('csvPick');break;
+      case 'imports':modal('Import history',`${state.imports.slice().reverse().map(imp=>`<div class="setting-row"><div class="grow"><h3>${esc(imp.date)} · ${imp.count} rows</h3><p>${imp.undone?'Undone':'Imported'} · ${esc(imp.name)}</p></div>${!imp.undone?actionButton('Undo import','undoImportConfirm',imp.id):''}</div>`).join('')||'<p class="note">No imports yet.</p>'}`);break;
+      case 'undoImportConfirm':modal('Undo this import?',`<p class="note">Unedited records in this batch will be voided. Records you have corrected remain. The original file cannot be accidentally imported again.</p>${actionButton('Undo import','undoImport',id,'danger')}`);break;
+      case 'undoImport':await mutate('undoImport',{id},'Import reversed. Edited records were kept.');close();break;
+      case 'recoverConfirm':modal('Restore previous local copy?',`<p class="note">This replaces your current ledger with the copy retained before your last restore. Export a backup first if you want to keep current changes.</p>${actionButton('Restore local copy','recover','','danger')}`);break;
+      case 'recover':await mutate('recover',{},'Previous local copy restored.');close();break;
+      case 'diagnostics':{const d=await call('diagnostics');modalContext={diagnostics:JSON.stringify(d,null,2)};modal('Capture diagnostics',`<p class="note">This preview contains no merchants, amounts, account numbers or raw notifications.</p><pre class="csv-sample">${esc(JSON.stringify(d,null,2))}</pre>${actionButton('Export these diagnostics','diagnosticExport')}`);break;}
+      case 'diagnosticExport':await call('diagnosticExport',{text:modalContext.diagnostics});break;
+      case 'batch':batchForm();break;
+      case 'ignoreSelected':{const ids=[...document.querySelectorAll('input[name=draft]:checked')].map(x=>x.value);await mutate('ignoreBatch',{ids},'Selected suggestions ignored.');close();break;}
+      case 'linkDraft':linkForm(id);break;
+      case 'matchBill':linkForm(id,true);break;
+      case 'reconcile':modal('Compare with your statement',`<form data-extra="reconcile">${acctSelect()}${field('As-of date','date',today(),'date','required')}${field('Statement balance (RM)','actual','','text','required inputmode="decimal"')}<p class="note">For a card, enter debt as a negative balance, such as -125.50. You will review the difference before adjusting.</p>${field('Note','note','','text','maxlength="500"')}${formFooter('Compare balances')}</form>`);break;
+      case 'saveReconcile':await mutate('reconcile',{...modalContext,adjust:false},'Balance check saved.');close();break;
+      case 'adjustReconcile':await mutate('reconcile',{...modalContext,adjust:true},'Explicit balance adjustment saved.');close();break;
+      case 'installment':modal('Plan an installment purchase',`<form data-extra="installment">${field('Purchase name','name','','text','required maxlength="80"')}${field('Purchase price (RM)','amount','','text','required inputmode="decimal"')}${field('Total fees or interest (RM)','fee','0','text','required inputmode="decimal"')}${field('Number of monthly payments','months','12','number','min="2" max="60" required')}${field('First payment date','date',today(),'date','required')}${acctSelect()}${categorySelect('Shopping')}<p class="note">The full purchase plus fees is recorded once as spending on a new installment liability account. Monthly payments are transfers that reduce this debt.</p>${formFooter('Create purchase and payment plan')}</form>`);modalContext={key:cryptoId()};break;
+      case 'filters':modal('Find the records you need',`<form data-extra="filters"><div class="form-grid">${field('From date','from',advancedFilters.from||'','date')}${field('Through date','until',advancedFilters.until||'','date')}</div>${select('Account','account',[['','All accounts'],...state.accounts.map(a=>[a.id,a.name])],advancedFilters.account||'')}<div class="form-grid">${field('Minimum RM','min',advancedFilters.min||'','number','min="0" step="0.01"')}${field('Maximum RM','max',advancedFilters.max||'','number','min="0" step="0.01"')}</div>${field('Tag contains','tag',advancedFilters.tag||'')}${select('Source','source',[['','All sources'],['manual','Manual entry'],...[...new Set(validTx().map(t=>t.source).filter(Boolean))].map(s=>[s,s])],advancedFilters.source||'')}${formFooter('Apply filters')}</form>`);break;
+      case 'history':{let cur=state.transactions.find(x=>x.id===id),rows=[cur];while(cur.replaces){cur=state.transactions.find(x=>x.id===cur.replaces);if(!cur)break;rows.push(cur)}modal('Correction history',rows.map((r,i)=>`<section class="soft-card"><h3>${i===0?'Current record':'Previous version'}</h3><p>${esc(r.date)} · ${esc(r.merchant)} · ${money(r.amount)}</p><p class="note">${esc(r.category)}${r.subcategory?' › '+esc(r.subcategory):''} · ${esc(r.note||'')} · ${r.voided?'Superseded or voided':'Active'}</p></section>`).join(''));break;}
+      case 'preferences':modal('Personal preferences',`<form id="preferences-form">${field('Display name','name',state.settings.name||'','text','maxlength="50"')}${field('Monthly budget start day (1–31)','cycleDay',state.settings.cycleDay||1,'number','min="1" max="31" required')}<p class="note">Choose a day near payday. Short months use their last day. Day 31 returns to the 31st in longer months.</p><div class="error" role="alert"></div><button class="btn">Save preferences</button></form>`);break;
+      case 'accountDetail':{const a=account(id),n=balance(id);modal(a.name,`<div class="detail-total money">${n<0?'−':''}${money(n)}</div><p class="note">Recorded balance · ${esc(a.type)}<br>For credit cards, a negative balance is money owed.</p><div style="margin-top:25px">${transactionList(validTx().filter(t=>t.kind!=='opening'&&t.postings.some(p=>p.account===id)).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8),false)}</div>`);break;}
+    }
+  }catch(err){toast(err.message)}
+});
+
+document.addEventListener('submit',async e=>{
+  const form=e.target;
+  if(!form.matches('form[data-extra], .modal form'))return;
+  e.preventDefault();
+  if(busy)return;
+  busy=true;
+  const button=form.querySelector('button[type=submit],button:not([type])');
+  if(button)button.disabled=true;
+  const args=Object.fromEntries(new FormData(form).entries());
+  try{
+    let method=form.dataset.extra,stay=false;
+    if(method){
+      switch(method){
+        case 'quickNote':{
+          args.id=modalContext.id;args.applyHistory=!!form.elements.applyHistory?.checked;
+          const m=modalContext.merchant,oldCat=modalContext.oldCategory,newCat=args.category||oldCat,diffCount=sameMerchantCount(m,args.id,newCat);
+          if(!args.applyHistory&&m&&newCat!==oldCat&&diffCount>0){
+            await mutate('quickNote',args,'Saved.');busy=false;
+            modalContext={merchant:m,category:newCat,subcategory:args.subcategory||'',account:modalContext.account||''};
+            modal('Update previous history too?',`<p class="note">Found <strong>${diffCount}</strong> previous transaction${diffCount===1?'':'s'} for <strong>${esc(m)}</strong> with a different category. Would you like to update their category to <strong>${esc(newCat)}</strong> and remember it for future notifications?</p><div class="form-footer" style="margin-top:20px"><button class="btn ghost" data-action="close">Only this one</button><button class="btn" data-action="applyHistoryYes">Update all & remember</button></div>`);
+            return;
+          }
+          break;
+        }
+        case 'category':case 'addSubcategory':
+          await mutate(method,args,'Category list updated.');busy=false;categoriesModal();return;
+        case 'taxProfile':
+          await mutate('taxProfile',args,'LHDN tax estimate updated.');busy=false;render();return;
+        case 'debt':
+          if(modalContext.id)args.id=modalContext.id;
+          args.dueDay=Number(args.dueDay||1);
+          args.createReminder=!!form.elements.createReminder?.checked;
+          break;
+        case 'debtExtra':
+          await mutate('debtExtra',args,'Debt payoff plan updated.');busy=false;render();return;
+        case 'favorite':if(state.favorites.some(f=>f.id===modalContext.id))args.id=modalContext.id;break;
+        case 'rule':if(modalContext.id)args.id=modalContext.id;args.priority=Number(args.priority);args.enabled=form.elements.enabled.checked;break;
+        case 'automation':method='settings';for(const name of ['quietEnabled','digest','reminders','budgetAlerts','weeklyBudgetNudge','widgetAmounts','captureWhileLocked','autoRecord','captureAllSources','autoOpenOnBoot','alwaysOnScheduler'])if(form.elements[name])args[name]=form.elements[name].checked;for(const name of ['quietStart','quietEnd','digestHour','threshold'])args[name]=Number(args[name]);break;
+        case 'csvMap':for(const k of ['date','amount','merchant','category','kind','note'])args[k]=Number(args[k]);args.signed=form.elements.signed.checked;csvReview(await call('csvPreview',args));stay=true;break;
+        case 'csvCommit':args.indices=[...form.querySelectorAll('input[name=row]:checked')].map(x=>Number(x.value));if(!args.indices.length)throw new Error('Choose at least one valid row.');break;
+        case 'batch':{const ids=[...form.querySelectorAll('input[name=draft]:checked')].map(x=>x.value);if(!ids.length)throw new Error('Select the payments you checked.');args.rows=ids.map(did=>{const d=state.drafts.find(x=>x.id===did);return {...d,amount:amount(d.amount),account:args.account,draftId:did,draftRevision:d.revision||1,key:'draft:'+did}});method='confirmBatch';break;}
+        case 'linkDraft':case 'matchBill':args.id=modalContext.id;break;
+        case 'reconcile':{
+          const actual=Number(args.actual);
+          if(!Number.isFinite(actual)||!/^[-]?\d+([.]\d{1,2})?$/.test(args.actual))throw new Error('Enter a balance with at most two decimal places.');
+          const recorded=validTx().filter(t=>t.date<=args.date).reduce((sum,t)=>sum+t.postings.filter(p=>p.account===args.account).reduce((n,p)=>n+p.amount,0),0);
+          modalContext=args;
+          modal('Review balance difference',`<div class="detail-line"><span>Recorded</span><strong>${signedMoney(recorded)}</strong></div><div class="detail-line"><span>Statement</span><strong>${signedMoney(Math.round(actual*100))}</strong></div><div class="detail-line"><span>Difference</span><strong>${signedMoney(Math.round(actual*100)-recorded)}</strong></div><p class="note">Check missing or duplicate transactions first. Saving a check keeps a comparison record. An adjustment changes the account balance through an explicit equity posting.</p><div class="tools-grid">${actionButton('Save comparison only','saveReconcile')}${actionButton('Record adjustment','adjustReconcile','','ghost')}</div>`);
+          stay=true;break;
+        }
+        case 'installment':args.months=Number(args.months);args.key=modalContext.key;break;
+        case 'filters':advancedFilters=Object.fromEntries(Object.entries(args).filter(([,v])=>v));render();stay=true;busy=false;close();break;
+      }
+      if(!stay){await mutate(method,args,'Saved on your device.');busy=false;close();if(form.dataset.extra==='paste'){page='inbox';render()}}
+      busy=false;
+    }else{
+      switch(form.id){
+        case 'transaction-form':
+          method='transaction';Object.assign(args,{kind:modalContext.kind||'expense',key:modalContext.key});
+          for(const k of ['draftId','editId','billId','billDate','originalId','receiptId','reimbursementFor','draftRevision'])if(modalContext[k])args[k]=modalContext[k];
+          if(args.account==='')throw new Error('Choose the account used for this payment.');
+          enrichTransaction(args,form);break;
+        case 'account-form':method='account';break;
+        case 'budget-form':{
+          method='budget';args.rollover=!!form.elements.rollover?.checked;
+          if(modalContext.id)args.id=modalContext.id;
+          else{const old=state.budgets.find(b=>b.category===args.category&&(b.subcategory||'')===(args.subcategory||''));if(old)args.id=old.id;}
+          break;
+        }
+        case 'bill-form':
+          method='bill';args.monthly=args.frequency==='monthly';args.variable=!!form.elements.variable?.checked;args.subscription=!!form.elements.subscription?.checked;
+          if(modalContext.kind)args.kind=modalContext.kind;if(modalContext.to)args.to=modalContext.to;if(modalContext.id)args.id=modalContext.id;break;
+        case 'goal-form':method='goal';if(modalContext.id)args.id=modalContext.id;break;
+        case 'preferences-form':method='settings';args.cycleDay=Number(args.cycleDay);break;
+        default:throw new Error('Unknown form.');
+      }
+      await mutate(method,args,'Saved on your device.');busy=false;close();
+    }
+  }catch(err){
+    busy=false;
+    const box=form.querySelector('.error');
+    if(box)box.textContent=err.message;else toast(err.message);
+  }finally{
+    if(button)button.disabled=false;
+  }
+});
+
+document.addEventListener('input',e=>{
+  if(e.target.id==='search'){
+    query=e.target.value;
+    const res=$('#tx-results');
+    if(res)res.innerHTML=`<section class="card">${transactionList(filteredTransactions(),true)}</section>`;
+  }else if(e.target.id==='source-search'){
+    const q=e.target.value;renderSources(q);const input=$('#source-search');if(input){input.focus();input.setSelectionRange(q.length,q.length);}
+  }else if(e.target.name==='match'&&$('#rule-preview')){
+    const needle=e.target.value.toLowerCase();
+    $('#rule-preview').textContent='Matching examples in your ledger: '+[...new Set(validTx().filter(t=>needle&&t.merchant?.toLowerCase().includes(needle)).map(t=>t.merchant))].slice(0,5).join(', ');
+  }
+});
+
+document.addEventListener('change',async e=>{
+  const x=e.target;
+  try{
+    if(x.name==='category'&&$('#f-subcategory'))$('#f-subcategory').innerHTML=subcatOptions(x.value,'');
+    if(x.id==='langToggle'){
+      const lg=x.value==='ms'?'ms':'en';
+      if(window.MoneyLensNative)await mutate('settings',{lang:lg},lg==='ms'?'Bahasa ditukar ke Bahasa Melayu.':'Language set to English.');
+      else{state.settings.lang=lg;render();}
+    }
+    if(x.id==='darkToggle')await mutate('settings',{theme:x.checked?'dark':'light'});
+    if(x.id==='blurToggle')await mutate('settings',{privacyBlur:x.checked});
+    if(x.id==='lockToggle')await mutate('settings',{appLock:x.checked});
+    if(x.id==='autoRecordToggle')await mutate('settings',{autoRecord:x.checked},x.checked?'Auto-record enabled.':'Auto-record paused.');
+    if(x.id==='captureAllToggle')await mutate('settings',{captureAllSources:x.checked},x.checked?'Reading all bank & wallet apps.':'Restricted to selected apps.');
+    if(x.id==='alwaysOnToggle')await mutate('settings',{alwaysOnScheduler:x.checked},x.checked?'Always-on task scheduler active.':'Always-on task scheduler paused.');
+    if(x.id==='autoOpenToggle')await mutate('settings',{autoOpenOnBoot:x.checked},x.checked?'Will auto-open on phone restart.':'Auto-open on restart disabled.');
+    if(x.matches('.source-account')){await mutate('source',{package:x.dataset.package,name:x.dataset.name,enabled:true,account:x.value},'Linked account saved.');}
+    if(x.matches('.source-toggle')){
+      await mutate('source',{package:x.dataset.package,name:x.dataset.name,enabled:x.checked});
+      toast(x.checked?'Source enabled.':'Source disabled.');
+      if($('#source-search'))setTimeout(()=>renderSources($('#source-search').value),80);
+    }
+  }catch(err){if(x.type==='checkbox')x.checked=!x.checked;toast(err.message)}
+});
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape')close();
+  if(e.key==='Tab'&&$('.modal')){
+    const nodes=[...document.querySelectorAll('.modal button:not([disabled]),.modal input,.modal select,.modal textarea')];
+    const first=nodes[0],last=nodes.at(-1);
+    if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}
+    else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}
+  }
+});

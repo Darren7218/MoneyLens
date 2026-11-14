@@ -17,9 +17,9 @@ public final class Ledger {
   }
   public static JSONObject initial() throws JSONException {
     JSONObject s=new JSONObject();s.put("schema",2);s.put("revision",0);
-    for(String name: new String[]{"accounts","transactions","drafts","budgets","bills","goals","sources","seen","rules","favorites","receipts","imports","reconciliations","installments","customCategories","alerts","ruleHistory"})s.put(name,new JSONArray());
+    for(String name: new String[]{"accounts","transactions","drafts","budgets","bills","goals","debts","sources","seen","rules","favorites","receipts","imports","reconciliations","installments","customCategories","alerts","ruleHistory"})s.put(name,new JSONArray());
     s.getJSONArray("accounts").put(new JSONObject().put("id","cash").put("name","Cash").put("type","cash").put("color","sage"));
-    s.put("settings",new JSONObject().put("name","Darren").put("theme","light").put("cycleDay",1).put("appLock",false).put("autoRecord",true).put("captureAllSources",true).put("autoOpenOnBoot",true).put("alwaysOnScheduler",true));
+    s.put("settings",new JSONObject().put("name","Darren").put("theme","light").put("lang","en").put("cycleDay",1).put("appLock",false).put("autoRecord",true).put("captureAllSources",true).put("autoOpenOnBoot",true).put("alwaysOnScheduler",true));
     return s;
   }
   public static JSONObject find(JSONArray a,String id) throws JSONException {
@@ -53,16 +53,17 @@ public final class Ledger {
         upsert(s,"goals",new JSONObject().put("id",a.optString("id",id())).put("name",str(a,"name",80)).put("target",target).put("saved",saved));break;
       }
       case "deletePlan": {
-        String table=a.getString("table");if(!Arrays.asList("budgets","bills","goals").contains(table))throw new IllegalArgumentException("Invalid plan.");JSONArray rows=s.getJSONArray(table);for(int i=rows.length()-1;i>=0;i--)if(rows.getJSONObject(i).getString("id").equals(a.getString("id")))rows.remove(i);break;
+        String table=a.getString("table");if(!Arrays.asList("budgets","bills","goals","debts").contains(table))throw new IllegalArgumentException("Invalid plan.");JSONArray rows=s.getJSONArray(table);for(int i=rows.length()-1;i>=0;i--)if(rows.getJSONObject(i).getString("id").equals(a.getString("id")))rows.remove(i);break;
       }
       case "ignore": {JSONObject draft=find(s.getJSONArray("drafts"),a.getString("id"));if(draft.optString("state").equals("review"))draft.put("state","ignored");break;}
       case "settings":{
         JSONObject settings=s.getJSONObject("settings");if(a.has("name"))settings.put("name",str(a,"name",50));
         if(a.has("theme"))settings.put("theme",a.getString("theme").equals("dark")?"dark":"light");
+        if(a.has("lang")){String lg=str(a,"lang",8);if(!Arrays.asList("en","ms").contains(lg))throw new IllegalArgumentException("Unsupported language.");settings.put("lang",lg);}
         if(a.has("accent")){String ac=str(a,"accent",24);if(Arrays.asList("emerald","indigo","ocean","terracotta").contains(ac))settings.put("accent",ac);}
         if(a.has("cycleDay")){int d=a.getInt("cycleDay");if(d<1||d>31)throw new IllegalArgumentException("Cycle day must be 1–31.");settings.put("cycleDay",d);}
         if(a.has("appLock"))settings.put("appLock",a.getBoolean("appLock"));
-        for(String k:new String[]{"quietEnabled","digest","reminders","budgetAlerts","widgetAmounts","captureWhileLocked","autoRecord","captureAllSources","autoOpenOnBoot","alwaysOnScheduler","privacyBlur"})if(a.has(k))settings.put(k,a.getBoolean(k));
+        for(String k:new String[]{"quietEnabled","digest","reminders","budgetAlerts","weeklyBudgetNudge","widgetAmounts","captureWhileLocked","autoRecord","captureAllSources","autoOpenOnBoot","alwaysOnScheduler","privacyBlur"})if(a.has(k))settings.put(k,a.getBoolean(k));
         for(String k:new String[]{"quietStart","quietEnd","digestHour"})if(a.has(k)){int v=a.getInt(k);if(v<0||v>23)throw new IllegalArgumentException("Choose an hour from 0 to 23.");settings.put(k,v);}
         if(a.has("threshold")){int v=a.getInt("threshold");if(v<1||v>100)throw new IllegalArgumentException("Threshold must be 1–100%.");settings.put("threshold",v);}break;
       }
@@ -126,7 +127,7 @@ public final class Ledger {
   }
   public static void migrate(JSONObject s)throws Exception{
     int version=s.getInt("schema");if(version<1||version>2)throw new IllegalArgumentException("Unsupported backup version.");
-    for(String k:new String[]{"rules","favorites","receipts","imports","reconciliations","installments","customCategories","alerts","ruleHistory"})if(!s.has(k))s.put(k,new JSONArray());s.put("schema",2);
+    for(String k:new String[]{"rules","favorites","receipts","imports","reconciliations","installments","customCategories","alerts","ruleHistory","debts"})if(!s.has(k))s.put(k,new JSONArray());s.put("schema",2);
   }
   static JSONArray postings(JSONObject s,JSONObject a,String tid,long n)throws Exception{
     String kind=a.getString("kind"),account=a.getString("account"),category=a.optString("category","Other");JSONArray p=new JSONArray();
@@ -162,8 +163,9 @@ public final class Ledger {
     }
     for(int i=0;i<tx.length();i++){JSONObject t=tx.getJSONObject(i);if(t.optBoolean("voided"))continue;if(t.getString("kind").equals("reimbursement")){JSONObject original=find(tx,t.getString("reimbursementFor"));if(original.optBoolean("voided")||!original.getString("kind").equals("shared"))throw new IllegalArgumentException("Missing shared expense.");}if(t.has("originalId")){JSONObject original=find(tx,t.getString("originalId"));if(!t.getString("kind").equals("refund")||!original.getString("kind").equals("expense"))throw new IllegalArgumentException("Invalid refund link.");}}
     for(long remaining:receivables.values())if(remaining<0)throw new IllegalArgumentException("A repayment would exceed its shared expense. Remove the repayment first.");
-    for(String k:new String[]{"drafts","budgets","bills","goals","sources","seen","rules","favorites","receipts","imports","reconciliations","installments","customCategories","alerts","ruleHistory"})if(s.getJSONArray(k).length()>100000)throw new IllegalArgumentException("Too many records.");
-    Set<String> cats=new HashSet<>();JSONArray budgets=s.getJSONArray("budgets");for(int i=0;i<budgets.length();i++){JSONObject b=budgets.getJSONObject(i);if(b.getLong("limit")<=0||b.getLong("limit")>MAX||!cats.add(b.getString("category")))throw new IllegalArgumentException("Invalid or duplicate category budget.");}
+    for(String k:new String[]{"drafts","budgets","bills","goals","debts","sources","seen","rules","favorites","receipts","imports","reconciliations","installments","customCategories","alerts","ruleHistory"})if(s.getJSONArray(k).length()>100000)throw new IllegalArgumentException("Too many records.");
+    JSONArray debts=s.getJSONArray("debts");for(int i=0;i<debts.length();i++){JSONObject d=debts.getJSONObject(i);long bal=d.getLong("balance"),minP=d.getLong("minPayment");int bps=d.optInt("aprBps",0);if(d.optString("name","").trim().isEmpty()||bal<0||bal>MAX||minP<=0||minP>MAX||bps<0||bps>10000||!Arrays.asList("reducing","flat").contains(d.optString("rateType","reducing")))throw new IllegalArgumentException("Invalid debt entry.");}
+    Set<String> cats=new HashSet<>();JSONArray budgets=s.getJSONArray("budgets");for(int i=0;i<budgets.length();i++){JSONObject b=budgets.getJSONObject(i);if(b.getLong("limit")<=0||b.getLong("limit")>MAX||!cats.add(b.getString("category")+"\u0000"+b.optString("subcategory","").trim()))throw new IllegalArgumentException("Invalid or duplicate category budget.");}
     JSONArray bills=s.getJSONArray("bills");for(int i=0;i<bills.length();i++){JSONObject b=bills.getJSONObject(i);date(b.getString("date"));if(!ac.contains(b.getString("account"))||b.getLong("amount")<=0)throw new IllegalArgumentException("Invalid bill.");}
     int day=s.getJSONObject("settings").optInt("cycleDay",1);if(day<1||day>31)throw new IllegalArgumentException("Invalid cycle day.");
   }

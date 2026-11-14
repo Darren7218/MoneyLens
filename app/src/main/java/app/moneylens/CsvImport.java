@@ -21,8 +21,23 @@ public final class CsvImport {
    String raw=get(row,map,"amount").replace("RM","").replace("MYR","").replace(",","").trim();if(raw.startsWith("(")&&raw.endsWith(")"))raw="-"+raw.substring(1,raw.length()-1);BigDecimal n=new BigDecimal(raw);long value=n.abs().movePointRight(2).longValueExact();if(value<=0||value>Ledger.MAX)throw new IllegalArgumentException("Invalid amount");
    String d=get(row,map,"date"),format=map.optString("dateFormat","iso");LocalDate date=format.equals("dmy")?LocalDate.parse(d,DateTimeFormatter.ofPattern("d/M/uuuu").withResolverStyle(ResolverStyle.STRICT)):format.equals("mdy")?LocalDate.parse(d,DateTimeFormatter.ofPattern("M/d/uuuu").withResolverStyle(ResolverStyle.STRICT)):LocalDate.parse(d);
    String kind=get(row,map,"kind").toLowerCase(Locale.ROOT);if(kind.isEmpty())kind=map.optBoolean("signed")?(n.signum()<0?"expense":"income"):map.optString("defaultKind","expense");if(!Arrays.asList("expense","income","refund").contains(kind))throw new IllegalArgumentException("Use expense, income or refund; review transfers manually");
-   String merchant=get(row,map,"merchant"),category=get(row,map,"category");if(category.isEmpty())category=kind.equals("income")?"Other income":"Other";if(merchant.length()>120||category.length()>60)throw new IllegalArgumentException("Description too long");
-   result.put("kind",kind).put("amount",BigDecimal.valueOf(value,2).toPlainString()).put("merchant",merchant).put("category",category).put("date",date.toString()).put("account",account).put("note",get(row,map,"note")).put("key","import:"+digest+":"+i);
+   String merchant=get(row,map,"merchant"),category=get(row,map,"category"),note=get(row,map,"note");
+   if(category.isEmpty()){
+    JSONObject probe=new JSONObject().put("merchant",merchant).put("amount",value).put("account",account).put("source","CSV import").put("note",note);
+    Finance.suggest(state,probe);
+    if(kind.equals("income")){
+     category="Other income";
+     if(!probe.optString("ruleId","").isEmpty()){
+      category=probe.optString("category",category);
+      if(!probe.optString("subcategory").isEmpty())result.put("subcategory",probe.getString("subcategory"));
+     }
+    }else{
+     category=probe.optString("category","Miscellaneous");
+     if(!probe.optString("subcategory").isEmpty())result.put("subcategory",probe.getString("subcategory"));
+    }
+   }
+   if(merchant.length()>120||category.length()>60)throw new IllegalArgumentException("Description too long");
+   result.put("kind",kind).put("amount",BigDecimal.valueOf(value,2).toPlainString()).put("merchant",merchant).put("category",category).put("date",date.toString()).put("account",account).put("note",note).put("key","import:"+digest+":"+i);
    JSONArray tx=state.getJSONArray("transactions");for(int j=0;j<tx.length();j++){JSONObject t=tx.getJSONObject(j);if(result.getString("importRow").equals(t.optString("importRow")))result.put("duplicate",true);if(!t.optBoolean("voided")&&t.getLong("amount")==value&&t.getString("date").equals(date.toString())&&t.getString("account").equals(account)&&t.optString("merchant").equalsIgnoreCase(merchant))result.put("possibleDuplicate",true);}
   }catch(Exception e){result.put("error","Row "+i+": check the date, amount and column mapping.");}out.put(result);}
   return out;
