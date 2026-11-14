@@ -180,5 +180,6 @@ const CAT_NOTIFICATION_PRESETS=[
   {key:'shopping',category:'Shopping',sub:'Clothing, Bags & Footwear',source:'Shopee MY',sample:'RM 68.00 paid at UNIQLO Malaysia via ShopeePay.'},
   {key:'education',category:'Education',sub:'Books & Stationery',source:"Touch 'n Go eWallet",sample:'You have paid RM 39.90 at POPULAR Bookstore.'},
   {key:'entertainment',category:'Entertainment & travel',sub:'Movies, Concerts & Events',source:"Touch 'n Go eWallet",sample:'You paid RM 42.00 at GSC Mid Valley.'},
-  {key:'refund',category:'Shopping',sub:'Refund & Reversal',source:'ShopeePay MY',sample:'Refund of RM 68.00 from UNIQLO Malaysia credited to your ShopeePay balance.'}
+  {key:'refund',category:'Shopping',sub:'Refund & Reversal',source:'ShopeePay MY',sample:'Refund of RM 68.00 from UNIQLO Malaysia credited to your ShopeePay balance.'},
+  {key:'split',category:'Family & gifts',sub:'Split-Bill Reimbursement',source:'MAE by Maybank2u',sample:'You received RM 24.50 from Ali via DuitNow transfer.'}
 ];

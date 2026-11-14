@@ -495,6 +495,7 @@ const I18N_MS={
   'Recent Split Settlements':'Penyelesaian Bil Kongsi Terkini',
   'Auto-matched split':'Kongsi dipadankan auto',
   'Split repayment':'Bayaran balik kongsi',
+  'Split-Bill Reimbursement':'Bayaran Balik Bil Kongsi',
   'Split bills owed: {amt}':'Bil berkongsi belum terima: {amt}',
   'Split Tabs':'Tab Kongsi',
   'Restore Diff Preview':'Pratonton Perbezaan Pemulihan',

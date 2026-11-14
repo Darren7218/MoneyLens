@@ -223,6 +223,7 @@ test('Phase 14 split bills tabs by friend, home split banner & auto-reconciled p
 
   const txHtml=run(`transactions()`);
   assert(txHtml.includes('tx-pill split-link')&&txHtml.includes('Auto-matched split · Sarah Lee'));
+  assert(run(`CAT_NOTIFICATION_PRESETS.some(p=>p.key==='split')`)===true);
   run(`reportData=${JSON.stringify(prevReport)};planTab='budgets'`);
 });
 console.log('RESULT: '+passed+' UI tests passed');

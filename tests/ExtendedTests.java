@@ -599,6 +599,13 @@ public final class ExtendedTests {
    eq(Finance.income(s,LocalDate.now().withDayOfMonth(1),LocalDate.now().plusDays(1)),0L);
    yes(Extras.formatRecordedTitle(savedDraft,s.getJSONObject("settings"),false,false).contains("Split settled RM 40.00"));
    yes(Extras.formatRecordedBody(savedDraft,s.getJSONObject("settings"),true,false).contains("Dilangsaikan automatik"));
+   yes(PaymentParser.isLikelyPayment("You received RM 40.00 from Ali via DuitNow to your MAE account."));
+   yes(PaymentParser.isLikelyPayment("Anda menerima 40.00 daripada Ali melalui DuitNow"));
+   yes(PaymentParser.isLikelyPayment("Akaun anda dikreditkan RM 40.00 daripada Ali"));
+   JSONObject bmIn=PaymentParser.parse("Akaun anda dikreditkan RM 40.00 daripada Ali ke akaun MAE anda.","MAE by Maybank2u");
+   yes(bmIn!=null&&"income".equals(bmIn.optString("kind"))&&bmIn.getLong("amount")==4000L&&"Ali".equalsIgnoreCase(bmIn.optString("merchant")));
+   JSONObject bmIn2=PaymentParser.parse("Anda menerima RM 40.00 daripada Ali melalui DuitNow.","MAE by Maybank2u");
+   yes(bmIn2!=null&&"income".equals(bmIn2.optString("kind"))&&bmIn2.getLong("amount")==4000L&&"Ali".equalsIgnoreCase(bmIn2.optString("merchant")));
   });
 
   test("Phase 14 sharedSummary groups friends and settlePerson FIFO-settles multiple bills",()->{

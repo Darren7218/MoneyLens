@@ -214,6 +214,7 @@ public final class MainActivity extends Activity {
       {"education","my.com.tngdigital.ewallet","Touch 'n Go eWallet","eWallet Payment","You have paid RM 39.90 at POPULAR Bookstore.","You have paid RM 39.90 at POPULAR Bookstore."},
       {"entertainment","my.com.tngdigital.ewallet","Touch 'n Go eWallet","GSC Cinema Tickets","You paid RM 42.00 at GSC Mid Valley.","You paid RM 42.00 at GSC Mid Valley via TNG eWallet."},
       {"refund","com.shopee.pay.my","ShopeePay MY","ShopeePay Refund Credited","Refund of RM 68.00 from UNIQLO Malaysia credited to ShopeePay.","Refund of RM 68.00 from UNIQLO Malaysia credited to your ShopeePay wallet balance."},
+      {"split","com.maybank2u.mae","MAE by Maybank2u","DuitNow Transfer Received","You received RM 24.50 from Ali via DuitNow.","You received RM 24.50 from Ali via DuitNow transfer. Ref: DN8821."},
       {"ptptn","com.maybank2u.life","Maybank2u","JomPAY Payment","You have paid RM 150.00 to PTPTN Direct Debit.","You have paid RM 150.00 to PTPTN Direct Debit. Ref: 9928172."}
     };
     int idx=(testCursor++)%templates.length;

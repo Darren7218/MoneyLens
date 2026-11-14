@@ -14,7 +14,7 @@
   "total_samples": 1884,
   "thermal_receipts": {
     "merchant_match": 0.8163,
-    "date_exact": 0.9301,
+    "date_exact": 0.9322,
     "cat_acc": 0.9342,
     "n": 958,
     "amount_exact": 0.9708,
