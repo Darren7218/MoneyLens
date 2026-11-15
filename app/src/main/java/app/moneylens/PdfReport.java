@@ -42,6 +42,8 @@ public final class PdfReport {
 
  public static byte[] build(JSONObject state,LocalDate on)throws Exception{
   JSONObject recap=Finance.cycleRecap(state,on);
+  JSONObject pacing=Finance.dailyPacing(state,on);
+  JSONObject shared=Finance.sharedSummary(state,on);
   JSONObject tax=Finance.calculateTax(state,null,on.getYear());
   PdfReport r=new PdfReport();
   try{
@@ -57,6 +59,7 @@ public final class PdfReport {
    r.row("Total Spending",rm(recap.getLong("totalSpent")),r.bodyPaint,r.boldPaint);
    r.row("Net Saved",(net>=0?"+":"")+rm(net)+" ("+recap.getInt("savingsRatePct")+"%)",r.boldPaint,r.boldPaint);
    r.row("Previous Cycle Spending",rm(recap.getLong("previousSpent"))+" ("+(delta>=0?"+":"")+rm(delta)+" change)",r.bodyPaint,r.bodyPaint);
+   r.row("Daily Burn Avg / Safe Allowance",rm(pacing.optLong("dailyAvg"))+"/day  ·  Safe "+rm(pacing.optLong("safeDaily"))+"/day ("+pacing.optLong("remainingDays")+"d left)",r.bodyPaint,r.bodyPaint);
    r.row("Budgets On Track / Over",recap.getInt("underBudgetCount")+" on track  ·  "+recap.getInt("overBudgetCount")+" over",r.bodyPaint,r.bodyPaint);
 
    r.section("2. Spending by Category");
@@ -93,6 +96,15 @@ public final class PdfReport {
     JSONObject it=claim.getJSONObject(i);
     String receiptMark=it.optString("receiptId","").isEmpty()?"":" [Receipt]";
     r.row(it.getString("date")+" · "+it.getString("merchant")+" · "+it.getString("bucket")+receiptMark,rm(it.getLong("amount")),r.bodyPaint,r.boldPaint);
+   }
+
+   JSONArray friends=shared.optJSONArray("friends");
+   if(friends!=null&&friends.length()>0){
+    r.section("6. Open Split-Bill Receivables ("+rm(shared.optLong("totalOwed"))+")");
+    for(int i=0;i<friends.length();i++){
+     JSONObject fr=friends.getJSONObject(i);
+     r.row(fr.optString("person")+" ("+fr.optInt("count")+" open item"+(fr.optInt("count")==1?"":"s")+", since "+fr.optString("oldestDate")+")",rm(fr.optLong("totalOwed")),r.bodyPaint,r.boldPaint);
+    }
    }
 
    if(r.page!=null){r.canvas.drawText("MoneyLens · Page "+r.pageNum,MARGIN,820,r.mutedPaint);r.doc.finishPage(r.page);}

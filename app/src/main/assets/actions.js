@@ -10,9 +10,9 @@ function inferSourceGroup(a){
   return a.group||'other';
 }
 function modal(title,body){
-  $('#modal-root').innerHTML=`<div class="modal-shade"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="dialog-title"><div class="sheet-handle"></div><header><h2 id="dialog-title">${esc(title)}</h2><button class="close" data-action="close" aria-label="Close">${icon('close')}</button></header>${body}</section></div>`;
-  const f=$('.modal input:not([type=hidden]),.modal select,.modal button');
-  if(f)setTimeout(()=>f.focus(),100);
+  $('#modal-root').innerHTML=`<div class="modal-shade"><section class="modal" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="dialog-title"><div class="sheet-handle"></div><header><h2 id="dialog-title">${esc(title)}</h2><button class="close" data-action="close" aria-label="Close">${icon('close')}</button></header>${body}</section></div>`;
+  const m=$('.modal');
+  if(m){m.scrollTop=0;setTimeout(()=>{m.scrollTop=0;try{m.focus({preventScroll:true});}catch(_){}},40);}
 }
 function close(){if(busy)return;if(modalContext.isRestorePreview&&window.MoneyLensNative)call('cancelRestore').catch(()=>{});$('#modal-root').innerHTML='';modalContext={}}
 
@@ -38,7 +38,8 @@ function txForm(data={}){
   const historyCheck=prevCount>0?check(`Update ${prevCount} previous "${esc(merged.merchant)}" transaction${prevCount===1?'':'s'} to this category & remember for future`,'applyHistory',merged.category==='Miscellaneous'||merged.category==='Other'):'';
   const ruleCheck=check('Remember merchant category and account for next time','rememberRule',!!merged.editId&&(merged.category==='Miscellaneous'||merged.category==='Other'));
   const title=merged.draftId?'Review payment':merged.editId?'Edit transaction':merged.billId?'Record bill payment':'Add transaction';
-  modal(title,`<form id="transaction-form"><div class="chips">${chips}</div><div class="amount-input"><span>RM</span><input name="amount" id="f-amount" inputmode="decimal" aria-label="Amount in MYR" placeholder="0.00" value="${merged.amount?esc(typeof merged.amount==='number'?amount(merged.amount):merged.amount):''}" required pattern="[0-9]+([.][0-9]{1,2})?" autocomplete="off"></div>${merged.reason?`<div class="hint" style="margin:0">${esc(merged.reason)}</div>`:''}<div class="form-grid">${select(kind==='transfer'?'From account':'Account','account',merged.draftId?[['','Choose account'],...acctRows]:acctRows,merged.account||(merged.draftId?'':state.accounts[0].id))}${kind==='transfer'?select('To account','to',acctRows,merged.to||state.accounts[1]?.id):select('Category','category',catRows,selCat)}</div>${field(kind==='transfer'?'Description':'Merchant / description','merchant',merged.merchant||'','text','maxlength="120"')}${field('Date','date',merged.date||today(),'date','required')}<div><label for="f-note">Note <span class="muted">· optional</span></label><textarea id="f-note" name="note" maxlength="500" placeholder="Anything worth remembering?">${esc(merged.note||'')}</textarea></div>${evidence}${thumb}${subRow}${sharedRows}${tagsField}${splitsBox}${fxBox}${historyCheck}${ruleCheck}<div class="error" role="alert"></div><div class="form-footer"><button class="btn" type="submit">${icon('check')}${merged.editId?'Save changes':'Record transaction'}</button></div><p class="note">${kind==='transfer'?'A transfer moves money without adding an expense.':kind==='refund'?'A refund reduces spending in the selected category.':'Only confirmed records affect your balance.'}</p></form>`);
+  const quickBar=(!merged.editId&&!merged.draftId)?`<div class="quick-parse-bar"><input type="text" id="quick-parse-input" placeholder="${esc(tr('Try: Nasi Lemak 12.50 cash or Dinner 60 split Sarah'))}" aria-label="${esc(tr('Smart quick entry'))}"><button type="button" class="btn secondary small" data-action="quickParseFill">${esc(tr('Auto-fill'))}</button></div>`:'';
+  modal(title,`<form id="transaction-form">${quickBar}<div class="chips">${chips}</div><div class="amount-input"><span>RM</span><input name="amount" id="f-amount" inputmode="decimal" aria-label="Amount in MYR" placeholder="0.00" value="${merged.amount?esc(typeof merged.amount==='number'?amount(merged.amount):merged.amount):''}" required pattern="[0-9]+([.][0-9]{1,2})?" autocomplete="off"></div>${merged.reason?`<div class="hint" style="margin:0">${esc(merged.reason)}</div>`:''}<div class="form-grid">${select(kind==='transfer'?'From account':'Account','account',merged.draftId?[['','Choose account'],...acctRows]:acctRows,merged.account||(merged.draftId?'':state.accounts[0].id))}${kind==='transfer'?select('To account','to',acctRows,merged.to||state.accounts[1]?.id):select('Category','category',catRows,selCat)}</div>${field(kind==='transfer'?'Description':'Merchant / description','merchant',merged.merchant||'','text','maxlength="120"')}${field('Date','date',merged.date||today(),'date','required')}<div><label for="f-note">Note <span class="muted">· optional</span></label><textarea id="f-note" name="note" maxlength="500" placeholder="Anything worth remembering?">${esc(merged.note||'')}</textarea></div>${evidence}${thumb}${subRow}${sharedRows}${tagsField}${splitsBox}${fxBox}${historyCheck}${ruleCheck}<div class="error" role="alert"></div><div class="form-footer"><button class="btn" type="submit">${icon('check')}${merged.editId?'Save changes':'Record transaction'}</button></div><p class="note">${kind==='transfer'?'A transfer moves money without adding an expense.':kind==='refund'?'A refund reduces spending in the selected category.':'Only confirmed records affect your balance.'}</p></form>`);
 }
 
 function splitRow(s={}){
@@ -312,6 +313,14 @@ document.addEventListener('click',async e=>{
         else if(h)billForm({name:h.merchant,amount:h.latestAmount,account:h.account,category:h.category,frequency:h.frequency||'monthly',subscription:true});
         break;
       }
+      case 'quickParseFill':{
+        const qText=($('#quick-parse-input')?.value||'').trim();
+        const parsed=window.MoneyLensNative?await call('quickParse',{text:qText}):localQuickParse(qText);
+        if(!parsed||!parsed.amountMinor){toast(tr('Enter an amount like "Nasi Lemak 12.50 cash".'));break;}
+        txForm({...parsed,key:modalContext.key});
+        toast(tr('Smart fields filled from your note.'));
+        break;
+      }
       case 'fxPreset':{
         const f=$('#transaction-form');
         if(f){
@@ -535,7 +544,7 @@ document.addEventListener('input',e=>{
   if(e.target.id==='search'){
     query=e.target.value;
     const res=$('#tx-results');
-    if(res)res.innerHTML=`<section class="card">${transactionList(filteredTransactions(),true)}</section>`;
+    if(res)res.innerHTML=renderTxResults(filteredTransactions());
   }else if(e.target.id==='source-search'){
     const q=e.target.value;renderSources(q);const input=$('#source-search');if(input){input.focus();input.setSelectionRange(q.length,q.length);}
   }else if(e.target.name==='match'&&$('#rule-preview')){
@@ -575,6 +584,7 @@ document.addEventListener('change',async e=>{
 });
 
 document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&e.target?.id==='quick-parse-input'){e.preventDefault();$('[data-action="quickParseFill"]')?.click();return;}
   if(e.key==='Escape')close();
   if(e.key==='Tab'&&$('.modal')){
     const nodes=[...document.querySelectorAll('.modal button:not([disabled]),.modal input,.modal select,.modal textarea')];

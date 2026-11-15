@@ -82,12 +82,12 @@ const formFooter=(text='Save')=>`<div class="error" role="alert"></div><button c
 function account(id){return state.accounts.find(a=>a.id===id)||{name:tr('Unknown account'),type:'bank'}}
 function validTx(){return state.transactions.filter(t=>!t.voided)}
 function balance(id){return validTx().reduce((sum,t)=>sum+(t.postings||[]).filter(p=>p.account===id).reduce((n,p)=>n+p.amount,0),0)}
-function period(){
+function period(off=monthOffset){
   let now=new Date(),day=state.settings.cycleDay||1;
   const date=(y,m)=>new Date(y,m,Math.min(day,new Date(y,m+1,0).getDate()),0);
   let start=date(now.getFullYear(),now.getMonth());
   if(now<start)start=date(start.getFullYear(),start.getMonth()-1);
-  start=date(start.getFullYear(),start.getMonth()+monthOffset);
+  start=date(start.getFullYear(),start.getMonth()+off);
   let end=date(start.getFullYear(),start.getMonth()+1);
   const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   return{start:iso(start),end:iso(end),label:start.toLocaleDateString(appLocale(),{month:'long',year:'numeric'}),day};
@@ -163,6 +163,110 @@ function catMeta(c){
   if(low.includes('invest')||low.includes('saving'))return CAT_META['Investments & savings'];
   if(low.includes('tax')||low.includes('lhdn')||low.includes('jpj'))return CAT_META['Taxes & government'];
   return CAT_META['Miscellaneous'];
+}
+function computeLocalDailyPacing(s,rep){
+  const curState=s||state;if(!curState)return null;
+  const p=period(0),onIso=today();
+  const prevM=period(-1);
+  const startDt=new Date(p.start+'T12:00:00'),endDt=new Date(p.end+'T12:00:00'),onDt=new Date(onIso+'T12:00:00');
+  endDt.setDate(endDt.getDate()-1);
+  const dayMs=86400000;
+  const daysInCycle=Math.max(1,Math.round((endDt-startDt)/dayMs)+1);
+  const elapsedDays=Math.max(1,Math.min(daysInCycle,Math.round((onDt-startDt)/dayMs)+1));
+  const remainingDays=Math.max(1,Math.round((endDt-onDt)/dayMs)+1);
+  const txList=(curState.transactions||[]).filter(t=>!t.voided&&t.date<=onIso);
+  let cycleSpent=0,todaySpent=0;
+  const dayMap=new Map(),currCats=new Map(),prevCats=new Map();
+  const seriesStartDt=new Date(onDt);seriesStartDt.setDate(seriesStartDt.getDate()-13);
+  const seriesIso=`${seriesStartDt.getFullYear()}-${String(seriesStartDt.getMonth()+1).padStart(2,'0')}-${String(seriesStartDt.getDate()).padStart(2,'0')}`;
+  for(const t of txList){
+    const inCurr=t.date>=p.start&&t.date<p.end;
+    const inPrev=t.date>=prevM.start&&t.date<prevM.end;
+    const inSer=t.date>=seriesIso;
+    if(!inCurr&&!inPrev&&!inSer)continue;
+    let txExp=0;
+    for(const e of (t.postings||[])){
+      if(e.account?.startsWith('expense:')){
+        const cat=e.account.slice(8),amt=e.amount||0;
+        if(inCurr){currCats.set(cat,(currCats.get(cat)||0)+amt);cycleSpent+=amt;}
+        else if(inPrev){prevCats.set(cat,(prevCats.get(cat)||0)+amt);}
+        if(t.date===onIso)todaySpent+=amt;
+        txExp+=amt;
+      }
+    }
+    if(inSer&&txExp!==0)dayMap.set(t.date,Math.max(0,(dayMap.get(t.date)||0)+txExp));
+  }
+  const accts=curState.accounts||[];
+  let liq=0,debt=0;
+  for(const a of accts){
+    const b=txList.reduce((sum,t)=>sum+(t.postings||[]).filter(e=>e.account===a.id).reduce((k,e)=>k+e.amount,0),0);
+    if(a.type==='card')debt+=Math.max(0,-b);else liq+=b;
+  }
+  const avail=(rep&&rep.availableToSpend!=null)?rep.availableToSpend:Math.max(0,liq-debt);
+  const safeDaily=avail>0?Math.floor(avail/remainingDays):0;
+  const dailyAvg=Math.round(cycleSpent/elapsedDays);
+  const todayRemaining=Math.max(0,safeDaily-todaySpent);
+  const paceStatus=(safeDaily>0&&todaySpent>safeDaily)||(avail<=0&&todaySpent>0)?'over':(safeDaily>0&&todaySpent*100>=safeDaily*80)?'watch':'good';
+  const dailySeries=[];
+  for(let i=13;i>=0;i--){
+    const d=new Date(onDt);d.setDate(d.getDate()-i);
+    const iso=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    dailySeries.push({date:iso,spent:dayMap.get(iso)||0,isToday:i===0});
+  }
+  const categoryDeltas=[...currCats.entries()].filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,6).map(([cat,curr])=>{
+    const prev=Math.max(0,prevCats.get(cat)||0),delta=curr-prev;
+    const deltaPct=prev>0?Math.round(delta*100/prev):100;
+    return{category:cat,current:curr,previous:prev,delta,deltaPct};
+  });
+  return{daysInCycle,elapsedDays,remainingDays,cycleSpent,todaySpent,safeDaily,todayRemaining,dailyAvg,projectedCycleSpend:dailyAvg*daysInCycle,paceStatus,dailySeries,categoryDeltas};
+}
+function localQuickParse(rawText){
+  const raw=String(rawText||'').trim();if(!raw)return null;
+  const work=raw.replace(/\b20\d{2}-\d{2}-\d{2}\b/g,' ').replace(/\s+/g,' ').trim();
+  const rmM=work.match(/\b(?:rm|myr)\s*([0-9]{1,7}(?:\.[0-9]{1,2})?)/i);
+  const numM=rmM||work.match(/(?:^|[^0-9.:/-])([0-9]{1,6}(?:\.[0-9]{1,2})?)(?![0-9.:/-])/);
+  if(!numM)return null;
+  const val=Number(numM[1]);if(!(val>0))return null;
+  const amtMinor=Math.round(val*100);
+  const tokenStart=work.indexOf(numM[0]);
+  let rest=(work.slice(0,tokenStart)+' '+work.slice(tokenStart+numM[0].length)).replace(/\s+/g,' ').trim();
+  let kind='expense',person='',ownAmount='';
+  const spM=rest.match(/\b(?:split(?:\s+with)?|kongsi(?:\s+dengan)?)\s+([A-Za-z0-9][A-Za-z0-9 .'_-]{0,40})/i);
+  if(spM){
+    kind='shared';
+    person=spM[1].replace(/\s+(?:via|by|using|with|cash|tunai|tng|mae|maybank|cimb|rhb|gxbank|shopeepay|grabpay|boost|bank|card).*$/i,'').trim();
+    rest=(rest.slice(0,spM.index)+' '+rest.slice(spM.index+spM[0].length)).replace(/\s+/g,' ').trim();
+    ownAmount=(Math.floor(amtMinor/2)/100).toFixed(2);
+  }else if(/\b(?:received|terima|daripada|gaji|salary)\b/i.test(rest)||/\bfrom\s+[A-Za-z]/i.test(rest)){
+    if(!/\b(?:transfer|pindah|top.?up|reload)\b/i.test(rest))kind='income';
+  }else if(/\b(?:transfer|pindah|top.?up|reload)\b/i.test(rest))kind='transfer';
+  const accts=state?.accounts||[];
+  let acct=accts.find(a=>new RegExp(`\\b${a.name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\b`,'i').test(rest))?.id||'';
+  if(!acct){
+    const aliases=[[/\b(?:cash|tunai)\b/i,'cash'],[/\b(?:tng|touch\s*'?n\s*go)\b/i,'tng'],[/\bmae\b/i,'mae'],[/\bmaybank\b/i,'maybank'],[/\bcimb\b/i,'cimb'],[/\bgxbank\b|\bgx\b/i,'gx'],[/\bshopeepay\b|\bspay\b/i,'shopee'],[/\bgrabpay\b/i,'grab']];
+    for(const[re,needle] of aliases){
+      if(re.test(rest)){
+        const hit=accts.find(a=>a.type===needle||a.name.toLowerCase().includes(needle));
+        if(hit){acct=hit.id;rest=rest.replace(re,' ');break;}
+      }
+    }
+  }
+  if(!acct)acct=state?.settings?.lastAccount||accts[0]?.id||'cash';
+  let merchant=rest.replace(/\b(?:paid|pay|spent|bought|bayar|beli|received|terima|duitnow|fpx|qr|via|melalui|from|daripada|at|di|for|untuk|to|kepada)\b/ig,' ').replace(/\s+/g,' ').trim();
+  if(kind==='income'){const fm=rest.match(/\b(?:from|daripada)\s+([A-Za-z0-9 .'_-]{2,40})/i);if(fm)merchant=fm[1].replace(/\b(?:via|duitnow|mae|tng|cash|tunai|bank).*/i,'').trim();}
+  if(!merchant)merchant=kind==='shared'?'Shared expense':kind==='income'?'Incoming transfer':'Quick expense';
+  else merchant=merchant[0].toUpperCase()+merchant.slice(1);
+  const low=(merchant+' '+raw).toLowerCase();
+  let category=kind==='income'?'Other income':'Miscellaneous',subcategory='';
+  if(kind!=='income'){
+    if(/\b(nasi|kopitiam|mamak|laksa|mee|food|lunch|dinner|breakfast|makan|teh|coffee|cafe|starbucks|zus|mixue|mcd|kfc)\b/.test(low)){category='Food & drinks';subcategory=/grabfood|foodpanda/.test(low)?'Food Delivery (GrabFood / Foodpanda)':'Hawker & Mamak';}
+    else if(/\b(grab|mrt|lrt|toll|petrol|shell|petronas|setel|parking)\b/.test(low)){category='Transport';subcategory=/grab/.test(low)?'E-Hailing (Grab / AirAsia Ride)':'';}
+    else if(/\b(speedmart|lotus|mydin|jaya|village grocer|aeon|groceries|market)\b/.test(low)){category='Groceries';}
+    else if(/\b(clinic|klinik|pharmacy|farmasi|watsons|guardian|doctor)\b/.test(low)){category='Health & medical';}
+    else if(/\b(shopee|lazada|uniqlo|shopping|watsons)\b/.test(low)){category='Shopping';}
+    else if(/\b(tnb|unifi|maxis|celcom|water|wifi|electric)\b/.test(low)){category='Bills & utilities';}
+  }
+  return{kind,amount:(amtMinor/100).toFixed(2),amountMinor:amtMinor,merchant,category,subcategory,account:acct,ownAmount,person,date:today()};
 }
 const CAT_NOTIFICATION_PRESETS=[
   {key:'hawker',category:'Food & drinks',sub:'Hawker & Mamak',source:'ShopeePay MY',sample:'You have paid RM 8.50 at Nasi Lemak Wanjo Kampung Baru.'},

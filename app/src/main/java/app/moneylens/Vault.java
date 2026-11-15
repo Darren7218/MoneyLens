@@ -44,6 +44,7 @@ public final class Vault {
         .putInt("quietEnd",st.optInt("quietEnd",8))
         .putBoolean("appLock",st.optBoolean("appLock",false))
         .putBoolean("privacyBlur",st.optBoolean("privacyBlur",false))
+        .putBoolean("darkMode","dark".equals(st.optString("theme","light")))
         .putInt("lockTimeoutSec",st.optInt("lockTimeoutSec",0))
         .putString("lang",st.optString("lang","en"))
         .putInt("activeBillsCount",activeBills)

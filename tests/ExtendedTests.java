@@ -636,6 +636,48 @@ public final class ExtendedTests {
    Ledger.validate(s);
   });
 
+  test("Phase 15 dailyPacing computes safe daily burn, 14-day series & category deltas",()->{
+   JSONObject s=Ledger.initial();
+   Ledger.apply(s,"account",new JSONObject().put("name","MAE").put("type","bank").put("opening","1000.00"));
+   String maeId=s.getJSONArray("accounts").getJSONObject(1).getString("id");
+   LocalDate on=LocalDate.now();
+   LocalDate cycleStart=Finance.start(on,1),prevCycleDay=cycleStart.minusDays(5);
+   Ledger.post(s,new JSONObject().put("key","p15-prev").put("kind","expense").put("amount","50.00").put("account",maeId).put("category","Food & drinks").put("merchant","Kopitiam").put("date",prevCycleDay.toString()));
+   Ledger.post(s,new JSONObject().put("key","p15-cur1").put("kind","expense").put("amount","30.00").put("account",maeId).put("category","Food & drinks").put("merchant","Nasi Kandar").put("date",on.toString()));
+   if(!on.equals(cycleStart)){
+    Ledger.post(s,new JSONObject().put("key","p15-cur2").put("kind","expense").put("amount","45.00").put("account",maeId).put("category","Food & drinks").put("merchant","Mamak").put("date",cycleStart.toString()));
+   }
+   JSONObject rep=Finance.report(s,on);
+   JSONObject dp=rep.getJSONObject("dailyPacing");
+   eq(dp.getLong("todaySpent"),3000L);
+   yes(dp.getLong("safeDaily")>0L&&dp.getLong("daysInCycle")>=28);
+   JSONArray ser=dp.getJSONArray("dailySeries");
+   eq(ser.length(),14);
+   JSONObject lastBar=ser.getJSONObject(13);
+   yes(lastBar.getBoolean("isToday")&&lastBar.getLong("spent")==3000L);
+   JSONArray deltas=dp.getJSONArray("categoryDeltas");
+   yes(deltas.length()>=1&&"Food & drinks".equals(deltas.getJSONObject(0).getString("category")));
+   eq(deltas.getJSONObject(0).getLong("previous"),5000L);
+  });
+
+  test("Phase 15 parseQuickEntry parses EN/BM shortcuts, split-bills and account aliases",()->{
+   JSONObject s=Ledger.initial();
+   Ledger.apply(s,"account",new JSONObject().put("name","MAE").put("type","bank").put("opening","500.00"));
+   Ledger.apply(s,"account",new JSONObject().put("name","Touch 'n Go eWallet").put("type","wallet").put("opening","100.00"));
+   String maeId=s.getJSONArray("accounts").getJSONObject(1).getString("id");
+   String tngId=s.getJSONArray("accounts").getJSONObject(2).getString("id");
+   LocalDate on=LocalDate.now();
+   JSONObject q1=Extras.parseQuickEntry(s,"Nasi Lemak 12.50 cash",on);
+   yes(q1!=null&&"expense".equals(q1.getString("kind"))&&"12.50".equals(q1.getString("amount"))&&"cash".equals(q1.getString("account"))&&"Food & drinks".equals(q1.getString("category")));
+   JSONObject q2=Extras.parseQuickEntry(s,"Grab to KL Sentral RM 18 tng",on);
+   yes(q2!=null&&"expense".equals(q2.getString("kind"))&&"18.00".equals(q2.getString("amount"))&&tngId.equals(q2.getString("account"))&&"Transport".equals(q2.getString("category")));
+   JSONObject q3=Extras.parseQuickEntry(s,"Dinner 60 split with Sarah",on);
+   yes(q3!=null&&"shared".equals(q3.getString("kind"))&&"60.00".equals(q3.getString("amount"))&&"30.00".equals(q3.getString("ownAmount"))&&"Sarah".equals(q3.getString("person")));
+   JSONObject q4=Extras.parseQuickEntry(s,"Received RM 45 from Ali duitnow mae",on);
+   yes(q4!=null&&"income".equals(q4.getString("kind"))&&"45.00".equals(q4.getString("amount"))&&maeId.equals(q4.getString("account"))&&"Ali".equalsIgnoreCase(q4.getString("merchant")));
+   yes(Extras.parseQuickEntry(s,"no amount mentioned",on)==null);
+  });
+
   System.out.println("RESULT: "+passed+" extended tests passed");
  }
 }

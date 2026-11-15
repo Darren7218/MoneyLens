@@ -16,6 +16,7 @@ public final class KeepAliveService extends Service {
   private static final String CHANNEL_ID = "scheduler_keepalive";
   private final Handler handler = new Handler(Looper.getMainLooper());
   private boolean startupSynced = false;
+  private boolean stoppedSelfBecauseDenied = false;
   private final Runnable watchdog = new Runnable() {
     @Override public void run() {
       try {
@@ -80,7 +81,13 @@ public final class KeepAliveService extends Service {
       return START_NOT_STICKY;
     }
     running = true;
-    startForegroundQuiet();
+    stoppedSelfBecauseDenied = false;
+    if (!startForegroundQuiet()) {
+      stoppedSelfBecauseDenied = true;
+      running = false;
+      stopSelf();
+      return START_NOT_STICKY;
+    }
     handler.removeCallbacks(watchdog);
     if (!startupSynced) {
       startupSynced = true;
@@ -90,7 +97,7 @@ public final class KeepAliveService extends Service {
     return START_STICKY;
   }
 
-  private void startForegroundQuiet() {
+  private boolean startForegroundQuiet() {
     try {
       NotificationManager nm = getSystemService(NotificationManager.class);
       if (nm != null) {
@@ -116,7 +123,10 @@ public final class KeepAliveService extends Service {
       } else {
         startForeground(FG_ID, n);
       }
-    } catch (Exception ignored) {}
+      return true;
+    } catch (Exception e) {
+      return false;
+    }
   }
 
   @Override public void onTaskRemoved(Intent rootIntent) {
@@ -129,7 +139,7 @@ public final class KeepAliveService extends Service {
   @Override public void onDestroy() {
     running = false;
     handler.removeCallbacks(watchdog);
-    if (getSharedPreferences("health", 0).getBoolean("alwaysOnScheduler", true)) {
+    if (!stoppedSelfBecauseDenied && getSharedPreferences("health", 0).getBoolean("alwaysOnScheduler", true)) {
       scheduleImmediateRestart(this);
     }
     super.onDestroy();

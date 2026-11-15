@@ -16,6 +16,7 @@ import android.text.InputType;
 import org.json.*;
 import java.io.*;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.*;
 import java.nio.charset.StandardCharsets;
@@ -27,14 +28,14 @@ public final class MainActivity extends Activity {
   private static int testCursor=0;
   private String stagedCsv;private JSONArray stagedRows;private String scanLanguage="latin";private android.net.Uri cameraUri;private char[] autoPassword;private BackupArchive.Contents stagedRestoreContents;
   private boolean pageReady=false;private WebView web;private LinearLayout lockOverlay;private CancellationSignal bioCancel;private long lastPausedAt=0L;private boolean awaitingExternalResult=false;
-  private final ExecutorService io=Executors.newSingleThreadExecutor();private volatile boolean unlocked=false;private boolean authenticating=false;private byte[] pendingExport;private String exportToast="Encrypted backup saved.";private char[] restorePassword;private String startScreen="home";private String pendingEditNoteId="";
+  private final ExecutorService io=Executors.newSingleThreadExecutor();private volatile boolean unlocked=false;private boolean authenticating=false;private byte[] pendingExport;private String exportToast="Encrypted backup saved.";private char[] restorePassword;private String startScreen="";private String pendingEditNoteId="";
   public static void notifyCaptured(){MainActivity a=activeInstance;if(a!=null&&a.unlocked)a.js("window.nativeRefresh && window.nativeRefresh()");}
   @Override public void onCreate(Bundle b){super.onCreate(b);activeInstance=this;startScreen=screen(getIntent());pendingEditNoteId=String.valueOf(getIntent().getStringExtra("editNoteId")==null?"":getIntent().getStringExtra("editNoteId"));
     getSharedPreferences("health",0).edit().putBoolean("pendingBootOpen",false).apply();
     try{getSystemService(NotificationManager.class).cancel(2108);}catch(Exception ignored){}
     try{android.service.notification.NotificationListenerService.requestRebind(new ComponentName(this,CaptureService.class));}catch(Exception ignored){}
-    Automation.schedule(this);shortcuts();
     Vault.configureClassifierLazy(this);
+    io.execute(()->{Automation.schedule(this);shortcuts();});
     web=new WebView(this);web.setBackgroundColor(0xfff7f8f2);WebSettings w=web.getSettings();w.setJavaScriptEnabled(true);w.setDomStorageEnabled(false);w.setAllowFileAccess(false);w.setAllowContentAccess(false);w.setAllowFileAccessFromFileURLs(false);w.setAllowUniversalAccessFromFileURLs(false);w.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);w.setSupportMultipleWindows(false);
     web.addJavascriptInterface(new Bridge(),"MoneyLensNative");
     web.setWebViewClient(new WebViewClient(){
@@ -53,7 +54,7 @@ public final class MainActivity extends Activity {
     root.addView(web,new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.MATCH_PARENT));
     root.addView(lockOverlay,new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.MATCH_PARENT));
     if(Build.VERSION.SDK_INT>=30)root.setOnApplyWindowInsetsListener((v,insets)->{android.graphics.Insets bars=insets.getInsets(android.view.WindowInsets.Type.systemBars()|android.view.WindowInsets.Type.ime());v.setPadding(bars.left,bars.top,bars.right,bars.bottom);return insets;});
-    setContentView(root);web.setVisibility(View.INVISIBLE);lockOverlay.setVisibility(View.GONE);web.loadUrl(BASE+"index.html");
+    setContentView(root);web.setVisibility(View.INVISIBLE);lockOverlay.setVisibility(View.GONE);applySystemBars(Vault.hasMeta(this)&&Vault.fastBool(this,"darkMode",false));web.loadUrl(BASE+"index.html");
   }
   private LinearLayout buildLockOverlay(){
     float dp=getResources().getDisplayMetrics().density;
@@ -112,6 +113,25 @@ public final class MainActivity extends Activity {
       else getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
     }catch(Exception ignored){}
   }
+  private void applySystemBars(boolean dark){
+    try{
+      int bg=dark?0xff101511:0xfff7f8f2;
+      if(web!=null)web.setBackgroundColor(bg);
+      if(getWindow()!=null){
+        getWindow().setStatusBarColor(bg);
+        getWindow().setNavigationBarColor(bg);
+        getWindow().getDecorView().setBackgroundColor(bg);
+        if(Build.VERSION.SDK_INT>=30&&getWindow().getInsetsController()!=null){
+          int mask=android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS|android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
+          getWindow().getInsetsController().setSystemBarsAppearance(dark?0:mask,mask);
+        }else if(Build.VERSION.SDK_INT>=26){
+          int flags=getWindow().getDecorView().getSystemUiVisibility();
+          int lightFlags=View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR|View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+          getWindow().getDecorView().setSystemUiVisibility(dark?(flags&~lightFlags):(flags|lightFlags));
+        }
+      }
+    }catch(Exception ignored){}
+  }
   private void launchExternal(Intent i,int req){
     awaitingExternalResult=true;
     startActivityForResult(i,req);
@@ -132,13 +152,20 @@ public final class MainActivity extends Activity {
     }catch(Exception e){return false;}
   }
   private WebResourceResponse blocked(){return new WebResourceResponse("text/plain","UTF-8",403,"Blocked",Collections.emptyMap(),new ByteArrayInputStream(new byte[0]));}
-  private String screen(Intent i){String s=i.getStringExtra("screen");return Arrays.asList("inbox","plan","quick","scan","favorites","transactions").contains(s)?s:"home";}
+  private String screen(Intent i){String s=i.getStringExtra("screen");return Arrays.asList("home","inbox","plan","quick","scan","favorites","transactions").contains(s)?s:"";}
   @Override protected void onNewIntent(Intent i){super.onNewIntent(i);setIntent(i);startScreen=screen(i);pendingEditNoteId=String.valueOf(i.getStringExtra("editNoteId")==null?"":i.getStringExtra("editNoteId"));if(unlocked){refreshScreen();handleShare();}}
-  @Override protected void onResume(){super.onResume();activeInstance=this;if(authenticating)return;final boolean wasExternal=awaitingExternalResult;awaitingExternalResult=false;io.execute(()->{try{boolean lock,blur;int timeoutSec;if(Vault.hasMeta(this)){lock=Vault.fastBool(this,"appLock",false);blur=Vault.fastBool(this,"privacyBlur",false);timeoutSec=Vault.fastInt(this,"lockTimeoutSec",0);}else{JSONObject settings=Vault.read(this).getJSONObject("settings");lock=settings.optBoolean("appLock");blur=settings.optBoolean("privacyBlur");timeoutSec=settings.optInt("lockTimeoutSec",0);}long elapsedMs=lastPausedAt>0?(System.currentTimeMillis()-lastPausedAt):Long.MAX_VALUE;boolean withinGrace=unlocked&&(wasExternal||(timeoutSec>0&&elapsedMs<timeoutSec*1000L));runOnUiThread(()->{updateSecureFlag(lock||blur);if(lock&&!withinGrace){unlocked=false;visibleUnlocked=false;if(lockOverlay!=null)lockOverlay.setVisibility(View.VISIBLE);if(web!=null)web.setVisibility(View.INVISIBLE);authenticate();}else unlock();});}catch(Exception e){runOnUiThread(()->new AlertDialog.Builder(this).setTitle("Vault unavailable").setMessage("Your encrypted data could not be opened. It has not been replaced or deleted. Restore a backup to recover, or close the app.").setPositiveButton("Restore backup",(d,x)->passwordDialog(true)).setNegativeButton("Close",(d,x)->finish()).show());}});}
+  @Override protected void onResume(){super.onResume();activeInstance=this;if(authenticating)return;final boolean wasExternal=awaitingExternalResult;awaitingExternalResult=false;
+    if(Vault.hasMeta(this)&&!Vault.fastBool(this,"appLock",false)){
+      updateSecureFlag(Vault.fastBool(this,"privacyBlur",false));
+      applySystemBars(Vault.fastBool(this,"darkMode",false));
+      unlock();
+      return;
+    }
+    io.execute(()->{try{boolean lock,blur,dark;int timeoutSec;if(Vault.hasMeta(this)){lock=Vault.fastBool(this,"appLock",false);blur=Vault.fastBool(this,"privacyBlur",false);dark=Vault.fastBool(this,"darkMode",false);timeoutSec=Vault.fastInt(this,"lockTimeoutSec",0);}else{JSONObject settings=Vault.read(this).getJSONObject("settings");lock=settings.optBoolean("appLock");blur=settings.optBoolean("privacyBlur");dark="dark".equals(settings.optString("theme","light"));timeoutSec=settings.optInt("lockTimeoutSec",0);}long elapsedMs=lastPausedAt>0?(System.currentTimeMillis()-lastPausedAt):Long.MAX_VALUE;boolean withinGrace=unlocked&&(wasExternal||(timeoutSec>0&&elapsedMs<timeoutSec*1000L));runOnUiThread(()->{updateSecureFlag(lock||blur);applySystemBars(dark);if(lock&&!withinGrace){unlocked=false;visibleUnlocked=false;if(lockOverlay!=null)lockOverlay.setVisibility(View.VISIBLE);if(web!=null)web.setVisibility(View.INVISIBLE);authenticate();}else unlock();});}catch(Exception e){runOnUiThread(()->new AlertDialog.Builder(this).setTitle("Vault unavailable").setMessage("Your encrypted data could not be opened. It has not been replaced or deleted. Restore a backup to recover, or close the app.").setPositiveButton("Restore backup",(d,x)->passwordDialog(true)).setNegativeButton("Close",(d,x)->finish()).show());}});}
   @Override protected void onPause(){super.onPause();if(awaitingExternalResult||authenticating)return;lastPausedAt=System.currentTimeMillis();visibleUnlocked=false;io.execute(()->{try{Health.flush(this);boolean lock,zeroTimeout;if(Vault.hasMeta(this)){lock=Vault.fastBool(this,"appLock",false);zeroTimeout=Vault.fastInt(this,"lockTimeoutSec",0)==0;}else{JSONObject settings=Vault.read(this).getJSONObject("settings");lock=settings.optBoolean("appLock");zeroTimeout=settings.optInt("lockTimeoutSec",0)==0;}if(lock&&zeroTimeout){unlocked=false;Vault.trimCache();runOnUiThread(()->{if(web!=null)web.setVisibility(View.INVISIBLE);if(lockOverlay!=null)lockOverlay.setVisibility(View.VISIBLE);});}}catch(Exception ignored){}});}
   @Override public void onTrimMemory(int level){super.onTrimMemory(level);if(level>=TRIM_MEMORY_UI_HIDDEN){Health.flush(this);Vault.trimCache();}}
   @Override protected void onDestroy(){Health.flush(this);if(bioCancel!=null){try{bioCancel.cancel();}catch(Exception ignored){}bioCancel=null;}if(activeInstance==this)activeInstance=null;super.onDestroy();}
-  private void refreshScreen(){if(!pageReady)return;String noteId=pendingEditNoteId;pendingEditNoteId="";js("window.nativeRefresh && window.nativeRefresh("+JSONObject.quote(startScreen)+","+JSONObject.quote(noteId)+")");startScreen="home";}
+  private void refreshScreen(){if(!pageReady)return;String noteId=pendingEditNoteId;pendingEditNoteId="";js("window.nativeRefresh && window.nativeRefresh("+JSONObject.quote(startScreen)+","+JSONObject.quote(noteId)+")");startScreen="";}
   private void unlock(){unlocked=true;visibleUnlocked=true;lastPausedAt=System.currentTimeMillis();if(lockOverlay!=null)lockOverlay.setVisibility(View.GONE);if(web!=null)web.setVisibility(View.VISIBLE);refreshScreen();handleShare();}
   private void fallbackCredentialIntent(){
     KeyguardManager k=getSystemService(KeyguardManager.class);
@@ -193,7 +220,7 @@ public final class MainActivity extends Activity {
     String listeners=Settings.Secure.getString(getContentResolver(),"enabled_notification_listeners");ComponentName ours=new ComponentName(this,CaptureService.class);boolean access=false;if(listeners!=null)for(String item:listeners.split(":"))if(ours.equals(ComponentName.unflattenFromString(item)))access=true;
     PowerManager pm=getSystemService(PowerManager.class);
     boolean batteryOk=pm!=null&&pm.isIgnoringBatteryOptimizations(getPackageName());
-    return new JSONObject().put("notificationAccess",access).put("listenerConnected",CaptureService.connected).put("schedulerRunning",KeepAliveService.running).put("batteryUnrestricted",batteryOk).put("biometricAvailable",isBiometricAvailable()).put("promptPermission",getSystemService(NotificationManager.class).areNotificationsEnabled()).put("overlayPermission",Settings.canDrawOverlays(this)).put("autoOpenOnBoot",getSharedPreferences("health",0).getBoolean("autoOpenOnBoot",true)).put("alwaysOnScheduler",getSharedPreferences("health",0).getBoolean("alwaysOnScheduler",true)).put("ecoCapture",!Vault.hasMeta(this)||Vault.fastBool(this,"ecoCapture",true)).put("error",getSharedPreferences("health",0).getString("error","")).put("version","0.13.0").put("autoBackup",getSharedPreferences("health",0).getBoolean("autoBackup",false)).put("backupSuccess",getSharedPreferences("health",0).getLong("backupSuccess",0)).put("lastSnapshotAt",getSharedPreferences("health",0).getLong("lastSnapshotAt",0)).put("snapshotCount",getSharedPreferences("health",0).getInt("snapshotCount",0)).put("backupError",getSharedPreferences("health",0).getString("backupError","")).put("recovery",new File(getNoBackupFilesDir(),"before-restore.vault").exists());
+    return new JSONObject().put("notificationAccess",access).put("listenerConnected",CaptureService.connected).put("schedulerRunning",KeepAliveService.running).put("batteryUnrestricted",batteryOk).put("biometricAvailable",isBiometricAvailable()).put("promptPermission",getSystemService(NotificationManager.class).areNotificationsEnabled()).put("overlayPermission",Settings.canDrawOverlays(this)).put("autoOpenOnBoot",getSharedPreferences("health",0).getBoolean("autoOpenOnBoot",true)).put("alwaysOnScheduler",getSharedPreferences("health",0).getBoolean("alwaysOnScheduler",true)).put("ecoCapture",!Vault.hasMeta(this)||Vault.fastBool(this,"ecoCapture",true)).put("error",getSharedPreferences("health",0).getString("error","")).put("version","0.14.0").put("autoBackup",getSharedPreferences("health",0).getBoolean("autoBackup",false)).put("backupSuccess",getSharedPreferences("health",0).getLong("backupSuccess",0)).put("lastSnapshotAt",getSharedPreferences("health",0).getLong("lastSnapshotAt",0)).put("snapshotCount",getSharedPreferences("health",0).getInt("snapshotCount",0)).put("backupError",getSharedPreferences("health",0).getString("backupError","")).put("recovery",new File(getNoBackupFilesDir(),"before-restore.vault").exists());
   }
   private JSONObject sendTestNotification(String presetKey)throws Exception{
     String[][] templates={
@@ -318,7 +345,7 @@ public final class MainActivity extends Activity {
         else if(method.equals("stopAutoBackup")){getSharedPreferences("health",0).edit().putBoolean("autoBackup",false).apply();result=true;}
         else if(method.equals("backupNow")){Automation.autoBackup(MainActivity.this,true);result=true;}
         else if(method.equals("diagnosticExport")){exportToast="Diagnostics exported.";pendingExport=args.getString("text").getBytes(StandardCharsets.UTF_8);runOnUiThread(()->launchExternal(new Intent(Intent.ACTION_CREATE_DOCUMENT).setType("text/plain").addCategory(Intent.CATEGORY_OPENABLE).putExtra(Intent.EXTRA_TITLE,"MoneyLens-Diagnostics.txt"),50));result=true;}
-        else if(method.equals("diagnostics"))result=new JSONObject().put("version","0.13.0").put("ecoCapture",!Vault.hasMeta(MainActivity.this)||Vault.fastBool(MainActivity.this,"ecoCapture",true)).put("mlClassifierLoaded",MlClassifier.isLoaded()).put("notificationAccess",status().getBoolean("notificationAccess")).put("listenerConnected",CaptureService.connected).put("schedulerRunning",KeepAliveService.running).put("lastCapture",Vault.read(MainActivity.this).optLong("lastCapture")).put("backupSuccess",status().getLong("backupSuccess")).put("lastSnapshotAt",status().getLong("lastSnapshotAt")).put("snapshotCount",status().getInt("snapshotCount")).put("workError",getSharedPreferences("health",0).getString("workError","")).put("pendingReviews",countPending()).put("networkPermission",false).put("counters",Health.snapshot(MainActivity.this));
+        else if(method.equals("diagnostics"))result=new JSONObject().put("version","0.14.0").put("ecoCapture",!Vault.hasMeta(MainActivity.this)||Vault.fastBool(MainActivity.this,"ecoCapture",true)).put("mlClassifierLoaded",MlClassifier.isLoaded()).put("notificationAccess",status().getBoolean("notificationAccess")).put("listenerConnected",CaptureService.connected).put("schedulerRunning",KeepAliveService.running).put("lastCapture",Vault.read(MainActivity.this).optLong("lastCapture")).put("backupSuccess",status().getLong("backupSuccess")).put("lastSnapshotAt",status().getLong("lastSnapshotAt")).put("snapshotCount",status().getInt("snapshotCount")).put("workError",getSharedPreferences("health",0).getString("workError","")).put("pendingReviews",countPending()).put("networkPermission",false).put("counters",Health.snapshot(MainActivity.this));
         else if(method.equals("confirmRestore")){if(stagedRestoreContents==null)throw new IllegalStateException("No backup selected for restore.");Vault.applyRestoredContents(MainActivity.this,stagedRestoreContents);stagedRestoreContents=null;runOnUiThread(()->{toast("Backup restored. Re-enable capture sources in Settings.");unlock();});result=true;}
         else if(method.equals("cancelRestore")){stagedRestoreContents=null;result=true;}
         else if(method.equals("snapshots"))result=Vault.listLocalSnapshots(MainActivity.this);
@@ -326,6 +353,7 @@ public final class MainActivity extends Activity {
         else if(method.equals("previewSnapshot"))result=Vault.previewLocalSnapshot(MainActivity.this,args.getString("id"));
         else if(method.equals("restoreSnapshot")){Vault.restoreLocalSnapshot(MainActivity.this,args.getString("id"));result=true;}
         else if(method.equals("healthCheck"))result=Finance.vaultHealthCheck(Vault.read(MainActivity.this),status());
+        else if(method.equals("quickParse")){JSONObject q=Extras.parseQuickEntry(Vault.read(MainActivity.this),args.optString("text",""),LocalDate.now());result=q!=null?q:new JSONObject();}
         else if(method.equals("apps")){
           JSONArray apps=new JSONArray();List<ResolveInfo> list=getPackageManager().queryIntentActivities(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER),0);Set<String> seen=new HashSet<>();
           List<JSONObject> rows=new ArrayList<>();
@@ -377,7 +405,8 @@ public final class MainActivity extends Activity {
           if(method.equals("settings")){
             JSONObject st=((JSONObject)result).getJSONObject("settings");
             boolean sec=st.optBoolean("appLock")||st.optBoolean("privacyBlur");
-            runOnUiThread(()->updateSecureFlag(sec));
+            boolean dk="dark".equals(st.optString("theme","light"));
+            runOnUiThread(()->{updateSecureFlag(sec);applySystemBars(dk);});
             if(args.has("ecoCapture")&&st.optBoolean("alwaysOnScheduler",true))KeepAliveService.ensureRunning(MainActivity.this);
           }
           if(method.equals("bill")||method.equals("deletePlan")||method.equals("cancelBill"))AlarmReceiver.scheduleNext(MainActivity.this);

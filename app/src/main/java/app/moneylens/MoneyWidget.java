@@ -38,11 +38,17 @@ public final class MoneyWidget extends AppWidgetProvider {
     if(showAmounts){
      String avail="RM "+BigDecimal.valueOf(r.optLong("availableToSpend"),2).toPlainString();
      String spent="RM "+BigDecimal.valueOf(r.optLong("spent"),2).toPlainString();
-     v.setTextViewText(R.id.widget_status,"Avail "+avail+" · Spent "+spent);
+     JSONObject dp=r.optJSONObject("dailyPacing");
+     long safeDay=dp!=null?dp.optLong("safeDaily",0L):0L;
+     v.setTextViewText(R.id.widget_status,"Avail "+avail+" · Spent "+spent+(safeDay>0?" · "+BigDecimal.valueOf(safeDay,2).toPlainString()+"/d":""));
     }
     if(!nextDue.isEmpty()){
      String shortName=nextName.length()>14?nextName.substring(0,14)+"…":nextName;
      v.setTextViewText(R.id.widget_due,"Next: "+shortName+" ("+nextDue.substring(5)+")");
+    }else{
+     JSONObject sh=r.optJSONObject("sharedSummary");
+     long owed=sh!=null?sh.optLong("totalOwed",0L):0L;
+     if(owed>0)v.setTextViewText(R.id.widget_due,"Splits: RM "+BigDecimal.valueOf(owed,2).toPlainString());
     }
    }
    bind(c,v,R.id.widget_add,"quick");

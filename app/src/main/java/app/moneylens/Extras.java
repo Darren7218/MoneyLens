@@ -770,4 +770,97 @@ public final class Extras {
   if(!src.isEmpty())return head+" · "+src+(ms?" · Ketik Semak":" · Tap Review");
   return head+(ms?" · Ketik untuk semak butiran.":" · Tap to review details.");
  }
+ /** Parses a natural-language quick entry phrase (e.g. "Nasi Lemak 12.50 cash", "Dinner 60 split Sarah") into form fields. */
+ public static JSONObject parseQuickEntry(JSONObject s,String rawText,LocalDate today)throws Exception{
+  String raw=rawText==null?"":rawText.trim();
+  if(raw.isEmpty())return null;
+  String work=raw.replaceAll("\\b20[0-9]{2}-[0-9]{2}-[0-9]{2}\\b"," ").replaceAll("\\s+"," ").trim();
+  java.util.regex.Matcher rmMatch=java.util.regex.Pattern.compile("(?i)\\b(?:rm|myr)\\s*([0-9]{1,7}(?:\\.[0-9]{1,2})?)").matcher(work);
+  java.util.regex.Matcher bareMatch=java.util.regex.Pattern.compile("(?<![0-9.:/-])([0-9]{1,6}(?:\\.[0-9]{1,2})?)(?![0-9.:/-])").matcher(work);
+  String amtToken="";int amtStart=-1,amtEnd=-1;
+  if(rmMatch.find()){amtToken=rmMatch.group(1);amtStart=rmMatch.start();amtEnd=rmMatch.end();}
+  else if(bareMatch.find()){amtToken=bareMatch.group(1);amtStart=bareMatch.start();amtEnd=bareMatch.end();}
+  if(amtToken.isEmpty())return null;
+  long amountMinor=Ledger.minor(amtToken);
+  String withoutAmt=(work.substring(0,amtStart)+" "+work.substring(amtEnd)).replaceAll("\\s+"," ").trim();
+
+  String kind="expense",person="",ownAmount="",sourceHint="";
+  java.util.regex.Matcher sp=java.util.regex.Pattern.compile("(?i)\\b(?:split(?:\\s+with)?|kongsi(?:\\s+dengan)?)\\s+([\\p{L}0-9][\\p{L}0-9 .'_-]{0,40})").matcher(withoutAmt);
+  if(sp.find()){
+   kind="shared";
+   person=sp.group(1).replaceAll("(?i)\\s+(?:via|by|using|with|pada|melalui|on)\\s+(?:cash|tunai|tng|mae|maybank|cimb|rhb|hlb|gxbank|aeon|ryt|shopeepay|grabpay|boost|bigpay|bank|card).*$","")
+    .replaceAll("(?i)\\s+(?:cash|tunai|tng|mae|maybank|cimb|rhb|hlb|gxbank|shopeepay|grabpay|boost|bigpay)$","").trim();
+   withoutAmt=(withoutAmt.substring(0,sp.start())+" "+withoutAmt.substring(sp.end())).replaceAll("\\s+"," ").trim();
+   ownAmount=BigDecimal.valueOf(amountMinor/2L,2).toPlainString();
+  }else if(withoutAmt.matches("(?i).*\\b(?:received|terima|daripada|gaji|salary|income)\\b.*")||withoutAmt.matches("(?i).*\\bfrom\\s+[\\p{L}].*")){
+   if(!withoutAmt.matches("(?i).*\\b(?:transfer|pindah|top.?up|reload)\\b.*"))kind="income";
+  }else if(withoutAmt.matches("(?i).*\\b(?:transfer|pindah|top.?up|reload)\\b.*")){
+   kind="transfer";
+  }
+
+  JSONArray accounts=s!=null?s.optJSONArray("accounts"):null;
+  String matchedAcct="",matchedAcctToken="";
+  String low=(" "+withoutAmt.toLowerCase(Locale.ROOT)+" ");
+  if(accounts!=null){
+   for(int i=0;i<accounts.length();i++){
+    JSONObject a=accounts.getJSONObject(i);
+    String aname=a.optString("name","").trim().toLowerCase(Locale.ROOT);
+    if(!aname.isEmpty()&&low.contains(" "+aname+" ")){matchedAcct=a.getString("id");matchedAcctToken=a.optString("name","");sourceHint=a.optString("name","");break;}
+   }
+   if(matchedAcct.isEmpty()){
+    String[][] aliases={{"cash","Cash"},{"tunai","Cash"},{"tng","Touch 'n Go eWallet"},{"touch n go","Touch 'n Go eWallet"},{"mae","MAE"},{"maybank","Maybank"},{"cimb","CIMB"},{"rhb","RHB"},{"gxbank","GXBank"},{"gx","GXBank"},{"aeon","AEON"},{"ryt","Ryt"},{"shopeepay","ShopeePay"},{"spay","ShopeePay"},{"grabpay","GrabPay"},{"boost","Boost"},{"bigpay","BigPay"}};
+    for(String[] al:aliases){
+     if(java.util.regex.Pattern.compile("(?i)(?:^|\\s)"+java.util.regex.Pattern.quote(al[0])+"(?:\\s|$)").matcher(withoutAmt).find()){
+      String id=Finance.matchAccountByName(accounts,al[1],"");
+      if(id.isEmpty()&&"cash".equals(al[1].toLowerCase(Locale.ROOT))){
+       for(int i=0;i<accounts.length();i++)if("cash".equals(accounts.getJSONObject(i).optString("type"))){id=accounts.getJSONObject(i).getString("id");break;}
+      }
+      if(!id.isEmpty()){matchedAcct=id;matchedAcctToken=al[0];sourceHint=al[1];break;}
+     }
+    }
+   }
+  }
+  if(matchedAcct.isEmpty()&&s!=null&&accounts!=null){
+   JSONObject prefs=s.optJSONObject("settings");
+   String lastAcc=prefs!=null?prefs.optString("lastAccount",""):"";
+   if(!lastAcc.isEmpty()){
+    for(int i=0;i<accounts.length();i++)if(lastAcc.equals(accounts.getJSONObject(i).optString("id"))){matchedAcct=lastAcc;break;}
+   }
+   if(matchedAcct.isEmpty()&&accounts.length()>0)matchedAcct=accounts.getJSONObject(0).optString("id","cash");
+  }
+
+  String merchantClean=withoutAmt;
+  if(!matchedAcctToken.isEmpty()){
+   merchantClean=merchantClean.replaceAll("(?i)(?:\\b(?:via|with|using|by|at|on|melalui|ke|dari)\\s+)?"+java.util.regex.Pattern.quote(matchedAcctToken)+"\\b"," ");
+  }
+  merchantClean=merchantClean.replaceAll("(?i)\\b(?:paid|pay|spent|bought|bayar|beli|received|terima|duitnow|fpx|qr|via|melalui|from|daripada|at|di|for|untuk|to|kepada|on|today|hari ini)\\b"," ")
+   .replaceAll("[.,;:!\\-]+$","").replaceAll("^[.,;:!\\-]+","").replaceAll("\\s+"," ").trim();
+  if("income".equals(kind)){
+   java.util.regex.Matcher frm=java.util.regex.Pattern.compile("(?i)\\b(?:from|daripada)\\s+([\\p{L}0-9 .'_-]{2,40})").matcher(withoutAmt);
+   if(frm.find())merchantClean=frm.group(1).replaceAll("(?i)\\b(?:via|duitnow|mae|tng|cash|tunai|bank).*","").trim();
+  }
+  if(merchantClean.isEmpty())merchantClean="shared".equals(kind)?"Shared expense":"income".equals(kind)?"Incoming transfer":"Quick expense";
+  else if(Character.isLowerCase(merchantClean.charAt(0)))merchantClean=Character.toUpperCase(merchantClean.charAt(0))+merchantClean.substring(1);
+
+  String[] cls="income".equals(kind)?new String[]{"Other income",""}:PaymentParser.classify(merchantClean,sourceHint,rawText);
+  JSONObject res=new JSONObject()
+   .put("kind",kind)
+   .put("amount",BigDecimal.valueOf(amountMinor,2).toPlainString())
+   .put("amountMinor",amountMinor)
+   .put("merchant",merchantClean)
+   .put("category",cls[0])
+   .put("subcategory",cls[1])
+   .put("account",matchedAcct)
+   .put("date",today.toString());
+  if(!ownAmount.isEmpty())res.put("ownAmount",ownAmount);
+  if(!person.isEmpty())res.put("person",person);
+  if(s!=null&&"expense".equals(kind)){
+   JSONObject draft=new JSONObject().put("merchant",merchantClean).put("amount",amountMinor).put("source",sourceHint).put("category",cls[0]).put("subcategory",cls[1]).put("account",matchedAcct);
+   Finance.suggest(s,draft);
+   res.put("category",draft.optString("category",cls[0]));
+   if(!draft.optString("subcategory").isEmpty())res.put("subcategory",draft.optString("subcategory"));
+   if(!draft.optString("account").isEmpty())res.put("account",draft.optString("account"));
+  }
+  return res;
+ }
 }

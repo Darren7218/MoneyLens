@@ -272,7 +272,8 @@ public final class Finance {
   JSONArray b=s.getJSONArray("budgets");Set<String> topCats=new HashSet<>();List<JSONObject> budgetRows=new ArrayList<>();for(int i=0;i<b.length();i++){JSONObject row=budget(s,b.getJSONObject(i),on);budgets.put(row);budgetRows.add(row);if(row.optString("subcategory","").isEmpty())topCats.add(row.getString("category"));}for(JSONObject row:budgetRows){if(row.optString("subcategory","").isEmpty()||!topCats.contains(row.getString("category")))budgetRemaining+=Math.max(0,row.getLong("remaining"));}
   JSONArray tx=s.getJSONArray("transactions"),receivables=new JSONArray();for(int i=0;i<tx.length();i++){JSONObject t=tx.getJSONObject(i);if(t.optBoolean("voided")||!t.getString("kind").equals("shared"))continue;long remaining=balance(s,"receivable:"+t.getString("id"),on.toString());if(remaining>0){owed+=remaining;receivables.put(new JSONObject().put("id",t.getString("id")).put("person",t.optString("person")).put("merchant",t.optString("merchant")).put("remaining",remaining));}}
   JSONArray months=new JSONArray();for(int i=5;i>=0;i--){LocalDate m=anchored(YearMonth.from(from).minusMonths(i),day),e=next(m,day);months.put(new JSONObject().put("start",m.toString()).put("spent",spend(s,"",m,e)).put("income",income(s,m,e)));}
-  return new JSONObject().put("start",from.toString()).put("end",until.toString()).put("spent",spend(s,"",from,on.plusDays(1))).put("previousComparable",spend(s,"",prev,prevUntil)).put("budgets",budgets).put("dailyAllowance",budgetRemaining/Math.max(1,ChronoUnit.DAYS.between(on,until))).put("liquid",liquid).put("cardReserve",debt).put("billsReserve",commitments).put("goalReserve",reserved).put("availableToSpend",Math.max(0,liquid-debt-commitments-reserved)).put("owed",owed).put("receivables",receivables).put("sharedSummary",sharedSummary(s,on)).put("months",months).put("subscriptions",subscriptions(s)).put("priceHikes",priceHikes(s)).put("taxEstimate",calculateTax(s,null,on.getYear())).put("debtPlan",debtPlan(s,on)).put("recurringIncome",recurringIncome(s,on)).put("forecast",forecast(s,on,30)).put("recap",cycleRecap(s,on));
+  long availToSpend=Math.max(0,liquid-debt-commitments-reserved);
+  return new JSONObject().put("start",from.toString()).put("end",until.toString()).put("spent",spend(s,"",from,on.plusDays(1))).put("previousComparable",spend(s,"",prev,prevUntil)).put("budgets",budgets).put("dailyAllowance",budgetRemaining/Math.max(1,ChronoUnit.DAYS.between(on,until))).put("liquid",liquid).put("cardReserve",debt).put("billsReserve",commitments).put("goalReserve",reserved).put("availableToSpend",availToSpend).put("owed",owed).put("receivables",receivables).put("sharedSummary",sharedSummary(s,on)).put("dailyPacing",dailyPacing(s,on,availToSpend)).put("months",months).put("subscriptions",subscriptions(s)).put("priceHikes",priceHikes(s)).put("taxEstimate",calculateTax(s,null,on.getYear())).put("debtPlan",debtPlan(s,on)).put("recurringIncome",recurringIncome(s,on)).put("forecast",forecast(s,on,30)).put("recap",cycleRecap(s,on));
  }
  public static JSONObject calculateTax(JSONObject s,JSONObject override,int year)throws Exception{
   JSONObject prof=override!=null?override:s.getJSONObject("settings").optJSONObject("taxProfile");
@@ -1117,5 +1118,85 @@ public final class Finance {
    .put("friendCount",friends.length())
    .put("friends",friends)
    .put("recentSettlements",recentSettle);
+ }
+ /** Computes cycle daily burn rate, safe-to-spend-today allowance, 14-day series and category deltas vs prior cycle. */
+ public static JSONObject dailyPacing(JSONObject s,LocalDate on)throws Exception{
+  int day=s.optJSONObject("settings")!=null?s.getJSONObject("settings").optInt("cycleDay",1):1;
+  LocalDate from=start(on,day),until=next(from,day);
+  long liquid=0,debt=0,commitments=0,reserved=0;
+  JSONArray accounts=s.getJSONArray("accounts"),billRows=s.optJSONArray("bills"),goalRows=s.optJSONArray("goals");
+  for(int i=0;i<accounts.length();i++){JSONObject a=accounts.getJSONObject(i);long n=balance(s,a.getString("id"),on.toString());if("card".equals(a.optString("type")))debt+=Math.max(0,-n);else liquid+=n;}
+  if(billRows!=null)for(int i=0;i<billRows.length();i++){JSONObject b=billRows.getJSONObject(i);if(!b.optBoolean("paid")&&!b.optBoolean("cancelled")&&!"transfer".equals(b.optString("kind",""))&&b.optString("date","").compareTo(until.toString())<0)commitments+=b.optLong("amount");}
+  if(goalRows!=null)for(int i=0;i<goalRows.length();i++)reserved+=goalRows.getJSONObject(i).optLong("saved");
+  return dailyPacing(s,on,Math.max(0L,liquid-debt-commitments-reserved));
+ }
+ public static JSONObject dailyPacing(JSONObject s,LocalDate on,long availableToSpend)throws Exception{
+  int day=s.optJSONObject("settings")!=null?s.getJSONObject("settings").optInt("cycleDay",1):1;
+  LocalDate from=start(on,day),until=next(from,day),prevFrom=anchored(YearMonth.from(from).minusMonths(1),day),seriesStart=on.minusDays(13);
+  long daysInCycle=Math.max(1L,ChronoUnit.DAYS.between(from,until));
+  long elapsedDays=on.isBefore(from)?1L:!on.isBefore(until)?daysInCycle:Math.max(1L,ChronoUnit.DAYS.between(from,on)+1L);
+  long remainingDays=Math.max(1L,on.isBefore(until)?ChronoUnit.DAYS.between(on,until):1L);
+  String fromIso=from.toString(),untilIso=until.toString(),prevIso=prevFrom.toString(),onIso=on.toString(),seriesIso=seriesStart.toString();
+  long cycleSpent=0L,todaySpent=0L;
+  Map<String,Long> dayMap=new HashMap<>(),currCats=new LinkedHashMap<>(),prevCats=new LinkedHashMap<>();
+  JSONArray tx=s.optJSONArray("transactions");
+  if(tx!=null){
+   for(int i=0;i<tx.length();i++){
+    JSONObject t=tx.getJSONObject(i);
+    String d=t.optString("date","");
+    if(t.optBoolean("voided")||d.compareTo(onIso)>0)continue;
+    boolean inCurr=d.compareTo(fromIso)>=0&&d.compareTo(untilIso)<0;
+    boolean inPrev=d.compareTo(prevIso)>=0&&d.compareTo(fromIso)<0;
+    boolean inSeries=d.compareTo(seriesIso)>=0;
+    if(!inCurr&&!inPrev&&!inSeries)continue;
+    JSONArray p=t.getJSONArray("postings");
+    long txExp=0L;
+    for(int j=0;j<p.length();j++){
+     JSONObject e=p.getJSONObject(j);
+     String acc=e.optString("account","");
+     if(acc.startsWith("expense:")){
+      long amt=e.optLong("amount");
+      String cat=acc.substring(8);
+      if(inCurr){currCats.put(cat,currCats.getOrDefault(cat,0L)+amt);cycleSpent=Math.addExact(cycleSpent,amt);}
+      else if(inPrev){prevCats.put(cat,prevCats.getOrDefault(cat,0L)+amt);}
+      if(d.equals(onIso))todaySpent=Math.addExact(todaySpent,amt);
+      txExp+=amt;
+     }
+    }
+    if(inSeries&&txExp!=0L)dayMap.put(d,Math.max(0L,dayMap.getOrDefault(d,0L)+txExp));
+   }
+  }
+  long safeDaily=availableToSpend>0L?(availableToSpend/remainingDays):0L;
+  long dailyAvg=Math.round((double)cycleSpent/elapsedDays);
+  long todayRemaining=Math.max(0L,safeDaily-todaySpent);
+  long projectedCycleSpend=Math.round(dailyAvg*(double)daysInCycle);
+  String paceStatus=(safeDaily>0L&&todaySpent>safeDaily)||(availableToSpend<=0L&&todaySpent>0L)?"over":(safeDaily>0L&&todaySpent*100L>=safeDaily*80L)?"watch":"good";
+  JSONArray dailySeries=new JSONArray();
+  for(int i=13;i>=0;i--){
+   LocalDate dt=on.minusDays(i);String ds=dt.toString();
+   dailySeries.put(new JSONObject().put("date",ds).put("spent",dayMap.getOrDefault(ds,0L)).put("isToday",i==0));
+  }
+  List<Map.Entry<String,Long>> catRows=new ArrayList<>(currCats.entrySet());
+  catRows.removeIf(e->e.getValue()<=0L);
+  catRows.sort((a,b)->Long.compare(b.getValue(),a.getValue()));
+  JSONArray categoryDeltas=new JSONArray();
+  for(int i=0;i<catRows.size()&&i<6;i++){
+   String cat=catRows.get(i).getKey();long curr=catRows.get(i).getValue(),prev=Math.max(0L,prevCats.getOrDefault(cat,0L));
+   long delta=curr-prev;int deltaPct=prev>0L?(int)Math.round(delta*100.0/prev):(curr>0L?100:0);
+   categoryDeltas.put(new JSONObject().put("category",cat).put("current",curr).put("previous",prev).put("delta",delta).put("deltaPct",deltaPct));
+  }
+  return new JSONObject()
+   .put("daysInCycle",daysInCycle)
+   .put("elapsedDays",elapsedDays)
+   .put("remainingDays",remainingDays)
+   .put("cycleSpent",cycleSpent)
+   .put("todaySpent",todaySpent)
+   .put("safeDaily",safeDaily)
+   .put("todayRemaining",todayRemaining)
+   .put("dailyAvg",dailyAvg)
+   .put("projectedCycleSpend",projectedCycleSpend)
+   .put("paceStatus",paceStatus)
+   .put("dailySeries",dailySeries)
+   .put("categoryDeltas",categoryDeltas);
  }
 }
