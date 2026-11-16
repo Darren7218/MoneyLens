@@ -565,7 +565,7 @@ const I18N_MS={
   'Median at this merchant':'Median di peniaga ini',
   'Dismiss unusual spend warning':'Tutup amaran perbelanjaan luar biasa',
   'Anomaly alert dismissed.':'Amaran anomali ditutup.',
-  'MoneyLens 0.14.0 · Personal build':'MoneyLens 0.14.0 · Binaan peribadi',
+  'MoneyLens 0.15.0 · Personal build':'MoneyLens 0.15.0 · Binaan peribadi',
   'Safe-to-spend pacing · Smart Quick Entry · Split auto-reconciliation':'Kadar belanja selamat · Rekod Pantas Pintar · Penyelarasan kongsi automatik',
   'SAFE TO SPEND TODAY':'SELAMAT DIBELANJA HARI INI',
   'On pace':'Mengikut kadar',
@@ -591,7 +591,15 @@ const I18N_MS={
   'Spend anomaly & high-purchase guard':'Pengawal anomali & belian tinggi',
   'Flag single payments ≥ RM 50 and ≥ 2.5× your usual merchant spend, plus auto-match refunds':'Tandakan bayaran tunggal ≥ RM 50 dan ≥ 2.5× kebiasaan peniaga, serta padankan bayaran balik automatik',
   'Spend anomaly guard enabled.':'Pengawal anomali perbelanjaan diaktifkan.',
-  'Spend anomaly guard paused.':'Pengawal anomali perbelanjaan dijeda.'
+  'Spend anomaly guard paused.':'Pengawal anomali perbelanjaan dijeda.',
+  'Settings sections':'Bahagian tetapan',
+  'Capture':'Tangkapan',
+  'Preferences':'Keutamaan',
+  'Tools':'Alatan',
+  'Backup':'Sandaran',
+  'Refresh score':'Muat semula skor',
+  'Restore backup':'Pulihkan sandaran',
+  'Encrypted local snapshot saved. Health score updated.':'Syot kilat tempatan disulitkan disimpan. Skor kesihatan dikemas kini.'
 };
 function currentLang(){return (typeof state!=='undefined'&&state?.settings?.lang==='ms')?'ms':'en'}
 function appLocale(){return currentLang()==='ms'?'ms-MY':'en-MY'}

@@ -1,0 +1,5 @@
+<resources>
+    <string name="widget_overview_desc">Resizable safe-to-spend balance, bill reminder, 7-day spend trend and quick actions.</string>
+    <string name="widget_compact_desc">Compact daily safe-to-spend allowance and 1-tap + Expense shortcut.</string>
+    <string name="widget_insights_desc">Detailed 7-day spending trend bars, top budget watch and latest transactions.</string>
+</resources>

@@ -1,12 +1,130 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:padding="14dp" android:background="#0d4a2d">
-<LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
-<TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="MoneyLens" android:textColor="#f5f8f5" android:textSize="17sp" android:textStyle="bold" />
-<TextView android:id="@+id/widget_due" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="On-device vault" android:textColor="#c9ebd7" android:textSize="11sp" />
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="14dp"
+    android:background="@drawable/widget_bg_emerald">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/widget_title"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="MoneyLens"
+            android:textColor="#F5F8F5"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/widget_due"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:paddingTop="3dp"
+            android:paddingBottom="3dp"
+            android:background="@drawable/widget_pill_emerald"
+            android:text="On-device vault"
+            android:textColor="#E6F5EC"
+            android:textSize="11sp"
+            android:maxLines="1"
+            android:ellipsize="end" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/widget_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="Private · Offline · Auto-Capture"
+        android:textColor="#F5F8F5"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:maxLines="1"
+        android:ellipsize="end" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal"
+        android:gravity="bottom"
+        android:layout_marginTop="8dp">
+
+        <Button
+            android:id="@+id/widget_add"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="0dp"
+            android:layout_weight="1.15"
+            android:layout_height="34dp"
+            android:minHeight="34dp"
+            android:background="@drawable/widget_pill_emerald"
+            android:text="+ Expense"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <Button
+            android:id="@+id/widget_inbox"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="34dp"
+            android:minHeight="34dp"
+            android:layout_marginLeft="6dp"
+            android:background="@drawable/widget_pill_emerald"
+            android:text="Inbox"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <Button
+            android:id="@+id/widget_scan"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="0dp"
+            android:layout_weight="0.9"
+            android:layout_height="34dp"
+            android:minHeight="34dp"
+            android:layout_marginLeft="6dp"
+            android:background="@drawable/widget_pill_emerald"
+            android:text="Scan"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <Button
+            android:id="@+id/widget_plan"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="0dp"
+            android:layout_weight="0.9"
+            android:layout_height="34dp"
+            android:minHeight="34dp"
+            android:layout_marginLeft="6dp"
+            android:background="@drawable/widget_pill_emerald"
+            android:text="Plan"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end" />
+    </LinearLayout>
 </LinearLayout>
-<TextView android:id="@+id/widget_status" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Private · Offline · Auto-Capture" android:textColor="#e6f5ec" android:textSize="13sp" android:textStyle="bold" android:layout_marginTop="4dp" />
-<LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:gravity="center_vertical" android:layout_marginTop="6dp">
-<Button android:id="@+id/widget_add" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="+ Expense" android:textSize="11sp" />
-<Button android:id="@+id/widget_inbox" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="Inbox" android:textSize="11sp" />
-<Button android:id="@+id/widget_scan" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="Scan" android:textSize="11sp" />
-<Button android:id="@+id/widget_plan" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="Plan" android:textSize="11sp" />
-</LinearLayout></LinearLayout>

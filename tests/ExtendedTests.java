@@ -678,6 +678,134 @@ public final class ExtendedTests {
    yes(Extras.parseQuickEntry(s,"no amount mentioned",on)==null);
   });
 
+  test("Phase 16C cross-source dedup handles review drafts, expense-transfer pairs, manual entries, merchant conflicts and postTime",()->{
+   // 1. Review-state dedup (autoRecord = false): two apps stay collapsed into one Inbox review item, confirming preserves link
+   JSONObject s1=Ledger.initial();
+   Ledger.apply(s1,"settings",new JSONObject().put("autoRecord",false));
+   JSONObject r1=Extras.captureState(s1,"my.com.tngdigital.ewallet","TNG eWallet","rv1","You have paid RM 24.50 at ZUS COFFEE",1_000_000L,1_000_000L);
+   JSONObject r2=Extras.captureState(s1,"com.maybank2u.life","Maybank MAE","rv2","Card transaction RM 24.50 at TNG DIGITAL approved",1_040_000L,1_040_000L);
+   yes(r1!=null&&"review".equals(r1.getString("state")));
+   yes(r2!=null&&"linked".equals(r2.getString("state"))&&r1.getString("id").equals(r2.optString("duplicateOf")));
+   yes(r1.optString("alsoSeenFrom","").contains("Maybank MAE"));
+   Ledger.apply(s1,"transaction",new JSONObject().put("key","confirm-rv1").put("draftId",r1.getString("id")).put("kind","expense").put("amount","24.50").put("account","cash").put("category","Food & drinks").put("merchant","ZUS COFFEE").put("date",LocalDate.now().toString()));
+   JSONObject confirmedTx=Ledger.find(s1.getJSONArray("transactions"),r1.getString("transactionId"));
+   yes(confirmedTx.optString("alsoSeenFrom","").contains("Maybank MAE"));
+   yes(r2.getString("duplicateOf").equals(confirmedTx.getString("id")));
+
+   // 2. Expense <-> Transfer gateway dedup vs true Reload+Spend separation
+   JSONObject s2=Ledger.initial();
+   Ledger.apply(s2,"account",new JSONObject().put("name","Maybank").put("type","bank").put("opening","500"));
+   Ledger.apply(s2,"account",new JSONObject().put("name","ShopeePay").put("type","wallet").put("opening","100"));
+   String spId=s2.getJSONArray("accounts").getJSONObject(2).getString("id");
+   JSONObject spExp=Extras.captureState(s2,"com.shopee.pay.my","ShopeePay","sp1","You have paid RM 35.00 at UNIQLO",2_000_000L,2_000_000L);
+   JSONObject maeTr=Extras.captureState(s2,"com.maybank2u.life","Maybank MAE","mb1","DuitNow transfer of RM 35.00 to UNIQLO successful.",2_050_000L,2_050_000L);
+   yes(spExp!=null&&spExp.optBoolean("autoRecorded"));
+   yes(maeTr!=null&&!maeTr.optBoolean("autoRecorded")&&spExp.getString("transactionId").equals(maeTr.optString("duplicateOf")));
+   eq(spending(s2),3500);
+   // Real Bank -> ShopeePay reload transfer followed by ShopeePay -> Expense must NOT merge (two real events)
+   JSONObject realReload=Extras.captureState(s2,"com.maybank2u.life","Maybank MAE","rel1","You have transferred RM 50.00 to ShopeePay.",3_000_000L,3_000_000L);
+   yes(realReload!=null&&realReload.optBoolean("autoRecorded")&&"transfer".equals(realReload.getString("kind")));
+   JSONObject postReloadBuy=Extras.captureState(s2,"com.shopee.pay.my","ShopeePay","buy1","You have paid RM 50.00 at WATSONS",3_030_000L,3_030_000L);
+   yes(postReloadBuy!=null&&postReloadBuy.optBoolean("autoRecorded")&&!postReloadBuy.has("duplicateOf"));
+   yes(Ledger.find(s2.getJSONArray("transactions"),postReloadBuy.getString("transactionId")).getString("account").equals(spId));
+   eq(spending(s2),8500);
+
+   // 3. Manual / Quick Entry followed by delayed bank alert
+   JSONObject s3=Ledger.initial();
+   long realNow=System.currentTimeMillis();
+   Ledger.apply(s3,"transaction",tx("expense","18.50").put("merchant","Nasi Lemak Corner"));
+   JSONObject bankLate=Extras.captureState(s3,"com.maybank2u.life","Maybank MAE","man1","Card transaction RM 18.50 at NASI LEMAK CORNER approved",realNow+60_000L,realNow+60_000L);
+   yes(bankLate!=null&&!bankLate.optBoolean("autoRecorded")&&bankLate.has("duplicateOf"));
+   eq(spending(s3),1850);
+
+   // 4. Conflicting real merchants stay separate even within 60s; same brand up to 5 min merges
+   JSONObject s4=Ledger.initial();
+   JSONObject park=Extras.captureState(s4,"my.com.myboost","Boost","p1","You have paid RM 5.00 at PARKING SUNWAY PYRAMID",4_000_000L,4_000_000L);
+   JSONObject tea=Extras.captureState(s4,"my.com.tngdigital.ewallet","TNG eWallet","p2","You have paid RM 5.00 at TEALIVE SUNWAY",4_040_000L,4_040_000L);
+   yes(park!=null&&park.optBoolean("autoRecorded")&&tea!=null&&tea.optBoolean("autoRecorded")&&!tea.has("duplicateOf"));
+   eq(spending(s4),1000);
+   JSONObject w1=Extras.captureState(s4,"com.shopee.pay.my","ShopeePay","w1","You have paid RM 42.00 at WATSONS OFFICIAL",5_000_000L,5_000_000L);
+   JSONObject w2=Extras.captureState(s4,"com.maybank2u.life","Maybank MAE","w2","Card transaction RM 42.00 at WATSONS PERSONAL CARE approved",5_240_000L,5_240_000L);
+   yes(w2!=null&&w1.getString("transactionId").equals(w2.optString("duplicateOf")));
+
+   // 5. Notification postTime accuracy: Doze-delayed callback still merges on postTime; stale replay is NOT merged
+   JSONObject s5=Ledger.initial();
+   JSONObject live=Extras.captureState(s5,"my.com.tngdigital.ewallet","TNG eWallet","d1","You have paid RM 14.00 at FAMILYMART",6_000_000L,6_000_000L);
+   JSONObject dozeDelayed=Extras.captureState(s5,"com.maybank2u.life","Maybank MAE","d2","Card transaction RM 14.00 at TNG DIGITAL approved",6_045_000L,6_450_000L);
+   yes(dozeDelayed!=null&&live.getString("transactionId").equals(dozeDelayed.optString("duplicateOf")));
+   JSONObject staleReplay=Extras.captureState(s5,"com.cimb.octomy","CIMB","d3","You have paid RM 14.00 at FAMILYMART",5_200_000L,6_020_000L);
+   yes(staleReplay!=null&&staleReplay.optBoolean("autoRecorded")&&!staleReplay.has("duplicateOf"));
+   eq(spending(s5),2800);
+   Ledger.validate(s1);Ledger.validate(s2);Ledger.validate(s3);Ledger.validate(s4);Ledger.validate(s5);
+  });
+
+  test("Phase 16B WidgetModel selects responsive size tiers and builds privacy-safe 7-day & budget metrics",()->{
+   yes("compact".equals(WidgetModel.selectSizeTier(120,48)));
+   yes("compact".equals(WidgetModel.selectSizeTier(260,56)));
+   yes("medium".equals(WidgetModel.selectSizeTier(170,120)));
+   yes("wide".equals(WidgetModel.selectSizeTier(260,110)));
+   yes("wide".equals(WidgetModel.selectSizeTier(260,210)));
+   yes("large".equals(WidgetModel.selectSizeTier(260,240)));
+
+   JSONObject s=Ledger.initial();
+   Ledger.apply(s,"account",new JSONObject().put("name","MAE").put("type","bank").put("opening","900.00"));
+   String maeId=s.getJSONArray("accounts").getJSONObject(1).getString("id");
+   LocalDate on=LocalDate.now();
+   Ledger.apply(s,"budget",new JSONObject().put("category","Food & drinks").put("amount","200.00"));
+   Ledger.post(s,new JSONObject().put("key","w-1").put("kind","expense").put("amount","80.00").put("account",maeId).put("category","Food & drinks").put("merchant","Zus Coffee").put("date",on.toString()));
+   Ledger.post(s,new JSONObject().put("key","w-2").put("kind","expense").put("amount","30.00").put("account",maeId).put("category","Transport").put("merchant","Grab").put("date",on.minusDays(1).toString()));
+
+   JSONObject wm=WidgetModel.build(s,on);
+   yes(wm.getBoolean("showAmounts")&&!wm.getBoolean("locked"));
+   yes(wm.getString("primaryMetric").startsWith("RM "));
+   yes(wm.getString("statusLine").contains("Avail ")&&wm.getString("statusLine").contains("Spent "));
+   eq(wm.getJSONArray("bars7").length(),7);
+   yes(wm.getJSONArray("bars7").getInt(6)>6); // today non-zero bar
+   eq(wm.getInt("budgetPct"),40);
+   yes(wm.getString("budgetLabel").contains("Food & drinks")&&wm.getString("budgetLabel").contains("40%"));
+   eq(wm.getJSONArray("recentTx").length(),2);
+   yes(wm.getJSONArray("recentTx").getString(0).contains("Zus Coffee"));
+
+   // Privacy blur masks amounts but preserves structure
+   Ledger.apply(s,"settings",new JSONObject().put("privacyBlur",true));
+   JSONObject blurred=WidgetModel.build(s,on);
+   yes(!blurred.getBoolean("showAmounts")&&"RM ••••".equals(blurred.getString("primaryMetric")));
+   yes(blurred.getJSONArray("recentTx").getString(0).contains("•••"));
+
+   // App lock hides all balances and recent tx
+   Ledger.apply(s,"settings",new JSONObject().put("appLock",true));
+   JSONObject locked=WidgetModel.build(s,on);
+   yes(locked.getBoolean("locked")&&"Locked".equals(locked.getString("primaryMetric"))&&locked.getJSONArray("recentTx").length()==0);
+  });
+
+  test("Phase 17 ScreenRouter prevents resume reset to home & Smart Quick Entry benchmark",()->{
+   yes("".equals(ScreenRouter.resolveExtraScreen(null)));
+   yes("".equals(ScreenRouter.resolveExtraScreen("")));
+   yes("".equals(ScreenRouter.resolveExtraScreen("unknown_screen")));
+   yes("quick".equals(ScreenRouter.resolveExtraScreen("quick")));
+   yes("home".equals(ScreenRouter.resolveExtraScreen("home")));
+   yes("".equals(ScreenRouter.consumePendingScreen()));
+
+   // EN/BM Smart Quick Entry precision sweep
+   JSONObject s=Ledger.initial();
+   Ledger.apply(s,"account",new JSONObject().put("name","TNG eWallet").put("type","wallet").put("opening","100"));
+   Ledger.apply(s,"account",new JSONObject().put("name","MAE").put("type","bank").put("opening","500"));
+   LocalDate on=LocalDate.now();
+   String[][] cases={
+     {"Kopi O RM 3.50 tunai","expense","Food & drinks"},
+     {"Bayar bil TNB 145.20 mae","expense","Bills & utilities"},
+     {"Klinik Mediviron RM 55 tng","expense","Health & medical"},
+     {"Makan malam 80 kongsi dengan Ali","shared","Food & drinks"},
+     {"Terima RM 120 daripada Siti duitnow mae","income","Other income"},
+     {"Transfer 100 mae to tng","transfer","Miscellaneous"}
+   };
+   for(String[] c:cases){
+    JSONObject q=Extras.parseQuickEntry(s,c[0],on);
+    yes(q!=null&&c[1].equals(q.getString("kind")));
+    if(!"transfer".equals(c[1]))yes(c[2].equals(q.getString("category")));
+   }
+  });
+
   System.out.println("RESULT: "+passed+" extended tests passed");
  }
 }

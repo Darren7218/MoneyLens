@@ -29,7 +29,9 @@
     <service android:name=".MoneyJob" android:permission="android.permission.BIND_JOB_SERVICE" android:exported="false" />
     <receiver android:name=".BootReceiver" android:exported="true" android:directBootAware="true"><intent-filter><action android:name="android.intent.action.BOOT_COMPLETED"/><action android:name="android.intent.action.LOCKED_BOOT_COMPLETED"/><action android:name="android.intent.action.QUICKBOOT_POWERON"/><action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/><action android:name="android.intent.action.MY_PACKAGE_REPLACED"/><action android:name="android.intent.action.USER_PRESENT"/><action android:name="android.intent.action.TIME_SET"/><action android:name="android.intent.action.TIMEZONE_CHANGED"/></intent-filter></receiver>
     <receiver android:name=".AlarmReceiver" android:exported="false"/>
-    <receiver android:name=".MoneyWidget" android:exported="false"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE"/></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_info"/></receiver>
+    <receiver android:name=".MoneyWidget" android:label="MoneyLens · Overview" android:exported="false"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE"/></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_info"/></receiver>
+    <receiver android:name=".MoneyWidgetCompact" android:label="MoneyLens · Daily Pulse" android:exported="false"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE"/></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_compact_info"/></receiver>
+    <receiver android:name=".MoneyWidgetInsights" android:label="MoneyLens · Insights" android:exported="false"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE"/></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_insights_info"/></receiver>
     <receiver android:name=".IgnoreReceiver" android:exported="false"/>
   </application>
 </manifest>

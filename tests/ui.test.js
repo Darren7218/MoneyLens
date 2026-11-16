@@ -94,7 +94,7 @@ test('Bahasa Melayu toggle localizes nav, home, plan, budgets, settings, goals, 
   const planHtml=run(`plan()`);
   assert(planHtml.includes('Bajet')&&planHtml.includes('Hutang')&&planHtml.includes('Cukai LHDN'));
   const setHtml=run(`settings()`);
-  assert(setHtml.includes('id="langToggle"')&&setHtml.includes('value="ms" selected')&&setHtml.includes('Rekod automatik notifikasi')&&setHtml.includes('id="ecoCaptureToggle"')&&setHtml.includes('Enjin notifikasi jimat kuasa (Mod Eko)')&&setHtml.includes('Kunci aplikasi cap jari &amp; biometrik')&&setHtml.includes('id="categoryAlertsToggle"')&&setHtml.includes('id="anomalyGuardToggle"')&&setHtml.includes('id="splitAutoMatchToggle"')&&setHtml.includes('Pengawal anomali')&&setHtml.includes('Pustaka notifikasi &amp; amaran kategori')&&setHtml.includes('0.14.0'));
+  assert(setHtml.includes('id="langToggle"')&&setHtml.includes('value="ms" selected')&&setHtml.includes('Rekod automatik notifikasi')&&setHtml.includes('id="ecoCaptureToggle"')&&setHtml.includes('Enjin notifikasi jimat kuasa (Mod Eko)')&&setHtml.includes('Kunci aplikasi cap jari &amp; biometrik')&&setHtml.includes('id="categoryAlertsToggle"')&&setHtml.includes('id="anomalyGuardToggle"')&&setHtml.includes('id="splitAutoMatchToggle"')&&setHtml.includes('Pengawal anomali')&&setHtml.includes('Pustaka notifikasi &amp; amaran kategori')&&setHtml.includes('0.15.0'));
   run(`state.settings.appLock=true`);
   const setLockedHtml=run(`settings()`);
   assert(setLockedHtml.includes('id="lockTimeoutSelect"')&&setLockedHtml.includes('data-action="lockNow"')&&setLockedHtml.includes('Kunci sekarang'));
@@ -119,7 +119,7 @@ test('home smart insights strip, hero delta pill and digital bank badges render 
   assert(run(`brandBadge('GXBank')`).includes('brand-gxbank'));
   assert(run(`brandBadge('AEON Bank')`).includes('brand-aeon'));
   assert(run(`brandBadge('Setel')`).includes('brand-setel'));
-  assert(run(`settings()`).includes('MoneyLens 0.14.0'));
+  assert(run(`settings()`).includes('MoneyLens 0.15.0'));
   assert(run(`settings()`).includes('id="anomalyGuardToggle"')&&run(`settings()`).includes('Spend anomaly'));
   run(`state.settings.lang='ms'`);
   const bmHome=run(`home()`);
@@ -197,7 +197,7 @@ test('Phase 11 category notification library, budget alert pills & commercial UI
 });
 test('Phase 13 vault health check, restore diff preview & snapshot history UI',()=>{
   const setHtml=run(`settings()`);
-  assert(setHtml.includes('data-action="healthCheck"')&&setHtml.includes('data-action="snapshotHistory"')&&setHtml.includes('id="splitAutoMatchToggle"')&&setHtml.includes('MoneyLens 0.14.0'));
+  assert(setHtml.includes('data-action="healthCheck"')&&setHtml.includes('data-action="snapshotHistory"')&&setHtml.includes('id="splitAutoMatchToggle"')&&setHtml.includes('MoneyLens 0.15.0'));
 
   let mTitle='',mBody='';
   const prevModal=ctx.modal;
@@ -243,8 +243,36 @@ test('Phase 15 safe-to-spend SVG trend, cashflow SVG, tx summary filters & smart
 
   run(`txForm()`);
   assert(captured.includes('id="quick-parse-input"')&&captured.includes('data-action="quickParseFill"'));
-  assert(run(`settings()`).includes('MoneyLens 0.14.0'));
+  assert(run(`settings()`).includes('MoneyLens 0.15.0'));
 
   ctx.modal=prevModal;run(`filter=${JSON.stringify(prevFilter)};reportData=${JSON.stringify(prevReport)}`);
+});
+
+test('Phase 16 UI polish hides Settings FAB, stacks Auto-lock, adds section jump chips & health refresh',()=>{
+  run(`const prevPage=page;`);
+  let rendered='',capturedHealth='';
+  const css=fs.readFileSync(path.join(__dirname,'..','app','src','main','assets','style.css'),'utf8');
+  assert(css.includes('.setting-row.stacked')&&css.includes('calc(156px + env(safe-area-inset-bottom))')&&css.includes('.settings-jump'));
+
+  const setHtml=run(`settings()`);
+  assert(setHtml.includes('class="settings-jump"')&&setHtml.includes('id="set-capture"')&&setHtml.includes('id="set-prefs"')&&setHtml.includes('id="set-tools"')&&setHtml.includes('id="set-backup"')&&setHtml.includes('class="setting-row stacked"'));
+
+  const prevQS=ctx.document.querySelector,prevModal=ctx.modal;
+  ctx.document.querySelector=sel=>sel==='#app'?{set innerHTML(v){rendered=v;}}:prevQS(sel);
+  run(`page='settings';render()`);
+  assert(!rendered.includes('class="fab-add"')&&rendered.includes('id="set-capture"'));
+  run(`page='home';render()`);
+  assert(rendered.includes('class="fab-add"'));
+  run(`page=prevPage;`);
+  ctx.document.querySelector=prevQS;
+
+  ctx.modal=(t,h)=>{capturedHealth=h;};
+  run(`renderHealthModal(computeLocalHealthCheck())`);
+  ctx.modal=prevModal;
+  assert(capturedHealth.includes('data-action="healthCheck"'));
+
+  run(`state.drafts.push({id:'d-rv',merchant:'ZUS',amount:1200,kind:'expense',category:'Food & drinks',source:'TNG',state:'review',alsoSeenFrom:'Maybank MAE',date:today(),reason:'Review'},{id:'d-dup',merchant:'TNG DIGITAL',amount:1200,kind:'expense',category:'Food & drinks',source:'Maybank MAE',state:'linked',duplicateOf:'d-rv',date:today(),reason:'Merged with TNG alert'});`);
+  const inb=run(`inbox()`);
+  assert(inb.includes('Also from Maybank MAE')&&inb.includes('Merged with TNG alert'));
 });
 console.log('RESULT: '+passed+' UI tests passed');

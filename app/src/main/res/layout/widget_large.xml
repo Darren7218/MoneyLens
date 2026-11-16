@@ -1,0 +1,244 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="@drawable/widget_bg_emerald">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/widget_title"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="MoneyLens"
+            android:textColor="#F5F8F5"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/widget_pace_badge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:background="@drawable/widget_pill_emerald"
+            android:text="On pace"
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:maxLines="1" />
+
+        <TextView
+            android:id="@+id/widget_due"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="6dp"
+            android:text="On-device vault"
+            android:textColor="#C9EBD7"
+            android:textSize="11sp"
+            android:maxLines="1"
+            android:ellipsize="end" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="bottom"
+        android:layout_marginTop="2dp">
+
+        <TextView
+            android:id="@+id/widget_primary_metric"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Protected"
+            android:textColor="#F5F8F5"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/widget_status"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="8dp"
+            android:text="Private · Offline · Auto-Capture"
+            android:textColor="#C9EBD7"
+            android:textSize="11sp"
+            android:maxLines="1"
+            android:ellipsize="end" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/widget_bars_row"
+        android:layout_width="match_parent"
+        android:layout_height="32dp"
+        android:orientation="horizontal"
+        android:gravity="bottom"
+        android:layout_marginTop="5dp">
+
+        <ProgressBar android:id="@+id/widget_bar_1" style="?android:attr/progressBarStyleHorizontal" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:layout_marginRight="4dp" android:max="100" android:progress="10" android:progressDrawable="@drawable/widget_bar_v" />
+        <ProgressBar android:id="@+id/widget_bar_2" style="?android:attr/progressBarStyleHorizontal" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:layout_marginRight="4dp" android:max="100" android:progress="25" android:progressDrawable="@drawable/widget_bar_v" />
+        <ProgressBar android:id="@+id/widget_bar_3" style="?android:attr/progressBarStyleHorizontal" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:layout_marginRight="4dp" android:max="100" android:progress="40" android:progressDrawable="@drawable/widget_bar_v" />
+        <ProgressBar android:id="@+id/widget_bar_4" style="?android:attr/progressBarStyleHorizontal" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:layout_marginRight="4dp" android:max="100" android:progress="15" android:progressDrawable="@drawable/widget_bar_v" />
+        <ProgressBar android:id="@+id/widget_bar_5" style="?android:attr/progressBarStyleHorizontal" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:layout_marginRight="4dp" android:max="100" android:progress="60" android:progressDrawable="@drawable/widget_bar_v" />
+        <ProgressBar android:id="@+id/widget_bar_6" style="?android:attr/progressBarStyleHorizontal" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:layout_marginRight="4dp" android:max="100" android:progress="35" android:progressDrawable="@drawable/widget_bar_v" />
+        <ProgressBar android:id="@+id/widget_bar_7" style="?android:attr/progressBarStyleHorizontal" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:max="100" android:progress="50" android:progressDrawable="@drawable/widget_bar_v" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/widget_budget_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginTop="5dp">
+
+        <TextView
+            android:id="@+id/widget_budget_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Budgets · All on track"
+            android:textColor="#C9EBD7"
+            android:textSize="11sp"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <ProgressBar
+            android:id="@+id/widget_budget_bar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="5dp"
+            android:layout_marginTop="2dp"
+            android:max="100"
+            android:progress="0"
+            android:progressDrawable="@drawable/widget_bar_h" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/widget_tx_list"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:layout_marginTop="5dp">
+
+        <TextView
+            android:id="@+id/widget_tx_1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Recent activity appears here"
+            android:textColor="#E6F5EC"
+            android:textSize="11sp"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/widget_tx_2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text=""
+            android:textColor="#C9EBD7"
+            android:textSize="11sp"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/widget_tx_3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text=""
+            android:textColor="#C9EBD7"
+            android:textSize="11sp"
+            android:maxLines="1"
+            android:ellipsize="end" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="5dp">
+
+        <Button
+            android:id="@+id/widget_add"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="0dp"
+            android:layout_weight="1.15"
+            android:layout_height="32dp"
+            android:minHeight="32dp"
+            android:background="@drawable/widget_pill_emerald"
+            android:text="+ Expense"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <Button
+            android:id="@+id/widget_inbox"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="32dp"
+            android:minHeight="32dp"
+            android:layout_marginLeft="6dp"
+            android:background="@drawable/widget_pill_emerald"
+            android:text="Inbox"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <Button
+            android:id="@+id/widget_scan"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="0dp"
+            android:layout_weight="0.9"
+            android:layout_height="32dp"
+            android:minHeight="32dp"
+            android:layout_marginLeft="6dp"
+            android:background="@drawable/widget_pill_emerald"
+            android:text="Scan"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <Button
+            android:id="@+id/widget_plan"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="0dp"
+            android:layout_weight="0.9"
+            android:layout_height="32dp"
+            android:minHeight="32dp"
+            android:layout_marginLeft="6dp"
+            android:background="@drawable/widget_pill_emerald"
+            android:text="Plan"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end" />
+    </LinearLayout>
+</LinearLayout>

@@ -1,0 +1,58 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingLeft="14dp"
+    android:paddingRight="12dp"
+    android:paddingTop="10dp"
+    android:paddingBottom="10dp"
+    android:background="@drawable/widget_bg_light">
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_weight="1"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingRight="8dp">
+
+        <TextView
+            android:id="@+id/widget_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Safe today"
+            android:textColor="#4E5E50"
+            android:textSize="11sp"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/widget_primary_metric"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="RM 0.00"
+            android:textColor="#162017"
+            android:textSize="17sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end" />
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/widget_add"
+        style="?android:attr/borderlessButtonStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="34dp"
+        android:minWidth="58dp"
+        android:minHeight="34dp"
+        android:paddingLeft="12dp"
+        android:paddingRight="12dp"
+        android:background="@drawable/widget_pill_soft"
+        android:text="+ Add"
+        android:textAllCaps="false"
+        android:textColor="#1B4332"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:maxLines="1" />
+</LinearLayout>

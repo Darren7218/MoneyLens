@@ -219,8 +219,8 @@ function computeLocalHealthCheck(){
 function renderHealthModal(h){
   const tone=h.status==='healthy'?'healthy':h.status==='attention'?'attention':'action';
   const lbl=h.status==='healthy'?tr('Healthy'):h.status==='attention'?tr('Needs attention'):tr('Action recommended');
-  const actionMap={snapshotNow:tr('Snapshot now'),openNeedsNote:tr('Review items'),openAccounts:tr('Verify accounts'),openInbox:tr('Open inbox'),enableLock:tr('Enable lock')};
-  modal(tr('Vault Health Check'),`<div class="health-head"><div class="health-score-ring ${tone}"><strong>${h.score}</strong><span>/100</span></div><div class="grow"><h3>${esc(tr('Overall Vault Health'))}: ${esc(lbl)}</h3><p class="note">${esc(tr('Offline security, backup freshness & double-entry integrity diagnostics.'))}</p></div></div><div class="stack" style="gap:8px;margin-top:12px">${(h.checks||[]).map(c=>`<div class="health-row"><div class="icon-bg ${c.ok?'sage':'peach'}">${icon(c.ok?'check':'bell')}</div><div class="grow"><strong>${esc(tr(c.title))} <span class="tag">${c.points}/${c.maxPoints}</span></strong><p class="note">${esc(c.detail)}</p></div>${(!c.ok&&c.action&&actionMap[c.action])?actionButton(actionMap[c.action],c.action,'','ghost'):''}</div>`).join('')}</div>`);
+  const actionMap={restore:tr('Restore backup'),snapshotNow:tr('Snapshot now'),openNeedsNote:tr('Review items'),openAccounts:tr('Verify accounts'),openInbox:tr('Open inbox'),enableLock:tr('Enable lock')};
+  modal(tr('Vault Health Check'),`<div class="health-head"><div class="health-score-ring ${tone}"><strong>${h.score}</strong><span>/100</span></div><div class="grow"><h3>${esc(tr('Overall Vault Health'))}: ${esc(lbl)}</h3><p class="note">${esc(tr('Offline security, backup freshness & double-entry integrity diagnostics.'))}</p></div></div><div class="stack" style="gap:8px;margin-top:12px">${(h.checks||[]).map(c=>`<div class="health-row"><div class="icon-bg ${c.ok?'sage':'peach'}">${icon(c.ok?'check':'bell')}</div><div class="grow"><strong>${esc(tr(c.title))} <span class="tag">${c.points}/${c.maxPoints}</span></strong><p class="note">${esc(c.detail)}</p></div>${(!c.ok&&c.action&&actionMap[c.action])?actionButton(actionMap[c.action],c.action,'','ghost'):''}</div>`).join('')}</div><div class="form-footer" style="margin-top:14px"><button type="button" class="btn secondary small" data-action="healthCheck">${esc(tr('Refresh score'))}</button></div>`);
 }
 function renderSnapshotsModal(list){
   const rows=Array.isArray(list)?list:[];
@@ -355,8 +355,9 @@ document.addEventListener('click',async e=>{
       case 'openBnplPlan':page='plan';planTab='bills';render();window.scrollTo(0,0);break;
       case 'openSplitsPlan':page='plan';planTab='splits';render();window.scrollTo(0,0);break;
       case 'healthCheck':{const h=window.MoneyLensNative?await call('healthCheck'):computeLocalHealthCheck();renderHealthModal(h);break;}
+      case 'jumpSection':{const tid=b.dataset.target||'';const el=tid?document.getElementById(tid):null;if(el)el.scrollIntoView({behavior:'smooth',block:'start'});[...document.querySelectorAll('.settings-jump .chip')].forEach(c=>c.classList.toggle('active',c===b));break;}
       case 'snapshotHistory':{const list=window.MoneyLensNative?await call('snapshots'):[];renderSnapshotsModal(list);break;}
-      case 'snapshotNow':{if(!window.MoneyLensNative){toast('Run on Android to save encrypted device snapshot.');break;}const list=await call('snapshotNow');await window.nativeRefresh();renderSnapshotsModal(list);toast(tr('Encrypted local snapshot saved.'));break;}
+      case 'snapshotNow':{if(!window.MoneyLensNative){toast('Run on Android to save encrypted device snapshot.');break;}const inHealth=!!$('.health-head');const list=await call('snapshotNow');await window.nativeRefresh();if(inHealth){renderHealthModal(await call('healthCheck'));toast(tr('Encrypted local snapshot saved. Health score updated.'));}else{renderSnapshotsModal(list);toast(tr('Encrypted local snapshot saved.'));}break;}
       case 'previewSnapshot':{const prev=await call('previewSnapshot',{id});modal(tr('Snapshot Diff Preview'),diffMarkup(prev,id));break;}
       case 'restoreSnapshot':{await mutate('restoreSnapshot',{id},tr('Snapshot restored.'));close();break;}
       case 'confirmRestore':{await call('confirmRestore');close();break;}
@@ -364,7 +365,7 @@ document.addEventListener('click',async e=>{
       case 'openNeedsNote':{page='transactions';advancedFilters={needsNote:true};close();render();break;}
       case 'openAccounts':{page='accounts';close();render();break;}
       case 'openInbox':{page='inbox';close();render();break;}
-      case 'enableLock':{await mutate('settings',{appLock:true},tr('Fingerprint app lock enabled.'));close();break;}
+      case 'enableLock':{const inHealth=!!$('.health-head');await mutate('settings',{appLock:true},tr('Fingerprint app lock enabled.'));if(inHealth){renderHealthModal(window.MoneyLensNative?await call('healthCheck'):computeLocalHealthCheck());}else close();break;}
       case 'settlePerson':{
         const person=b.dataset.person||'';
         const amt=Number(b.dataset.amt||0);

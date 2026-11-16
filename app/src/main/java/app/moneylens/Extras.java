@@ -545,43 +545,196 @@ public final class Extras {
   JSONArray drafts=s.getJSONArray("drafts");int pending=0;for(int i=0;i<drafts.length();i++)if(drafts.getJSONObject(i).optString("state").equals("review"))pending++;
   if(pending>=500)throw new IllegalStateException("Review your Inbox before capturing more payments.");
   while(drafts.length()>=1000){int remove=-1;for(int i=0;i<drafts.length();i++)if(!drafts.getJSONObject(i).optString("state").equals("review")){remove=i;break;}if(remove<0)break;drafts.remove(remove);}
-  for(int i=drafts.length()-1;i>=0;i--){JSONObject other=drafts.getJSONObject(i);if(d.optLong("amount")>0&&other.optLong("amount")==d.optLong("amount")&&now-other.optLong("created")<300000)d.put("reason",d.getString("reason")+" A similar recent amount exists; check for a duplicate.");}
-  d.put("package",pkg).put("capturedAt",now);Finance.suggest(s,d);drafts.put(d);
-  JSONObject twin=findCrossSourceTwin(s,d,pkg,now);
+  long eventTime=postTime>0L?postTime:now;
+  for(int i=drafts.length()-1;i>=0;i--){JSONObject other=drafts.getJSONObject(i);if(d.optLong("amount")>0&&other.optLong("amount")==d.optLong("amount")&&Math.abs(eventTime-draftEventTime(other))<300000L)d.put("reason",d.getString("reason")+" A similar recent amount exists; check for a duplicate.");}
+  d.put("package",pkg).put("capturedAt",now).put("postedAt",eventTime);Finance.suggest(s,d);drafts.put(d);
+  JSONObject twin=findPostedDraftTwin(s,d,pkg,eventTime);
   if(twin!=null){
    String twinTx=twin.getString("transactionId");
-   d.put("state","linked").put("duplicateOf",twinTx).put("transactionId",twinTx).put("reason","Same amount reported by "+twin.optString("source","another app")+" within 3 minutes, so it was not recorded twice. Tap \"Not a duplicate\" if these were separate payments.");
-   try{JSONObject t=Ledger.find(s.getJSONArray("transactions"),twinTx);t.put("alsoSeenFrom",label==null?pkg:label);}catch(IllegalArgumentException ignored){}
+   String seenFrom=(label==null||label.isEmpty())?pkg:label;
+   d.put("state","linked").put("duplicateOf",twinTx).put("transactionId",twinTx).put("reason","Same amount reported by "+twin.optString("source","another app")+" around the same time, so it was not recorded twice. Tap \"Not a duplicate\" if these were separate payments.");
+   appendAlsoSeen(s,twinTx,seenFrom);
   }else{
-   autoPost(s,d);
-   if(d.optBoolean("autoRecorded")&&"transfer".equals(d.optString("kind"))){
-    // The wallet side of a reload may have arrived first and be waiting in Inbox; fold it into this transfer.
-    for(int i=0;i<drafts.length();i++){
-     JSONObject o=drafts.getJSONObject(i);
-     if(o==d||!"review".equals(o.optString("state"))||!"transfer".equals(o.optString("kind"))||o.optLong("amount")!=d.optLong("amount"))continue;
-     if(pkg==null||pkg.equals(o.optString("package"))||Math.abs(now-o.optLong("capturedAt",Long.MIN_VALUE/2))>180_000L)continue;
-     o.put("state","linked").put("duplicateOf",d.getString("transactionId")).put("transactionId",d.getString("transactionId")).put("reason","Matched to the transfer reported by "+d.optString("source","your bank")+".");
+   JSONObject recentTx=findRecentMatchingTx(s,d,eventTime);
+   if(recentTx!=null){
+    String txId=recentTx.getString("id");
+    String seenFrom=(label==null||label.isEmpty())?pkg:label;
+    d.put("state","linked").put("duplicateOf",txId).put("transactionId",txId).put("reason","Matches a recent "+recentTx.optString("merchant","recorded")+" entry of the same amount, so it was not recorded twice. Tap \"Not a duplicate\" if these were separate payments.");
+    appendAlsoSeen(s,txId,seenFrom);
+   }else{
+    JSONObject reviewTwin=findReviewDraftTwin(s,d,pkg,eventTime);
+    if(reviewTwin!=null&&!d.optBoolean("reload")){
+     if(isRailOrGeneric(Finance.normalizeMerchant(d.optString("merchant","")),reviewTwin.optString("source",""),reviewTwin.optString("package",""))
+        &&!isRailOrGeneric(Finance.normalizeMerchant(reviewTwin.optString("merchant","")),label,pkg)){
+      d.put("merchant",reviewTwin.optString("merchant"));
+      if("expense".equals(d.optString("kind"))&&!reviewTwin.optString("category","").isEmpty()&&!"Miscellaneous".equals(reviewTwin.optString("category"))){
+       d.put("category",reviewTwin.getString("category"));
+       if(!reviewTwin.optString("subcategory","").isEmpty())d.put("subcategory",reviewTwin.getString("subcategory"));
+      }
+     }
+    }
+    autoPost(s,d);
+    if(d.optBoolean("autoRecorded")){
+     String postedId=d.getString("transactionId");
+     if(reviewTwin!=null){
+      linkReviewDraftToPosted(s,reviewTwin,d,postedId);
+     }
+     if("transfer".equals(d.optString("kind"))){
+      // Also fold any other pending reload-side review draft from another app within 3 minutes.
+      for(int i=0;i<drafts.length();i++){
+       JSONObject o=drafts.getJSONObject(i);
+       if(o==d||o==reviewTwin||!"review".equals(o.optString("state"))||!"transfer".equals(o.optString("kind"))||o.optLong("amount")!=d.optLong("amount"))continue;
+       if(pkg==null||pkg.equals(o.optString("package"))||Math.abs(eventTime-draftEventTime(o))>180_000L)continue;
+       linkReviewDraftToPosted(s,o,d,postedId);
+      }
+     }
+    }else if(reviewTwin!=null){
+     String seenFrom=(label==null||label.isEmpty())?pkg:label;
+     d.put("state","linked").put("duplicateOf",reviewTwin.getString("id")).put("reason","Same amount reported by "+reviewTwin.optString("source","another app")+" around the same time. Tap \"Not a duplicate\" if these were separate payments.");
+     reviewTwin.put("alsoSeenFrom",mergeSeenLabel(reviewTwin.optString("alsoSeenFrom",""),seenFrom));
     }
    }
   }
   seen.put(new JSONObject().put("hash",instanceDigest).put("contentHash",contentDigest).put("time",now));while(seen.length()>5000)seen.remove(0);
   s.put("lastCapture",now).put("revision",s.optLong("revision")+1);Ledger.validate(s);return d;
  }
- /** Finds an auto-recorded draft from a different app with the same amount captured within 3 minutes (e.g. TNG + linked bank card both alerting). */
- static JSONObject findCrossSourceTwin(JSONObject s,JSONObject d,String pkg,long now)throws JSONException{
+ private static final Set<String> TWIN_EXACT_RAILS=new HashSet<>(Arrays.asList("tng digital","touch n go","tng","shopeepay","spaylater","grabpay","grabpaylater","boost","myboost","boost payflex","atome","lazpaylater","tiktok paylater","bigpay","duitnow","fpx","jompay","ipay88","razerpay","senangpay","billplz","stripe","molpay","apple pay","google pay","samsung pay","ewallet","e wallet","wallet","card transaction","online banking","qr pay","qrpay","detected payment"));
+ private static final Set<String> TWIN_PLACE_WORDS=new HashSet<>(Arrays.asList("at","to","di","ke","no","in","on","of","by","kl","klcc","sunway","pyramid","mid","valley","pavilion","subang","puchong","petaling","jaya","shah","alam","damansara","bangsar","cheras","klang","penang","johor","ipoh","melaka","malaysia","my","online","store","shop","mart","cafe","restoran","restaurant","kedai","gerai","parking","payment","transfer","purchase","outlet","branch","cawangan","bhd","sdn","berhad","enterprise","enterprises","service","services"));
+ private static long draftEventTime(JSONObject d){
+  if(d==null)return Long.MIN_VALUE/2;
+  return d.has("postedAt")?d.optLong("postedAt",0L):d.optLong("capturedAt",d.optLong("created",Long.MIN_VALUE/2));
+ }
+ private static String mergeSeenLabel(String existing,String add){
+  String a=add==null?"":add.trim(),e=existing==null?"":existing.trim();
+  if(a.isEmpty())return e;
+  if(e.isEmpty())return a;
+  for(String part:e.split(","))if(part.trim().equalsIgnoreCase(a))return e;
+  return e+", "+a;
+ }
+ private static void appendAlsoSeen(JSONObject s,String txId,String srcLabel){
+  try{
+   JSONObject t=Ledger.find(s.getJSONArray("transactions"),txId);
+   t.put("alsoSeenFrom",mergeSeenLabel(t.optString("alsoSeenFrom",""),srcLabel));
+  }catch(Exception ignored){}
+ }
+ private static void linkReviewDraftToPosted(JSONObject s,JSONObject reviewDraft,JSONObject postedDraft,String txId)throws JSONException{
+  String by=postedDraft.optString("source","another app");
+  reviewDraft.put("state","linked").put("duplicateOf",txId).put("transactionId",txId).put("reason","Matched to "+by+" transaction of the same amount.");
+  appendAlsoSeen(s,txId,reviewDraft.optString("source",reviewDraft.optString("package","")));
+ }
+ private static boolean isRailOrGeneric(String mNorm,String otherSrc,String otherPkg){
+  if(mNorm==null||mNorm.isEmpty()||TWIN_EXACT_RAILS.contains(mNorm))return true;
+  for(String r:TWIN_EXACT_RAILS){
+   if(r.length()>=4&&(mNorm.startsWith(r+" ")||mNorm.endsWith(" "+r)))return true;
+  }
+  String oMeta=(String.valueOf(otherSrc)+" "+String.valueOf(otherPkg)).toLowerCase(Locale.ROOT);
+  String[][] pairHints={{"tng","tng"},{"touch n go","tng"},{"mae","maybank"},{"maybank","maybank"},{"cimb","cimb"},{"rhb","rhb"},{"hong leong","hlb"},{"hlb","hlb"},{"public bank","pbe"},{"ambank","ambank"},{"gxbank","gx"},{"aeon","aeon"},{"ryt","ryt"},{"shopeepay","shopee"},{"shopee","shopee"},{"grab","grab"},{"boost","boost"},{"atome","atome"},{"bigpay","bigpay"},{"setel","setel"}};
+  for(String[] ph:pairHints){
+   if(oMeta.contains(ph[1])&&(mNorm.equals(ph[0])||mNorm.startsWith(ph[0]+" ")||mNorm.endsWith(" "+ph[0])))return true;
+  }
+  return false;
+ }
+ private static List<String> brandTokens(String norm){
+  List<String> out=new ArrayList<>();
+  if(norm==null||norm.isEmpty())return out;
+  for(String tok:norm.split(" ")){
+   if(tok.length()>=2&&!TWIN_PLACE_WORDS.contains(tok)&&!tok.matches("[0-9]+"))out.add(tok);
+  }
+  return out;
+ }
+ private static int twinMerchantQuality(String mA,String srcA,String pkgA,String mB,String srcB,String pkgB){
+  String nA=Finance.normalizeMerchant(mA),nB=Finance.normalizeMerchant(mB);
+  boolean rA=isRailOrGeneric(nA,srcB,pkgB),rB=isRailOrGeneric(nB,srcA,pkgA);
+  if(!rA&&!rB&&!nA.isEmpty()&&nA.equals(nB))return 2;
+  List<String> tA=brandTokens(nA),tB=brandTokens(nB);
+  if(!rA&&!rB){
+   for(String a:tA){
+    for(String b:tB){
+     if(a.equals(b)||(a.length()>=5&&b.length()>=5&&(a.startsWith(b)||b.startsWith(a))))return 2;
+    }
+   }
+  }
+  if(rA||rB)return 1;
+  return 0;
+ }
+ private static boolean areKindsTwinCompatible(JSONObject a,JSONObject b){
+  String kA=a.optString("kind","expense"),kB=b.optString("kind","expense");
+  if(kA.equals(kB))return true;
+  if(("shared".equals(kA)&&"expense".equals(kB))||("expense".equals(kA)&&"shared".equals(kB)))return true;
+  boolean trMatch=(("expense".equals(kA)||"shared".equals(kA))&&"transfer".equals(kB))||("transfer".equals(kA)&&("expense".equals(kB)||"shared".equals(kB)));
+  if(!trMatch)return false;
+  if(a.optBoolean("reload")||b.optBoolean("reload"))return false;
+  JSONObject tr="transfer".equals(kA)?a:b,ex="transfer".equals(kA)?b:a;
+  // Never merge a real bank-to-wallet internal reload transfer with a subsequent wallet purchase.
+  String trTo=tr.optString("to",""),exAcct=ex.optString("account","");
+  if(!trTo.isEmpty()&&trTo.equals(exAcct))return false;
+  return true;
+ }
+ /** Finds an auto-recorded draft from a different app matching amount, time window, compatible kind and non-conflicting merchant. */
+ static JSONObject findCrossSourceTwin(JSONObject s,JSONObject d,String pkg,long eventTime)throws JSONException{
+  return findPostedDraftTwin(s,d,pkg,eventTime);
+ }
+ static JSONObject findPostedDraftTwin(JSONObject s,JSONObject d,String pkg,long eventTime)throws JSONException{
   long amt=d.optLong("amount");
   if(amt<=0||pkg==null||!s.getJSONObject("settings").optBoolean("autoRecord",true))return null;
   JSONArray drafts=s.getJSONArray("drafts");
+  String dMerch=d.optString("merchant",""),dSrc=d.optString("source","");
   for(int i=drafts.length()-1;i>=0;i--){
    JSONObject o=drafts.getJSONObject(i);
-   if(o==d||!o.optBoolean("autoRecorded")||o.has("duplicateOf")||o.optLong("amount")!=amt)continue;
-   if(pkg.equals(o.optString("package"))||!o.has("capturedAt"))continue;
-   if(Math.abs(now-o.optLong("capturedAt"))>180_000L)continue;
-   if(!o.optString("kind","expense").equals(d.optString("kind","expense")))continue;
+   if(o==d||o.has("duplicateOf")||o.optLong("amount")!=amt)continue;
+   if(pkg.equals(o.optString("package")))continue;
    String txId=o.optString("transactionId","");
-   if(txId.isEmpty())continue;
+   if(txId.isEmpty()||(!o.optBoolean("autoRecorded")&&!"confirmed".equals(o.optString("state"))))continue;
+   if(!areKindsTwinCompatible(o,d))continue;
+   int q=twinMerchantQuality(o.optString("merchant",""),o.optString("source",""),o.optString("package",""),dMerch,dSrc,pkg);
+   if(q==0)continue;
+   long maxWin=q>=2?300_000L:180_000L;
+   if(Math.abs(eventTime-draftEventTime(o))>maxWin)continue;
    try{if(Ledger.find(s.getJSONArray("transactions"),txId).optBoolean("voided"))continue;}catch(IllegalArgumentException e){continue;}
    return o;
+  }
+  return null;
+ }
+ static JSONObject findReviewDraftTwin(JSONObject s,JSONObject d,String pkg,long eventTime)throws JSONException{
+  long amt=d.optLong("amount");
+  if(amt<=0||pkg==null)return null;
+  JSONArray drafts=s.getJSONArray("drafts");
+  String dMerch=d.optString("merchant",""),dSrc=d.optString("source","");
+  for(int i=drafts.length()-1;i>=0;i--){
+   JSONObject o=drafts.getJSONObject(i);
+   if(o==d||!"review".equals(o.optString("state"))||o.has("duplicateOf")||o.optLong("amount")!=amt)continue;
+   if(pkg.equals(o.optString("package")))continue;
+   if(!areKindsTwinCompatible(o,d))continue;
+   int q=twinMerchantQuality(o.optString("merchant",""),o.optString("source",""),o.optString("package",""),dMerch,dSrc,pkg);
+   if(q==0)continue;
+   long maxWin=q>=2?300_000L:180_000L;
+   if(Math.abs(eventTime-draftEventTime(o))>maxWin)continue;
+   return o;
+  }
+  return null;
+ }
+ static JSONObject findRecentMatchingTx(JSONObject s,JSONObject d,long eventTime)throws JSONException{
+  long amt=d.optLong("amount");
+  if(amt<=0)return null;
+  JSONArray tx=s.optJSONArray("transactions");
+  if(tx==null)return null;
+  String dMerch=d.optString("merchant",""),dSrc=d.optString("source",""),dPkg=d.optString("package","");
+  for(int i=tx.length()-1;i>=0;i--){
+   JSONObject t=tx.getJSONObject(i);
+   if(t.optBoolean("voided")||t.has("importBatch"))continue;
+   String tk=t.optString("kind","");
+   if(!Arrays.asList("expense","transfer","income","refund","shared").contains(tk))continue;
+   if(t.optLong("amount")!=amt)continue;
+   String sp=t.optString("sourcePackage","");
+   if(!dPkg.isEmpty()&&dPkg.equals(sp))continue;
+   if(!areKindsTwinCompatible(t,d))continue;
+   int q=twinMerchantQuality(t.optString("merchant",""),t.optString("source",""),sp,dMerch,dSrc,dPkg);
+   if(q==0)continue;
+   long created=t.optLong("created",0L);
+   if(created<=0L)continue;
+   long maxWin=q>=2?7_200_000L:900_000L;
+   if(Math.abs(eventTime-created)>maxWin)continue;
+   return t;
   }
   return null;
  }
