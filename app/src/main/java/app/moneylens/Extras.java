@@ -173,6 +173,7 @@ public final class Extras {
     return true;
    }
    case "syncDebtReminder":syncDebtReminder(s,Ledger.find(s.getJSONArray("debts"),a.getString("id")));return true;
+   case "quickPost":postQuickEntry(s,a.optString("text",""),LocalDate.now(),a.optString("key",""));return true;
    case "adjustGoal":{
     JSONObject g=Ledger.find(s.getJSONArray("goals"),a.getString("id"));
     long delta=a.has("delta")?a.getLong("delta"):(a.optBoolean("withdraw")?-1L:1L)*Ledger.minor(a.getString("amount"));
@@ -857,7 +858,7 @@ public final class Extras {
    default:return "💸";
   }
  }
- private static String rm(long minor){
+ public static String rm(long minor){
   return BigDecimal.valueOf(Math.abs(minor),2).toPlainString();
  }
  public static String formatRecordedTitle(JSONObject d,JSONObject settings,boolean ms,boolean blur){
@@ -1014,6 +1015,68 @@ public final class Extras {
    if(!draft.optString("subcategory").isEmpty())res.put("subcategory",draft.optString("subcategory"));
    if(!draft.optString("account").isEmpty())res.put("account",draft.optString("account"));
   }
+  if("transfer".equals(kind)&&accounts!=null&&accounts.length()>1){
+   String toAcct="";
+   java.util.regex.Matcher toM=java.util.regex.Pattern.compile("(?i)\\b(?:to|ke|into)\\s+([\\p{L}0-9 .'_-]{2,40})").matcher(withoutAmt);
+   String afterTo=toM.find()?toM.group(1):"";
+   String[][] toAliases={{"cash","Cash"},{"tunai","Cash"},{"tng","Touch 'n Go eWallet"},{"touch n go","Touch 'n Go eWallet"},{"mae","MAE"},{"maybank","Maybank"},{"cimb","CIMB"},{"rhb","RHB"},{"gxbank","GXBank"},{"gx","GXBank"},{"aeon","AEON"},{"ryt","Ryt"},{"shopeepay","ShopeePay"},{"spay","ShopeePay"},{"grabpay","GrabPay"},{"boost","Boost"},{"bigpay","BigPay"}};
+   if(!afterTo.isEmpty()){
+    for(int i=0;i<accounts.length();i++){
+     JSONObject a=accounts.getJSONObject(i);String id=a.getString("id");
+     if(id.equals(matchedAcct))continue;
+     String an=a.optString("name","").trim().toLowerCase(Locale.ROOT);
+     if(!an.isEmpty()&&(" "+afterTo.toLowerCase(Locale.ROOT)+" ").contains(" "+an+" ")){toAcct=id;break;}
+    }
+    if(toAcct.isEmpty()){
+     for(String[] al:toAliases){
+      if(java.util.regex.Pattern.compile("(?i)(?:^|\\s)"+java.util.regex.Pattern.quote(al[0])+"(?:\\s|$)").matcher(afterTo).find()){
+       String id=Finance.matchAccountByName(accounts,al[1],"");
+       if(!id.isEmpty()&&!id.equals(matchedAcct)){toAcct=id;break;}
+      }
+     }
+    }
+   }
+   if(toAcct.isEmpty()){
+    for(int i=0;i<accounts.length();i++){String id=accounts.getJSONObject(i).getString("id");if(!id.equals(matchedAcct)){toAcct=id;break;}}
+   }
+   if(!toAcct.isEmpty())res.put("to",toAcct);
+  }
   return res;
+ }
+ /** Parses a natural-language quick entry phrase and posts it directly as a double-entry transaction. */
+ public static JSONObject postQuickEntry(JSONObject s,String rawText,LocalDate today,String saveKey)throws Exception{
+  JSONObject parsed=parseQuickEntry(s,rawText,today);
+  if(parsed==null)throw new IllegalArgumentException("Include an amount like \"Nasi Lemak 12.50 cash\".");
+  String kind=parsed.optString("kind","expense");
+  String acct=parsed.optString("account","");
+  if(acct.isEmpty())acct=s.getJSONArray("accounts").getJSONObject(0).getString("id");
+  JSONObject postArgs=new JSONObject()
+   .put("kind",kind)
+   .put("amount",parsed.getString("amount"))
+   .put("account",acct)
+   .put("merchant",parsed.optString("merchant","Quick expense"))
+   .put("category",parsed.optString("category","Miscellaneous"))
+   .put("date",parsed.optString("date",today.toString()))
+   .put("source","Quick Log")
+   .put("autoRecorded",false)
+   .put("key",(saveKey!=null&&!saveKey.trim().isEmpty())?saveKey.trim():("quick:"+Ledger.id()));
+  String sub=parsed.optString("subcategory","");
+  if(!sub.isEmpty())postArgs.put("subcategory",sub);
+  if("shared".equals(kind)){
+   String person=parsed.optString("person","").trim();
+   postArgs.put("person",person.isEmpty()?"Friend":person);
+   postArgs.put("ownAmount",parsed.optString("ownAmount","0"));
+  }else if("transfer".equals(kind)){
+   String toAcct=parsed.optString("to","");
+   if(toAcct.isEmpty()||toAcct.equals(acct)){
+    JSONArray accts=s.getJSONArray("accounts");
+    for(int i=0;i<accts.length();i++){String id=accts.getJSONObject(i).getString("id");if(!id.equals(acct)){toAcct=id;break;}}
+   }
+   if(toAcct.isEmpty()||toAcct.equals(acct))throw new IllegalArgumentException("Add at least two accounts to record a transfer.");
+   postArgs.put("to",toAcct);
+  }
+  Ledger.post(s,postArgs);
+  JSONArray tx=s.getJSONArray("transactions");
+  return tx.getJSONObject(tx.length()-1);
  }
 }

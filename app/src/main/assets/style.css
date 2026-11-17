@@ -1068,3 +1068,11 @@ body.dark .pace-chip.watch { color: #fcd34d; }
 .quick-parse-bar input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--ink); font-size: 13px; padding: 4px 6px; outline: none; }
 .tx-summary-bar { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; padding: 10px 14px; margin-bottom: 10px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); font-size: 12px; color: var(--muted); }
 .tx-summary-bar strong { color: var(--ink); }
+.cycle-end-banner { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: var(--radius); border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--line)); background: color-mix(in srgb, var(--accent-soft) 55%, var(--surface)); }
+.cycle-end-banner h3 { margin: 0 0 2px; font-size: 14px; }
+.cycle-end-banner p { margin: 0; font-size: 12px; color: var(--muted); }
+.backup-nudge-card { padding: 16px; border-radius: var(--radius); border: 1px solid rgba(217, 119, 6, 0.35); background: color-mix(in srgb, var(--amber) 35%, var(--surface)); }
+.backup-nudge-card h3 { margin: 0 0 4px; font-size: 14px; }
+:root[data-theme="dark"] .backup-nudge-card { background: rgba(245, 158, 11, 0.09); border-color: rgba(245, 158, 11, 0.35); }
+.review-cat-row { padding: 8px 0; border-bottom: 1px solid var(--line); }
+.review-cat-row:last-child { border-bottom: 0; }

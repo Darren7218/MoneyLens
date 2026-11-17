@@ -40,6 +40,8 @@ function txForm(data={}){
   const title=merged.draftId?'Review payment':merged.editId?'Edit transaction':merged.billId?'Record bill payment':'Add transaction';
   const quickBar=(!merged.editId&&!merged.draftId)?`<div class="quick-parse-bar"><input type="text" id="quick-parse-input" placeholder="${esc(tr('Try: Nasi Lemak 12.50 cash or Dinner 60 split Sarah'))}" aria-label="${esc(tr('Smart quick entry'))}"><button type="button" class="btn secondary small" data-action="quickParseFill">${esc(tr('Auto-fill'))}</button></div>`:'';
   modal(title,`<form id="transaction-form">${quickBar}<div class="chips">${chips}</div><div class="amount-input"><span>RM</span><input name="amount" id="f-amount" inputmode="decimal" aria-label="Amount in MYR" placeholder="0.00" value="${merged.amount?esc(typeof merged.amount==='number'?amount(merged.amount):merged.amount):''}" required pattern="[0-9]+([.][0-9]{1,2})?" autocomplete="off"></div>${merged.reason?`<div class="hint" style="margin:0">${esc(merged.reason)}</div>`:''}<div class="form-grid">${select(kind==='transfer'?'From account':'Account','account',merged.draftId?[['','Choose account'],...acctRows]:acctRows,merged.account||(merged.draftId?'':state.accounts[0].id))}${kind==='transfer'?select('To account','to',acctRows,merged.to||state.accounts[1]?.id):select('Category','category',catRows,selCat)}</div>${field(kind==='transfer'?'Description':'Merchant / description','merchant',merged.merchant||'','text','maxlength="120"')}${field('Date','date',merged.date||today(),'date','required')}<div><label for="f-note">Note <span class="muted">· optional</span></label><textarea id="f-note" name="note" maxlength="500" placeholder="Anything worth remembering?">${esc(merged.note||'')}</textarea></div>${evidence}${thumb}${subRow}${sharedRows}${tagsField}${splitsBox}${fxBox}${historyCheck}${ruleCheck}<div class="error" role="alert"></div><div class="form-footer"><button class="btn" type="submit">${icon('check')}${merged.editId?'Save changes':'Record transaction'}</button></div><p class="note">${kind==='transfer'?'A transfer moves money without adding an expense.':kind==='refund'?'A refund reduces spending in the selected category.':'Only confirmed records affect your balance.'}</p></form>`);
+  if(data.focusQuick)setTimeout(()=>{const q=$('#quick-parse-input');if(q){try{q.focus({preventScroll:true});}catch(_){}}},60);
+  else if(data.focusSubmit)setTimeout(()=>{const btn=$('#transaction-form button[type="submit"]');if(btn){try{btn.focus({preventScroll:true});}catch(_){}}},60);
 }
 
 function splitRow(s={}){
@@ -317,7 +319,7 @@ document.addEventListener('click',async e=>{
         const qText=($('#quick-parse-input')?.value||'').trim();
         const parsed=window.MoneyLensNative?await call('quickParse',{text:qText}):localQuickParse(qText);
         if(!parsed||!parsed.amountMinor){toast(tr('Enter an amount like "Nasi Lemak 12.50 cash".'));break;}
-        txForm({...parsed,key:modalContext.key});
+        txForm({...parsed,key:modalContext.key,focusSubmit:true});
         toast(tr('Smart fields filled from your note.'));
         break;
       }
@@ -349,6 +351,39 @@ document.addEventListener('click',async e=>{
       case 'csvExport':await call('csvExport');break;
       case 'exportPdf':await call('exportPdf',{date:period().start});break;
       case 'openRecap':{const rc=(window.MoneyLensNative&&monthOffset!==0)?await call('cycleRecap',{date:period().start}):null;showRecap(rc);break;}
+      case 'openCycleReview':{
+        page='plan';planTab='review';
+        if(window.MoneyLensNative&&monthOffset!==0){modalContext.cycleReviewStart=period().start;modalContext.cycleReviewRecap=await call('cycleRecap',{date:period().start});}
+        render();window.scrollTo(0,0);break;
+      }
+      case 'reviewPrevMonth':{
+        monthOffset--;
+        if(window.MoneyLensNative&&monthOffset!==0){modalContext.cycleReviewStart=period().start;modalContext.cycleReviewRecap=await call('cycleRecap',{date:period().start});}
+        else{modalContext.cycleReviewRecap=null;}
+        render();break;
+      }
+      case 'reviewNextMonth':{
+        monthOffset=Math.min(0,monthOffset+1);
+        if(window.MoneyLensNative&&monthOffset!==0){modalContext.cycleReviewStart=period().start;modalContext.cycleReviewRecap=await call('cycleRecap',{date:period().start});}
+        else{modalContext.cycleReviewRecap=null;}
+        render();break;
+      }
+      case 'snoozeBackupNudge':{
+        const until=Date.now()+7*86400000;
+        if(window.MoneyLensNative)await mutate('settings',{backupNudgeSnoozeUntil:until},tr('Backup reminder snoozed for 7 days.'));
+        else{state.settings.backupNudgeSnoozeUntil=until;render();toast(tr('Backup reminder snoozed for 7 days.'));}
+        break;
+      }
+      case 'dismissBackupNudge':{
+        if(window.MoneyLensNative)await mutate('settings',{backupNudgeDismissed:true},tr('Backup reminder hidden. You can re-enable it in Settings.'));
+        else{state.settings.backupNudgeDismissed=true;render();toast(tr('Backup reminder hidden. You can re-enable it in Settings.'));}
+        break;
+      }
+      case 'resetBackupNudge':{
+        if(window.MoneyLensNative)await mutate('settings',{backupNudgeDismissed:false,backupNudgeSnoozeUntil:0},tr('Backup reminder restored.'));
+        else{state.settings.backupNudgeDismissed=false;state.settings.backupNudgeSnoozeUntil=0;render();toast(tr('Backup reminder restored.'));}
+        break;
+      }
       case 'insights':insights();break;
       case 'openTaxPlan':page='plan';planTab='tax';render();window.scrollTo(0,0);break;
       case 'openDebtPlan':page='plan';planTab='debts';render();window.scrollTo(0,0);break;

@@ -288,3 +288,27 @@ const CAT_NOTIFICATION_PRESETS=[
   {key:'split',category:'Family & gifts',sub:'Split-Bill Reimbursement',source:'MAE by Maybank2u',sample:'You received RM 24.50 from Ali via DuitNow transfer.'},
   {key:'twin',category:'Shopping',sub:'Cross-App Duplicate (with Shopping)',source:'MAE by Maybank2u',sample:'Card transaction RM 68.00 at SHOPEEPAY approved.'}
 ];
+function computeLocalBackupNudge(st=state,meta=status,nowMs=Date.now()){
+  const txs=(st?.transactions||[]).filter(t=>!t.voided&&t.kind!=='opening');
+  const activeTxCount=txs.length;
+  const threshold=20;
+  const settings=st?.settings||{};
+  const dismissed=!!settings.backupNudgeDismissed;
+  const snoozeUntil=Number(settings.backupNudgeSnoozeUntil||0);
+  const snoozed=snoozeUntil>nowMs;
+  const backupMs=Math.max(Number(meta?.backupSuccess||0),Number(meta?.lastSnapshotAt||0));
+  const staleMs=14*86400000;
+  const needsBackup=backupMs<=0||(nowMs-backupMs)>staleMs;
+  const daysSinceBackup=backupMs>0?Math.max(0,Math.floor((nowMs-backupMs)/86400000)):-1;
+  return {
+    shouldShow:!dismissed&&!snoozed&&activeTxCount>=threshold&&needsBackup,
+    activeTxCount,
+    threshold,
+    dismissed,
+    snoozed,
+    snoozeUntil,
+    hasBackup:backupMs>0,
+    daysSinceBackup,
+    reason:backupMs<=0?'never':(needsBackup?'stale':'fresh')
+  };
+}

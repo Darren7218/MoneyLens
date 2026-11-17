@@ -55,6 +55,7 @@ public final class Vault {
   public static boolean hasMeta(Context c){return c.getApplicationContext().getSharedPreferences("vault-meta",0).getBoolean("ready",false);}
   public static boolean fastBool(Context c,String key,boolean def){return c.getApplicationContext().getSharedPreferences("vault-meta",0).getBoolean(key,def);}
   public static int fastInt(Context c,String key,int def){return c.getApplicationContext().getSharedPreferences("vault-meta",0).getInt(key,def);}
+  public static String fastStr(Context c,String key,String def){return c.getApplicationContext().getSharedPreferences("vault-meta",0).getString(key,def);}
   public static boolean fastIsChatPkg(String pkg){return pkg!=null&&pkg.matches("(?i).*(whatsapp|telegram|discord|messaging|mms|google\\.android\\.gm|facebook\\.orca|instagram|tencent\\.mm|line\\.android|viber|signal).*");}
   public static String fastPreFilterCapture(Context c,String pkg,boolean visibleUnlocked,boolean isTest){
     if(isTest)return null;

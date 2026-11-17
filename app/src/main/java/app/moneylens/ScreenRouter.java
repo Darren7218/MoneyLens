@@ -5,7 +5,7 @@ import java.util.*;
 /** Pure Android-free launch/resume screen routing state helper. */
 public final class ScreenRouter {
   private static final Set<String> VALID_SCREENS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-      "home", "inbox", "plan", "quick", "scan", "favorites", "transactions"
+      "home", "inbox", "plan", "quick", "scan", "favorites", "transactions", "review"
   )));
 
   public static String resolveExtraScreen(String extra) {

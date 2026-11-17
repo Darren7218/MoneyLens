@@ -1,7 +1,7 @@
 'use strict';
 function plan(){
-  const tabs=[['budgets',tr('Budgets')],['bills',tr('BNPL & Bills')],['debts',tr('Debts')],['splits',tr('Split Bills')],['goals',tr('Goals')],['tax',tr('LHDN Tax')]];
-  const body=planTab==='budgets'?budgets():planTab==='bills'?bills():planTab==='debts'?debtView():planTab==='splits'?splitsView():planTab==='tax'?taxView():goals();
+  const tabs=[['budgets',tr('Budgets')],['bills',tr('BNPL & Bills')],['debts',tr('Debts')],['splits',tr('Split Bills')],['goals',tr('Goals')],['tax',tr('LHDN Tax')],['review',tr('Cycle Review')]];
+  const body=planTab==='budgets'?budgets():planTab==='bills'?bills():planTab==='debts'?debtView():planTab==='splits'?splitsView():planTab==='tax'?taxView():planTab==='review'?reviewView():goals();
   return `<div class="stack"><div class="segmented">${tabs.map(([id,lbl])=>`<button class="${planTab===id?'active':''}" data-plan="${id}">${esc(lbl)}</button>`).join('')}</div>${body}</div>`;
 }
 
@@ -165,9 +165,10 @@ function taxView(){
 }
 
 function computeLocalRecap(){
-  const p=period(),endInc=new Date(new Date(p.end+'T00:00:00').getTime()-86400000).toISOString().slice(0,10);
+  const p=period(),prevP=period(monthOffset-1),endInc=new Date(new Date(p.end+'T00:00:00').getTime()-86400000).toISOString().slice(0,10);
   const rows=currentTx();
-  let totalIncome=0,totalSpent=0;const cats={},merchs={};
+  const prevRows=validTx().filter(t=>t.date>=prevP.start&&t.date<prevP.end&&t.date<=today());
+  let totalIncome=0,totalSpent=0,previousIncome=0,previousSpent=0;const cats={},prevCats={},merchs={};
   for(const txRow of rows){
     if(txRow.kind==='income')totalIncome+=txRow.amount;
     for(const pt of txRow.postings||[]){
@@ -177,13 +178,25 @@ function computeLocalRecap(){
       }
     }
   }
+  for(const txRow of prevRows){
+    if(txRow.kind==='income')previousIncome+=txRow.amount;
+    for(const pt of txRow.postings||[]){if(pt.account.startsWith('expense:')){const c=pt.account.slice(8);prevCats[c]=(prevCats[c]||0)+pt.amount;previousSpent+=pt.amount;}}
+  }
   const catSum=Math.max(1,Object.values(cats).filter(v=>v>0).reduce((a,b)=>a+b,0));
+  const msStart=new Date(p.start+'T00:00:00').getTime(),msEnd=new Date(p.end+'T00:00:00').getTime(),msNow=new Date(today()+'T00:00:00').getTime();
+  const totalDays=Math.max(1,Math.round((msEnd-msStart)/86400000));
+  const elapsedDays=monthOffset<0?totalDays:Math.max(1,Math.min(totalDays,Math.floor((msNow-msStart)/86400000)+1));
+  const daysLeft=monthOffset<0?0:Math.max(0,Math.ceil((msEnd-msNow)/86400000)-1);
+  const budgetRows=(reportData?.budgets&&monthOffset===0)?reportData.budgets:(state.budgets||[]).map(b=>{const sp=Math.max(0,spendFor(b.category,b.subcategory||''));return{category:b.category,subcategory:b.subcategory||'',available:b.limit,spent:sp,remaining:b.limit-sp};});
+  let underBudgetCount=0,overBudgetCount=0;for(const b of budgetRows){if(b.remaining<0)overBudgetCount++;else underBudgetCount++;}
   return {
-    start:p.start,end:endInc,totalIncome,totalSpent,previousSpent:0,spentDelta:totalSpent,netSaved:totalIncome-totalSpent,
+    start:p.start,end:endInc,totalIncome,previousIncome,incomeDelta:totalIncome-previousIncome,totalSpent,previousSpent,spentDelta:totalSpent-previousSpent,netSaved:totalIncome-totalSpent,
     savingsRatePct:totalIncome>0?Math.round((totalIncome-totalSpent)*100/totalIncome):0,
-    topCategories:Object.entries(cats).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([category,amount])=>({category,amount,sharePct:Math.round(amount*100/catSum)})),
+    elapsedDays,totalDays,daysLeft,dailyAvg:Math.round(totalSpent/elapsedDays),isCycleEndWindow:monthOffset===0&&daysLeft<=2,
+    txCount:rows.filter(t=>t.kind!=='opening').length,
+    topCategories:Object.entries(cats).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([category,amount])=>{const prev=Math.max(0,prevCats[category]||0),delta=amount-prev;return{category,amount,previous:prev,delta,deltaPct:prev>0?Math.round(delta*100/prev):100,sharePct:Math.round(amount*100/catSum)};}),
     topMerchants:Object.entries(merchs).filter(([,v])=>v.amount>0).sort((a,b)=>b[1].amount-a[1].amount).slice(0,8).map(([merchant,v])=>({merchant,amount:v.amount,count:v.count})),
-    underBudgetCount:0,overBudgetCount:0,claimableCount:reportData?.taxEstimate?.claimableItems?.length||0
+    budgets:budgetRows,underBudgetCount,overBudgetCount,claimableCount:reportData?.taxEstimate?.claimableItems?.length||0
   };
 }
 
@@ -191,6 +204,18 @@ function recapMarkup(rc){
   const r=rc||reportData?.recap||computeLocalRecap();
   const deltaSign=r.spentDelta>0?'+':'';
   return `<p class="eyebrow muted">${esc(r.start)} – ${esc(r.end)}</p><div class="paycheck-grid"><div class="soft-card" style="margin:0"><span class="muted" style="font-size:11px">${esc(tr('Total Income'))}</span><strong class="money" style="display:block;font-size:18px;margin-top:4px">${money(r.totalIncome)}</strong></div><div class="soft-card" style="margin:0"><span class="muted" style="font-size:11px">${esc(tr('Total Spending'))}</span><strong class="money" style="display:block;font-size:18px;margin-top:4px">${money(r.totalSpent)}</strong></div></div><div class="detail-line"><span>${esc(tr('Net Saved'))} (${r.savingsRatePct}%)</span><strong class="money">${signedMoney(r.netSaved)}</strong></div><div class="detail-line"><span>${esc(tr('Vs previous cycle'))}</span><span>${deltaSign}${signedMoney(r.spentDelta)}</span></div><div class="detail-line"><span>${esc(tr('Budgets'))}</span><span>${esc(tr('{u} on track · {o} over',{u:r.underBudgetCount,o:r.overBudgetCount}))}</span></div><div class="detail-line"><span>${esc(tr('LHDN YA Claimable items'))}</span><strong>${esc(tr('{n} recorded',{n:r.claimableCount||0}))}</strong></div><h3>${esc(tr('Top Categories'))}</h3>${(r.topCategories||[]).map(c=>`<div class="detail-line"><span>${esc(tr(c.category))} (${c.sharePct}%)</span><strong class="money">${money(c.amount)}</strong></div>`).join('')||`<p class="note">${esc(tr('No expenses in this cycle.'))}</p>`}<h3>${esc(tr('Top Merchants'))}</h3>${(r.topMerchants||[]).map(m=>`<div class="detail-line"><span>${esc(m.merchant)} (${m.count}×)</span><strong class="money">${money(m.amount)}</strong></div>`).join('')||`<p class="note">${esc(tr('No merchant spending in this cycle.'))}</p>`}<div class="form-footer" style="margin-top:16px">${actionButton(tr('Export PDF Report'),'exportPdf')}<button type="button" class="btn ghost" data-action="close">${esc(tr('Close'))}</button></div>`;
+}
+
+function reviewView(){
+  const p=period();
+  const r=(monthOffset===0&&reportData?.recap)?reportData.recap:(modalContext.cycleReviewRecap&&modalContext.cycleReviewStart===p.start?modalContext.cycleReviewRecap:computeLocalRecap());
+  const pacing=(monthOffset===0&&reportData?.dailyPacing)?reportData.dailyPacing:computeLocalDailyPacing(state,reportData);
+  const daysLeft=r.daysLeft??pacing?.remainingDays??0;
+  const cycleStatus=monthOffset<0?tr('Completed cycle'):r.isCycleEndWindow?tr('Cycle closing soon'):tr('{n} days left',{n:daysLeft});
+  const dailyAvg=r.dailyAvg??pacing?.dailyAvg??0;
+  const safeDaily=pacing?.safeDaily||0;
+  const catList=r.topCategories||[],merchList=r.topMerchants||[],budgetList=r.budgets||reportData?.budgets||[];
+  return `<div class="stack"><section class="card hero"><div class="flex between"><span class="eyebrow">${esc(tr('CYCLE-END REVIEW'))} · ${esc(dateLabel(r.start))} – ${esc(dateLabel(r.end))}</span><span class="hero-delta-pill">${esc(cycleStatus)}</span></div><div class="balance money">${r.netSaved<0?'−':'+'}<span>RM</span>${(Math.abs(r.netSaved)/100).toLocaleString(appLocale(),{minimumFractionDigits:2,maximumFractionDigits:2})}</div><small>${esc(tr('Net saved this cycle · {pct}% savings rate',{pct:r.savingsRatePct||0}))}</small><div class="hero-foot"><div class="hero-stat-box"><div class="label">${esc(tr('Total Income'))}</div><strong class="money">${money(r.totalIncome)}</strong></div><div class="hero-stat-box"><div class="label">${esc(tr('Total Spending'))}</div><strong class="money">${money(r.totalSpent)}</strong></div></div></section><div class="flex between card" style="padding:12px 16px"><button type="button" class="btn secondary small" data-action="reviewPrevMonth" aria-label="${esc(tr('Previous cycle'))}">← ${esc(tr('Previous'))}</button><div style="text-align:center"><strong>${esc(p.label)}</strong><p class="note">${esc(tr('{n} transactions · {d}/{t} days',{n:r.txCount||0,d:r.elapsedDays||1,t:r.totalDays||30}))}</p></div><button type="button" class="btn secondary small" data-action="reviewNextMonth" ${monthOffset>=0?'disabled':''} aria-label="${esc(tr('Next cycle'))}">${esc(tr('Next'))} →</button></div><section class="card"><div class="section-head"><h2>${esc(tr('Cycle Pacing & Comparison'))}</h2>${actionButton(tr('Export PDF'),'exportPdf','','secondary')}</div><div class="detail-line"><span>${esc(tr('Spending vs previous cycle'))}</span><strong class="money">${signedMoney(r.spentDelta)}</strong></div>${r.previousIncome!==undefined?`<div class="detail-line"><span>${esc(tr('Income vs previous cycle'))}</span><strong class="money">${signedMoney(r.incomeDelta||0)}</strong></div>`:''}<div class="detail-line"><span>${esc(tr('Average daily burn'))}</span><strong class="money">${money(dailyAvg)}/d</strong></div>${safeDaily>0?`<div class="detail-line"><span>${esc(tr('Safe daily allowance'))}</span><strong class="money">${money(safeDaily)}/d</strong></div>`:''}<div class="detail-line"><span>${esc(tr('Budgets scorecard'))}</span><span>${esc(tr('{u} on track · {o} over',{u:r.underBudgetCount||0,o:r.overBudgetCount||0}))}</span></div><div class="detail-line"><span>${esc(tr('LHDN YA Claimable items'))}</span><span class="flex" style="gap:8px"><strong>${esc(tr('{n} recorded',{n:r.claimableCount||0}))}</strong><button type="button" class="text-btn" data-action="openTaxPlan">${esc(tr('LHDN Tax'))}</button></span></div></section><section class="card"><div class="section-head"><h2>${esc(tr('Top Categories & MoM Change'))}</h2><span class="tag">${catList.length}</span></div>${catList.length?catList.map((c,i)=>{const dlt=c.delta||0,hasPrev=(c.previous||0)>0;const dBadge=hasPrev&&dlt!==0?`<span class="delta-badge ${dlt>0?'up':'down'}">${dlt>0?'↑':'↓'} ${Math.abs(c.deltaPct||0)}%</span>`:'';const cm=catMeta(c.category);return `<div class="review-cat-row"><div class="cat-breakdown-head"><div class="cat-breakdown-title"><span class="cat-mini-pill tone-${cm.tone}">${cm.emoji}</span><span>${esc(tr(c.category))}</span>${dBadge}</div><strong class="money" style="font-size:12px">${money(c.amount)} <span class="muted">(${c.sharePct}%)</span></strong></div><div class="cat-bar"><span style="width:${Math.max(4,c.sharePct)}%;background:${colors[i%colors.length]}"></span></div></div>`;}).join(''):`<p class="note">${esc(tr('No expenses in this cycle.'))}</p>`}</section><section class="card"><div class="section-head"><h2>${esc(tr('Top Merchants'))}</h2><span class="tag">${merchList.length}</span></div>${merchList.length?merchList.map(m=>`<div class="detail-line"><span><strong>${esc(m.merchant)}</strong> <small class="muted">(${m.count}×)</small></span><strong class="money">${money(m.amount)}</strong></div>`).join(''):`<p class="note">${esc(tr('No merchant spending in this cycle.'))}</p>`}</section>${budgetList.length?`<section class="card"><div class="section-head"><h2>${esc(tr('Budget Adherence'))}</h2>${actionButton(tr('Manage'),'openBnplPlan','','ghost')}</div>${budgetList.map(b=>`<div class="detail-line"><span>${esc(tr(b.category))}${b.subcategory?` › ${esc(b.subcategory)}`:''}</span><strong class="money" style="color:${b.remaining<0?'var(--danger)':'var(--accent)'}">${money(b.spent)} / ${money(b.available||b.limit)}</strong></div>`).join('')}</section>`:''}</div>`;
 }
 
 function computeLocalSharedSummary(){

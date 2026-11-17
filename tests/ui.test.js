@@ -94,7 +94,7 @@ test('Bahasa Melayu toggle localizes nav, home, plan, budgets, settings, goals, 
   const planHtml=run(`plan()`);
   assert(planHtml.includes('Bajet')&&planHtml.includes('Hutang')&&planHtml.includes('Cukai LHDN'));
   const setHtml=run(`settings()`);
-  assert(setHtml.includes('id="langToggle"')&&setHtml.includes('value="ms" selected')&&setHtml.includes('Rekod automatik notifikasi')&&setHtml.includes('id="ecoCaptureToggle"')&&setHtml.includes('Enjin notifikasi jimat kuasa (Mod Eko)')&&setHtml.includes('Kunci aplikasi cap jari &amp; biometrik')&&setHtml.includes('id="categoryAlertsToggle"')&&setHtml.includes('id="anomalyGuardToggle"')&&setHtml.includes('id="splitAutoMatchToggle"')&&setHtml.includes('Pengawal anomali')&&setHtml.includes('Pustaka notifikasi &amp; amaran kategori')&&setHtml.includes('0.15.0'));
+  assert(setHtml.includes('id="langToggle"')&&setHtml.includes('value="ms" selected')&&setHtml.includes('Rekod automatik notifikasi')&&setHtml.includes('id="ecoCaptureToggle"')&&setHtml.includes('Enjin notifikasi jimat kuasa (Mod Eko)')&&setHtml.includes('Kunci aplikasi cap jari &amp; biometrik')&&setHtml.includes('id="categoryAlertsToggle"')&&setHtml.includes('id="anomalyGuardToggle"')&&setHtml.includes('id="splitAutoMatchToggle"')&&setHtml.includes('Pengawal anomali')&&setHtml.includes('Pustaka notifikasi &amp; amaran kategori')&&setHtml.includes('0.16.0'));
   run(`state.settings.appLock=true`);
   const setLockedHtml=run(`settings()`);
   assert(setLockedHtml.includes('id="lockTimeoutSelect"')&&setLockedHtml.includes('data-action="lockNow"')&&setLockedHtml.includes('Kunci sekarang'));
@@ -119,7 +119,7 @@ test('home smart insights strip, hero delta pill and digital bank badges render 
   assert(run(`brandBadge('GXBank')`).includes('brand-gxbank'));
   assert(run(`brandBadge('AEON Bank')`).includes('brand-aeon'));
   assert(run(`brandBadge('Setel')`).includes('brand-setel'));
-  assert(run(`settings()`).includes('MoneyLens 0.15.0'));
+  assert(run(`settings()`).includes('MoneyLens 0.16.0'));
   assert(run(`settings()`).includes('id="anomalyGuardToggle"')&&run(`settings()`).includes('Spend anomaly'));
   run(`state.settings.lang='ms'`);
   const bmHome=run(`home()`);
@@ -197,7 +197,7 @@ test('Phase 11 category notification library, budget alert pills & commercial UI
 });
 test('Phase 13 vault health check, restore diff preview & snapshot history UI',()=>{
   const setHtml=run(`settings()`);
-  assert(setHtml.includes('data-action="healthCheck"')&&setHtml.includes('data-action="snapshotHistory"')&&setHtml.includes('id="splitAutoMatchToggle"')&&setHtml.includes('MoneyLens 0.15.0'));
+  assert(setHtml.includes('data-action="healthCheck"')&&setHtml.includes('data-action="snapshotHistory"')&&setHtml.includes('id="splitAutoMatchToggle"')&&setHtml.includes('MoneyLens 0.16.0'));
 
   let mTitle='',mBody='';
   const prevModal=ctx.modal;
@@ -243,7 +243,7 @@ test('Phase 15 safe-to-spend SVG trend, cashflow SVG, tx summary filters & smart
 
   run(`txForm()`);
   assert(captured.includes('id="quick-parse-input"')&&captured.includes('data-action="quickParseFill"'));
-  assert(run(`settings()`).includes('MoneyLens 0.15.0'));
+  assert(run(`settings()`).includes('MoneyLens 0.16.0'));
 
   ctx.modal=prevModal;run(`filter=${JSON.stringify(prevFilter)};reportData=${JSON.stringify(prevReport)}`);
 });
@@ -274,5 +274,46 @@ test('Phase 16 UI polish hides Settings FAB, stacks Auto-lock, adds section jump
   run(`state.drafts.push({id:'d-rv',merchant:'ZUS',amount:1200,kind:'expense',category:'Food & drinks',source:'TNG',state:'review',alsoSeenFrom:'Maybank MAE',date:today(),reason:'Review'},{id:'d-dup',merchant:'TNG DIGITAL',amount:1200,kind:'expense',category:'Food & drinks',source:'Maybank MAE',state:'linked',duplicateOf:'d-rv',date:today(),reason:'Merged with TNG alert'});`);
   const inb=run(`inbox()`);
   assert(inb.includes('Also from Maybank MAE')&&inb.includes('Merged with TNG alert'));
+});
+
+test('Phase 18 Cycle Review view, focusQuick modal & 20-tx encrypted backup nudge',()=>{
+  const prevReport=run(`reportData`);
+  const prevStatus=run(`status`);
+  const prevTx=run(`state.transactions`);
+  run(`state.settings.backupNudgeDismissed=false;state.settings.backupNudgeSnoozeUntil=0;status={...status,backupSuccess:0,lastSnapshotAt:0};`);
+
+  // Smart quick entry focusQuick support
+  let focused=false;
+  const prevSetTimeout=ctx.setTimeout,prevQS=ctx.document.querySelector;
+  ctx.setTimeout=(fn)=>{fn();return 0;};
+  ctx.document.querySelector=sel=>sel==='#quick-parse-input'?{focus:()=>{focused=true;}}:prevQS(sel);
+  run(`txForm({focusQuick:true})`);
+  assert(focused===true);
+  ctx.setTimeout=prevSetTimeout;ctx.document.querySelector=prevQS;
+
+  // Cycle Review tab & Home cycle-end banner
+  run(`planTab='review';reportData={budgets:[],receivables:[],months:[],dailyPacing:{safeDaily:6500,dailyAvg:4200,remainingDays:2},recap:{start:today(),end:today(),totalIncome:500000,previousIncome:480000,incomeDelta:20000,totalSpent:210000,previousSpent:250000,spentDelta:-40000,netSaved:290000,savingsRatePct:58,elapsedDays:28,totalDays:30,daysLeft:2,dailyAvg:7500,isCycleEndWindow:true,txCount:24,topCategories:[{category:'Food & drinks',amount:90000,previous:80000,delta:10000,deltaPct:13,sharePct:43}],topMerchants:[{merchant:'Nasi Lemak',amount:45000,count:6}],budgets:[],underBudgetCount:2,overBudgetCount:0,claimableCount:2}};`);
+  const planHtml=run(`plan()`);
+  assert(planHtml.includes('data-plan="review"')&&planHtml.includes('CYCLE-END REVIEW')&&planHtml.includes('Top Categories &amp; MoM Change')&&planHtml.includes('data-action="reviewPrevMonth"')&&planHtml.includes('data-action="exportPdf"'));
+
+  const homeCycleEnd=run(`home()`);
+  assert(homeCycleEnd.includes('cycle-end-banner')&&homeCycleEnd.includes('data-action="openCycleReview"'));
+
+  // 20-tx Backup Nudge eligibility (<20 off, >=20 on, dismiss persistence & Settings reset)
+  run(`state.transactions=[]`);
+  assert(run(`computeLocalBackupNudge().shouldShow`)===false);
+  for(let i=0;i<20;i++){
+    run(`state.transactions.push({id:'bn-${i}',kind:'expense',amount:500,account:'cash',category:'Food & drinks',merchant:'Stall',date:today(),postings:[{account:'cash',amount:-500},{account:'expense:Food & drinks',amount:500}]})`);
+  }
+  const bnOn=run(`computeLocalBackupNudge()`);
+  assert(bnOn.shouldShow===true&&bnOn.activeTxCount>=20);
+  const homeNudge=run(`home()`);
+  assert(homeNudge.includes('backup-nudge-card')&&homeNudge.includes('data-action="snoozeBackupNudge"')&&homeNudge.includes('data-action="dismissBackupNudge"'));
+
+  run(`state.settings.backupNudgeDismissed=true;`);
+  assert(run(`computeLocalBackupNudge().shouldShow`)===false);
+  assert(run(`settings()`).includes('data-action="resetBackupNudge"'));
+
+  run(`state.transactions=${JSON.stringify(prevTx)};state.settings.backupNudgeDismissed=false;reportData=${JSON.stringify(prevReport)};status=${JSON.stringify(prevStatus)};planTab='budgets';`);
 });
 console.log('RESULT: '+passed+' UI tests passed');

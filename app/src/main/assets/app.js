@@ -30,10 +30,11 @@ window.nativeRefresh=async(screen,editNoteId)=>{
   try{
     const r=await call('snapshot');state=r.state;status=r.status;
     reportData=await call('report');
-    if(screen&&['home','inbox','plan','accounts','transactions','settings'].includes(screen))page=screen;
+    if(screen==='review'){page='plan';planTab='review';if(!editNoteId)close();}
+    else if(screen&&['home','inbox','plan','accounts','transactions','settings'].includes(screen)){page=screen;if(!editNoteId)close();}
     render();
     if(editNoteId)quickNoteForm(editNoteId);
-    else if(screen==='quick')txForm();
+    else if(screen==='quick')txForm({focusQuick:true});
     else if(screen==='scan')scanDialog();
     else if(screen==='favorites')showFavorites();
   }catch(e){

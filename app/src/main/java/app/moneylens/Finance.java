@@ -189,16 +189,20 @@ public final class Finance {
  public static JSONObject cycleRecap(JSONObject s,LocalDate on)throws Exception{
   int day=s.getJSONObject("settings").optInt("cycleDay",1);
   LocalDate from=start(on,day),until=next(from,day),prevFrom=anchored(YearMonth.from(from).minusMonths(1),day);
-  long totalSpent=spend(s,"",from,until),totalIncome=income(s,from,until),prevSpent=spend(s,"",prevFrom,from);
+  long totalSpent=spend(s,"",from,until),totalIncome=income(s,from,until),prevSpent=spend(s,"",prevFrom,from),prevIncome=income(s,prevFrom,from);
   long netSaved=Math.subtractExact(totalIncome,totalSpent);
   int savingsRatePct=totalIncome>0?(int)Math.round((netSaved*100.0)/totalIncome):0;
-  Map<String,Long> catTotals=new LinkedHashMap<>(),merchTotals=new LinkedHashMap<>();
+  Map<String,Long> catTotals=new LinkedHashMap<>(),prevCats=new LinkedHashMap<>(),merchTotals=new LinkedHashMap<>();
   Map<String,Integer> merchCounts=new LinkedHashMap<>();
+  int txCount=0;
   JSONArray tx=s.getJSONArray("transactions");
   for(int i=0;i<tx.length();i++){
    JSONObject t=tx.getJSONObject(i);
    String d=t.optString("date","");
-   if(t.optBoolean("voided")||d.compareTo(from.toString())<0||d.compareTo(until.toString())>=0)continue;
+   boolean inCurr=!t.optBoolean("voided")&&d.compareTo(from.toString())>=0&&d.compareTo(until.toString())<0;
+   boolean inPrev=!t.optBoolean("voided")&&d.compareTo(prevFrom.toString())>=0&&d.compareTo(from.toString())<0;
+   if(!inCurr&&!inPrev)continue;
+   if(inCurr&&!"opening".equals(t.optString("kind")))txCount++;
    JSONArray p=t.getJSONArray("postings");
    long txExp=0;
    for(int j=0;j<p.length();j++){
@@ -206,11 +210,11 @@ public final class Finance {
     if(e.getString("account").startsWith("expense:")){
      String c=e.getString("account").substring(8);
      long v=e.getLong("amount");
-     catTotals.put(c,catTotals.getOrDefault(c,0L)+v);
-     txExp+=v;
+     if(inCurr){catTotals.put(c,catTotals.getOrDefault(c,0L)+v);txExp+=v;}
+     else prevCats.put(c,prevCats.getOrDefault(c,0L)+v);
     }
    }
-   if(txExp!=0){
+   if(inCurr&&txExp!=0){
     String m=t.optString("merchant","").trim();
     if(m.isEmpty())m=t.optString("category","General");
     merchTotals.put(m,merchTotals.getOrDefault(m,0L)+txExp);
@@ -224,9 +228,17 @@ public final class Finance {
   JSONArray topCategories=new JSONArray();
   for(int i=0;i<Math.min(10,catList.size());i++){
    Map.Entry<String,Long> e=catList.get(i);
+   long prevCat=Math.max(0L,prevCats.getOrDefault(e.getKey(),0L));
+   long catDelta=e.getValue()-prevCat;
+   int deltaPct=prevCat>0L?(int)Math.round(catDelta*100.0/prevCat):(e.getValue()>0L?100:0);
    int share=catSum>0?(int)Math.round(e.getValue()*100.0/catSum):0;
-   topCategories.put(new JSONObject().put("category",e.getKey()).put("amount",e.getValue()).put("sharePct",share));
+   topCategories.put(new JSONObject().put("category",e.getKey()).put("amount",e.getValue()).put("previous",prevCat).put("delta",catDelta).put("deltaPct",deltaPct).put("sharePct",share));
   }
+  long totalDays=Math.max(1L,ChronoUnit.DAYS.between(from,until));
+  long elapsedDays=on.isBefore(from)?0L:(on.isBefore(until)?Math.max(1L,ChronoUnit.DAYS.between(from,on)+1):totalDays);
+  long daysLeft=on.isBefore(until)?Math.max(0L,ChronoUnit.DAYS.between(on,until)-1):0L;
+  long dailyAvg=elapsedDays>0L?totalSpent/elapsedDays:0L;
+  boolean isCycleEndWindow=!on.isBefore(from)&&on.isBefore(until)&&daysLeft<=2L;
   List<Map.Entry<String,Long>> merchList=new ArrayList<>(merchTotals.entrySet());
   merchList.removeIf(e->e.getValue()<=0);
   merchList.sort((a,b)->Long.compare(b.getValue(),a.getValue()));
@@ -250,11 +262,19 @@ public final class Finance {
    .put("end",until.minusDays(1).toString())
    .put("nextCycleStart",until.toString())
    .put("totalIncome",totalIncome)
+   .put("previousIncome",prevIncome)
+   .put("incomeDelta",totalIncome-prevIncome)
    .put("totalSpent",totalSpent)
    .put("previousSpent",prevSpent)
    .put("spentDelta",totalSpent-prevSpent)
    .put("netSaved",netSaved)
    .put("savingsRatePct",savingsRatePct)
+   .put("elapsedDays",elapsedDays)
+   .put("totalDays",totalDays)
+   .put("daysLeft",daysLeft)
+   .put("dailyAvg",dailyAvg)
+   .put("isCycleEndWindow",isCycleEndWindow)
+   .put("txCount",txCount)
    .put("topCategories",topCategories)
    .put("topMerchants",topMerchants)
    .put("budgets",budgetRows)
@@ -1198,5 +1218,38 @@ public final class Finance {
    .put("paceStatus",paceStatus)
    .put("dailySeries",dailySeries)
    .put("categoryDeltas",categoryDeltas);
+ }
+ public static final int BACKUP_NUDGE_TX_THRESHOLD=20;
+ /** Evaluates optional encrypted backup nudge eligibility (~20+ active tx without recent backup/snapshot). */
+ public static JSONObject backupNudge(JSONObject s,JSONObject meta,long nowMs)throws Exception{
+  JSONObject st=s==null?Ledger.initial():s;
+  JSONObject settings=st.optJSONObject("settings");
+  JSONArray tx=st.optJSONArray("transactions");
+  int activeTxCount=0;
+  if(tx!=null){
+   for(int i=0;i<tx.length();i++){
+    JSONObject t=tx.getJSONObject(i);
+    if(!t.optBoolean("voided")&&!"opening".equals(t.optString("kind")))activeTxCount++;
+   }
+  }
+  boolean dismissed=settings!=null&&settings.optBoolean("backupNudgeDismissed",false);
+  long snoozeUntil=settings!=null?settings.optLong("backupNudgeSnoozeUntil",0L):0L;
+  boolean snoozed=snoozeUntil>nowMs;
+  long backupMs=Math.max(meta==null?0L:meta.optLong("backupSuccess",0L),meta==null?0L:meta.optLong("lastSnapshotAt",0L));
+  long staleMs=14L*86400000L;
+  boolean needsBackup=backupMs<=0L||(nowMs-backupMs)>staleMs;
+  long daysSinceBackup=backupMs>0L?Math.max(0L,(nowMs-backupMs)/86400000L):-1L;
+  boolean shouldShow=!dismissed&&!snoozed&&activeTxCount>=BACKUP_NUDGE_TX_THRESHOLD&&needsBackup;
+  String reason=backupMs<=0L?"never":(needsBackup?"stale":"fresh");
+  return new JSONObject()
+   .put("shouldShow",shouldShow)
+   .put("activeTxCount",activeTxCount)
+   .put("threshold",BACKUP_NUDGE_TX_THRESHOLD)
+   .put("dismissed",dismissed)
+   .put("snoozed",snoozed)
+   .put("snoozeUntil",snoozeUntil)
+   .put("hasBackup",backupMs>0L)
+   .put("daysSinceBackup",daysSinceBackup)
+   .put("reason",reason);
  }
 }

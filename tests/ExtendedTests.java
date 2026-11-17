@@ -784,6 +784,7 @@ public final class ExtendedTests {
    yes("".equals(ScreenRouter.resolveExtraScreen("unknown_screen")));
    yes("quick".equals(ScreenRouter.resolveExtraScreen("quick")));
    yes("home".equals(ScreenRouter.resolveExtraScreen("home")));
+   yes("review".equals(ScreenRouter.resolveExtraScreen("review")));
    yes("".equals(ScreenRouter.consumePendingScreen()));
 
    // EN/BM Smart Quick Entry precision sweep
@@ -804,6 +805,56 @@ public final class ExtendedTests {
     yes(q!=null&&c[1].equals(q.getString("kind")));
     if(!"transfer".equals(c[1]))yes(c[2].equals(q.getString("category")));
    }
+  });
+
+  test("Phase 18 quickPost RemoteInput engine, Cycle Review metrics & 20-tx Backup Nudge",()->{
+   JSONObject s=Ledger.initial();
+   Ledger.apply(s,"account",new JSONObject().put("name","Cash").put("type","cash").put("opening","300"));
+   Ledger.apply(s,"account",new JSONObject().put("name","TNG eWallet").put("type","wallet").put("opening","200"));
+   Ledger.apply(s,"account",new JSONObject().put("name","MAE").put("type","bank").put("opening","1000"));
+   LocalDate on=LocalDate.now();
+
+   JSONObject tx1=Extras.postQuickEntry(s,"Nasi Lemak 12.50 cash",on,"shade:1");
+   yes(tx1.getLong("amount")==1250L&&"Food & drinks".equals(tx1.getString("category"))&&"Quick Log".equals(tx1.getString("source")));
+
+   JSONObject tx2=Extras.postQuickEntry(s,"Dinner 60 split Sarah tng",on,"shade:2");
+   yes("shared".equals(tx2.getString("kind"))&&tx2.getLong("amount")==6000L&&"Sarah".equals(tx2.getString("person")));
+
+   JSONObject tx3=Extras.postQuickEntry(s,"Transfer 100 mae to tng",on,"shade:3");
+   yes("transfer".equals(tx3.getString("kind"))&&tx3.getLong("amount")==10000L&&!tx3.getString("account").equals(tx3.getString("to")));
+
+   boolean threwBad=false;
+   try{Extras.postQuickEntry(s,"Just coffee without number",on,"shade:bad");}catch(IllegalArgumentException ex){threwBad=true;}
+   yes(threwBad);
+
+   // Cycle review metrics
+   JSONObject recap=Finance.cycleRecap(s,on);
+   yes(recap.has("isCycleEndWindow")&&recap.has("daysLeft")&&recap.has("previousIncome")&&recap.getInt("txCount")>=3);
+
+   // Backup nudge below threshold (<20 active non-opening tx)
+   long now=System.currentTimeMillis();
+   JSONObject bnLow=Finance.backupNudge(s,new JSONObject(),now);
+   yes(!bnLow.getBoolean("shouldShow")&&bnLow.getInt("threshold")==20);
+
+   // Reach >=20 active transactions -> nudge turns ON when no recent backup
+   for(int i=0;i<18;i++){
+    Extras.postQuickEntry(s,"Teh tarik 2.50 cash",on,"shade:fill:"+i);
+   }
+   JSONObject bnHigh=Finance.backupNudge(s,new JSONObject(),now);
+   yes(bnHigh.getBoolean("shouldShow")&&bnHigh.getInt("activeTxCount")>=20);
+
+   // Fresh backup or local snapshot suppresses nudge
+   yes(!Finance.backupNudge(s,new JSONObject().put("lastSnapshotAt",now-3600000L),now).getBoolean("shouldShow"));
+   // Backup older than 14 days turns stale nudge back ON
+   yes(Finance.backupNudge(s,new JSONObject().put("backupSuccess",now-16L*86400000L),now).getBoolean("shouldShow"));
+
+   // Snooze & dismiss settings persistence
+   Ledger.apply(s,"settings",new JSONObject().put("backupNudgeSnoozeUntil",now+7L*86400000L));
+   yes(!Finance.backupNudge(s,new JSONObject(),now).getBoolean("shouldShow"));
+   Ledger.apply(s,"settings",new JSONObject().put("backupNudgeSnoozeUntil",0L).put("backupNudgeDismissed",true));
+   yes(!Finance.backupNudge(s,new JSONObject(),now).getBoolean("shouldShow"));
+   Ledger.apply(s,"settings",new JSONObject().put("backupNudgeDismissed",false));
+   yes(Finance.backupNudge(s,new JSONObject(),now).getBoolean("shouldShow"));
   });
 
   System.out.println("RESULT: "+passed+" extended tests passed");

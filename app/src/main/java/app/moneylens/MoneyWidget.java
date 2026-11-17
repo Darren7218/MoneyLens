@@ -154,9 +154,17 @@ public class MoneyWidget extends AppWidgetProvider {
     if (!"compact".equals(tier)) {
       bind(c, v, R.id.widget_inbox, "inbox");
     }
+    if ("medium".equals(tier)) {
+      bind(c, v, R.id.widget_pace_badge, "review");
+    }
     if ("wide".equals(tier) || "large".equals(tier)) {
       bind(c, v, R.id.widget_scan, "scan");
       bind(c, v, R.id.widget_plan, "plan");
+      bind(c, v, R.id.widget_due, "review");
+    }
+    if ("large".equals(tier)) {
+      bind(c, v, R.id.widget_pace_badge, "review");
+      bind(c, v, R.id.widget_budget_label, "review");
     }
     return v;
   }
