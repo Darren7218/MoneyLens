@@ -1,4 +1,4 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" package="app.moneylens" android:versionCode="2" android:versionName="0.2.0">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
   <uses-sdk android:minSdkVersion="28" android:targetSdkVersion="35" />
   <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
   <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
@@ -24,6 +24,9 @@
     </service>
     <service android:name=".KeepAliveService" android:exported="false" android:foregroundServiceType="specialUse">
       <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="Always-on personal finance notification auto-capture and BNPL/PTPTN due reminder scheduler" />
+    </service>
+    <service android:name=".QuickEntryTileService" android:label="Quick Expense" android:icon="@drawable/ic_notification" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE" android:exported="true">
+      <intent-filter><action android:name="android.service.quicksettings.action.QS_TILE"/></intent-filter>
     </service>
     <provider android:name="androidx.core.content.FileProvider" android:authorities="app.moneylens.files" android:exported="false" android:grantUriPermissions="true"><meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths"/></provider>
     <service android:name=".MoneyJob" android:permission="android.permission.BIND_JOB_SERVICE" android:exported="false" />

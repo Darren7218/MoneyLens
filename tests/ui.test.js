@@ -94,7 +94,7 @@ test('Bahasa Melayu toggle localizes nav, home, plan, budgets, settings, goals, 
   const planHtml=run(`plan()`);
   assert(planHtml.includes('Bajet')&&planHtml.includes('Hutang')&&planHtml.includes('Cukai LHDN'));
   const setHtml=run(`settings()`);
-  assert(setHtml.includes('id="langToggle"')&&setHtml.includes('value="ms" selected')&&setHtml.includes('Rekod automatik notifikasi')&&setHtml.includes('id="ecoCaptureToggle"')&&setHtml.includes('Enjin notifikasi jimat kuasa (Mod Eko)')&&setHtml.includes('Kunci aplikasi cap jari &amp; biometrik')&&setHtml.includes('id="categoryAlertsToggle"')&&setHtml.includes('id="anomalyGuardToggle"')&&setHtml.includes('id="splitAutoMatchToggle"')&&setHtml.includes('Pengawal anomali')&&setHtml.includes('Pustaka notifikasi &amp; amaran kategori')&&setHtml.includes('0.16.0'));
+  assert(setHtml.includes('id="langToggle"')&&setHtml.includes('value="ms" selected')&&setHtml.includes('Rekod automatik notifikasi')&&setHtml.includes('id="ecoCaptureToggle"')&&setHtml.includes('Enjin notifikasi jimat kuasa (Mod Eko)')&&setHtml.includes('Kunci aplikasi cap jari &amp; biometrik')&&setHtml.includes('id="categoryAlertsToggle"')&&setHtml.includes('id="anomalyGuardToggle"')&&setHtml.includes('id="splitAutoMatchToggle"')&&setHtml.includes('Pengawal anomali')&&setHtml.includes('Pustaka notifikasi &amp; amaran kategori')&&setHtml.includes('0.17.0'));
   run(`state.settings.appLock=true`);
   const setLockedHtml=run(`settings()`);
   assert(setLockedHtml.includes('id="lockTimeoutSelect"')&&setLockedHtml.includes('data-action="lockNow"')&&setLockedHtml.includes('Kunci sekarang'));
@@ -119,7 +119,7 @@ test('home smart insights strip, hero delta pill and digital bank badges render 
   assert(run(`brandBadge('GXBank')`).includes('brand-gxbank'));
   assert(run(`brandBadge('AEON Bank')`).includes('brand-aeon'));
   assert(run(`brandBadge('Setel')`).includes('brand-setel'));
-  assert(run(`settings()`).includes('MoneyLens 0.16.0'));
+  assert(run(`settings()`).includes('MoneyLens 0.17.0'));
   assert(run(`settings()`).includes('id="anomalyGuardToggle"')&&run(`settings()`).includes('Spend anomaly'));
   run(`state.settings.lang='ms'`);
   const bmHome=run(`home()`);
@@ -197,7 +197,7 @@ test('Phase 11 category notification library, budget alert pills & commercial UI
 });
 test('Phase 13 vault health check, restore diff preview & snapshot history UI',()=>{
   const setHtml=run(`settings()`);
-  assert(setHtml.includes('data-action="healthCheck"')&&setHtml.includes('data-action="snapshotHistory"')&&setHtml.includes('id="splitAutoMatchToggle"')&&setHtml.includes('MoneyLens 0.16.0'));
+  assert(setHtml.includes('data-action="healthCheck"')&&setHtml.includes('data-action="snapshotHistory"')&&setHtml.includes('id="splitAutoMatchToggle"')&&setHtml.includes('MoneyLens 0.17.0'));
 
   let mTitle='',mBody='';
   const prevModal=ctx.modal;
@@ -243,7 +243,7 @@ test('Phase 15 safe-to-spend SVG trend, cashflow SVG, tx summary filters & smart
 
   run(`txForm()`);
   assert(captured.includes('id="quick-parse-input"')&&captured.includes('data-action="quickParseFill"'));
-  assert(run(`settings()`).includes('MoneyLens 0.16.0'));
+  assert(run(`settings()`).includes('MoneyLens 0.17.0'));
 
   ctx.modal=prevModal;run(`filter=${JSON.stringify(prevFilter)};reportData=${JSON.stringify(prevReport)}`);
 });
@@ -315,5 +315,33 @@ test('Phase 18 Cycle Review view, focusQuick modal & 20-tx encrypted backup nudg
   assert(run(`settings()`).includes('data-action="resetBackupNudge"'));
 
   run(`state.transactions=${JSON.stringify(prevTx)};state.settings.backupNudgeDismissed=false;reportData=${JSON.stringify(prevReport)};status=${JSON.stringify(prevStatus)};planTab='budgets';`);
+});
+
+test('Phase 19A scrollable Plan tabs, Cycle Review empty-income/prior wording, BM txForm & Phase 20 budget suggestions',()=>{
+  const prevReport=run(`reportData`),prevLang=run(`state.settings.lang`);
+  const css=fs.readFileSync(path.join(__dirname,'..','app','src','main','assets','style.css'),'utf8');
+  assert(css.includes('flex-wrap: nowrap')&&css.includes('overflow-x: auto')&&css.includes('.detail-line { display: flex; justify-content: space-between; align-items: center;'));
+
+  // Zero-income & zero prior-cycle wording in Cycle Review + Plan Next Cycle button
+  run(`planTab='review';reportData={budgets:[],receivables:[],months:[],dailyPacing:{safeDaily:0,dailyAvg:800,remainingDays:10},recap:{start:today(),end:today(),totalIncome:0,previousIncome:0,incomeDelta:0,totalSpent:15825,previousSpent:0,spentDelta:15825,netSaved:-15825,savingsRatePct:0,elapsedDays:17,totalDays:30,daysLeft:13,dailyAvg:930,isCycleEndWindow:false,txCount:5,topCategories:[],topMerchants:[],budgets:[],underBudgetCount:0,overBudgetCount:0,claimableCount:0}};`);
+  const rv=run(`plan()`);
+  assert(rv.includes('Net cash flow this cycle')&&rv.includes('No prior cycle data')&&rv.includes('data-action="planNextCycle"')&&!rv.includes('0% savings rate'));
+
+  // Bahasa Melayu txForm localization
+  run(`state.settings.lang='ms'`);
+  let capTitle='',capBody='';
+  const prevModal=ctx.modal;
+  ctx.modal=(t,b)=>{capTitle=t;capBody=b;};
+  run(`txForm()`);
+  assert(capTitle==='Tambah transaksi'&&capBody.includes('Peniaga / penerangan')&&capBody.includes('Tarikh')&&capBody.includes('Rekod transaksi')&&capBody.includes('Perbelanjaan'));
+  ctx.modal=prevModal;
+
+  // Phase 20 Suggested Budgets from History card & opt-in backup notification toggle
+  run(`state.settings.lang='en';planTab='budgets';reportData={budgets:[],budgetSuggestions:[{category:'Groceries',avgSpend:24500,suggestedLimit:25000,cyclesAnalyzed:2}]};`);
+  const budHtml=run(`plan()`);
+  assert(budHtml.includes('Suggested Budgets from History')&&budHtml.includes('data-action="applyAllSuggestedBudgets"')&&budHtml.includes('data-action="applyOneSuggestedBudget"'));
+  assert(run(`settings()`).includes('id="backupNudgeNotifyToggle"'));
+
+  run(`state.settings.lang=${JSON.stringify(prevLang)};reportData=${JSON.stringify(prevReport)};planTab='budgets';`);
 });
 console.log('RESULT: '+passed+' UI tests passed');

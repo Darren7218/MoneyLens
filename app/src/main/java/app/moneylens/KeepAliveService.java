@@ -13,6 +13,7 @@ import android.service.notification.NotificationListenerService;
 public final class KeepAliveService extends Service {
   public static volatile boolean running = false;
   public static final String ACTION_QUICK_ENTRY = "app.moneylens.ACTION_QUICK_ENTRY";
+  public static final String ACTION_REPEAT_QUICK = "app.moneylens.ACTION_REPEAT_QUICK";
   public static final String KEY_QUICK_ENTRY = "ml_quick_entry_text";
   public static final int QUICK_FEEDBACK_ID = 2111;
   private static final int FG_ID = 2109;
@@ -145,6 +146,15 @@ public final class KeepAliveService extends Service {
           .addRemoteInput(ri)
           .build());
       nb.addAction(new Notification.Action.Builder(null, ms ? "Borang" : "Quick Form", quickFormPi).build());
+      String repeatPhrase = Vault.hasMeta(c) ? Vault.fastStr(c, "topQuickPhrase", "") : "";
+      if (!repeatPhrase.isEmpty()) {
+        String repeatLabel = Vault.fastStr(c, "topQuickLabel", ms ? "↻ Ulang" : "↻ Repeat");
+        PendingIntent repeatPi = PendingIntent.getBroadcast(
+            c, 2116,
+            new Intent(c, IgnoreReceiver.class).setAction(ACTION_REPEAT_QUICK),
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        nb.addAction(new Notification.Action.Builder(null, repeatLabel, repeatPi).build());
+      }
     } else {
       nb.addAction(new Notification.Action.Builder(null, ms ? "Buka Kunci & Rekod" : "Unlock & Log", quickFormPi).build());
     }

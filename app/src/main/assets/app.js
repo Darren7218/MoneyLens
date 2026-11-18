@@ -13,7 +13,7 @@ async function mutate(method,args,message){
   if(result&&result.schema)state=result;
   render();
   if(message)toast(message);
-  if(window.MoneyLensNative){reportData=await call('report');status=(await call('snapshot')).status;render()}
+  if(window.MoneyLensNative){reportData=await call('report');status=await call('status');render()}
   return result;
 }
 
@@ -76,6 +76,7 @@ function render(){
   document.body.classList.toggle('privacy-blur',!!state.settings.privacyBlur);
   const navHtml=nav();
   $('#app').innerHTML=`<div class="shell"><aside class="sidebar"><div class="brand flex"><div class="brand-mark">M</div>MoneyLens</div><nav>${navHtml}</nav><div class="sidebar-foot"><button class="nav-btn ${page==='settings'?'active':''}" data-page="settings">${icon('settings')}${esc(tr('Settings'))}</button><div class="privacy-pill">${icon('shield')}${esc(tr('Private. Offline. Yours.'))}</div></div></aside><main class="screen">${header()}${({home,transactions,inbox,plan,accounts,settings}[page]||home)()}</main>${page==='settings'?'':`<button class="fab-add" data-action="add" aria-label="${esc(tr('Quick add transaction'))}" title="${esc(tr('Add transaction'))}">${icon('plus')}</button>`}<nav class="bottomnav" aria-label="Main navigation">${navHtml}</nav></div>`;
+  const segAct=$('.segmented button.active');if(segAct&&segAct.scrollIntoView){try{segAct.scrollIntoView({block:'nearest',inline:'center'});}catch(_){}}
 }
 
 if(window.MoneyLensNative)window.nativeRefresh();

@@ -174,6 +174,23 @@ public final class Extras {
    }
    case "syncDebtReminder":syncDebtReminder(s,Ledger.find(s.getJSONArray("debts"),a.getString("id")));return true;
    case "quickPost":postQuickEntry(s,a.optString("text",""),LocalDate.now(),a.optString("key",""));return true;
+   case "applyBudgetSuggestions":{
+    JSONArray items=a.optJSONArray("items");
+    if(items==null||items.length()==0)items=Finance.suggestBudgets(s,LocalDate.now());
+    JSONArray existing=s.getJSONArray("budgets");
+    for(int i=0;i<items.length();i++){
+     JSONObject it=items.getJSONObject(i);
+     String cat=it.getString("category").trim();
+     String amt=it.has("amount")?it.getString("amount"):BigDecimal.valueOf(it.getLong("suggestedLimit"),2).toPlainString();
+     JSONObject bArgs=new JSONObject().put("category",cat).put("amount",amt).put("rollover",a.optBoolean("rollover",true));
+     for(int j=0;j<existing.length();j++){
+      JSONObject ex=existing.getJSONObject(j);
+      if(ex.getString("category").equalsIgnoreCase(cat)&&ex.optString("subcategory","").trim().isEmpty()){bArgs.put("id",ex.getString("id"));break;}
+     }
+     budget(s,bArgs);
+    }
+    return true;
+   }
    case "adjustGoal":{
     JSONObject g=Ledger.find(s.getJSONArray("goals"),a.getString("id"));
     long delta=a.has("delta")?a.getLong("delta"):(a.optBoolean("withdraw")?-1L:1L)*Ledger.minor(a.getString("amount"));

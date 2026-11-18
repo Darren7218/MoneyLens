@@ -853,8 +853,55 @@ public final class ExtendedTests {
    yes(!Finance.backupNudge(s,new JSONObject(),now).getBoolean("shouldShow"));
    Ledger.apply(s,"settings",new JSONObject().put("backupNudgeSnoozeUntil",0L).put("backupNudgeDismissed",true));
    yes(!Finance.backupNudge(s,new JSONObject(),now).getBoolean("shouldShow"));
-   Ledger.apply(s,"settings",new JSONObject().put("backupNudgeDismissed",false));
+   Ledger.apply(s,"settings",new JSONObject().put("backupNudgeDismissed",false).put("backupNudgeNotify",true));
    yes(Finance.backupNudge(s,new JSONObject(),now).getBoolean("shouldShow"));
+   yes(s.getJSONObject("settings").getBoolean("backupNudgeNotify"));
+  });
+
+  test("Phase 19B large-ledger report cache & single-pass tax, Phase 20 budget suggestions, Phase 21 widget favorites",()->{
+   JSONObject s=Ledger.initial();
+   Ledger.apply(s,"account",new JSONObject().put("name","Cash").put("type","cash").put("opening","20000"));
+   LocalDate on=LocalDate.now();
+   for(int i=0;i<1000;i++){
+    String dt=on.minusDays(i%45).toString();
+    Ledger.post(s,new JSONObject()
+      .put("key","perf:"+i)
+      .put("kind","expense")
+      .put("amount","5.00")
+      .put("account","cash")
+      .put("category",(i%3==0)?"Food & drinks":(i%3==1)?"Groceries":"Transport")
+      .put("merchant","Merchant "+i)
+      .put("date",dt));
+   }
+   long t0=System.nanoTime();
+   JSONObject rCold=Finance.report(s,on);
+   long coldMs=(System.nanoTime()-t0)/1_000_000L;
+   long t1=System.nanoTime();
+   JSONObject rWarm=Finance.report(s,on);
+   long warmMs=(System.nanoTime()-t1)/1_000_000L;
+   System.out.println("  Benchmark 1k tx: cold="+coldMs+"ms warm="+warmMs+"ms");
+   yes(rCold.getLong("spent")==rWarm.getLong("spent")&&rCold.getJSONObject("taxEstimate").getLong("netTaxPayable")==rWarm.getJSONObject("taxEstimate").getLong("netTaxPayable"));
+
+   // Mutating ledger invalidates report cache immediately
+   Ledger.post(s,new JSONObject().put("key","perf:extra").put("kind","expense").put("amount","100.00").put("account","cash").put("category","Food & drinks").put("merchant","Extra").put("date",on.toString()));
+   JSONObject rAfter=Finance.report(s,on);
+   yes(rAfter.getLong("spent")==rCold.getLong("spent")+10000L);
+
+   // Phase 20 suggestBudgets & applyBudgetSuggestions
+   JSONArray sug=Finance.suggestBudgets(s,on);
+   yes(sug.length()>=3&&sug.getJSONObject(0).getLong("suggestedLimit")>=5000L);
+   Ledger.apply(s,"applyBudgetSuggestions",new JSONObject());
+   yes(s.getJSONArray("budgets").length()>=3);
+   yes(Finance.suggestBudgets(s,on).length()==0);
+
+   // Phase 21 WidgetModel favoriteLabel unlocked vs locked/blur
+   Extras.apply(s,"favorite",new JSONObject().put("name","Kopi O").put("amount","3.50").put("account","cash").put("category","Food & drinks"));
+   JSONObject wOpen=WidgetModel.build(s,on);
+   yes(wOpen.getString("favoriteLabel").contains("Kopi O")&&wOpen.getString("favoriteLabel").contains("RM 3.50"));
+   Ledger.apply(s,"settings",new JSONObject().put("privacyBlur",true));
+   yes(WidgetModel.build(s,on).getString("favoriteLabel").contains("•••"));
+   Ledger.apply(s,"settings",new JSONObject().put("privacyBlur",false).put("appLock",true));
+   yes("".equals(WidgetModel.build(s,on).getString("favoriteLabel")));
   });
 
   System.out.println("RESULT: "+passed+" extended tests passed");

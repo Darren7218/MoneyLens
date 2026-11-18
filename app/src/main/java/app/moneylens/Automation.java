@@ -48,9 +48,25 @@ public final class Automation {
  }
  static void alert(Context c,String id,String title,String body,String screen)throws Exception{if(!Vault.alertExists(c,id)&&notify(c,id,title,body,screen))Vault.markAlert(c,id);}
 
+ public static boolean checkBackupNudgeNotification(Context c,JSONObject s,long nowMs)throws Exception{
+  JSONObject prefs=s.getJSONObject("settings");
+  if(!prefs.optBoolean("backupNudgeNotify",false)||quiet(prefs))return false;
+  SharedPreferences hp=c.getApplicationContext().getSharedPreferences("health",0);
+  JSONObject meta=new JSONObject().put("backupSuccess",hp.getLong("backupSuccess",0L)).put("lastSnapshotAt",hp.getLong("lastSnapshotAt",0L));
+  JSONObject bn=Finance.backupNudge(s,meta,nowMs);
+  if(!bn.optBoolean("shouldShow"))return false;
+  String alertKey="backup-nudge:"+(nowMs/(14L*86400000L));
+  if(Vault.hasAlertInState(s,alertKey))return false;
+  boolean ms="ms".equals(prefs.optString("lang","en"));
+  String title=ms?("Sandarkan "+bn.optInt("activeTxCount")+" transaksi anda"):("Back up your "+bn.optInt("activeTxCount")+" transactions");
+  String body=ms?"Semua data kekal di peranti anda. Eksport sandaran disulitkan atau syot kilat tempatan di MoneyLens.":"Everything stays offline. Save a password-encrypted archive or local snapshot from Home.";
+  if(notify(c,alertKey,title,body,"home")){Vault.markAlert(c,alertKey);return true;}
+  return false;
+ }
  public static void checkDueReminders(Context c)throws Exception{
   if(Vault.hasMeta(c)){
-   if(!Vault.fastBool(c,"reminders",true)||Vault.fastInt(c,"activeBillsCount",0)==0)return;
+   boolean wantBackup=Vault.fastBool(c,"backupNudgeNotify",false);
+   if(!wantBackup&&(!Vault.fastBool(c,"reminders",true)||Vault.fastInt(c,"activeBillsCount",0)==0))return;
    if(Vault.fastBool(c,"quietEnabled",false)){
     int h=LocalTime.now().getHour(),start=Vault.fastInt(c,"quietStart",22),end=Vault.fastInt(c,"quietEnd",8);
     if(start==end||(start<end?h>=start&&h<end:h>=start||h<end))return;
@@ -59,6 +75,7 @@ public final class Automation {
   checkDueReminders(c,Vault.read(c));
  }
  public static void checkDueReminders(Context c,JSONObject s)throws Exception{
+  try{checkBackupNudgeNotification(c,s,System.currentTimeMillis());}catch(Exception ignored){}
   JSONObject prefs=s.getJSONObject("settings");
   if(!prefs.optBoolean("reminders",true)||quiet(prefs))return;
   boolean ms="ms".equals(prefs.optString("lang","en"));

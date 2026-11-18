@@ -21,25 +21,25 @@ function txForm(data={}){
   const kind=merged.kind||'expense';
   modalContext={...merged,kind,key:merged.key||cryptoId()};
   const acctRows=state.accounts.map(a=>[a.id,a.name]);
-  const catRows=kind==='income'?[['Salary','Salary'],['Other income','Other income']]:activeCategories().map(c=>[c[0],tr(c[0])]);
+  const catRows=kind==='income'?[['Salary',tr('Salary')],['Other income',tr('Other income')]]:activeCategories().map(c=>[c[0],tr(c[0])]);
   const selCat=merged.category||catRows[0][0];
   const prevCount=merged.editId&&merged.merchant?sameMerchantCount(merged.merchant,merged.editId):0;
   const chips=kind==='reimbursement'
-    ? '<span class="chip active">Repayment received</span>'
-    : `${['expense','income','transfer','refund'].map(k=>`<button type="button" class="chip ${kind===k?'active':''}" data-kind="${k}">${k[0].toUpperCase()+k.slice(1)}</button>`).join('')}${kind==='shared'?'<span class="chip active">Shared expense</span>':''}`;
-  const evidence=merged.amountCandidates?.length>1?`<p class="note">Amounts found: ${merged.amountCandidates.map(money).join(' · ')}. Choose the actual payment amount above.</p>`:'';
+    ? `<span class="chip active">${esc(tr('Repayment received'))}</span>`
+    : `${['expense','income','transfer','refund'].map(k=>`<button type="button" class="chip ${kind===k?'active':''}" data-kind="${k}">${esc(tr(k[0].toUpperCase()+k.slice(1)))}</button>`).join('')}${kind==='shared'?`<span class="chip active">${esc(tr('Shared expense'))}</span>`:''}`;
+  const evidence=merged.amountCandidates?.length>1?`<p class="note">${esc(tr('Amounts found: {list}. Choose the actual payment amount above.',{list:merged.amountCandidates.map(money).join(' · ')}))}</p>`:'';
   const thumb=merged.receiptId?`<img class="receipt-thumb" src="/receipt/${esc(merged.receiptId)}" alt="Attached receipt">`:'';
   const subRow=(!kind||['expense','refund','shared'].includes(kind))?subcategorySelect(selCat,merged.subcategory||''):'';
-  const sharedRows=kind==='shared'?`${field('Your own share (RM)','ownAmount',merged.ownAmount||'0','text','required inputmode="decimal"')}${field('Who owes the rest?','person',merged.person||'','text','required maxlength="80"')}`:'';
-  const tagsField=field('Tags · comma separated','tags',Array.isArray(merged.tags)?merged.tags.join(', '):merged.tags||'','text','maxlength="200" placeholder="work, holiday"');
-  const splitsBox=(!kind||['expense','refund'].includes(kind))?`<details ${merged.splits?.length?'open':''}><summary>Split across categories</summary><div id="split-rows">${(Array.isArray(merged.splits)?merged.splits:[]).map(splitRow).join('')}</div>${actionButton('Add category split','addSplit')}<p class="note">Splits must add up to the full payment above.</p></details>`:'';
+  const sharedRows=kind==='shared'?`${field(tr('Your own share (RM)'),'ownAmount',merged.ownAmount||'0','text','required inputmode="decimal"')}${field(tr('Who owes the rest?'),'person',merged.person||'','text','required maxlength="80"')}`:'';
+  const tagsField=field(tr('Tags · comma separated'),'tags',Array.isArray(merged.tags)?merged.tags.join(', '):merged.tags||'','text','maxlength="200" placeholder="work, holiday"');
+  const splitsBox=(!kind||['expense','refund'].includes(kind))?`<details ${merged.splits?.length?'open':''}><summary>${esc(tr('Split across categories'))}</summary><div id="split-rows">${(Array.isArray(merged.splits)?merged.splits:[]).map(splitRow).join('')}</div>${actionButton(tr('Add category split'),'addSplit')}<p class="note">${esc(tr('Splits must add up to the full payment above.'))}</p></details>`:'';
   const fxRates=[['SGD','3.30'],['USD','4.45'],['THB','0.13'],['JPY','0.029'],['EUR','4.80'],['GBP','5.65'],['AUD','2.90'],['CNY','0.62']];
-  const fxBox=`<details ${merged.originalCurrency?'open':''}><summary>Foreign currency details</summary><div class="chips" style="margin:8px 0">${fxRates.map(([c,rt])=>`<button type="button" class="chip" data-action="fxPreset" data-id="${c}" data-rate="${rt}">${c} (~${rt})</button>`).join('')}</div><div class="form-grid">${field('Original currency','originalCurrency',merged.originalCurrency||'','text','maxlength="3" placeholder="USD"')}${field('Original amount','originalAmount',merged.originalAmount||'','text','inputmode="decimal"')}</div>${field('Included conversion fees (MYR)','foreignFee',merged.foreignFee||'0','text','inputmode="decimal"')}<p class="note">Enter the actual settled MYR amount at the top, including any fees. The implied rate is saved with this record.</p></details>`;
+  const fxBox=`<details ${merged.originalCurrency?'open':''}><summary>${esc(tr('Foreign currency details'))}</summary><div class="chips" style="margin:8px 0">${fxRates.map(([c,rt])=>`<button type="button" class="chip" data-action="fxPreset" data-id="${c}" data-rate="${rt}">${c} (~${rt})</button>`).join('')}</div><div class="form-grid">${field(tr('Original currency'),'originalCurrency',merged.originalCurrency||'','text','maxlength="3" placeholder="USD"')}${field(tr('Original amount'),'originalAmount',merged.originalAmount||'','text','inputmode="decimal"')}</div>${field(tr('Included conversion fees (MYR)'),'foreignFee',merged.foreignFee||'0','text','inputmode="decimal"')}<p class="note">${esc(tr('Enter the actual settled MYR amount at the top, including any fees. The implied rate is saved with this record.'))}</p></details>`;
   const historyCheck=prevCount>0?check(`Update ${prevCount} previous "${esc(merged.merchant)}" transaction${prevCount===1?'':'s'} to this category & remember for future`,'applyHistory',merged.category==='Miscellaneous'||merged.category==='Other'):'';
-  const ruleCheck=check('Remember merchant category and account for next time','rememberRule',!!merged.editId&&(merged.category==='Miscellaneous'||merged.category==='Other'));
-  const title=merged.draftId?'Review payment':merged.editId?'Edit transaction':merged.billId?'Record bill payment':'Add transaction';
+  const ruleCheck=check(tr('Remember merchant category and account for next time'),'rememberRule',!!merged.editId&&(merged.category==='Miscellaneous'||merged.category==='Other'));
+  const title=merged.draftId?tr('Review payment'):merged.editId?tr('Edit transaction'):merged.billId?tr('Record bill payment'):tr('Add transaction');
   const quickBar=(!merged.editId&&!merged.draftId)?`<div class="quick-parse-bar"><input type="text" id="quick-parse-input" placeholder="${esc(tr('Try: Nasi Lemak 12.50 cash or Dinner 60 split Sarah'))}" aria-label="${esc(tr('Smart quick entry'))}"><button type="button" class="btn secondary small" data-action="quickParseFill">${esc(tr('Auto-fill'))}</button></div>`:'';
-  modal(title,`<form id="transaction-form">${quickBar}<div class="chips">${chips}</div><div class="amount-input"><span>RM</span><input name="amount" id="f-amount" inputmode="decimal" aria-label="Amount in MYR" placeholder="0.00" value="${merged.amount?esc(typeof merged.amount==='number'?amount(merged.amount):merged.amount):''}" required pattern="[0-9]+([.][0-9]{1,2})?" autocomplete="off"></div>${merged.reason?`<div class="hint" style="margin:0">${esc(merged.reason)}</div>`:''}<div class="form-grid">${select(kind==='transfer'?'From account':'Account','account',merged.draftId?[['','Choose account'],...acctRows]:acctRows,merged.account||(merged.draftId?'':state.accounts[0].id))}${kind==='transfer'?select('To account','to',acctRows,merged.to||state.accounts[1]?.id):select('Category','category',catRows,selCat)}</div>${field(kind==='transfer'?'Description':'Merchant / description','merchant',merged.merchant||'','text','maxlength="120"')}${field('Date','date',merged.date||today(),'date','required')}<div><label for="f-note">Note <span class="muted">· optional</span></label><textarea id="f-note" name="note" maxlength="500" placeholder="Anything worth remembering?">${esc(merged.note||'')}</textarea></div>${evidence}${thumb}${subRow}${sharedRows}${tagsField}${splitsBox}${fxBox}${historyCheck}${ruleCheck}<div class="error" role="alert"></div><div class="form-footer"><button class="btn" type="submit">${icon('check')}${merged.editId?'Save changes':'Record transaction'}</button></div><p class="note">${kind==='transfer'?'A transfer moves money without adding an expense.':kind==='refund'?'A refund reduces spending in the selected category.':'Only confirmed records affect your balance.'}</p></form>`);
+  modal(title,`<form id="transaction-form">${quickBar}<div class="chips">${chips}</div><div class="amount-input"><span>RM</span><input name="amount" id="f-amount" inputmode="decimal" aria-label="Amount in MYR" placeholder="0.00" value="${merged.amount?esc(typeof merged.amount==='number'?amount(merged.amount):merged.amount):''}" required pattern="[0-9]+([.][0-9]{1,2})?" autocomplete="off"></div>${merged.reason?`<div class="hint" style="margin:0">${esc(merged.reason)}</div>`:''}<div class="form-grid">${select(tr(kind==='transfer'?'From account':'Account'),'account',merged.draftId?[['',tr('Choose account')],...acctRows]:acctRows,merged.account||(merged.draftId?'':state.accounts[0].id))}${kind==='transfer'?select(tr('To account'),'to',acctRows,merged.to||state.accounts[1]?.id):select(tr('Category'),'category',catRows,selCat)}</div>${field(tr(kind==='transfer'?'Description':'Merchant / description'),'merchant',merged.merchant||'','text','maxlength="120"')}${field(tr('Date'),'date',merged.date||today(),'date','required')}<div><label for="f-note">${esc(tr('Note'))} <span class="muted">· ${esc(tr('optional'))}</span></label><textarea id="f-note" name="note" maxlength="500" placeholder="${esc(tr('Anything worth remembering?'))}">${esc(merged.note||'')}</textarea></div>${evidence}${thumb}${subRow}${sharedRows}${tagsField}${splitsBox}${fxBox}${historyCheck}${ruleCheck}<div class="error" role="alert"></div><div class="form-footer"><button class="btn" type="submit">${icon('check')}${esc(tr(merged.editId?'Save changes':'Record transaction'))}</button></div><p class="note">${esc(tr(kind==='transfer'?'A transfer moves money without adding an expense.':kind==='refund'?'A refund reduces spending in the selected category.':'Only confirmed records affect your balance.'))}</p></form>`);
   if(data.focusQuick)setTimeout(()=>{const q=$('#quick-parse-input');if(q){try{q.focus({preventScroll:true});}catch(_){}}},60);
   else if(data.focusSubmit)setTimeout(()=>{const btn=$('#transaction-form button[type="submit"]');if(btn){try{btn.focus({preventScroll:true});}catch(_){}}},60);
 }
@@ -384,6 +384,32 @@ document.addEventListener('click',async e=>{
         else{state.settings.backupNudgeDismissed=false;state.settings.backupNudgeSnoozeUntil=0;render();toast(tr('Backup reminder restored.'));}
         break;
       }
+      case 'applyOneSuggestedBudget':{
+        const cat=b.dataset.cat||'',amt=b.dataset.amount||'50.00';
+        if(!cat)break;
+        await mutate('applyBudgetSuggestions',{items:[{category:cat,amount:amt}],rollover:true},tr('Budget created for {cat}.',{cat:tr(cat)}));
+        break;
+      }
+      case 'applyAllSuggestedBudgets':{
+        const sug=(monthOffset===0&&Array.isArray(reportData?.budgetSuggestions))?reportData.budgetSuggestions:computeLocalBudgetSuggestions();
+        if(!sug.length){toast(tr('No new budget suggestions right now.'));break;}
+        const items=sug.map(s=>({category:s.category,amount:(s.suggestedLimit/100).toFixed(2)}));
+        await mutate('applyBudgetSuggestions',{items,rollover:true},tr('Applied {n} suggested budgets.',{n:items.length}));
+        close();
+        page='plan';planTab='budgets';render();
+        break;
+      }
+      case 'planNextCycle':{
+        const r=reportData?.recap||computeLocalRecap();
+        const sug=(monthOffset===0&&Array.isArray(reportData?.budgetSuggestions))?reportData.budgetSuggestions:computeLocalBudgetSuggestions();
+        const overCats=(r.topCategories||[]).filter(c=>(c.delta||0)>0&&(c.previous||0)>0).slice(0,4);
+        const goalRows=(state.goals||[]).filter(g=>(g.saved||0)<(g.target||0)).slice(0,3);
+        const sugRows=sug.length?sug.map(s=>`<div class="detail-line"><span>${esc(tr(s.category))} <small class="muted">(${esc(tr('Suggested'))})</small></span><strong class="money">${money(s.suggestedLimit)}</strong></div>`).join(''):`<p class="note">${esc(tr('Existing category budgets look balanced.'))}</p>`;
+        const riseRows=overCats.length?`<h3 style="margin-top:12px">${esc(tr('Categories that rose this cycle'))}</h3>${overCats.map(c=>`<div class="detail-line"><span>${esc(tr(c.category))}</span><strong class="money">+${signedMoney(c.delta)} (+${c.deltaPct}%)</strong></div>`).join('')}`:'';
+        const gRows=goalRows.length?`<h3 style="margin-top:12px">${esc(tr('Active goals to top up'))}</h3>${goalRows.map(g=>`<div class="detail-line"><span>${esc(g.name)}</span><strong class="money">${money(g.saved||0)} / ${money(g.target||0)}</strong></div>`).join('')}`:'';
+        modal(tr('Plan Next Cycle'),`<p class="note">${esc(tr('Carry over active budgets cleanly or apply history-based limits for your next payday cycle.'))}</p><h3 style="margin-top:10px">${esc(tr('Suggested Budgets from History'))}</h3>${sugRows}${riseRows}${gRows}<div class="form-footer" style="margin-top:16px">${sug.length?actionButton(tr('Apply Suggested Budgets'),'applyAllSuggestedBudgets','','primary'):''}<button type="button" class="btn ghost" data-action="close">${esc(tr('Close'))}</button></div>`);
+        break;
+      }
       case 'insights':insights();break;
       case 'openTaxPlan':page='plan';planTab='tax';render();window.scrollTo(0,0);break;
       case 'openDebtPlan':page='plan';planTab='debts';render();window.scrollTo(0,0);break;
@@ -605,6 +631,7 @@ document.addEventListener('change',async e=>{
     if(x.id==='categoryAlertsToggle')await mutate('settings',{categoryAlerts:x.checked},x.checked?'Rich category notification cards enabled.':'Rich category notification cards disabled.');
     if(x.id==='anomalyGuardToggle')await mutate('settings',{anomalyGuard:x.checked},tr(x.checked?'Spend anomaly guard enabled.':'Spend anomaly guard paused.'));
     if(x.id==='splitAutoMatchToggle')await mutate('settings',{splitAutoMatch:x.checked},tr(x.checked?'Auto-reconcile for split transfers enabled.':'Auto-reconcile for split transfers paused.'));
+    if(x.id==='backupNudgeNotifyToggle')await mutate('settings',{backupNudgeNotify:x.checked},tr(x.checked?'20-transaction backup reminder notification enabled.':'20-transaction backup reminder notification disabled.'));
     if(x.id==='autoRecordToggle')await mutate('settings',{autoRecord:x.checked},x.checked?'Auto-record enabled.':'Auto-record paused.');
     if(x.id==='captureAllToggle')await mutate('settings',{captureAllSources:x.checked},x.checked?'Reading all bank & wallet apps.':'Restricted to selected apps.');
     if(x.id==='ecoCaptureToggle')await mutate('settings',{ecoCapture:x.checked},x.checked?tr('Eco notification engine enabled.'):tr('Eco notification engine disabled.'));

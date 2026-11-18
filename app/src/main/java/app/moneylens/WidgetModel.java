@@ -52,7 +52,8 @@ public final class WidgetModel {
        .put("paceText", ms ? "Terkawal" : "On pace")
        .put("paceStatus", "good")
        .put("budgetLabel", ms ? "Bajet · Tiada bajet lagi" : "Budgets · Tap Plan to set")
-       .put("budgetPct", 0);
+       .put("budgetPct", 0)
+       .put("favoriteLabel", "");
 
     int[] bars = new int[]{6, 6, 6, 6, 6, 6, 6};
     JSONArray recentTx = new JSONArray();
@@ -181,6 +182,18 @@ public final class WidgetModel {
           String dt = t.optString("date", "");
           String dLbl = dt.equals(todayStr) ? (ms ? "Hari ini" : "Today") : (dt.length() >= 10 ? dt.substring(5) : dt);
           recentTx.put(merch + " · " + amtStr + " · " + dLbl);
+        }
+      }
+
+      // Top saved favorite shortcut
+      JSONArray favs = s.optJSONArray("favorites");
+      if (favs != null && favs.length() > 0) {
+        JSONObject fav = favs.getJSONObject(0);
+        String fn = fav.optString("name", "").trim();
+        String fa = fav.optString("amount", "").trim();
+        if (!fn.isEmpty()) {
+          String amtDisp = showAmounts ? (fa.isEmpty() ? "" : (" · RM " + fa)) : " · RM •••";
+          out.put("favoriteLabel", "★ " + shortText(fn, 14) + amtDisp);
         }
       }
     }

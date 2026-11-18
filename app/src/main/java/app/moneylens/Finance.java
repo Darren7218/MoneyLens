@@ -187,6 +187,9 @@ public final class Finance {
  }
  /** Computes cycle summary, category shares, top merchants and budget adherence for the cycle containing `on`. */
  public static JSONObject cycleRecap(JSONObject s,LocalDate on)throws Exception{
+  return cycleRecap(s,on,null);
+ }
+ public static JSONObject cycleRecap(JSONObject s,LocalDate on,JSONObject precomputedTax)throws Exception{
   int day=s.getJSONObject("settings").optInt("cycleDay",1);
   LocalDate from=start(on,day),until=next(from,day),prevFrom=anchored(YearMonth.from(from).minusMonths(1),day);
   long totalSpent=spend(s,"",from,until),totalIncome=income(s,from,until),prevSpent=spend(s,"",prevFrom,from),prevIncome=income(s,prevFrom,from);
@@ -256,7 +259,7 @@ public final class Finance {
     if(row.getLong("remaining")<0)over++;else under++;
    }
   }
-  JSONObject tax=calculateTax(s,null,on.getYear());
+  JSONObject tax=precomputedTax!=null?precomputedTax:calculateTax(s,null,on.getYear());
   return new JSONObject()
    .put("start",from.toString())
    .put("end",until.minusDays(1).toString())
@@ -283,7 +286,120 @@ public final class Finance {
    .put("claimableCount",tax.getJSONArray("claimableItems").length())
    .put("netTaxPayable",tax.getLong("netTaxPayable"));
  }
+ private static final class CachedReport{
+  final String key;final String json;
+  CachedReport(String key,String json){this.key=key;this.json=json;}
+ }
+ private static volatile CachedReport reportCache=null;
+ private static long foldArrayIds(long h,JSONArray arr){
+  if(arr==null)return h*31L;
+  h=31L*h+arr.length();
+  for(int i=0;i<arr.length();i++){
+   JSONObject o=arr.optJSONObject(i);
+   h=31L*h+(o!=null?o.toString().hashCode():0);
+  }
+  return h;
+ }
+ private static String reportCacheKey(JSONObject s,LocalDate on){
+  if(s==null)return "";
+  long h=17L;
+  long rev=s.optLong("revision",-1L);
+  h=31L*h+rev;
+  JSONObject settings=s.optJSONObject("settings");
+  h=31L*h+(settings!=null?settings.toString().hashCode():0);
+  h=foldArrayIds(h,s.optJSONArray("accounts"));
+  h=foldArrayIds(h,s.optJSONArray("budgets"));
+  h=foldArrayIds(h,s.optJSONArray("bills"));
+  h=foldArrayIds(h,s.optJSONArray("goals"));
+  h=foldArrayIds(h,s.optJSONArray("debts"));
+  JSONArray tx=s.optJSONArray("transactions");
+  if(tx!=null){
+   h=31L*h+tx.length();
+   for(int i=0;i<tx.length();i++){
+    JSONObject t=tx.optJSONObject(i);
+    if(t==null)continue;
+    h=31L*h+t.optString("id","").hashCode();
+    h=31L*h+t.optString("kind","").hashCode();
+    h=31L*h+t.optLong("amount",0L);
+    h=31L*h+(t.optBoolean("voided")?1:0);
+    h=31L*h+t.optString("date","").hashCode();
+    h=31L*h+t.optString("category","").hashCode();
+    h=31L*h+t.optString("subcategory","").hashCode();
+    h=31L*h+t.optString("merchant","").hashCode();
+    h=31L*h+t.optString("reimbursementFor","").hashCode();
+    JSONArray ps=t.optJSONArray("postings");
+    if(ps!=null){
+     h=31L*h+ps.length();
+     for(int j=0;j<ps.length();j++){
+      JSONObject p=ps.optJSONObject(j);
+      if(p!=null){h=31L*h+p.optString("account","").hashCode();h=31L*h+p.optLong("amount",0L);}
+     }
+    }
+   }
+  }
+  return on+":"+rev+":"+(tx!=null?tx.length():0)+":"+h;
+ }
+ /** Suggests monthly category budgets from the median spend of up to 3 recent cycles for unbudgeted categories. */
+ public static JSONArray suggestBudgets(JSONObject s,LocalDate on)throws Exception{
+  JSONArray out=new JSONArray();
+  if(s==null)return out;
+  int day=s.optJSONObject("settings")!=null?s.getJSONObject("settings").optInt("cycleDay",1):1;
+  LocalDate c0=start(on,day),c0End=next(c0,day);
+  LocalDate c1=anchored(YearMonth.from(c0).minusMonths(1),day);
+  LocalDate c2=anchored(YearMonth.from(c0).minusMonths(2),day);
+  String s0=c0.toString(),e0=c0End.toString(),s1=c1.toString(),s2=c2.toString();
+  Set<String> budgeted=new HashSet<>();
+  JSONArray existing=s.optJSONArray("budgets");
+  if(existing!=null){
+   for(int i=0;i<existing.length();i++){
+    JSONObject b=existing.getJSONObject(i);
+    if(b.optString("subcategory","").trim().isEmpty())budgeted.add(b.optString("category","").trim().toLowerCase(Locale.ROOT));
+   }
+  }
+  Map<String,long[]> byCat=new LinkedHashMap<>();
+  JSONArray tx=s.optJSONArray("transactions");
+  if(tx!=null){
+   for(int i=0;i<tx.length();i++){
+    JSONObject t=tx.getJSONObject(i);
+    if(t.optBoolean("voided"))continue;
+    String d=t.optString("date","");
+    if(d.compareTo(s2)<0||d.compareTo(e0)>=0)continue;
+    int slot=d.compareTo(s0)>=0?0:(d.compareTo(s1)>=0?1:2);
+    JSONArray ps=t.optJSONArray("postings");
+    if(ps==null)continue;
+    for(int j=0;j<ps.length();j++){
+     JSONObject e=ps.getJSONObject(j);
+     String acc=e.getString("account");
+     if(acc.startsWith("expense:")){
+      String cat=acc.substring(8);
+      if(budgeted.contains(cat.toLowerCase(Locale.ROOT)))continue;
+      long[] arr=byCat.computeIfAbsent(cat,k->new long[3]);
+      arr[slot]+=e.getLong("amount");
+     }
+    }
+   }
+  }
+  List<JSONObject> rows=new ArrayList<>();
+  for(Map.Entry<String,long[]> entry:byCat.entrySet()){
+   long[] vals=entry.getValue();
+   List<Long> active=new ArrayList<>();
+   for(long v:vals)if(v>0L)active.add(v);
+   if(active.isEmpty())continue;
+   Collections.sort(active);
+   int n=active.size();
+   long median=n==1?active.get(0):(n==2?(active.get(0)+active.get(1))/2L:active.get(1));
+   if(median<=0L)continue;
+   long suggested=Math.max(5000L,((median+999L)/1000L)*1000L);
+   rows.add(new JSONObject().put("category",entry.getKey()).put("avgSpend",median).put("suggestedLimit",suggested).put("cyclesAnalyzed",n));
+  }
+  rows.sort((a,b)->Long.compare(b.optLong("avgSpend"),a.optLong("avgSpend")));
+  for(int i=0;i<Math.min(6,rows.size());i++)out.put(rows.get(i));
+  return out;
+ }
  public static JSONObject report(JSONObject s,LocalDate on)throws Exception{
+  String key=reportCacheKey(s,on);
+  CachedReport cached=reportCache;
+  if(cached!=null&&!key.isEmpty()&&key.equals(cached.key))return new JSONObject(cached.json);
   int day=s.getJSONObject("settings").optInt("cycleDay",1);LocalDate from=start(on,day),until=next(from,day),prev=anchored(YearMonth.from(from).minusMonths(1),day);int elapsed=(int)ChronoUnit.DAYS.between(from,on)+1;LocalDate prevUntil=prev.plusDays(elapsed);if(prevUntil.isAfter(from))prevUntil=from;
   long liquid=0,debt=0,owed=0,commitments=0,reserved=0,budgetRemaining=0;JSONArray budgets=new JSONArray(),accounts=s.getJSONArray("accounts"),billRows=s.getJSONArray("bills"),goalRows=s.getJSONArray("goals");
   for(int i=0;i<accounts.length();i++){JSONObject a=accounts.getJSONObject(i);long n=balance(s,a.getString("id"),on.toString());if(a.getString("type").equals("card"))debt+=Math.max(0,-n);else liquid+=n;}
@@ -293,7 +409,10 @@ public final class Finance {
   JSONArray tx=s.getJSONArray("transactions"),receivables=new JSONArray();for(int i=0;i<tx.length();i++){JSONObject t=tx.getJSONObject(i);if(t.optBoolean("voided")||!t.getString("kind").equals("shared"))continue;long remaining=balance(s,"receivable:"+t.getString("id"),on.toString());if(remaining>0){owed+=remaining;receivables.put(new JSONObject().put("id",t.getString("id")).put("person",t.optString("person")).put("merchant",t.optString("merchant")).put("remaining",remaining));}}
   JSONArray months=new JSONArray();for(int i=5;i>=0;i--){LocalDate m=anchored(YearMonth.from(from).minusMonths(i),day),e=next(m,day);months.put(new JSONObject().put("start",m.toString()).put("spent",spend(s,"",m,e)).put("income",income(s,m,e)));}
   long availToSpend=Math.max(0,liquid-debt-commitments-reserved);
-  return new JSONObject().put("start",from.toString()).put("end",until.toString()).put("spent",spend(s,"",from,on.plusDays(1))).put("previousComparable",spend(s,"",prev,prevUntil)).put("budgets",budgets).put("dailyAllowance",budgetRemaining/Math.max(1,ChronoUnit.DAYS.between(on,until))).put("liquid",liquid).put("cardReserve",debt).put("billsReserve",commitments).put("goalReserve",reserved).put("availableToSpend",availToSpend).put("owed",owed).put("receivables",receivables).put("sharedSummary",sharedSummary(s,on)).put("dailyPacing",dailyPacing(s,on,availToSpend)).put("months",months).put("subscriptions",subscriptions(s)).put("priceHikes",priceHikes(s)).put("taxEstimate",calculateTax(s,null,on.getYear())).put("debtPlan",debtPlan(s,on)).put("recurringIncome",recurringIncome(s,on)).put("forecast",forecast(s,on,30)).put("recap",cycleRecap(s,on));
+  JSONObject tax=calculateTax(s,null,on.getYear());
+  JSONObject res=new JSONObject().put("start",from.toString()).put("end",until.minusDays(1).toString()).put("spent",spend(s,"",from,on.plusDays(1))).put("previousComparable",spend(s,"",prev,prevUntil)).put("budgets",budgets).put("dailyAllowance",budgetRemaining/Math.max(1,ChronoUnit.DAYS.between(on,until))).put("liquid",liquid).put("cardReserve",debt).put("billsReserve",commitments).put("goalReserve",reserved).put("availableToSpend",availToSpend).put("owed",owed).put("receivables",receivables).put("sharedSummary",sharedSummary(s,on)).put("dailyPacing",dailyPacing(s,on,availToSpend)).put("months",months).put("subscriptions",subscriptions(s)).put("priceHikes",priceHikes(s)).put("taxEstimate",tax).put("debtPlan",debtPlan(s,on)).put("recurringIncome",recurringIncome(s,on)).put("forecast",forecast(s,on,30)).put("recap",cycleRecap(s,on,tax)).put("budgetSuggestions",suggestBudgets(s,on));
+  if(!key.isEmpty())reportCache=new CachedReport(key,res.toString());
+  return res;
  }
  public static JSONObject calculateTax(JSONObject s,JSONObject override,int year)throws Exception{
   JSONObject prof=override!=null?override:s.getJSONObject("settings").optJSONObject("taxProfile");

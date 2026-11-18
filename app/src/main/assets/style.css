@@ -222,7 +222,7 @@ body.privacy-blur .money:not(.unblur) { filter: blur(8px); user-select: none; tr
 .btn.secondary { background: var(--soft); color: var(--green); box-shadow: none; }
 .btn.ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); box-shadow: none; }
 .btn.danger { background: var(--peach); color: var(--red); box-shadow: none; }
-.btn.small { padding: 7px 12px; font-size: 12px; min-height: 34px; border-radius: 11px; }
+.btn.small { padding: 7px 12px; font-size: 12px; min-height: 34px; border-radius: 11px; white-space: nowrap; flex-shrink: 0; }
 .text-btn { background: none; border: 0; color: var(--green); font-size: 12px; font-weight: 650; min-height: 36px; padding: 4px 8px; border-radius: 8px; }
 
 /* Cards & Bento Hero */
@@ -592,15 +592,16 @@ body.dark .switch { background: #364037; }
 }
 #toast.show { opacity: 1; transform: translate(-50%, 0); }
 .detail-total { font-size: 38px; font-weight: 750; text-align: center; margin: 6px 0 22px; }
-.detail-line { display: flex; justify-content: space-between; gap: 15px; margin: 13px 0; font-size: 13px; }
+.detail-line { display: flex; justify-content: space-between; align-items: center; gap: 15px; margin: 13px 0; font-size: 13px; }
+.detail-line .text-btn { min-height: 0; padding: 2px 6px; }
 .detail-line span:first-child { color: var(--muted); }
 .detail-line span:last-child { text-align: right; overflow-wrap: anywhere; font-weight: 550; }
 .welcome { padding: 22px; background: var(--soft); border-radius: 20px; margin-bottom: 14px; }
 .welcome h2 { font-size: 18px; margin-bottom: 7px; }
 .welcome p { font-size: 12px; color: var(--muted); line-height: 1.65; margin-bottom: 14px; }
-.segmented { display: flex; flex-wrap: wrap; gap: 4px; background: var(--soft); padding: 4px; border-radius: 14px; margin-bottom: 8px; }
+.segmented { display: flex; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; gap: 4px; background: var(--soft); padding: 4px; border-radius: 14px; margin-bottom: 8px; }
 .segmented::-webkit-scrollbar { display: none; }
-.segmented button { flex: 1 1 auto; min-height: 36px; padding: 6px 10px; border: 0; border-radius: 11px; background: none; color: var(--muted); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.segmented button { flex: 0 0 auto; min-height: 36px; padding: 6px 12px; border: 0; border-radius: 11px; background: none; color: var(--muted); font-size: 12px; font-weight: 600; white-space: nowrap; }
 .segmented button.active { background: var(--surface); color: var(--green); box-shadow: var(--shadow-sm); font-weight: 700; }
 .note { font-size: 11px; color: var(--muted); line-height: 1.65; }
 .full { width: 100%; }

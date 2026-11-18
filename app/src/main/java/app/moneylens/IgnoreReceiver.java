@@ -32,40 +32,49 @@ public final class IgnoreReceiver extends BroadcastReceiver {
       nm.notify(KeepAliveService.QUICK_FEEDBACK_ID,b.build());
     }catch(Exception ignored){}
   }
+  private void postShadeQuickText(Context c,String rawText,boolean ms){
+    if(Vault.hasMeta(c)&&Vault.fastBool(c,"appLock",false)){
+      KeepAliveService.refreshNotification(c);
+      c.startActivity(new Intent(c,MainActivity.class).putExtra("screen","quick").setFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP));
+      return;
+    }
+    if(rawText==null||rawText.trim().isEmpty()){
+      KeepAliveService.refreshNotification(c);
+      return;
+    }
+    try{
+      JSONObject st=Vault.command(c,"quickPost",new JSONObject().put("text",rawText.trim()).put("key","shade:"+System.currentTimeMillis()));
+      MoneyWidget.refresh(c,st);
+      MainActivity.notifyCaptured();
+      KeepAliveService.refreshNotification(c);
+      JSONArray tx=st.optJSONArray("transactions");
+      JSONObject last=(tx!=null&&tx.length()>0)?tx.getJSONObject(tx.length()-1):null;
+      if(last!=null){
+        String catDisp=Finance.categoryLabel(last.optString("category","Miscellaneous"),ms);
+        String amtStr=Extras.rm(last.optLong("amount",0L));
+        notifyQuickFeedback(c,"✓ RM "+amtStr+" · "+last.optString("merchant","Quick expense"),catDisp+(last.has("person")?" · "+last.optString("person"):""),"transactions",last.getString("id"),ms);
+      }
+    }catch(IllegalArgumentException bad){
+      KeepAliveService.refreshNotification(c);
+      notifyQuickFeedback(c,ms?"Rekod Pantas perlukan amaun":"Quick Log needs an amount",bad.getMessage(),"quick","",ms);
+    }catch(Exception ignored){
+      KeepAliveService.refreshNotification(c);
+    }
+  }
   public void onReceive(Context c,Intent i){
     PendingResult pending=goAsync();
     new Thread(()->{
       try{
+        boolean ms=Vault.hasMeta(c)&&"ms".equals(Vault.fastStr(c,"lang","en"));
         if(KeepAliveService.ACTION_QUICK_ENTRY.equals(i.getAction())){
           Bundle remote=RemoteInput.getResultsFromIntent(i);
           CharSequence cs=remote!=null?remote.getCharSequence(KeepAliveService.KEY_QUICK_ENTRY):null;
-          String rawText=cs!=null?cs.toString().trim():"";
-          boolean ms=Vault.hasMeta(c)&&"ms".equals(Vault.fastStr(c,"lang","en"));
-          if(Vault.hasMeta(c)&&Vault.fastBool(c,"appLock",false)){
-            KeepAliveService.refreshNotification(c);
-            c.startActivity(new Intent(c,MainActivity.class).putExtra("screen","quick").setFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP));
-            return;
-          }
-          if(!rawText.isEmpty()){
-            try{
-              JSONObject st=Vault.command(c,"quickPost",new JSONObject().put("text",rawText).put("key","shade:"+System.currentTimeMillis()));
-              MoneyWidget.refresh(c,st);
-              MainActivity.notifyCaptured();
-              KeepAliveService.refreshNotification(c);
-              JSONArray tx=st.optJSONArray("transactions");
-              JSONObject last=(tx!=null&&tx.length()>0)?tx.getJSONObject(tx.length()-1):null;
-              if(last!=null){
-                String catDisp=Finance.categoryLabel(last.optString("category","Miscellaneous"),ms);
-                String amtStr=Extras.rm(last.optLong("amount",0L));
-                notifyQuickFeedback(c,"✓ RM "+amtStr+" · "+last.optString("merchant","Quick expense"),catDisp+(last.has("person")?" · "+last.optString("person"):""),"transactions",last.getString("id"),ms);
-              }
-            }catch(IllegalArgumentException bad){
-              KeepAliveService.refreshNotification(c);
-              notifyQuickFeedback(c,ms?"Rekod Pantas perlukan amaun":"Quick Log needs an amount",bad.getMessage(),"quick","",ms);
-            }
-          }else{
-            KeepAliveService.refreshNotification(c);
-          }
+          postShadeQuickText(c,cs!=null?cs.toString():"",ms);
+          return;
+        }
+        if(KeepAliveService.ACTION_REPEAT_QUICK.equals(i.getAction())){
+          String phrase=Vault.hasMeta(c)?Vault.fastStr(c,"topQuickPhrase",""):"";
+          postShadeQuickText(c,phrase,ms);
           return;
         }
         String id=i.getStringExtra("id"),txId=i.getStringExtra("voidTxId"),noteTxId=i.getStringExtra("noteTxId");

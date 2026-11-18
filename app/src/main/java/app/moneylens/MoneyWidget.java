@@ -128,6 +128,13 @@ public class MoneyWidget extends AppWidgetProvider {
 
       v.setTextViewText(R.id.widget_budget_label, model.optString("budgetLabel", "Budgets"));
       v.setProgressBar(R.id.widget_budget_bar, 100, locked ? 0 : model.optInt("budgetPct", 0), false);
+      String favLbl = model.optString("favoriteLabel", "");
+      if (!locked && !favLbl.isEmpty()) {
+        v.setTextViewText(R.id.widget_favorite_pill, favLbl);
+        v.setViewVisibility(R.id.widget_favorite_pill, View.VISIBLE);
+      } else {
+        v.setViewVisibility(R.id.widget_favorite_pill, View.GONE);
+      }
 
       int[] txIds = new int[]{R.id.widget_tx_1, R.id.widget_tx_2, R.id.widget_tx_3};
       JSONArray recent = model.optJSONArray("recentTx");
@@ -165,6 +172,7 @@ public class MoneyWidget extends AppWidgetProvider {
     if ("large".equals(tier)) {
       bind(c, v, R.id.widget_pace_badge, "review");
       bind(c, v, R.id.widget_budget_label, "review");
+      bind(c, v, R.id.widget_favorite_pill, "favorites");
     }
     return v;
   }
@@ -212,6 +220,8 @@ public class MoneyWidget extends AppWidgetProvider {
       v.setTextColor(R.id.widget_due, sub);
       v.setTextColor(R.id.widget_primary_metric, ink);
       v.setTextColor(R.id.widget_budget_label, sub);
+      v.setInt(R.id.widget_favorite_pill, "setBackgroundResource", pillRes);
+      v.setTextColor(R.id.widget_favorite_pill, btnInk);
       v.setTextColor(R.id.widget_tx_1, ink);
       v.setTextColor(R.id.widget_tx_2, sub);
       v.setTextColor(R.id.widget_tx_3, sub);

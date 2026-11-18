@@ -31,6 +31,34 @@ public final class Vault {
       if(bills!=null)for(int i=0;i<bills.length();i++){JSONObject b=bills.getJSONObject(i);if(!b.optBoolean("paid")&&!b.optBoolean("cancelled"))activeBills++;}
       JSONArray sources=s.optJSONArray("sources");java.util.Set<String> pkgs=new java.util.HashSet<>();
       if(sources!=null)for(int i=0;i<sources.length();i++){String p=sources.getJSONObject(i).optString("package","");if(!p.isEmpty())pkgs.add(p);}
+      String topQuickPhrase="",topQuickLabel="";
+      JSONArray favs=s.optJSONArray("favorites");
+      if(favs!=null&&favs.length()>0){
+        JSONObject f=favs.getJSONObject(0);
+        String fn=f.optString("name","").trim(),fa=f.optString("amount","").trim();
+        if(!fn.isEmpty()&&!fa.isEmpty()){
+          String sn=fn.length()>12?fn.substring(0,11)+"…":fn;
+          topQuickPhrase=fn+" RM "+fa;
+          topQuickLabel="★ "+sn+" RM "+fa;
+        }
+      }
+      if(topQuickPhrase.isEmpty()){
+        JSONArray tx=s.optJSONArray("transactions");
+        if(tx!=null){
+          for(int i=tx.length()-1;i>=0;i--){
+            JSONObject t=tx.getJSONObject(i);
+            if(t.optBoolean("voided")||!"expense".equals(t.optString("kind")))continue;
+            String m=t.optString("merchant","").trim();long amt=t.optLong("amount",0L);
+            if(!m.isEmpty()&&amt>0L){
+              String amtStr=Extras.rm(amt);
+              String sm=m.length()>12?m.substring(0,11)+"…":m;
+              topQuickPhrase=m+" RM "+amtStr;
+              topQuickLabel="↻ "+sm+" RM "+amtStr;
+              break;
+            }
+          }
+        }
+      }
       c.getApplicationContext().getSharedPreferences("vault-meta",0).edit()
         .putBoolean("ready",true)
         .putBoolean("captureWhileLocked",st.optBoolean("captureWhileLocked",true))
@@ -39,6 +67,7 @@ public final class Vault {
         .putBoolean("ecoCapture",st.optBoolean("ecoCapture",true))
         .putBoolean("autoOpenOnBoot",st.optBoolean("autoOpenOnBoot",true))
         .putBoolean("reminders",st.optBoolean("reminders",true))
+        .putBoolean("backupNudgeNotify",st.optBoolean("backupNudgeNotify",false))
         .putBoolean("quietEnabled",st.optBoolean("quietEnabled",false))
         .putInt("quietStart",st.optInt("quietStart",22))
         .putInt("quietEnd",st.optInt("quietEnd",8))
@@ -47,6 +76,8 @@ public final class Vault {
         .putBoolean("darkMode","dark".equals(st.optString("theme","light")))
         .putInt("lockTimeoutSec",st.optInt("lockTimeoutSec",0))
         .putString("lang",st.optString("lang","en"))
+        .putString("topQuickPhrase",topQuickPhrase)
+        .putString("topQuickLabel",topQuickLabel)
         .putInt("activeBillsCount",activeBills)
         .putStringSet("sources",pkgs)
         .apply();
