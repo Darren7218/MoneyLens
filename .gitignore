@@ -12,3 +12,16 @@ colab/outputs_v2/java_eval_v2_prod_asset.json
 colab/outputs_v3/moneylens_classifier.json
 colab/outputs_v3/moneylens_classifier.json.gz
 colab/outputs_v3/moneylens_classifier_holdout.json
+colab/outputs_v4/dataset_malaysian_v4.jsonl
+colab/outputs_v4/gen_v4_checkpoint.jsonl
+colab/outputs_v4/gen_v4_progress.json
+colab/outputs_v4/foundry_v4.log
+colab/outputs_v4/holdout_v4_details.json
+colab/outputs_v4/moneylens_classifier.json
+colab/outputs_v4/moneylens_classifier.json.gz
+colab/outputs_v4/moneylens_classifier_holdout.json
+colab/outputs_v4/moneylens_classifier_holdout.json.gz
+colab/outputs_v4/*.jsonl.gz
+colab/outputs_v4/*.tmp
+__pycache__/
+*.pyc

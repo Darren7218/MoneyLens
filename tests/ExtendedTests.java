@@ -904,6 +904,70 @@ public final class ExtendedTests {
    yes("".equals(WidgetModel.build(s,on).getString("favoriteLabel")));
   });
 
+  test("Foundry v4 calibrated asset, truncated merchants, FX conversions, split-bill P2P, LHDN & OOD safety",()->{
+   java.nio.file.Path asset=java.nio.file.Paths.get("app/src/main/assets/moneylens_classifier.json.gz");
+   yes(java.nio.file.Files.exists(asset)&&java.nio.file.Files.size(asset)<2_097_152L);
+   MlClassifier.clear();
+   long mt0=System.nanoTime();
+   yes(MlClassifier.loadFromPath(asset));
+   long loadMs=(System.nanoTime()-mt0)/1_000_000L;
+   yes(loadMs<2000L&&MlClassifier.isLoaded());
+   MlClassifier.Prediction vp1=MlClassifier.predict("Klinik Kesihatan","Bayaran rawatan RM50.00");
+   yes(vp1!=null&&vp1.probability>0.0&&vp1.probability<=1.0&&vp1.categoryProbability>=vp1.probability&&vp1.categoryProbability<=1.0001);
+   MlClassifier.trim();
+   yes(!MlClassifier.isLoaded());
+   MlClassifier.Prediction vp2=MlClassifier.predict("Klinik Kesihatan","Bayaran rawatan RM50.00");
+   yes(vp2!=null&&MlClassifier.isLoaded()&&vp1.category.equals(vp2.category)&&Math.abs(vp1.probability-vp2.probability)<1e-9);
+
+   // Truncated merchant & gateway prefix alerts
+   JSONObject tm1=PaymentParser.parse("Maybank MAE: Paid RM12.50 to RESTORAN NASI LEMAK WA","com.maybank2u.life");
+   yes(tm1!=null);eq(tm1.getLong("amount"),1250L);yes(tm1.getString("category").equals("Food & drinks"));
+   JSONObject tm2=PaymentParser.parse("CIMB: Payment of RM45.00 at DNQR*KLINIK MEDIVIR","com.cimb.octomy");
+   yes(tm2!=null);eq(tm2.getLong("amount"),4500L);yes(tm2.getString("category").equals("Health & medical"));
+   JSONObject tm3=PaymentParser.parse("Paid RM18.40 at 99 SPEEDMART SDN BH","Bank");
+   yes(tm3!=null);eq(tm3.getLong("amount"),1840L);yes(tm3.getString("category").equals("Groceries"));
+   JSONObject tm4=PaymentParser.parse("Paid RM89.90 at SHOPEEPAY*UNIQLO MY","com.shopee.my");
+   yes(tm4!=null);eq(tm4.getLong("amount"),8990L);yes(tm4.getString("category").equals("Shopping"));
+   JSONObject tm5=PaymentParser.parse("MYDEBIT*RECOMN PLMBR TRX, RM400.00","Bank");
+   yes(tm5!=null);eq(tm5.getLong("amount"),40000L);yes(tm5.getString("category").equals("Housing & property"));
+
+   // Foreign currency conversion & FX fee alerts
+   JSONObject fx1=PaymentParser.parse("CIMB OCTO: AUD 60.00 (RM 48.10) at SYDNEY COFFEE ROASTERS approved.","com.cimb.octomy");
+   yes(fx1!=null&&fx1.getString("kind").equals("expense"));eq(fx1.getLong("amount"),4810L);
+   JSONObject fx2=PaymentParser.parse("Maybank MAE: HKD 320.00 = RM 40.50 processed at UNIQLO HK.","com.maybank2u.life");
+   yes(fx2!=null&&fx2.getString("category").equals("Shopping"));eq(fx2.getLong("amount"),4050L);
+   JSONObject fx3=PaymentParser.parse("GXBank: USD 12.00 (RM 54.60) spent at OPENAI CHATGPT PLUS. FX rate 4.55.","GXBank");
+   yes(fx3!=null&&fx3.getString("category").equals("Bills & utilities"));eq(fx3.getLong("amount"),5460L);
+   JSONObject fx4=PaymentParser.parse("BigPay: Foreign currency fee of RM 2.40 charged on SGD transaction.","BigPay");
+   yes(fx4!=null&&fx4.getString("category").equals("Fees & charges")&&fx4.getString("subcategory").equals("Foreign Currency Fee"));eq(fx4.getLong("amount"),240L);
+
+   // Split-bill P2P DuitNow alerts
+   JSONObject p2p1=PaymentParser.parse("DuitNow transfer of RM28.50 to Ahmad Farhan. Ref: Share HaiDiLao TRX","Bank");
+   yes(p2p1!=null&&p2p1.getString("kind").equals("transfer")&&p2p1.getString("category").equals("Food & drinks"));eq(p2p1.getLong("amount"),2850L);
+   JSONObject p2p2=PaymentParser.parse("MAE transfer RM110.00 to Siti Aishah - Note: Unifi + TNB split","com.maybank2u.life");
+   yes(p2p2!=null&&p2p2.getString("kind").equals("transfer")&&p2p2.getString("category").equals("Bills & utilities"));eq(p2p2.getLong("amount"),11000L);
+   JSONObject p2pPaid=PaymentParser.parse("Paid RM28.50 to Ahmad Farhan via DuitNow. Ref: Share HaiDiLao TRX","Bank");
+   yes(p2pPaid!=null&&p2pPaid.getString("kind").equals("expense")&&p2pPaid.getString("category").equals("Food & drinks"));eq(p2pPaid.getLong("amount"),2850L);
+   JSONObject p2p3=PaymentParser.parse("DuitNow transfer of RM35.00 received from Jason Lim. Ref: Badminton court split","Bank");
+   yes(p2p3!=null&&p2p3.getString("kind").equals("income"));eq(p2p3.getLong("amount"),3500L);
+
+   // LHDN-eligible & outgoing-received notifications
+   JSONObject lh1=PaymentParser.parse("You have donated RM100.00 to Teach For Malaysia. Eligible for LHDN tax relief.","Bank");
+   yes(lh1!=null&&lh1.getString("kind").equals("expense")&&lh1.getString("category").equals("Family & gifts")&&lh1.getString("subcategory").equals("Charity & Donations"));eq(lh1.getLong("amount"),10000L);
+   JSONObject lh2=PaymentParser.parse("Universiti Malaya has received RM250.00 from your account for tuition fee.","Bank");
+   yes(lh2!=null&&lh2.getString("kind").equals("expense")&&lh2.getString("category").equals("Education"));eq(lh2.getLong("amount"),25000L);
+
+   // OOD unseen-merchant safety
+   for(String msg:new String[]{
+     "You have paid RM9.90 at ZXY ENTERPRISE 88",
+     "You have paid RM9.90 at QQQ999",
+     "You have paid RM24.00 at BORGEX 42"
+   }){
+    JSONObject ood=PaymentParser.parse(msg,"my.com.tngdigital.ewallet");
+    yes(ood!=null&&ood.getString("category").equals("Miscellaneous")&&ood.getString("subcategory").equals("Auto-Captured (Uncategorized)"));
+   }
+  });
+
   System.out.println("RESULT: "+passed+" extended tests passed");
  }
 }

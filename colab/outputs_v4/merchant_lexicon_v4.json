@@ -1,0 +1,7178 @@
+{
+  "Bills & utilities||Condo Maintenance & Sinking Fund": [
+    {
+      "term": "condo",
+      "weight": 8.147
+    },
+    {
+      "term": "jmb",
+      "weight": 7.513
+    },
+    {
+      "term": "strata",
+      "weight": 6.156
+    },
+    {
+      "term": "maintenance",
+      "weight": 5.139
+    },
+    {
+      "term": "condo maintenance",
+      "weight": 4.312
+    },
+    {
+      "term": "strata fee",
+      "weight": 4.082
+    },
+    {
+      "term": "sinking",
+      "weight": 4.016
+    },
+    {
+      "term": "sinking fund",
+      "weight": 4.016
+    },
+    {
+      "term": "residensi strata",
+      "weight": 3.993
+    },
+    {
+      "term": "management",
+      "weight": 3.82
+    },
+    {
+      "term": "tamarind",
+      "weight": 3.785
+    },
+    {
+      "term": "tamarind jmb",
+      "weight": 3.719
+    },
+    {
+      "term": "residensi",
+      "weight": 3.643
+    },
+    {
+      "term": "fund",
+      "weight": 3.571
+    },
+    {
+      "term": "setia sky",
+      "weight": 2.668
+    },
+    {
+      "term": "sky",
+      "weight": 2.668
+    },
+    {
+      "term": "arte",
+      "weight": 2.665
+    },
+    {
+      "term": "kiara jmb",
+      "weight": 2.665
+    },
+    {
+      "term": "arte mont",
+      "weight": 2.665
+    },
+    {
+      "term": "residences mc",
+      "weight": 2.575
+    },
+    {
+      "term": "residences",
+      "weight": 2.575
+    },
+    {
+      "term": "sky residences",
+      "weight": 2.575
+    },
+    {
+      "term": "skyresidence",
+      "weight": 2.568
+    },
+    {
+      "term": "skyresidence strata",
+      "weight": 2.568
+    }
+  ],
+  "Bills & utilities||Electricity (TNB)": [
+    {
+      "term": "tnb",
+      "weight": 7.801
+    },
+    {
+      "term": "electricity",
+      "weight": 6.386
+    },
+    {
+      "term": "tenaga nasional",
+      "weight": 6.069
+    },
+    {
+      "term": "tenaga",
+      "weight": 6.069
+    },
+    {
+      "term": "nasional",
+      "weight": 6.047
+    },
+    {
+      "term": "mytnb",
+      "weight": 4.831
+    },
+    {
+      "term": "energy",
+      "weight": 4.437
+    },
+    {
+      "term": "seb",
+      "weight": 4.342
+    },
+    {
+      "term": "sesb",
+      "weight": 4.288
+    },
+    {
+      "term": "sesco",
+      "weight": 4.245
+    },
+    {
+      "term": "cares",
+      "weight": 4.019
+    },
+    {
+      "term": "seb cares",
+      "weight": 4.019
+    },
+    {
+      "term": "mytnb tenaga",
+      "weight": 3.992
+    },
+    {
+      "term": "bil elektrik",
+      "weight": 3.903
+    },
+    {
+      "term": "bil",
+      "weight": 3.888
+    },
+    {
+      "term": "cares sarawak",
+      "weight": 3.88
+    },
+    {
+      "term": "tnb bil",
+      "weight": 3.793
+    },
+    {
+      "term": "jompay tnb",
+      "weight": 3.782
+    },
+    {
+      "term": "elektrik",
+      "weight": 3.733
+    },
+    {
+      "term": "sarawak energy",
+      "weight": 3.7
+    },
+    {
+      "term": "energy sesco",
+      "weight": 3.7
+    },
+    {
+      "term": "sabah electricity",
+      "weight": 3.619
+    },
+    {
+      "term": "electricity sesb",
+      "weight": 3.379
+    },
+    {
+      "term": "jompay",
+      "weight": 3.108
+    }
+  ],
+  "Bills & utilities||Home Internet & WiFi (Unifi / Time)": [
+    {
+      "term": "fibre",
+      "weight": 12.552
+    },
+    {
+      "term": "starlink",
+      "weight": 8.282
+    },
+    {
+      "term": "starlink malaysia",
+      "weight": 7.837
+    },
+    {
+      "term": "internet",
+      "weight": 6.676
+    },
+    {
+      "term": "broadband",
+      "weight": 4.578
+    },
+    {
+      "term": "home",
+      "weight": 4.533
+    },
+    {
+      "term": "unifi",
+      "weight": 4.468
+    },
+    {
+      "term": "home fibre",
+      "weight": 4.452
+    },
+    {
+      "term": "allo",
+      "weight": 3.872
+    },
+    {
+      "term": "allo city",
+      "weight": 3.872
+    },
+    {
+      "term": "city broadband",
+      "weight": 3.849
+    },
+    {
+      "term": "celcomdigi fibre",
+      "weight": 3.36
+    },
+    {
+      "term": "astro fibre",
+      "weight": 3.336
+    },
+    {
+      "term": "internet subscription",
+      "weight": 3.247
+    },
+    {
+      "term": "celcomdigi",
+      "weight": 3.168
+    },
+    {
+      "term": "wifi",
+      "weight": 3.048
+    },
+    {
+      "term": "city",
+      "weight": 3.012
+    },
+    {
+      "term": "lifestyle internet",
+      "weight": 2.997
+    },
+    {
+      "term": "subscription",
+      "weight": 2.994
+    },
+    {
+      "term": "astro",
+      "weight": 2.875
+    },
+    {
+      "term": "mobile home",
+      "weight": 2.799
+    },
+    {
+      "term": "unifi home",
+      "weight": 2.763
+    }
+  ],
+  "Bills & utilities||Mobile Postpaid & Prepaid": [
+    {
+      "term": "mobile",
+      "weight": 8.758
+    },
+    {
+      "term": "postpaid",
+      "weight": 8.172
+    },
+    {
+      "term": "prepaid",
+      "weight": 6.534
+    },
+    {
+      "term": "talk",
+      "weight": 5.459
+    },
+    {
+      "term": "tune talk",
+      "weight": 5.331
+    },
+    {
+      "term": "onexox",
+      "weight": 5.266
+    },
+    {
+      "term": "onexox black",
+      "weight": 5.047
+    },
+    {
+      "term": "black",
+      "weight": 4.987
+    },
+    {
+      "term": "tune",
+      "weight": 4.72
+    },
+    {
+      "term": "hotlink",
+      "weight": 4.175
+    },
+    {
+      "term": "hotlink prepaid",
+      "weight": 4.053
+    },
+    {
+      "term": "maxis postpaid",
+      "weight": 4.027
+    },
+    {
+      "term": "celcomdigi postpaid",
+      "weight": 3.913
+    },
+    {
+      "term": "infinite",
+      "weight": 3.889
+    },
+    {
+      "term": "maxis",
+      "weight": 3.821
+    },
+    {
+      "term": "upostpaid",
+      "weight": 3.802
+    },
+    {
+      "term": "redone",
+      "weight": 3.686
+    },
+    {
+      "term": "mobile upostpaid",
+      "weight": 3.605
+    },
+    {
+      "term": "redone mobile",
+      "weight": 3.567
+    },
+    {
+      "term": "reload",
+      "weight": 3.52
+    },
+    {
+      "term": "celcomdigi",
+      "weight": 3.479
+    },
+    {
+      "term": "yes",
+      "weight": 3.359
+    }
+  ],
+  "Bills & utilities||Streaming & App Subscriptions": [
+    {
+      "term": "pro",
+      "weight": 7.448
+    },
+    {
+      "term": "nordvpn",
+      "weight": 7.127
+    },
+    {
+      "term": "astro",
+      "weight": 6.953
+    },
+    {
+      "term": "netflix",
+      "weight": 5.983
+    },
+    {
+      "term": "netflix malaysia",
+      "weight": 5.319
+    },
+    {
+      "term": "apple",
+      "weight": 5.0
+    },
+    {
+      "term": "sooka malaysia",
+      "weight": 4.671
+    },
+    {
+      "term": "sooka",
+      "weight": 4.671
+    },
+    {
+      "term": "icloud",
+      "weight": 4.466
+    },
+    {
+      "term": "spotify",
+      "weight": 4.34
+    },
+    {
+      "term": "icloud apple",
+      "weight": 4.14
+    },
+    {
+      "term": "duo",
+      "weight": 4.019
+    },
+    {
+      "term": "disney",
+      "weight": 3.81
+    },
+    {
+      "term": "hotstar",
+      "weight": 3.81
+    },
+    {
+      "term": "disney hotstar",
+      "weight": 3.81
+    },
+    {
+      "term": "spotify duo",
+      "weight": 3.783
+    },
+    {
+      "term": "subscription",
+      "weight": 3.682
+    },
+    {
+      "term": "youtube",
+      "weight": 3.652
+    },
+    {
+      "term": "youtube premium",
+      "weight": 3.652
+    },
+    {
+      "term": "github",
+      "weight": 3.593
+    },
+    {
+      "term": "github copilot",
+      "weight": 3.593
+    },
+    {
+      "term": "copilot",
+      "weight": 3.593
+    },
+    {
+      "term": "chatgpt",
+      "weight": 3.331
+    },
+    {
+      "term": "chatgpt plus",
+      "weight": 3.331
+    }
+  ],
+  "Bills & utilities||Water & Sewerage (Air Selangor / IWK)": [
+    {
+      "term": "water",
+      "weight": 10.019
+    },
+    {
+      "term": "air",
+      "weight": 7.529
+    },
+    {
+      "term": "samb",
+      "weight": 5.806
+    },
+    {
+      "term": "sada",
+      "weight": 5.748
+    },
+    {
+      "term": "sada kedah",
+      "weight": 5.244
+    },
+    {
+      "term": "samb melaka",
+      "weight": 5.168
+    },
+    {
+      "term": "air selangor",
+      "weight": 5.129
+    },
+    {
+      "term": "ranhill",
+      "weight": 4.649
+    },
+    {
+      "term": "sains",
+      "weight": 4.445
+    },
+    {
+      "term": "saj",
+      "weight": 4.412
+    },
+    {
+      "term": "ranhill saj",
+      "weight": 4.324
+    },
+    {
+      "term": "iwk",
+      "weight": 4.309
+    },
+    {
+      "term": "sains negeri",
+      "weight": 4.276
+    },
+    {
+      "term": "laku",
+      "weight": 3.426
+    },
+    {
+      "term": "laku management",
+      "weight": 3.377
+    },
+    {
+      "term": "saj johor",
+      "weight": 3.263
+    },
+    {
+      "term": "management sarawak",
+      "weight": 3.229
+    },
+    {
+      "term": "negeri sembilan",
+      "weight": 3.009
+    },
+    {
+      "term": "negeri",
+      "weight": 2.993
+    },
+    {
+      "term": "sembilan",
+      "weight": 2.991
+    },
+    {
+      "term": "lap",
+      "weight": 2.749
+    },
+    {
+      "term": "pbapp",
+      "weight": 2.747
+    },
+    {
+      "term": "management",
+      "weight": 2.656
+    }
+  ],
+  "Education||Books & Stationery": [
+    {
+      "term": "smiggle",
+      "weight": 9.455
+    },
+    {
+      "term": "bookxcess",
+      "weight": 9.119
+    },
+    {
+      "term": "books",
+      "weight": 6.591
+    },
+    {
+      "term": "stationery",
+      "weight": 5.995
+    },
+    {
+      "term": "kinokuniya klcc",
+      "weight": 5.355
+    },
+    {
+      "term": "kinokuniya",
+      "weight": 5.347
+    },
+    {
+      "term": "cziplee",
+      "weight": 4.913
+    },
+    {
+      "term": "cziplee bangsar",
+      "weight": 4.789
+    },
+    {
+      "term": "bookstore",
+      "weight": 4.783
+    },
+    {
+      "term": "popular",
+      "weight": 4.402
+    },
+    {
+      "term": "mph",
+      "weight": 4.392
+    },
+    {
+      "term": "popular bookstore",
+      "weight": 4.381
+    },
+    {
+      "term": "mph bookstores",
+      "weight": 4.375
+    },
+    {
+      "term": "bookstores",
+      "weight": 4.375
+    },
+    {
+      "term": "typo stationery",
+      "weight": 3.556
+    },
+    {
+      "term": "typo",
+      "weight": 3.556
+    },
+    {
+      "term": "journals",
+      "weight": 3.262
+    },
+    {
+      "term": "lifestyle books",
+      "weight": 3.146
+    },
+    {
+      "term": "kedai buku",
+      "weight": 3.121
+    },
+    {
+      "term": "buku",
+      "weight": 3.121
+    },
+    {
+      "term": "hasani",
+      "weight": 3.067
+    },
+    {
+      "term": "publications",
+      "weight": 3.056
+    },
+    {
+      "term": "buku hasani",
+      "weight": 2.99
+    },
+    {
+      "term": "books journals",
+      "weight": 2.965
+    }
+  ],
+  "Education||Higher Education & Tuition": [
+    {
+      "term": "university",
+      "weight": 9.448
+    },
+    {
+      "term": "bursary",
+      "weight": 6.988
+    },
+    {
+      "term": "tuition",
+      "weight": 5.636
+    },
+    {
+      "term": "portal",
+      "weight": 5.321
+    },
+    {
+      "term": "universiti",
+      "weight": 4.626
+    },
+    {
+      "term": "mawar",
+      "weight": 4.089
+    },
+    {
+      "term": "university bursary",
+      "weight": 3.972
+    },
+    {
+      "term": "mmu",
+      "weight": 3.882
+    },
+    {
+      "term": "umpay",
+      "weight": 3.824
+    },
+    {
+      "term": "fees",
+      "weight": 3.819
+    },
+    {
+      "term": "pusat tuisyen",
+      "weight": 3.814
+    },
+    {
+      "term": "tuisyen",
+      "weight": 3.814
+    },
+    {
+      "term": "tuisyen mawar",
+      "weight": 3.814
+    },
+    {
+      "term": "fee",
+      "weight": 3.792
+    },
+    {
+      "term": "kumon",
+      "weight": 3.784
+    },
+    {
+      "term": "education fees",
+      "weight": 3.723
+    },
+    {
+      "term": "kumon tuition",
+      "weight": 3.687
+    },
+    {
+      "term": "self education",
+      "weight": 3.634
+    },
+    {
+      "term": "apu",
+      "weight": 3.633
+    },
+    {
+      "term": "mmu fee",
+      "weight": 3.605
+    },
+    {
+      "term": "tuition centre",
+      "weight": 3.59
+    },
+    {
+      "term": "fee collection",
+      "weight": 3.471
+    },
+    {
+      "term": "apu bursary",
+      "weight": 3.47
+    },
+    {
+      "term": "education",
+      "weight": 3.464
+    },
+    {
+      "term": "utar",
+      "weight": 3.455
+    }
+  ],
+  "Education||School & Childcare Fees": [
+    {
+      "term": "kids",
+      "weight": 7.498
+    },
+    {
+      "term": "preschool",
+      "weight": 6.34
+    },
+    {
+      "term": "kinderkaizen",
+      "weight": 5.142
+    },
+    {
+      "term": "playschool",
+      "weight": 4.987
+    },
+    {
+      "term": "kinderkaizen playschool",
+      "weight": 4.94
+    },
+    {
+      "term": "taska",
+      "weight": 4.826
+    },
+    {
+      "term": "childcare",
+      "weight": 4.772
+    },
+    {
+      "term": "fees",
+      "weight": 4.31
+    },
+    {
+      "term": "school",
+      "weight": 4.175
+    },
+    {
+      "term": "dees",
+      "weight": 4.129
+    },
+    {
+      "term": "dees preschool",
+      "weight": 4.079
+    },
+    {
+      "term": "mrc",
+      "weight": 3.742
+    },
+    {
+      "term": "mrc kids",
+      "weight": 3.588
+    },
+    {
+      "term": "pibg",
+      "weight": 3.425
+    },
+    {
+      "term": "sekolah kebangsaan",
+      "weight": 3.377
+    },
+    {
+      "term": "pibg sekolah",
+      "weight": 3.377
+    },
+    {
+      "term": "sekolah",
+      "weight": 3.377
+    },
+    {
+      "term": "kebangsaan",
+      "weight": 3.366
+    },
+    {
+      "term": "cicada",
+      "weight": 3.342
+    },
+    {
+      "term": "kindergarten",
+      "weight": 3.295
+    },
+    {
+      "term": "waldorf",
+      "weight": 3.185
+    },
+    {
+      "term": "cicada waldorf",
+      "weight": 3.185
+    },
+    {
+      "term": "waldorf school",
+      "weight": 3.185
+    },
+    {
+      "term": "sri al",
+      "weight": 2.98
+    },
+    {
+      "term": "al amin",
+      "weight": 2.892
+    }
+  ],
+  "Education||Upskilling & Certification": [
+    {
+      "term": "datacamp",
+      "weight": 9.174
+    },
+    {
+      "term": "pluralsight",
+      "weight": 8.548
+    },
+    {
+      "term": "certification",
+      "weight": 6.672
+    },
+    {
+      "term": "udemy",
+      "weight": 6.581
+    },
+    {
+      "term": "udemy malaysia",
+      "weight": 6.447
+    },
+    {
+      "term": "course",
+      "weight": 5.809
+    },
+    {
+      "term": "coursera",
+      "weight": 5.452
+    },
+    {
+      "term": "coursera plus",
+      "weight": 5.413
+    },
+    {
+      "term": "learning",
+      "weight": 4.455
+    },
+    {
+      "term": "linkedin",
+      "weight": 4.344
+    },
+    {
+      "term": "linkedin learning",
+      "weight": 4.311
+    },
+    {
+      "term": "upskilling",
+      "weight": 4.249
+    },
+    {
+      "term": "bootcamp",
+      "weight": 3.892
+    },
+    {
+      "term": "acca",
+      "weight": 3.722
+    },
+    {
+      "term": "course fees",
+      "weight": 3.702
+    },
+    {
+      "term": "exam",
+      "weight": 3.701
+    },
+    {
+      "term": "edx",
+      "weight": 3.603
+    },
+    {
+      "term": "lumpur bootcamp",
+      "weight": 3.599
+    },
+    {
+      "term": "upskilling course",
+      "weight": 3.493
+    },
+    {
+      "term": "edx certification",
+      "weight": 3.485
+    },
+    {
+      "term": "acca exam",
+      "weight": 3.48
+    },
+    {
+      "term": "self upskilling",
+      "weight": 3.458
+    },
+    {
+      "term": "exam fee",
+      "weight": 3.368
+    },
+    {
+      "term": "plus",
+      "weight": 3.356
+    }
+  ],
+  "Entertainment & travel||Flights & Transport": [
+    {
+      "term": "maswings",
+      "weight": 10.379
+    },
+    {
+      "term": "airasia",
+      "weight": 10.329
+    },
+    {
+      "term": "airlines",
+      "weight": 7.834
+    },
+    {
+      "term": "redbus",
+      "weight": 6.869
+    },
+    {
+      "term": "redbus malaysia",
+      "weight": 6.608
+    },
+    {
+      "term": "easybook express",
+      "weight": 5.786
+    },
+    {
+      "term": "easybook",
+      "weight": 5.786
+    },
+    {
+      "term": "express",
+      "weight": 4.638
+    },
+    {
+      "term": "batik",
+      "weight": 4.116
+    },
+    {
+      "term": "batik air",
+      "weight": 4.116
+    },
+    {
+      "term": "air malaysia",
+      "weight": 4.043
+    },
+    {
+      "term": "trip com",
+      "weight": 3.802
+    },
+    {
+      "term": "trip",
+      "weight": 3.745
+    },
+    {
+      "term": "com flights",
+      "weight": 3.605
+    },
+    {
+      "term": "flights",
+      "weight": 3.605
+    },
+    {
+      "term": "travel",
+      "weight": 3.445
+    },
+    {
+      "term": "booking",
+      "weight": 3.354
+    },
+    {
+      "term": "klook",
+      "weight": 3.351
+    },
+    {
+      "term": "scoot",
+      "weight": 3.331
+    },
+    {
+      "term": "firefly airlines",
+      "weight": 3.273
+    },
+    {
+      "term": "firefly",
+      "weight": 3.273
+    },
+    {
+      "term": "klook travel",
+      "weight": 3.223
+    },
+    {
+      "term": "activity",
+      "weight": 3.22
+    },
+    {
+      "term": "scoot airlines",
+      "weight": 3.204
+    },
+    {
+      "term": "travel activity",
+      "weight": 3.185
+    }
+  ],
+  "Entertainment & travel||Games & Hobbies": [
+    {
+      "term": "hoyoverse",
+      "weight": 9.475
+    },
+    {
+      "term": "playstation",
+      "weight": 6.255
+    },
+    {
+      "term": "playstation store",
+      "weight": 6.255
+    },
+    {
+      "term": "miniso",
+      "weight": 6.156
+    },
+    {
+      "term": "toys",
+      "weight": 5.934
+    },
+    {
+      "term": "miniso malaysia",
+      "weight": 5.864
+    },
+    {
+      "term": "toys malaysia",
+      "weight": 5.819
+    },
+    {
+      "term": "codashop",
+      "weight": 5.786
+    },
+    {
+      "term": "steam",
+      "weight": 5.691
+    },
+    {
+      "term": "codashop malaysia",
+      "weight": 5.628
+    },
+    {
+      "term": "steam wallet",
+      "weight": 5.627
+    },
+    {
+      "term": "pop mart",
+      "weight": 4.694
+    },
+    {
+      "term": "pop",
+      "weight": 4.666
+    },
+    {
+      "term": "nintendo eshop",
+      "weight": 4.659
+    },
+    {
+      "term": "nintendo",
+      "weight": 4.659
+    },
+    {
+      "term": "eshop",
+      "weight": 4.659
+    },
+    {
+      "term": "mart malaysia",
+      "weight": 4.211
+    },
+    {
+      "term": "wallet",
+      "weight": 4.147
+    },
+    {
+      "term": "store",
+      "weight": 3.865
+    },
+    {
+      "term": "toy",
+      "weight": 3.66
+    },
+    {
+      "term": "valorant",
+      "weight": 3.367
+    },
+    {
+      "term": "toy world",
+      "weight": 3.297
+    },
+    {
+      "term": "pin",
+      "weight": 3.209
+    },
+    {
+      "term": "hobby",
+      "weight": 3.182
+    }
+  ],
+  "Entertainment & travel||Hotel & Holiday Stay": [
+    {
+      "term": "hotel",
+      "weight": 8.503
+    },
+    {
+      "term": "resort",
+      "weight": 7.716
+    },
+    {
+      "term": "stay",
+      "weight": 6.281
+    },
+    {
+      "term": "com",
+      "weight": 6.244
+    },
+    {
+      "term": "agoda",
+      "weight": 5.382
+    },
+    {
+      "term": "agoda com",
+      "weight": 5.044
+    },
+    {
+      "term": "booking com",
+      "weight": 5.005
+    },
+    {
+      "term": "booking",
+      "weight": 4.7
+    },
+    {
+      "term": "airbnb stay",
+      "weight": 4.691
+    },
+    {
+      "term": "airbnb",
+      "weight": 4.691
+    },
+    {
+      "term": "shangri",
+      "weight": 4.01
+    },
+    {
+      "term": "shangri la",
+      "weight": 4.01
+    },
+    {
+      "term": "traveloka",
+      "weight": 3.848
+    },
+    {
+      "term": "traveloka hotel",
+      "weight": 3.848
+    },
+    {
+      "term": "skyworlds resort",
+      "weight": 3.006
+    },
+    {
+      "term": "langkawi",
+      "weight": 2.877
+    },
+    {
+      "term": "dash resort",
+      "weight": 2.612
+    },
+    {
+      "term": "resort langkawi",
+      "weight": 2.612
+    },
+    {
+      "term": "genting",
+      "weight": 2.608
+    },
+    {
+      "term": "genting skyworlds",
+      "weight": 2.514
+    },
+    {
+      "term": "skyworlds",
+      "weight": 2.511
+    },
+    {
+      "term": "dash",
+      "weight": 2.464
+    }
+  ],
+  "Entertainment & travel||Movies, Concerts & Events": [
+    {
+      "term": "cinemas",
+      "weight": 7.604
+    },
+    {
+      "term": "tickets",
+      "weight": 7.349
+    },
+    {
+      "term": "aquaria",
+      "weight": 6.643
+    },
+    {
+      "term": "aquaria klcc",
+      "weight": 6.349
+    },
+    {
+      "term": "events",
+      "weight": 4.962
+    },
+    {
+      "term": "gsc",
+      "weight": 4.306
+    },
+    {
+      "term": "tgv",
+      "weight": 4.125
+    },
+    {
+      "term": "concert",
+      "weight": 4.105
+    },
+    {
+      "term": "gsc cinemas",
+      "weight": 3.922
+    },
+    {
+      "term": "tgv cinemas",
+      "weight": 3.873
+    },
+    {
+      "term": "cloudjoi",
+      "weight": 3.76
+    },
+    {
+      "term": "dadi",
+      "weight": 3.694
+    },
+    {
+      "term": "cloudjoi tickets",
+      "weight": 3.661
+    },
+    {
+      "term": "dadi cinema",
+      "weight": 3.599
+    },
+    {
+      "term": "cinema",
+      "weight": 3.548
+    },
+    {
+      "term": "cinema pavilion",
+      "weight": 3.526
+    },
+    {
+      "term": "golive asia",
+      "weight": 3.461
+    },
+    {
+      "term": "golive",
+      "weight": 3.461
+    },
+    {
+      "term": "asia concert",
+      "weight": 3.216
+    },
+    {
+      "term": "asia",
+      "weight": 3.208
+    },
+    {
+      "term": "karaoke",
+      "weight": 3.139
+    },
+    {
+      "term": "lagoon",
+      "weight": 3.079
+    },
+    {
+      "term": "sunway lagoon",
+      "weight": 3.079
+    }
+  ],
+  "Family & gifts||Charity & Donations": [
+    {
+      "term": "donation",
+      "weight": 8.221
+    },
+    {
+      "term": "mercy",
+      "weight": 5.742
+    },
+    {
+      "term": "teach",
+      "weight": 5.729
+    },
+    {
+      "term": "teach malaysia",
+      "weight": 5.729
+    },
+    {
+      "term": "charity",
+      "weight": 5.561
+    },
+    {
+      "term": "hospis",
+      "weight": 5.529
+    },
+    {
+      "term": "mercy malaysia",
+      "weight": 5.484
+    },
+    {
+      "term": "hospis malaysia",
+      "weight": 5.23
+    },
+    {
+      "term": "soup kitchen",
+      "weight": 4.321
+    },
+    {
+      "term": "soup",
+      "weight": 4.272
+    },
+    {
+      "term": "kitchen",
+      "weight": 4.223
+    },
+    {
+      "term": "mission",
+      "weight": 3.179
+    },
+    {
+      "term": "peace",
+      "weight": 3.176
+    },
+    {
+      "term": "yayasan",
+      "weight": 3.144
+    },
+    {
+      "term": "yayasan chow",
+      "weight": 3.144
+    },
+    {
+      "term": "makna",
+      "weight": 3.125
+    },
+    {
+      "term": "global peace",
+      "weight": 3.123
+    },
+    {
+      "term": "peace mission",
+      "weight": 3.123
+    },
+    {
+      "term": "cancer",
+      "weight": 3.12
+    },
+    {
+      "term": "cancer council",
+      "weight": 3.11
+    },
+    {
+      "term": "council",
+      "weight": 3.11
+    },
+    {
+      "term": "makna cancer",
+      "weight": 3.11
+    }
+  ],
+  "Family & gifts||Childcare & Family Support": [
+    {
+      "term": "baby",
+      "weight": 9.193
+    },
+    {
+      "term": "mothercare",
+      "weight": 7.316
+    },
+    {
+      "term": "mothercare malaysia",
+      "weight": 7.294
+    },
+    {
+      "term": "chicco",
+      "weight": 7.246
+    },
+    {
+      "term": "chicco malaysia",
+      "weight": 7.16
+    },
+    {
+      "term": "poney babywear",
+      "weight": 5.306
+    },
+    {
+      "term": "poney",
+      "weight": 5.306
+    },
+    {
+      "term": "babywear",
+      "weight": 5.306
+    },
+    {
+      "term": "baby store",
+      "weight": 4.835
+    },
+    {
+      "term": "babysitter",
+      "weight": 4.54
+    },
+    {
+      "term": "pengasuh",
+      "weight": 4.276
+    },
+    {
+      "term": "pengasuh transfer",
+      "weight": 4.196
+    },
+    {
+      "term": "babysitter pengasuh",
+      "weight": 3.936
+    },
+    {
+      "term": "breastfeeding",
+      "weight": 3.718
+    },
+    {
+      "term": "nanny",
+      "weight": 3.589
+    },
+    {
+      "term": "nanny allowance",
+      "weight": 3.553
+    },
+    {
+      "term": "childcare",
+      "weight": 3.522
+    },
+    {
+      "term": "breast",
+      "weight": 3.461
+    },
+    {
+      "term": "childcare nanny",
+      "weight": 3.38
+    },
+    {
+      "term": "pump",
+      "weight": 3.33
+    },
+    {
+      "term": "breast pump",
+      "weight": 3.234
+    },
+    {
+      "term": "breastfeeding equipment",
+      "weight": 3.131
+    },
+    {
+      "term": "spectra",
+      "weight": 3.116
+    },
+    {
+      "term": "allowance",
+      "weight": 3.067
+    }
+  ],
+  "Family & gifts||Festive (Angpao / Duit Raya) & Gifts": [
+    {
+      "term": "angpao",
+      "weight": 7.217
+    },
+    {
+      "term": "gift",
+      "weight": 6.408
+    },
+    {
+      "term": "florist",
+      "weight": 6.035
+    },
+    {
+      "term": "bloomthis",
+      "weight": 5.967
+    },
+    {
+      "term": "bloomthis florist",
+      "weight": 5.882
+    },
+    {
+      "term": "flower",
+      "weight": 5.832
+    },
+    {
+      "term": "flower chimp",
+      "weight": 5.632
+    },
+    {
+      "term": "chimp",
+      "weight": 5.632
+    },
+    {
+      "term": "bunch",
+      "weight": 4.62
+    },
+    {
+      "term": "raya",
+      "weight": 4.575
+    },
+    {
+      "term": "happy bunch",
+      "weight": 4.443
+    },
+    {
+      "term": "bunch malaysia",
+      "weight": 4.382
+    },
+    {
+      "term": "happy",
+      "weight": 4.319
+    },
+    {
+      "term": "box",
+      "weight": 4.245
+    },
+    {
+      "term": "gift box",
+      "weight": 4.105
+    },
+    {
+      "term": "hamper",
+      "weight": 3.973
+    },
+    {
+      "term": "duit raya",
+      "weight": 3.618
+    },
+    {
+      "term": "mae duitnow",
+      "weight": 3.417
+    },
+    {
+      "term": "duitnow angpao",
+      "weight": 3.409
+    },
+    {
+      "term": "wedding",
+      "weight": 3.186
+    },
+    {
+      "term": "duit",
+      "weight": 3.184
+    },
+    {
+      "term": "angpao transfer",
+      "weight": 3.13
+    },
+    {
+      "term": "raya transfer",
+      "weight": 3.095
+    },
+    {
+      "term": "tng duit",
+      "weight": 3.078
+    },
+    {
+      "term": "wedding angpao",
+      "weight": 3.077
+    }
+  ],
+  "Family & gifts||Parents Allowance": [
+    {
+      "term": "monthly",
+      "weight": 5.867
+    },
+    {
+      "term": "bulanan",
+      "weight": 5.401
+    },
+    {
+      "term": "mak",
+      "weight": 5.321
+    },
+    {
+      "term": "transfer",
+      "weight": 4.028
+    },
+    {
+      "term": "emak",
+      "weight": 3.914
+    },
+    {
+      "term": "allowance",
+      "weight": 3.728
+    },
+    {
+      "term": "bulanan emak",
+      "weight": 3.616
+    },
+    {
+      "term": "support transfer",
+      "weight": 3.592
+    },
+    {
+      "term": "home support",
+      "weight": 3.592
+    },
+    {
+      "term": "family home",
+      "weight": 3.572
+    },
+    {
+      "term": "support",
+      "weight": 3.57
+    },
+    {
+      "term": "family",
+      "weight": 3.546
+    },
+    {
+      "term": "elaun bulanan",
+      "weight": 3.459
+    },
+    {
+      "term": "elaun",
+      "weight": 3.459
+    },
+    {
+      "term": "ayah",
+      "weight": 3.194
+    },
+    {
+      "term": "bapa monthly",
+      "weight": 3.168
+    },
+    {
+      "term": "ibu",
+      "weight": 3.168
+    },
+    {
+      "term": "ibu bapa",
+      "weight": 3.168
+    },
+    {
+      "term": "bapa",
+      "weight": 3.168
+    },
+    {
+      "term": "monthly transfer",
+      "weight": 3.168
+    },
+    {
+      "term": "monthly allowance",
+      "weight": 3.162
+    },
+    {
+      "term": "parents",
+      "weight": 3.119
+    },
+    {
+      "term": "allowance transfer",
+      "weight": 3.045
+    },
+    {
+      "term": "abah",
+      "weight": 3.032
+    },
+    {
+      "term": "parents monthly",
+      "weight": 2.945
+    }
+  ],
+  "Family & gifts||Zakat & Fitrah": [
+    {
+      "term": "zakat",
+      "weight": 23.857
+    },
+    {
+      "term": "fitrah",
+      "weight": 7.257
+    },
+    {
+      "term": "zakat fitrah",
+      "weight": 7.107
+    },
+    {
+      "term": "maiwp",
+      "weight": 4.757
+    },
+    {
+      "term": "maiwp zakat",
+      "weight": 4.622
+    },
+    {
+      "term": "lzs",
+      "weight": 3.647
+    },
+    {
+      "term": "zakat negeri",
+      "weight": 3.463
+    },
+    {
+      "term": "rebate",
+      "weight": 3.224
+    },
+    {
+      "term": "fitrah tax",
+      "weight": 3.198
+    },
+    {
+      "term": "tax rebate",
+      "weight": 3.171
+    },
+    {
+      "term": "mainj",
+      "weight": 3.166
+    },
+    {
+      "term": "rebate sec",
+      "weight": 3.142
+    },
+    {
+      "term": "zakat johor",
+      "weight": 3.102
+    },
+    {
+      "term": "lznk",
+      "weight": 3.077
+    },
+    {
+      "term": "maipk",
+      "weight": 3.048
+    },
+    {
+      "term": "zakat pulau",
+      "weight": 3.043
+    },
+    {
+      "term": "johor mainj",
+      "weight": 3.036
+    },
+    {
+      "term": "pulau pinang",
+      "weight": 2.982
+    },
+    {
+      "term": "sec",
+      "weight": 2.981
+    },
+    {
+      "term": "pulau",
+      "weight": 2.932
+    },
+    {
+      "term": "pinang",
+      "weight": 2.919
+    },
+    {
+      "term": "kedah lznk",
+      "weight": 2.896
+    },
+    {
+      "term": "zakat kedah",
+      "weight": 2.896
+    }
+  ],
+  "Fees & charges||Bank & Transfer Fee": [
+    {
+      "term": "fee",
+      "weight": 10.142
+    },
+    {
+      "term": "transfer charge",
+      "weight": 7.062
+    },
+    {
+      "term": "charge",
+      "weight": 4.904
+    },
+    {
+      "term": "duitnow overseas",
+      "weight": 4.314
+    },
+    {
+      "term": "transfer",
+      "weight": 4.073
+    },
+    {
+      "term": "rentas",
+      "weight": 3.979
+    },
+    {
+      "term": "overseas fee",
+      "weight": 3.864
+    },
+    {
+      "term": "card",
+      "weight": 3.816
+    },
+    {
+      "term": "overseas",
+      "weight": 3.738
+    },
+    {
+      "term": "ibg",
+      "weight": 3.683
+    },
+    {
+      "term": "card replacement",
+      "weight": 3.625
+    },
+    {
+      "term": "replacement fee",
+      "weight": 3.612
+    },
+    {
+      "term": "maybank debit",
+      "weight": 3.571
+    },
+    {
+      "term": "debit card",
+      "weight": 3.538
+    },
+    {
+      "term": "rentas transfer",
+      "weight": 3.416
+    },
+    {
+      "term": "replacement",
+      "weight": 3.304
+    },
+    {
+      "term": "maybank",
+      "weight": 3.199
+    },
+    {
+      "term": "ibg transfer",
+      "weight": 3.133
+    },
+    {
+      "term": "meps",
+      "weight": 3.037
+    },
+    {
+      "term": "fall",
+      "weight": 2.993
+    },
+    {
+      "term": "atm",
+      "weight": 2.975
+    },
+    {
+      "term": "certified",
+      "weight": 2.822
+    },
+    {
+      "term": "meps atm",
+      "weight": 2.819
+    },
+    {
+      "term": "card fee",
+      "weight": 2.805
+    },
+    {
+      "term": "certified fee",
+      "weight": 2.775
+    }
+  ],
+  "Fees & charges||Card Annual Fee": [
+    {
+      "term": "annual",
+      "weight": 11.615
+    },
+    {
+      "term": "fee",
+      "weight": 8.534
+    },
+    {
+      "term": "card",
+      "weight": 7.974
+    },
+    {
+      "term": "annual fee",
+      "weight": 7.907
+    },
+    {
+      "term": "card annual",
+      "weight": 7.64
+    },
+    {
+      "term": "credit",
+      "weight": 4.854
+    },
+    {
+      "term": "hsbc amanah",
+      "weight": 3.996
+    },
+    {
+      "term": "credit card",
+      "weight": 3.852
+    },
+    {
+      "term": "card fee",
+      "weight": 3.85
+    },
+    {
+      "term": "hsbc",
+      "weight": 3.548
+    },
+    {
+      "term": "public bank",
+      "weight": 3.516
+    },
+    {
+      "term": "amanah",
+      "weight": 3.508
+    },
+    {
+      "term": "amanah card",
+      "weight": 3.221
+    },
+    {
+      "term": "public",
+      "weight": 3.166
+    },
+    {
+      "term": "annual membership",
+      "weight": 3.058
+    },
+    {
+      "term": "membership fee",
+      "weight": 2.895
+    },
+    {
+      "term": "bank annual",
+      "weight": 2.83
+    },
+    {
+      "term": "bank",
+      "weight": 2.781
+    },
+    {
+      "term": "membership",
+      "weight": 2.723
+    },
+    {
+      "term": "rhb card",
+      "weight": 2.709
+    },
+    {
+      "term": "cimb credit",
+      "weight": 2.231
+    },
+    {
+      "term": "annual charge",
+      "weight": 2.213
+    },
+    {
+      "term": "leong card",
+      "weight": 2.198
+    },
+    {
+      "term": "aeon credit",
+      "weight": 2.198
+    },
+    {
+      "term": "uob credit",
+      "weight": 2.151
+    }
+  ],
+  "Fees & charges||Foreign Currency Fee": [
+    {
+      "term": "fee",
+      "weight": 8.567
+    },
+    {
+      "term": "currency",
+      "weight": 6.182
+    },
+    {
+      "term": "foreign",
+      "weight": 5.659
+    },
+    {
+      "term": "conversion",
+      "weight": 4.528
+    },
+    {
+      "term": "markup",
+      "weight": 4.448
+    },
+    {
+      "term": "currency fee",
+      "weight": 4.09
+    },
+    {
+      "term": "conversion fee",
+      "weight": 3.771
+    },
+    {
+      "term": "bigpay",
+      "weight": 3.617
+    },
+    {
+      "term": "overseas",
+      "weight": 3.396
+    },
+    {
+      "term": "foreign currency",
+      "weight": 3.201
+    },
+    {
+      "term": "fx fee",
+      "weight": 3.152
+    },
+    {
+      "term": "tng ewallet",
+      "weight": 3.006
+    },
+    {
+      "term": "ewallet",
+      "weight": 2.953
+    },
+    {
+      "term": "cimb overseas",
+      "weight": 2.883
+    },
+    {
+      "term": "hsbc",
+      "weight": 2.787
+    },
+    {
+      "term": "overseas markup",
+      "weight": 2.785
+    },
+    {
+      "term": "markup fee",
+      "weight": 2.781
+    },
+    {
+      "term": "currency conversion",
+      "weight": 2.729
+    },
+    {
+      "term": "cross",
+      "weight": 2.689
+    },
+    {
+      "term": "border",
+      "weight": 2.689
+    },
+    {
+      "term": "cross border",
+      "weight": 2.689
+    },
+    {
+      "term": "foreign conversion",
+      "weight": 2.633
+    },
+    {
+      "term": "maybank cross",
+      "weight": 2.516
+    },
+    {
+      "term": "gxbank foreign",
+      "weight": 2.422
+    }
+  ],
+  "Fees & charges||Late Payment Fee": [
+    {
+      "term": "late",
+      "weight": 12.044
+    },
+    {
+      "term": "ptptn",
+      "weight": 6.081
+    },
+    {
+      "term": "unifi",
+      "weight": 5.833
+    },
+    {
+      "term": "charge",
+      "weight": 5.413
+    },
+    {
+      "term": "fee",
+      "weight": 4.381
+    },
+    {
+      "term": "late payment",
+      "weight": 4.35
+    },
+    {
+      "term": "spaylater",
+      "weight": 4.213
+    },
+    {
+      "term": "grabpaylater",
+      "weight": 4.007
+    },
+    {
+      "term": "credit card",
+      "weight": 3.957
+    },
+    {
+      "term": "home loan",
+      "weight": 3.801
+    },
+    {
+      "term": "late charge",
+      "weight": 3.699
+    },
+    {
+      "term": "credit",
+      "weight": 3.283
+    },
+    {
+      "term": "late fee",
+      "weight": 3.018
+    },
+    {
+      "term": "loan",
+      "weight": 2.778
+    },
+    {
+      "term": "card",
+      "weight": 2.618
+    },
+    {
+      "term": "card late",
+      "weight": 2.552
+    },
+    {
+      "term": "untuk",
+      "weight": 2.546
+    },
+    {
+      "term": "reconnection",
+      "weight": 2.523
+    },
+    {
+      "term": "home",
+      "weight": 2.491
+    },
+    {
+      "term": "payment fee",
+      "weight": 2.45
+    },
+    {
+      "term": "penalty",
+      "weight": 2.398
+    },
+    {
+      "term": "reconnection fee",
+      "weight": 2.309
+    },
+    {
+      "term": "charge fee",
+      "weight": 2.247
+    },
+    {
+      "term": "penalty charge",
+      "weight": 2.228
+    },
+    {
+      "term": "payment charge",
+      "weight": 2.197
+    }
+  ],
+  "Food & drinks||Coffee, Tea & Drinks": [
+    {
+      "term": "coffee",
+      "weight": 11.264
+    },
+    {
+      "term": "starbucks",
+      "weight": 7.997
+    },
+    {
+      "term": "koppiku",
+      "weight": 6.584
+    },
+    {
+      "term": "tealive",
+      "weight": 6.422
+    },
+    {
+      "term": "beutea",
+      "weight": 5.958
+    },
+    {
+      "term": "chagee",
+      "weight": 5.869
+    },
+    {
+      "term": "chagee malaysia",
+      "weight": 5.674
+    },
+    {
+      "term": "mixue",
+      "weight": 5.277
+    },
+    {
+      "term": "mixue malaysia",
+      "weight": 5.042
+    },
+    {
+      "term": "cha",
+      "weight": 4.549
+    },
+    {
+      "term": "arabica",
+      "weight": 4.524
+    },
+    {
+      "term": "arabica kl",
+      "weight": 4.524
+    },
+    {
+      "term": "ai cha",
+      "weight": 4.364
+    },
+    {
+      "term": "tea",
+      "weight": 3.755
+    },
+    {
+      "term": "matcha",
+      "weight": 3.43
+    },
+    {
+      "term": "niko",
+      "weight": 3.192
+    },
+    {
+      "term": "niko neko",
+      "weight": 3.192
+    },
+    {
+      "term": "neko",
+      "weight": 3.192
+    },
+    {
+      "term": "neko matcha",
+      "weight": 3.192
+    },
+    {
+      "term": "hwc",
+      "weight": 2.343
+    },
+    {
+      "term": "richiamo",
+      "weight": 2.197
+    },
+    {
+      "term": "richiamo coffee",
+      "weight": 2.114
+    }
+  ],
+  "Food & drinks||Fast Food": [
+    {
+      "term": "myburgerlab",
+      "weight": 8.227
+    },
+    {
+      "term": "marrybrown",
+      "weight": 7.9
+    },
+    {
+      "term": "wingstop",
+      "weight": 7.714
+    },
+    {
+      "term": "mcdonald",
+      "weight": 6.054
+    },
+    {
+      "term": "chicken",
+      "weight": 5.966
+    },
+    {
+      "term": "kfc",
+      "weight": 5.54
+    },
+    {
+      "term": "burger",
+      "weight": 5.35
+    },
+    {
+      "term": "sugarbun",
+      "weight": 5.162
+    },
+    {
+      "term": "pizza",
+      "weight": 5.024
+    },
+    {
+      "term": "sugarbun sarawak",
+      "weight": 4.929
+    },
+    {
+      "term": "kfc malaysia",
+      "weight": 4.909
+    },
+    {
+      "term": "jollibee",
+      "weight": 4.848
+    },
+    {
+      "term": "jollibee malaysia",
+      "weight": 4.77
+    },
+    {
+      "term": "mcdonald malaysia",
+      "weight": 4.709
+    },
+    {
+      "term": "richeese",
+      "weight": 4.351
+    },
+    {
+      "term": "factory",
+      "weight": 4.28
+    },
+    {
+      "term": "richeese factory",
+      "weight": 4.28
+    },
+    {
+      "term": "domino pizza",
+      "weight": 4.275
+    },
+    {
+      "term": "kyochon",
+      "weight": 4.258
+    },
+    {
+      "term": "woodfire",
+      "weight": 4.003
+    },
+    {
+      "term": "woodfire burger",
+      "weight": 4.003
+    },
+    {
+      "term": "domino",
+      "weight": 3.771
+    }
+  ],
+  "Food & drinks||Food Delivery (GrabFood / Foodpanda)": [
+    {
+      "term": "delivery",
+      "weight": 10.879
+    },
+    {
+      "term": "grabfood",
+      "weight": 10.141
+    },
+    {
+      "term": "food",
+      "weight": 8.671
+    },
+    {
+      "term": "foodpanda",
+      "weight": 8.228
+    },
+    {
+      "term": "shopeefood",
+      "weight": 7.16
+    },
+    {
+      "term": "mcdelivery",
+      "weight": 7.091
+    },
+    {
+      "term": "mcdelivery malaysia",
+      "weight": 6.917
+    },
+    {
+      "term": "foodpanda malaysia",
+      "weight": 5.203
+    },
+    {
+      "term": "airasia food",
+      "weight": 3.146
+    },
+    {
+      "term": "bungkusit food",
+      "weight": 3.11
+    },
+    {
+      "term": "bungkusit",
+      "weight": 3.11
+    },
+    {
+      "term": "kfc delivery",
+      "weight": 2.678
+    },
+    {
+      "term": "misirakyat",
+      "weight": 2.634
+    },
+    {
+      "term": "misirakyat food",
+      "weight": 2.634
+    },
+    {
+      "term": "beep delivery",
+      "weight": 2.332
+    },
+    {
+      "term": "beep",
+      "weight": 2.332
+    },
+    {
+      "term": "domino delivery",
+      "weight": 2.317
+    },
+    {
+      "term": "order",
+      "weight": 2.293
+    },
+    {
+      "term": "kfc",
+      "weight": 2.133
+    },
+    {
+      "term": "airasia",
+      "weight": 2.121
+    },
+    {
+      "term": "food delivery",
+      "weight": 2.084
+    },
+    {
+      "term": "halo express",
+      "weight": 1.977
+    },
+    {
+      "term": "domino",
+      "weight": 1.96
+    },
+    {
+      "term": "express delivery",
+      "weight": 1.943
+    }
+  ],
+  "Food & drinks||Groceries & Snacks": [
+    {
+      "term": "bakery",
+      "weight": 8.131
+    },
+    {
+      "term": "donuts",
+      "weight": 7.689
+    },
+    {
+      "term": "chocolate",
+      "weight": 7.052
+    },
+    {
+      "term": "llaollao",
+      "weight": 6.713
+    },
+    {
+      "term": "dunkin",
+      "weight": 6.549
+    },
+    {
+      "term": "dunkin malaysia",
+      "weight": 6.376
+    },
+    {
+      "term": "mix",
+      "weight": 5.033
+    },
+    {
+      "term": "mix com",
+      "weight": 4.766
+    },
+    {
+      "term": "inside",
+      "weight": 4.542
+    },
+    {
+      "term": "patisserie",
+      "weight": 4.466
+    },
+    {
+      "term": "chateraise patisserie",
+      "weight": 4.466
+    },
+    {
+      "term": "chateraise",
+      "weight": 4.466
+    },
+    {
+      "term": "auntie",
+      "weight": 4.464
+    },
+    {
+      "term": "amos",
+      "weight": 4.462
+    },
+    {
+      "term": "rotiboy",
+      "weight": 4.445
+    },
+    {
+      "term": "rotiboy bakeshoppe",
+      "weight": 4.445
+    },
+    {
+      "term": "bakeshoppe",
+      "weight": 4.445
+    },
+    {
+      "term": "pastry",
+      "weight": 4.439
+    },
+    {
+      "term": "inside scoop",
+      "weight": 4.406
+    },
+    {
+      "term": "scoop",
+      "weight": 4.406
+    },
+    {
+      "term": "popcorn",
+      "weight": 4.395
+    },
+    {
+      "term": "auntie anne",
+      "weight": 4.332
+    },
+    {
+      "term": "anne",
+      "weight": 4.332
+    },
+    {
+      "term": "rt pastry",
+      "weight": 4.324
+    },
+    {
+      "term": "famous",
+      "weight": 4.281
+    }
+  ],
+  "Food & drinks||Hawker & Mamak": [
+    {
+      "term": "bistro",
+      "weight": 8.478
+    },
+    {
+      "term": "kee",
+      "weight": 5.898
+    },
+    {
+      "term": "restoran",
+      "weight": 5.234
+    },
+    {
+      "term": "nasi",
+      "weight": 5.138
+    },
+    {
+      "term": "hameediyah",
+      "weight": 4.832
+    },
+    {
+      "term": "madam",
+      "weight": 4.768
+    },
+    {
+      "term": "madam kwan",
+      "weight": 4.768
+    },
+    {
+      "term": "kwan",
+      "weight": 4.716
+    },
+    {
+      "term": "briyani",
+      "weight": 4.582
+    },
+    {
+      "term": "hameediyah briyani",
+      "weight": 4.496
+    },
+    {
+      "term": "discovery",
+      "weight": 4.467
+    },
+    {
+      "term": "murni discovery",
+      "weight": 4.467
+    },
+    {
+      "term": "oriental kopi",
+      "weight": 4.455
+    },
+    {
+      "term": "oriental",
+      "weight": 4.455
+    },
+    {
+      "term": "murni",
+      "weight": 4.405
+    },
+    {
+      "term": "railcoffee",
+      "weight": 4.359
+    },
+    {
+      "term": "kopi",
+      "weight": 4.314
+    },
+    {
+      "term": "kluang railcoffee",
+      "weight": 4.235
+    },
+    {
+      "term": "kluang",
+      "weight": 4.202
+    },
+    {
+      "term": "kayu",
+      "weight": 3.946
+    },
+    {
+      "term": "restoran kayu",
+      "weight": 3.858
+    },
+    {
+      "term": "hock",
+      "weight": 3.738
+    },
+    {
+      "term": "nasi kandar",
+      "weight": 3.338
+    },
+    {
+      "term": "kandar",
+      "weight": 3.338
+    },
+    {
+      "term": "ina",
+      "weight": 3.276
+    }
+  ],
+  "Food & drinks||Restaurant & Cafe": [
+    {
+      "term": "papparich",
+      "weight": 8.741
+    },
+    {
+      "term": "sushiro",
+      "weight": 6.753
+    },
+    {
+      "term": "cafe",
+      "weight": 6.479
+    },
+    {
+      "term": "sushiro malaysia",
+      "weight": 5.946
+    },
+    {
+      "term": "bar plaza",
+      "weight": 5.052
+    },
+    {
+      "term": "bistro",
+      "weight": 4.995
+    },
+    {
+      "term": "bar",
+      "weight": 4.88
+    },
+    {
+      "term": "serai",
+      "weight": 4.743
+    },
+    {
+      "term": "sushi",
+      "weight": 4.683
+    },
+    {
+      "term": "topokki",
+      "weight": 4.639
+    },
+    {
+      "term": "serai restaurant",
+      "weight": 4.569
+    },
+    {
+      "term": "yakiniku",
+      "weight": 4.515
+    },
+    {
+      "term": "dookki topokki",
+      "weight": 4.414
+    },
+    {
+      "term": "dookki",
+      "weight": 4.414
+    },
+    {
+      "term": "genki sushi",
+      "weight": 4.406
+    },
+    {
+      "term": "genki",
+      "weight": 4.406
+    },
+    {
+      "term": "restaurant",
+      "weight": 4.353
+    },
+    {
+      "term": "suki",
+      "weight": 4.332
+    },
+    {
+      "term": "like",
+      "weight": 4.311
+    },
+    {
+      "term": "yakiniku like",
+      "weight": 4.311
+    },
+    {
+      "term": "suki ya",
+      "weight": 4.228
+    },
+    {
+      "term": "plaza",
+      "weight": 4.141
+    },
+    {
+      "term": "rice shop",
+      "weight": 4.056
+    },
+    {
+      "term": "nippori",
+      "weight": 4.0
+    }
+  ],
+  "Groceries||Convenience Store (99 Speedmart / 7-Eleven / FamilyMart)": [
+    {
+      "term": "café",
+      "weight": 8.591
+    },
+    {
+      "term": "mart",
+      "weight": 8.023
+    },
+    {
+      "term": "familymart",
+      "weight": 6.642
+    },
+    {
+      "term": "speedmart",
+      "weight": 5.708
+    },
+    {
+      "term": "mynews",
+      "weight": 5.48
+    },
+    {
+      "term": "familymart malaysia",
+      "weight": 5.322
+    },
+    {
+      "term": "mynews com",
+      "weight": 5.293
+    },
+    {
+      "term": "select",
+      "weight": 4.973
+    },
+    {
+      "term": "shell select",
+      "weight": 4.973
+    },
+    {
+      "term": "kedai",
+      "weight": 4.386
+    },
+    {
+      "term": "shell",
+      "weight": 4.058
+    },
+    {
+      "term": "mix store",
+      "weight": 3.835
+    },
+    {
+      "term": "store convenience",
+      "weight": 3.835
+    },
+    {
+      "term": "convenience",
+      "weight": 3.77
+    },
+    {
+      "term": "mesra petronas",
+      "weight": 3.715
+    },
+    {
+      "term": "kedai mesra",
+      "weight": 3.715
+    },
+    {
+      "term": "bilabila",
+      "weight": 3.335
+    },
+    {
+      "term": "mix",
+      "weight": 3.266
+    },
+    {
+      "term": "bilabila mart",
+      "weight": 3.224
+    },
+    {
+      "term": "mesra",
+      "weight": 3.213
+    },
+    {
+      "term": "happy mart",
+      "weight": 3.117
+    }
+  ],
+  "Groceries||Household & Cleaning Supplies": [
+    {
+      "term": "ninso",
+      "weight": 8.97
+    },
+    {
+      "term": "supplies",
+      "weight": 6.55
+    },
+    {
+      "term": "shop malaysia",
+      "weight": 5.682
+    },
+    {
+      "term": "diy",
+      "weight": 5.599
+    },
+    {
+      "term": "mr diy",
+      "weight": 5.491
+    },
+    {
+      "term": "dobi",
+      "weight": 4.778
+    },
+    {
+      "term": "washingpro",
+      "weight": 4.7
+    },
+    {
+      "term": "laundromat",
+      "weight": 4.585
+    },
+    {
+      "term": "washingpro laundromat",
+      "weight": 4.585
+    },
+    {
+      "term": "eco",
+      "weight": 4.279
+    },
+    {
+      "term": "clean",
+      "weight": 4.207
+    },
+    {
+      "term": "eco shop",
+      "weight": 4.148
+    },
+    {
+      "term": "clean supplies",
+      "weight": 4.092
+    },
+    {
+      "term": "daiso japan",
+      "weight": 4.063
+    },
+    {
+      "term": "japan",
+      "weight": 4.063
+    },
+    {
+      "term": "daiso",
+      "weight": 4.063
+    },
+    {
+      "term": "dettol",
+      "weight": 4.027
+    },
+    {
+      "term": "care store",
+      "weight": 3.976
+    },
+    {
+      "term": "dettol care",
+      "weight": 3.976
+    },
+    {
+      "term": "soap",
+      "weight": 3.584
+    },
+    {
+      "term": "johnson",
+      "weight": 3.453
+    },
+    {
+      "term": "sc johnson",
+      "weight": 3.389
+    },
+    {
+      "term": "johnson outlet",
+      "weight": 3.353
+    },
+    {
+      "term": "hardware soap",
+      "weight": 3.15
+    }
+  ],
+  "Groceries||Supermarket & Hypermarket": [
+    {
+      "term": "grocer",
+      "weight": 7.857
+    },
+    {
+      "term": "hypermarket",
+      "weight": 6.941
+    },
+    {
+      "term": "lotus malaysia",
+      "weight": 5.748
+    },
+    {
+      "term": "lotus",
+      "weight": 5.709
+    },
+    {
+      "term": "aeon big",
+      "weight": 5.449
+    },
+    {
+      "term": "heromarket",
+      "weight": 5.372
+    },
+    {
+      "term": "servay",
+      "weight": 5.003
+    },
+    {
+      "term": "servay sabah",
+      "weight": 5.003
+    },
+    {
+      "term": "don",
+      "weight": 4.862
+    },
+    {
+      "term": "big",
+      "weight": 4.632
+    },
+    {
+      "term": "qra foods",
+      "weight": 4.584
+    },
+    {
+      "term": "qra",
+      "weight": 4.584
+    },
+    {
+      "term": "foods",
+      "weight": 4.584
+    },
+    {
+      "term": "mart",
+      "weight": 4.37
+    },
+    {
+      "term": "mercato",
+      "weight": 4.349
+    },
+    {
+      "term": "mercato pavilion",
+      "weight": 4.349
+    },
+    {
+      "term": "everrise",
+      "weight": 4.105
+    },
+    {
+      "term": "everrise sarawak",
+      "weight": 4.105
+    },
+    {
+      "term": "jaya grocer",
+      "weight": 3.837
+    },
+    {
+      "term": "rosyam",
+      "weight": 3.615
+    },
+    {
+      "term": "econsave",
+      "weight": 3.501
+    },
+    {
+      "term": "nsk trade",
+      "weight": 3.479
+    },
+    {
+      "term": "nsk",
+      "weight": 3.479
+    },
+    {
+      "term": "trade city",
+      "weight": 3.479
+    },
+    {
+      "term": "giant",
+      "weight": 3.438
+    }
+  ],
+  "Groceries||Wet Market & Fresh Produce": [
+    {
+      "term": "pasar",
+      "weight": 10.533
+    },
+    {
+      "term": "myfishman",
+      "weight": 8.673
+    },
+    {
+      "term": "fresh",
+      "weight": 6.023
+    },
+    {
+      "term": "market",
+      "weight": 5.514
+    },
+    {
+      "term": "borong",
+      "weight": 4.81
+    },
+    {
+      "term": "segar",
+      "weight": 4.021
+    },
+    {
+      "term": "chong hing",
+      "weight": 3.129
+    },
+    {
+      "term": "sin chong",
+      "weight": 3.129
+    },
+    {
+      "term": "hing",
+      "weight": 3.106
+    },
+    {
+      "term": "hing seafood",
+      "weight": 3.081
+    },
+    {
+      "term": "wet",
+      "weight": 3.071
+    },
+    {
+      "term": "wet market",
+      "weight": 3.071
+    },
+    {
+      "term": "sin",
+      "weight": 3.071
+    },
+    {
+      "term": "seafood",
+      "weight": 3.027
+    },
+    {
+      "term": "kepong",
+      "weight": 2.991
+    },
+    {
+      "term": "sayur segar",
+      "weight": 2.913
+    },
+    {
+      "term": "borong sayur",
+      "weight": 2.913
+    },
+    {
+      "term": "sayur",
+      "weight": 2.912
+    },
+    {
+      "term": "kepong wet",
+      "weight": 2.835
+    },
+    {
+      "term": "segi",
+      "weight": 2.617
+    },
+    {
+      "term": "segi fresh",
+      "weight": 2.617
+    },
+    {
+      "term": "kajang",
+      "weight": 2.548
+    },
+    {
+      "term": "fresh market",
+      "weight": 2.529
+    },
+    {
+      "term": "ttdi",
+      "weight": 2.501
+    },
+    {
+      "term": "chong",
+      "weight": 2.454
+    }
+  ],
+  "Health & medical||Clinic & GP": [
+    {
+      "term": "klinik",
+      "weight": 7.297
+    },
+    {
+      "term": "poliklinik",
+      "weight": 6.184
+    },
+    {
+      "term": "careclinics healthcare",
+      "weight": 5.282
+    },
+    {
+      "term": "careclinics",
+      "weight": 5.282
+    },
+    {
+      "term": "clinic",
+      "weight": 5.132
+    },
+    {
+      "term": "mediviron",
+      "weight": 5.084
+    },
+    {
+      "term": "telehealth",
+      "weight": 4.96
+    },
+    {
+      "term": "doctoroncall",
+      "weight": 4.886
+    },
+    {
+      "term": "doctoroncall telehealth",
+      "weight": 4.817
+    },
+    {
+      "term": "physiotherapy",
+      "weight": 4.736
+    },
+    {
+      "term": "zahran",
+      "weight": 4.613
+    },
+    {
+      "term": "megaklinik",
+      "weight": 4.613
+    },
+    {
+      "term": "megaklinik zahran",
+      "weight": 4.613
+    },
+    {
+      "term": "chiropractic",
+      "weight": 4.514
+    },
+    {
+      "term": "alty",
+      "weight": 4.486
+    },
+    {
+      "term": "healthcare",
+      "weight": 4.417
+    },
+    {
+      "term": "bewell",
+      "weight": 4.415
+    },
+    {
+      "term": "bewell physiotherapy",
+      "weight": 4.415
+    },
+    {
+      "term": "alty chiropractic",
+      "weight": 4.162
+    },
+    {
+      "term": "damai",
+      "weight": 3.69
+    },
+    {
+      "term": "poliklinik damai",
+      "weight": 3.474
+    },
+    {
+      "term": "klinik reddy",
+      "weight": 3.425
+    },
+    {
+      "term": "reddy",
+      "weight": 3.425
+    },
+    {
+      "term": "mediviron poliklinik",
+      "weight": 3.32
+    },
+    {
+      "term": "health clinic",
+      "weight": 3.07
+    }
+  ],
+  "Health & medical||Dental & Optical": [
+    {
+      "term": "dental",
+      "weight": 11.552
+    },
+    {
+      "term": "eyewear",
+      "weight": 7.095
+    },
+    {
+      "term": "owndays",
+      "weight": 6.341
+    },
+    {
+      "term": "lenskart",
+      "weight": 6.264
+    },
+    {
+      "term": "lenskart malaysia",
+      "weight": 6.187
+    },
+    {
+      "term": "owndays malaysia",
+      "weight": 5.574
+    },
+    {
+      "term": "glasses",
+      "weight": 5.461
+    },
+    {
+      "term": "pott",
+      "weight": 4.579
+    },
+    {
+      "term": "pott glasses",
+      "weight": 4.461
+    },
+    {
+      "term": "optical",
+      "weight": 4.346
+    },
+    {
+      "term": "mog",
+      "weight": 4.032
+    },
+    {
+      "term": "vision",
+      "weight": 4.011
+    },
+    {
+      "term": "mog eyewear",
+      "weight": 3.74
+    },
+    {
+      "term": "look",
+      "weight": 3.592
+    },
+    {
+      "term": "look eyewear",
+      "weight": 3.592
+    },
+    {
+      "term": "space",
+      "weight": 3.2
+    },
+    {
+      "term": "vision space",
+      "weight": 3.176
+    },
+    {
+      "term": "optometrist",
+      "weight": 3.157
+    },
+    {
+      "term": "space optometrist",
+      "weight": 3.157
+    },
+    {
+      "term": "dental treatment",
+      "weight": 3.041
+    },
+    {
+      "term": "medical dental",
+      "weight": 3.031
+    },
+    {
+      "term": "focus",
+      "weight": 2.93
+    },
+    {
+      "term": "focus point",
+      "weight": 2.93
+    },
+    {
+      "term": "point optical",
+      "weight": 2.93
+    }
+  ],
+  "Health & medical||Full Medical Checkup (LHDN)": [
+    {
+      "term": "checkup",
+      "weight": 8.823
+    },
+    {
+      "term": "screening",
+      "weight": 8.069
+    },
+    {
+      "term": "medical checkup",
+      "weight": 7.532
+    },
+    {
+      "term": "pathlab",
+      "weight": 6.558
+    },
+    {
+      "term": "pathlab malaysia",
+      "weight": 6.246
+    },
+    {
+      "term": "medical",
+      "weight": 5.919
+    },
+    {
+      "term": "wellness",
+      "weight": 5.56
+    },
+    {
+      "term": "innoquest",
+      "weight": 4.679
+    },
+    {
+      "term": "checkup lhdn",
+      "weight": 4.615
+    },
+    {
+      "term": "innoquest diagnostics",
+      "weight": 4.561
+    },
+    {
+      "term": "diagnostics",
+      "weight": 4.561
+    },
+    {
+      "term": "pathology",
+      "weight": 4.383
+    },
+    {
+      "term": "gribbles",
+      "weight": 4.383
+    },
+    {
+      "term": "gribbles pathology",
+      "weight": 4.383
+    },
+    {
+      "term": "wellness screening",
+      "weight": 4.106
+    },
+    {
+      "term": "health",
+      "weight": 3.929
+    },
+    {
+      "term": "lhdn",
+      "weight": 3.321
+    },
+    {
+      "term": "healthcare screening",
+      "weight": 2.9
+    },
+    {
+      "term": "bp healthcare",
+      "weight": 2.9
+    },
+    {
+      "term": "beacon",
+      "weight": 2.737
+    },
+    {
+      "term": "beacon wellness",
+      "weight": 2.737
+    }
+  ],
+  "Health & medical||Gym, Sports & Fitness": [
+    {
+      "term": "fitness",
+      "weight": 12.264
+    },
+    {
+      "term": "flyproject",
+      "weight": 9.365
+    },
+    {
+      "term": "sports",
+      "weight": 7.907
+    },
+    {
+      "term": "decathlon",
+      "weight": 7.185
+    },
+    {
+      "term": "decathlon malaysia",
+      "weight": 7.01
+    },
+    {
+      "term": "badminton",
+      "weight": 5.281
+    },
+    {
+      "term": "gym",
+      "weight": 5.229
+    },
+    {
+      "term": "courtsite badminton",
+      "weight": 5.008
+    },
+    {
+      "term": "courtsite",
+      "weight": 5.008
+    },
+    {
+      "term": "fit",
+      "weight": 4.808
+    },
+    {
+      "term": "babel",
+      "weight": 4.804
+    },
+    {
+      "term": "babel fit",
+      "weight": 4.751
+    },
+    {
+      "term": "court",
+      "weight": 4.191
+    },
+    {
+      "term": "sports direct",
+      "weight": 3.181
+    },
+    {
+      "term": "climbing",
+      "weight": 3.011
+    },
+    {
+      "term": "climbing gym",
+      "weight": 2.842
+    },
+    {
+      "term": "pickleball",
+      "weight": 2.769
+    },
+    {
+      "term": "pickleball court",
+      "weight": 2.701
+    },
+    {
+      "term": "court booking",
+      "weight": 2.687
+    },
+    {
+      "term": "equipment",
+      "weight": 2.582
+    },
+    {
+      "term": "booking kl",
+      "weight": 2.568
+    },
+    {
+      "term": "anytime fitness",
+      "weight": 2.565
+    },
+    {
+      "term": "anytime",
+      "weight": 2.565
+    }
+  ],
+  "Health & medical||Hospital & Specialist": [
+    {
+      "term": "hospital",
+      "weight": 12.191
+    },
+    {
+      "term": "sjmc",
+      "weight": 5.814
+    },
+    {
+      "term": "sjmc subang",
+      "weight": 5.551
+    },
+    {
+      "term": "medical centre",
+      "weight": 5.492
+    },
+    {
+      "term": "specialist",
+      "weight": 5.447
+    },
+    {
+      "term": "medical",
+      "weight": 5.433
+    },
+    {
+      "term": "centre",
+      "weight": 4.541
+    },
+    {
+      "term": "treatment",
+      "weight": 3.821
+    },
+    {
+      "term": "hospital kl",
+      "weight": 3.641
+    },
+    {
+      "term": "diseases",
+      "weight": 3.223
+    },
+    {
+      "term": "heart",
+      "weight": 3.187
+    },
+    {
+      "term": "national heart",
+      "weight": 3.09
+    },
+    {
+      "term": "national",
+      "weight": 3.077
+    },
+    {
+      "term": "ijn national",
+      "weight": 3.077
+    },
+    {
+      "term": "diseases treatment",
+      "weight": 3.04
+    },
+    {
+      "term": "heart institute",
+      "weight": 3.001
+    },
+    {
+      "term": "institute",
+      "weight": 2.951
+    },
+    {
+      "term": "medical diseases",
+      "weight": 2.882
+    },
+    {
+      "term": "damansara specialist",
+      "weight": 2.841
+    },
+    {
+      "term": "kpj",
+      "weight": 2.829
+    },
+    {
+      "term": "sunway medical",
+      "weight": 2.819
+    },
+    {
+      "term": "kpj damansara",
+      "weight": 2.802
+    }
+  ],
+  "Health & medical||Pharmacy & Medicine": [
+    {
+      "term": "pharmacy",
+      "weight": 17.493
+    },
+    {
+      "term": "multicare",
+      "weight": 7.575
+    },
+    {
+      "term": "sunway multicare",
+      "weight": 6.062
+    },
+    {
+      "term": "sunway",
+      "weight": 4.261
+    },
+    {
+      "term": "complete checkup",
+      "weight": 3.449
+    },
+    {
+      "term": "vaccine",
+      "weight": 2.872
+    },
+    {
+      "term": "checkup",
+      "weight": 2.738
+    },
+    {
+      "term": "alpro",
+      "weight": 2.727
+    },
+    {
+      "term": "alpro pharmacy",
+      "weight": 2.664
+    },
+    {
+      "term": "caring pharmacy",
+      "weight": 2.652
+    },
+    {
+      "term": "caring",
+      "weight": 2.652
+    },
+    {
+      "term": "constant",
+      "weight": 2.644
+    },
+    {
+      "term": "constant pharmacy",
+      "weight": 2.611
+    },
+    {
+      "term": "complete",
+      "weight": 2.607
+    },
+    {
+      "term": "watsons pharmacy",
+      "weight": 2.45
+    },
+    {
+      "term": "big pharmacy",
+      "weight": 2.384
+    },
+    {
+      "term": "watsons",
+      "weight": 2.326
+    },
+    {
+      "term": "pharmacy payment",
+      "weight": 2.307
+    },
+    {
+      "term": "checkup vaccine",
+      "weight": 2.26
+    },
+    {
+      "term": "multicare pharmacy",
+      "weight": 2.222
+    },
+    {
+      "term": "medical complete",
+      "weight": 2.205
+    },
+    {
+      "term": "big",
+      "weight": 2.169
+    },
+    {
+      "term": "guardian",
+      "weight": 2.072
+    },
+    {
+      "term": "guardian pharmacy",
+      "weight": 2.017
+    }
+  ],
+  "Housing & property||Cukai Pintu & Cukai Tanah": [
+    {
+      "term": "cukai",
+      "weight": 11.747
+    },
+    {
+      "term": "assessment",
+      "weight": 7.734
+    },
+    {
+      "term": "assessment tax",
+      "weight": 4.98
+    },
+    {
+      "term": "pintu",
+      "weight": 4.972
+    },
+    {
+      "term": "cukai pintu",
+      "weight": 4.945
+    },
+    {
+      "term": "taksiran",
+      "weight": 4.272
+    },
+    {
+      "term": "cukai taksiran",
+      "weight": 4.198
+    },
+    {
+      "term": "dbkk",
+      "weight": 3.691
+    },
+    {
+      "term": "dbkk assessment",
+      "weight": 3.559
+    },
+    {
+      "term": "assessment rate",
+      "weight": 3.559
+    },
+    {
+      "term": "tanah",
+      "weight": 3.166
+    },
+    {
+      "term": "cukai tanah",
+      "weight": 2.99
+    },
+    {
+      "term": "harta",
+      "weight": 2.945
+    },
+    {
+      "term": "cukai harta",
+      "weight": 2.888
+    },
+    {
+      "term": "mbjb",
+      "weight": 2.837
+    },
+    {
+      "term": "mbsj",
+      "weight": 2.782
+    },
+    {
+      "term": "mbjb cukai",
+      "weight": 2.75
+    },
+    {
+      "term": "mbpp",
+      "weight": 2.737
+    },
+    {
+      "term": "mbsj assessment",
+      "weight": 2.688
+    },
+    {
+      "term": "mbpp assessment",
+      "weight": 2.643
+    },
+    {
+      "term": "dbkl cukai",
+      "weight": 2.558
+    },
+    {
+      "term": "rate",
+      "weight": 2.551
+    },
+    {
+      "term": "ptg selangor",
+      "weight": 2.366
+    },
+    {
+      "term": "mpkj",
+      "weight": 2.333
+    }
+  ],
+  "Housing & property||Furniture & Appliances": [
+    {
+      "term": "ikea",
+      "weight": 8.302
+    },
+    {
+      "term": "coway",
+      "weight": 6.533
+    },
+    {
+      "term": "hooga",
+      "weight": 6.501
+    },
+    {
+      "term": "coway malaysia",
+      "weight": 6.177
+    },
+    {
+      "term": "ssf",
+      "weight": 6.104
+    },
+    {
+      "term": "ssf home",
+      "weight": 6.104
+    },
+    {
+      "term": "ogawa",
+      "weight": 5.834
+    },
+    {
+      "term": "hooga malaysia",
+      "weight": 5.826
+    },
+    {
+      "term": "ogawa malaysia",
+      "weight": 5.64
+    },
+    {
+      "term": "cuckoo",
+      "weight": 5.504
+    },
+    {
+      "term": "cuckoo international",
+      "weight": 5.088
+    },
+    {
+      "term": "uchi",
+      "weight": 4.905
+    },
+    {
+      "term": "akemi uchi",
+      "weight": 4.789
+    },
+    {
+      "term": "akemi",
+      "weight": 4.789
+    },
+    {
+      "term": "international",
+      "weight": 4.512
+    },
+    {
+      "term": "puricare",
+      "weight": 3.789
+    },
+    {
+      "term": "home",
+      "weight": 3.735
+    },
+    {
+      "term": "lg puricare",
+      "weight": 3.712
+    },
+    {
+      "term": "puricare rental",
+      "weight": 3.6
+    },
+    {
+      "term": "ikea damansara",
+      "weight": 3.577
+    },
+    {
+      "term": "purifier",
+      "weight": 3.316
+    },
+    {
+      "term": "koil",
+      "weight": 3.286
+    },
+    {
+      "term": "king koil",
+      "weight": 3.286
+    }
+  ],
+  "Housing & property||Home Loan / Mortgage": [
+    {
+      "term": "mortgage",
+      "weight": 9.075
+    },
+    {
+      "term": "homeflexi",
+      "weight": 7.785
+    },
+    {
+      "term": "cimb homeflexi",
+      "weight": 7.69
+    },
+    {
+      "term": "loan",
+      "weight": 6.294
+    },
+    {
+      "term": "housing loan",
+      "weight": 6.066
+    },
+    {
+      "term": "housing",
+      "weight": 6.06
+    },
+    {
+      "term": "home",
+      "weight": 6.025
+    },
+    {
+      "term": "home financing",
+      "weight": 5.816
+    },
+    {
+      "term": "bank mortgage",
+      "weight": 4.736
+    },
+    {
+      "term": "leong mortgage",
+      "weight": 4.679
+    },
+    {
+      "term": "financing",
+      "weight": 4.6
+    },
+    {
+      "term": "cimb",
+      "weight": 4.256
+    },
+    {
+      "term": "ambank home",
+      "weight": 3.91
+    },
+    {
+      "term": "rhb home",
+      "weight": 3.813
+    },
+    {
+      "term": "home loan",
+      "weight": 3.749
+    },
+    {
+      "term": "maybank housing",
+      "weight": 3.585
+    },
+    {
+      "term": "ambank",
+      "weight": 3.414
+    },
+    {
+      "term": "public bank",
+      "weight": 3.275
+    },
+    {
+      "term": "lppsa",
+      "weight": 3.237
+    },
+    {
+      "term": "lppsa housing",
+      "weight": 2.987
+    },
+    {
+      "term": "public",
+      "weight": 2.943
+    },
+    {
+      "term": "hong leong",
+      "weight": 2.941
+    },
+    {
+      "term": "hong",
+      "weight": 2.936
+    },
+    {
+      "term": "leong",
+      "weight": 2.936
+    },
+    {
+      "term": "bank",
+      "weight": 2.771
+    }
+  ],
+  "Housing & property||Home Repair & Maintenance": [
+    {
+      "term": "aircond",
+      "weight": 5.759
+    },
+    {
+      "term": "paint",
+      "weight": 5.088
+    },
+    {
+      "term": "mister",
+      "weight": 4.433
+    },
+    {
+      "term": "mister paint",
+      "weight": 4.433
+    },
+    {
+      "term": "paint kl",
+      "weight": 4.433
+    },
+    {
+      "term": "locksmith",
+      "weight": 4.34
+    },
+    {
+      "term": "repairs",
+      "weight": 4.145
+    },
+    {
+      "term": "jam",
+      "weight": 4.063
+    },
+    {
+      "term": "handyman",
+      "weight": 4.06
+    },
+    {
+      "term": "pest",
+      "weight": 3.955
+    },
+    {
+      "term": "control",
+      "weight": 3.955
+    },
+    {
+      "term": "pest control",
+      "weight": 3.955
+    },
+    {
+      "term": "plumber",
+      "weight": 3.884
+    },
+    {
+      "term": "recomn",
+      "weight": 3.778
+    },
+    {
+      "term": "com plumber",
+      "weight": 3.773
+    },
+    {
+      "term": "repair",
+      "weight": 3.77
+    },
+    {
+      "term": "mr handyman",
+      "weight": 3.763
+    },
+    {
+      "term": "rentokil pest",
+      "weight": 3.744
+    },
+    {
+      "term": "rentokil",
+      "weight": 3.744
+    },
+    {
+      "term": "recomn com",
+      "weight": 3.703
+    },
+    {
+      "term": "handyman repairs",
+      "weight": 3.673
+    },
+    {
+      "term": "plumbing",
+      "weight": 3.569
+    },
+    {
+      "term": "aircond service",
+      "weight": 3.254
+    }
+  ],
+  "Housing & property||Rent": [
+    {
+      "term": "rent",
+      "weight": 7.498
+    },
+    {
+      "term": "rental",
+      "weight": 7.398
+    },
+    {
+      "term": "living",
+      "weight": 6.043
+    },
+    {
+      "term": "sewa",
+      "weight": 5.856
+    },
+    {
+      "term": "utopia living",
+      "weight": 4.696
+    },
+    {
+      "term": "utopia",
+      "weight": 4.696
+    },
+    {
+      "term": "speedhome",
+      "weight": 4.443
+    },
+    {
+      "term": "speedhome rental",
+      "weight": 4.443
+    },
+    {
+      "term": "rental transfer",
+      "weight": 4.251
+    },
+    {
+      "term": "rumah bulanan",
+      "weight": 3.261
+    },
+    {
+      "term": "sewa rumah",
+      "weight": 3.261
+    },
+    {
+      "term": "sewa residensi",
+      "weight": 3.139
+    },
+    {
+      "term": "bilik sewa",
+      "weight": 3.125
+    },
+    {
+      "term": "bilik",
+      "weight": 3.114
+    },
+    {
+      "term": "rumah",
+      "weight": 3.06
+    },
+    {
+      "term": "ibilik",
+      "weight": 2.965
+    },
+    {
+      "term": "ibilik room",
+      "weight": 2.93
+    },
+    {
+      "term": "room rent",
+      "weight": 2.919
+    },
+    {
+      "term": "residensi",
+      "weight": 2.789
+    },
+    {
+      "term": "wetopia",
+      "weight": 2.755
+    },
+    {
+      "term": "room",
+      "weight": 2.732
+    },
+    {
+      "term": "living rent",
+      "weight": 2.731
+    },
+    {
+      "term": "wetopia living",
+      "weight": 2.723
+    },
+    {
+      "term": "bulanan",
+      "weight": 2.584
+    },
+    {
+      "term": "house rental",
+      "weight": 2.529
+    }
+  ],
+  "Insurance & Takaful||Education Insurance": [
+    {
+      "term": "education",
+      "weight": 7.694
+    },
+    {
+      "term": "pruedu",
+      "weight": 5.823
+    },
+    {
+      "term": "plan",
+      "weight": 5.73
+    },
+    {
+      "term": "edusmart",
+      "weight": 5.561
+    },
+    {
+      "term": "prudential pruedu",
+      "weight": 5.413
+    },
+    {
+      "term": "aia edusmart",
+      "weight": 5.127
+    },
+    {
+      "term": "prudential",
+      "weight": 4.761
+    },
+    {
+      "term": "insurance",
+      "weight": 4.76
+    },
+    {
+      "term": "smartedu",
+      "weight": 4.545
+    },
+    {
+      "term": "eastern smartedu",
+      "weight": 4.371
+    },
+    {
+      "term": "aia",
+      "weight": 4.276
+    },
+    {
+      "term": "educare",
+      "weight": 4.104
+    },
+    {
+      "term": "eduguard",
+      "weight": 3.48
+    },
+    {
+      "term": "eduguard plan",
+      "weight": 3.333
+    },
+    {
+      "term": "great",
+      "weight": 3.323
+    },
+    {
+      "term": "ilmu",
+      "weight": 3.298
+    },
+    {
+      "term": "eastern",
+      "weight": 3.253
+    },
+    {
+      "term": "great eastern",
+      "weight": 3.253
+    },
+    {
+      "term": "leong msig",
+      "weight": 3.213
+    },
+    {
+      "term": "msig educare",
+      "weight": 3.204
+    },
+    {
+      "term": "education plan",
+      "weight": 3.172
+    },
+    {
+      "term": "prubsn ilmu",
+      "weight": 3.161
+    },
+    {
+      "term": "allianz eduguard",
+      "weight": 3.153
+    },
+    {
+      "term": "takaful",
+      "weight": 3.059
+    },
+    {
+      "term": "ilmu education",
+      "weight": 3.043
+    }
+  ],
+  "Insurance & Takaful||Life Insurance / Takaful": [
+    {
+      "term": "takaful",
+      "weight": 10.83
+    },
+    {
+      "term": "life",
+      "weight": 8.99
+    },
+    {
+      "term": "assurance",
+      "weight": 6.289
+    },
+    {
+      "term": "manulife malaysia",
+      "weight": 6.132
+    },
+    {
+      "term": "insurance",
+      "weight": 5.966
+    },
+    {
+      "term": "aia malaysia",
+      "weight": 5.565
+    },
+    {
+      "term": "manulife",
+      "weight": 5.319
+    },
+    {
+      "term": "aia",
+      "weight": 4.772
+    },
+    {
+      "term": "life insurance",
+      "weight": 4.55
+    },
+    {
+      "term": "ammetlife",
+      "weight": 4.542
+    },
+    {
+      "term": "ammetlife insurance",
+      "weight": 4.128
+    },
+    {
+      "term": "leong assurance",
+      "weight": 3.619
+    },
+    {
+      "term": "zurich takaful",
+      "weight": 3.311
+    },
+    {
+      "term": "prudential assurance",
+      "weight": 3.294
+    },
+    {
+      "term": "assurance malaysia",
+      "weight": 3.248
+    },
+    {
+      "term": "mcis",
+      "weight": 3.179
+    },
+    {
+      "term": "mcis life",
+      "weight": 3.158
+    },
+    {
+      "term": "fwd takaful",
+      "weight": 3.122
+    },
+    {
+      "term": "prubsn takaful",
+      "weight": 3.046
+    },
+    {
+      "term": "eastern takaful",
+      "weight": 3.021
+    },
+    {
+      "term": "prudential",
+      "weight": 2.807
+    },
+    {
+      "term": "fwd",
+      "weight": 2.766
+    },
+    {
+      "term": "prubsn",
+      "weight": 2.671
+    },
+    {
+      "term": "insurance takaful",
+      "weight": 2.566
+    }
+  ],
+  "Insurance & Takaful||Medical & Health Card": [
+    {
+      "term": "medical",
+      "weight": 6.467
+    },
+    {
+      "term": "healthinsured",
+      "weight": 6.158
+    },
+    {
+      "term": "allianz healthinsured",
+      "weight": 6.009
+    },
+    {
+      "term": "healthenrich",
+      "weight": 5.946
+    },
+    {
+      "term": "prubsn healthenrich",
+      "weight": 5.608
+    },
+    {
+      "term": "medicare",
+      "weight": 4.751
+    },
+    {
+      "term": "allianz",
+      "weight": 4.739
+    },
+    {
+      "term": "health",
+      "weight": 4.731
+    },
+    {
+      "term": "prubsn",
+      "weight": 4.586
+    },
+    {
+      "term": "eastern medicare",
+      "weight": 4.43
+    },
+    {
+      "term": "takaful",
+      "weight": 4.368
+    },
+    {
+      "term": "aia plus",
+      "weight": 4.009
+    },
+    {
+      "term": "plus health",
+      "weight": 3.961
+    },
+    {
+      "term": "med",
+      "weight": 3.788
+    },
+    {
+      "term": "medica",
+      "weight": 3.738
+    },
+    {
+      "term": "zurich medica",
+      "weight": 3.738
+    },
+    {
+      "term": "pruvalue",
+      "weight": 3.724
+    },
+    {
+      "term": "medical takaful",
+      "weight": 3.688
+    },
+    {
+      "term": "medica care",
+      "weight": 3.679
+    },
+    {
+      "term": "prudential pruvalue",
+      "weight": 3.55
+    },
+    {
+      "term": "card",
+      "weight": 3.52
+    },
+    {
+      "term": "pruvalue med",
+      "weight": 3.516
+    },
+    {
+      "term": "aia",
+      "weight": 3.443
+    },
+    {
+      "term": "etiqa medical",
+      "weight": 3.428
+    },
+    {
+      "term": "etiqa",
+      "weight": 3.274
+    }
+  ],
+  "Insurance & Takaful||Personal Accident": [
+    {
+      "term": "personal accident",
+      "weight": 6.009
+    },
+    {
+      "term": "accident",
+      "weight": 5.992
+    },
+    {
+      "term": "shield plus",
+      "weight": 5.341
+    },
+    {
+      "term": "shield",
+      "weight": 5.323
+    },
+    {
+      "term": "allianz shield",
+      "weight": 5.313
+    },
+    {
+      "term": "personal",
+      "weight": 4.724
+    },
+    {
+      "term": "allianz",
+      "weight": 4.208
+    },
+    {
+      "term": "plus",
+      "weight": 3.498
+    },
+    {
+      "term": "lonpac",
+      "weight": 3.072
+    },
+    {
+      "term": "protection",
+      "weight": 3.018
+    },
+    {
+      "term": "lonpac pa",
+      "weight": 3.014
+    },
+    {
+      "term": "protect",
+      "weight": 3.012
+    },
+    {
+      "term": "tune protect",
+      "weight": 3.012
+    },
+    {
+      "term": "chubb",
+      "weight": 3.0
+    },
+    {
+      "term": "pa protection",
+      "weight": 2.986
+    },
+    {
+      "term": "protect pa",
+      "weight": 2.905
+    },
+    {
+      "term": "chubb personal",
+      "weight": 2.891
+    },
+    {
+      "term": "msig personal",
+      "weight": 2.787
+    },
+    {
+      "term": "tune",
+      "weight": 2.783
+    },
+    {
+      "term": "sompo",
+      "weight": 2.776
+    },
+    {
+      "term": "sompo pa",
+      "weight": 2.776
+    },
+    {
+      "term": "guard",
+      "weight": 2.735
+    },
+    {
+      "term": "pa guard",
+      "weight": 2.735
+    },
+    {
+      "term": "msig",
+      "weight": 2.602
+    }
+  ],
+  "Investments & savings||ASB / Tabung Haji": [
+    {
+      "term": "asnb",
+      "weight": 9.137
+    },
+    {
+      "term": "tabung haji",
+      "weight": 5.73
+    },
+    {
+      "term": "tabung",
+      "weight": 5.73
+    },
+    {
+      "term": "haji",
+      "weight": 5.718
+    },
+    {
+      "term": "saham",
+      "weight": 5.54
+    },
+    {
+      "term": "amanah saham",
+      "weight": 5.492
+    },
+    {
+      "term": "amanah",
+      "weight": 5.032
+    },
+    {
+      "term": "asb",
+      "weight": 4.962
+    },
+    {
+      "term": "tng asnb",
+      "weight": 4.758
+    },
+    {
+      "term": "asnb transfer",
+      "weight": 3.828
+    },
+    {
+      "term": "thijari",
+      "weight": 3.23
+    },
+    {
+      "term": "myasnb",
+      "weight": 3.221
+    },
+    {
+      "term": "myasnb amanah",
+      "weight": 3.033
+    },
+    {
+      "term": "direct deposit",
+      "weight": 2.999
+    },
+    {
+      "term": "bumiputera",
+      "weight": 2.788
+    },
+    {
+      "term": "asnb amanah",
+      "weight": 2.783
+    },
+    {
+      "term": "saham bumiputera",
+      "weight": 2.765
+    },
+    {
+      "term": "deposit",
+      "weight": 2.733
+    },
+    {
+      "term": "thijari tabung",
+      "weight": 2.695
+    },
+    {
+      "term": "haji direct",
+      "weight": 2.576
+    },
+    {
+      "term": "tng",
+      "weight": 2.529
+    },
+    {
+      "term": "direct",
+      "weight": 2.496
+    },
+    {
+      "term": "transfer",
+      "weight": 1.849
+    }
+  ],
+  "Investments & savings||EPF Voluntary (i-Saraan)": [
+    {
+      "term": "epf",
+      "weight": 13.595
+    },
+    {
+      "term": "kwsp",
+      "weight": 10.278
+    },
+    {
+      "term": "contribution",
+      "weight": 7.949
+    },
+    {
+      "term": "voluntary",
+      "weight": 7.162
+    },
+    {
+      "term": "kwsp akaun",
+      "weight": 6.672
+    },
+    {
+      "term": "saraan",
+      "weight": 4.912
+    },
+    {
+      "term": "voluntary contribution",
+      "weight": 4.652
+    },
+    {
+      "term": "sayang",
+      "weight": 4.637
+    },
+    {
+      "term": "sayang epf",
+      "weight": 4.481
+    },
+    {
+      "term": "epf transfer",
+      "weight": 4.473
+    },
+    {
+      "term": "caruman",
+      "weight": 4.428
+    },
+    {
+      "term": "sukarela",
+      "weight": 4.428
+    },
+    {
+      "term": "caruman sukarela",
+      "weight": 4.428
+    },
+    {
+      "term": "kwsp caruman",
+      "weight": 4.39
+    },
+    {
+      "term": "akaun",
+      "weight": 4.221
+    },
+    {
+      "term": "self contribution",
+      "weight": 4.106
+    },
+    {
+      "term": "epf self",
+      "weight": 4.048
+    },
+    {
+      "term": "epf voluntary",
+      "weight": 3.749
+    },
+    {
+      "term": "epf saraan",
+      "weight": 3.516
+    },
+    {
+      "term": "contribution relief",
+      "weight": 3.474
+    },
+    {
+      "term": "saraan voluntary",
+      "weight": 3.428
+    },
+    {
+      "term": "self",
+      "weight": 2.952
+    },
+    {
+      "term": "relief",
+      "weight": 2.562
+    },
+    {
+      "term": "transfer",
+      "weight": 1.882
+    },
+    {
+      "term": "bucket epf",
+      "weight": 1.344
+    }
+  ],
+  "Investments & savings||PRS (Private Retirement Scheme)": [
+    {
+      "term": "prs",
+      "weight": 17.355
+    },
+    {
+      "term": "oneprs",
+      "weight": 7.046
+    },
+    {
+      "term": "kenanga oneprs",
+      "weight": 6.953
+    },
+    {
+      "term": "kenanga",
+      "weight": 6.556
+    },
+    {
+      "term": "mutual",
+      "weight": 4.695
+    },
+    {
+      "term": "mutual prs",
+      "weight": 4.639
+    },
+    {
+      "term": "public mutual",
+      "weight": 4.63
+    },
+    {
+      "term": "retirement",
+      "weight": 4.541
+    },
+    {
+      "term": "ppa",
+      "weight": 4.124
+    },
+    {
+      "term": "scheme",
+      "weight": 4.091
+    },
+    {
+      "term": "retirement scheme",
+      "weight": 4.012
+    },
+    {
+      "term": "private retirement",
+      "weight": 3.986
+    },
+    {
+      "term": "private",
+      "weight": 3.986
+    },
+    {
+      "term": "ppa private",
+      "weight": 3.77
+    },
+    {
+      "term": "prs deferred",
+      "weight": 3.73
+    },
+    {
+      "term": "deferred",
+      "weight": 3.73
+    },
+    {
+      "term": "deferred annuity",
+      "weight": 3.73
+    },
+    {
+      "term": "annuity",
+      "weight": 3.73
+    },
+    {
+      "term": "public",
+      "weight": 3.717
+    },
+    {
+      "term": "aham",
+      "weight": 3.519
+    },
+    {
+      "term": "prs growth",
+      "weight": 3.436
+    },
+    {
+      "term": "growth fund",
+      "weight": 3.427
+    },
+    {
+      "term": "growth",
+      "weight": 3.419
+    },
+    {
+      "term": "aham prs",
+      "weight": 3.402
+    }
+  ],
+  "Investments & savings||SSPN Savings": [
+    {
+      "term": "sspn",
+      "weight": 15.497
+    },
+    {
+      "term": "simpan sspn",
+      "weight": 8.228
+    },
+    {
+      "term": "simpan",
+      "weight": 8.218
+    },
+    {
+      "term": "deposit",
+      "weight": 6.652
+    },
+    {
+      "term": "savings",
+      "weight": 5.669
+    },
+    {
+      "term": "sspn deposit",
+      "weight": 3.503
+    },
+    {
+      "term": "sspn plus",
+      "weight": 3.452
+    },
+    {
+      "term": "plus savings",
+      "weight": 3.324
+    },
+    {
+      "term": "jompay simpan",
+      "weight": 3.254
+    },
+    {
+      "term": "ptptn simpan",
+      "weight": 3.249
+    },
+    {
+      "term": "maybank sspn",
+      "weight": 3.158
+    },
+    {
+      "term": "prime",
+      "weight": 3.117
+    },
+    {
+      "term": "sspn prime",
+      "weight": 3.104
+    },
+    {
+      "term": "simpanan pendidikan",
+      "weight": 2.832
+    },
+    {
+      "term": "simpanan",
+      "weight": 2.83
+    },
+    {
+      "term": "sspn simpanan",
+      "weight": 2.824
+    },
+    {
+      "term": "myptptn sspn",
+      "weight": 2.799
+    },
+    {
+      "term": "pendidikan",
+      "weight": 2.757
+    },
+    {
+      "term": "deposit relief",
+      "weight": 2.602
+    },
+    {
+      "term": "net deposit",
+      "weight": 2.602
+    },
+    {
+      "term": "myptptn",
+      "weight": 2.577
+    },
+    {
+      "term": "maybank",
+      "weight": 2.509
+    }
+  ],
+  "Investments & savings||Stocks, ETF & Crypto": [
+    {
+      "term": "moomoo",
+      "weight": 9.707
+    },
+    {
+      "term": "bursaanywhere",
+      "weight": 7.941
+    },
+    {
+      "term": "invest",
+      "weight": 7.388
+    },
+    {
+      "term": "crypto",
+      "weight": 5.691
+    },
+    {
+      "term": "luno",
+      "weight": 5.672
+    },
+    {
+      "term": "webull",
+      "weight": 5.629
+    },
+    {
+      "term": "fsmone",
+      "weight": 5.604
+    },
+    {
+      "term": "luno malaysia",
+      "weight": 5.493
+    },
+    {
+      "term": "stashaway",
+      "weight": 5.462
+    },
+    {
+      "term": "webull malaysia",
+      "weight": 5.392
+    },
+    {
+      "term": "fsmone malaysia",
+      "weight": 5.265
+    },
+    {
+      "term": "goinvest",
+      "weight": 5.119
+    },
+    {
+      "term": "stashaway malaysia",
+      "weight": 5.025
+    },
+    {
+      "term": "touch goinvest",
+      "weight": 4.813
+    },
+    {
+      "term": "rakuten",
+      "weight": 4.764
+    },
+    {
+      "term": "rakuten trade",
+      "weight": 4.764
+    },
+    {
+      "term": "touch",
+      "weight": 4.752
+    },
+    {
+      "term": "hata",
+      "weight": 4.357
+    },
+    {
+      "term": "hata crypto",
+      "weight": 4.357
+    },
+    {
+      "term": "trade",
+      "weight": 4.333
+    },
+    {
+      "term": "versa",
+      "weight": 3.231
+    },
+    {
+      "term": "versa invest",
+      "weight": 3.231
+    },
+    {
+      "term": "wahed",
+      "weight": 2.862
+    },
+    {
+      "term": "wahed invest",
+      "weight": 2.862
+    }
+  ],
+  "Loans, BNPL & Credit||BNPL (SPayLater / GrabPayLater / Atome)": [
+    {
+      "term": "grabpaylater",
+      "weight": 10.109
+    },
+    {
+      "term": "lazpaylater",
+      "weight": 9.662
+    },
+    {
+      "term": "paylater",
+      "weight": 7.467
+    },
+    {
+      "term": "atome",
+      "weight": 7.242
+    },
+    {
+      "term": "atome malaysia",
+      "weight": 7.086
+    },
+    {
+      "term": "bnpl",
+      "weight": 6.941
+    },
+    {
+      "term": "shopee spaylater",
+      "weight": 5.876
+    },
+    {
+      "term": "boost payflex",
+      "weight": 5.082
+    },
+    {
+      "term": "spaylater",
+      "weight": 5.076
+    },
+    {
+      "term": "payflex",
+      "weight": 5.069
+    },
+    {
+      "term": "shopee",
+      "weight": 4.846
+    },
+    {
+      "term": "split paylater",
+      "weight": 4.525
+    },
+    {
+      "term": "boost",
+      "weight": 4.131
+    },
+    {
+      "term": "riipay bnpl",
+      "weight": 3.933
+    },
+    {
+      "term": "riipay",
+      "weight": 3.933
+    },
+    {
+      "term": "tiktok paylater",
+      "weight": 3.692
+    },
+    {
+      "term": "tiktok",
+      "weight": 3.024
+    },
+    {
+      "term": "pay",
+      "weight": 2.702
+    },
+    {
+      "term": "split",
+      "weight": 2.305
+    },
+    {
+      "term": "lazpaylater payment",
+      "weight": 1.751
+    },
+    {
+      "term": "grabpaylater payment",
+      "weight": 1.653
+    },
+    {
+      "term": "kepada grabpaylater",
+      "weight": 1.618
+    }
+  ],
+  "Loans, BNPL & Credit||Credit Card Bill": [
+    {
+      "term": "card",
+      "weight": 9.841
+    },
+    {
+      "term": "gxbank flexicredit",
+      "weight": 6.492
+    },
+    {
+      "term": "visa",
+      "weight": 5.579
+    },
+    {
+      "term": "bank credit",
+      "weight": 5.501
+    },
+    {
+      "term": "flexicredit",
+      "weight": 5.492
+    },
+    {
+      "term": "credit",
+      "weight": 4.684
+    },
+    {
+      "term": "rhb world",
+      "weight": 4.104
+    },
+    {
+      "term": "world mastercard",
+      "weight": 4.104
+    },
+    {
+      "term": "mastercard",
+      "weight": 3.808
+    },
+    {
+      "term": "card payment",
+      "weight": 3.795
+    },
+    {
+      "term": "gxbank",
+      "weight": 3.739
+    },
+    {
+      "term": "world",
+      "weight": 3.55
+    },
+    {
+      "term": "signature",
+      "weight": 3.475
+    },
+    {
+      "term": "visa signature",
+      "weight": 3.475
+    },
+    {
+      "term": "maybank visa",
+      "weight": 3.475
+    },
+    {
+      "term": "ambank visa",
+      "weight": 3.458
+    },
+    {
+      "term": "visa platinum",
+      "weight": 3.328
+    },
+    {
+      "term": "platinum",
+      "weight": 3.296
+    },
+    {
+      "term": "octo card",
+      "weight": 3.092
+    },
+    {
+      "term": "aeon bank",
+      "weight": 2.92
+    },
+    {
+      "term": "mach",
+      "weight": 2.865
+    },
+    {
+      "term": "bank",
+      "weight": 2.847
+    },
+    {
+      "term": "ambank",
+      "weight": 2.816
+    },
+    {
+      "term": "aeon",
+      "weight": 2.771
+    },
+    {
+      "term": "amanah card",
+      "weight": 2.717
+    }
+  ],
+  "Loans, BNPL & Credit||Hire Purchase / Installment": [
+    {
+      "term": "installment",
+      "weight": 9.939
+    },
+    {
+      "term": "courts flexicredit",
+      "weight": 5.913
+    },
+    {
+      "term": "courts",
+      "weight": 5.842
+    },
+    {
+      "term": "flexicredit",
+      "weight": 5.44
+    },
+    {
+      "term": "credit service",
+      "weight": 5.257
+    },
+    {
+      "term": "flexipay",
+      "weight": 4.805
+    },
+    {
+      "term": "aeon credit",
+      "weight": 4.762
+    },
+    {
+      "term": "norman flexipay",
+      "weight": 4.541
+    },
+    {
+      "term": "credit",
+      "weight": 3.868
+    },
+    {
+      "term": "singer",
+      "weight": 3.455
+    },
+    {
+      "term": "singer malaysia",
+      "weight": 3.412
+    },
+    {
+      "term": "malaysia installment",
+      "weight": 3.33
+    },
+    {
+      "term": "switch easy",
+      "weight": 3.284
+    },
+    {
+      "term": "payment plan",
+      "weight": 3.263
+    },
+    {
+      "term": "service",
+      "weight": 3.259
+    },
+    {
+      "term": "easy payment",
+      "weight": 3.242
+    },
+    {
+      "term": "switch",
+      "weight": 3.139
+    },
+    {
+      "term": "aeon",
+      "weight": 3.128
+    },
+    {
+      "term": "plan",
+      "weight": 3.121
+    },
+    {
+      "term": "furniture",
+      "weight": 3.069
+    },
+    {
+      "term": "easy",
+      "weight": 2.982
+    },
+    {
+      "term": "plusone installment",
+      "weight": 2.96
+    },
+    {
+      "term": "senheng plusone",
+      "weight": 2.96
+    },
+    {
+      "term": "plusone",
+      "weight": 2.96
+    },
+    {
+      "term": "norman",
+      "weight": 2.905
+    }
+  ],
+  "Loans, BNPL & Credit||PTPTN Study Loan": [
+    {
+      "term": "ptptn",
+      "weight": 13.745
+    },
+    {
+      "term": "loan",
+      "weight": 6.841
+    },
+    {
+      "term": "ptptn loan",
+      "weight": 4.573
+    },
+    {
+      "term": "repayment",
+      "weight": 4.275
+    },
+    {
+      "term": "loan repayment",
+      "weight": 3.884
+    },
+    {
+      "term": "jompay ptptn",
+      "weight": 3.831
+    },
+    {
+      "term": "gaji",
+      "weight": 3.507
+    },
+    {
+      "term": "potongan gaji",
+      "weight": 3.507
+    },
+    {
+      "term": "potongan",
+      "weight": 3.498
+    },
+    {
+      "term": "direct debit",
+      "weight": 3.451
+    },
+    {
+      "term": "ptptn myptptn",
+      "weight": 3.383
+    },
+    {
+      "term": "myptptn direct",
+      "weight": 3.308
+    },
+    {
+      "term": "gaji ptptn",
+      "weight": 3.297
+    },
+    {
+      "term": "direct",
+      "weight": 3.226
+    },
+    {
+      "term": "education loan",
+      "weight": 3.183
+    },
+    {
+      "term": "pinjaman",
+      "weight": 3.115
+    },
+    {
+      "term": "bayaran balik",
+      "weight": 3.104
+    },
+    {
+      "term": "balik pinjaman",
+      "weight": 3.104
+    },
+    {
+      "term": "ptptn bayaran",
+      "weight": 3.052
+    },
+    {
+      "term": "jompay",
+      "weight": 3.045
+    },
+    {
+      "term": "fpx ptptn",
+      "weight": 3.03
+    },
+    {
+      "term": "myptptn",
+      "weight": 3.007
+    },
+    {
+      "term": "ptptn education",
+      "weight": 2.985
+    },
+    {
+      "term": "balik",
+      "weight": 2.961
+    },
+    {
+      "term": "debit",
+      "weight": 2.112
+    }
+  ],
+  "Loans, BNPL & Credit||Personal Loan": [
+    {
+      "term": "personal",
+      "weight": 7.911
+    },
+    {
+      "term": "flexiloan",
+      "weight": 7.858
+    },
+    {
+      "term": "gxbank flexiloan",
+      "weight": 7.384
+    },
+    {
+      "term": "personal loan",
+      "weight": 6.418
+    },
+    {
+      "term": "loan",
+      "weight": 6.377
+    },
+    {
+      "term": "gxbank",
+      "weight": 4.904
+    },
+    {
+      "term": "credit aspirasi",
+      "weight": 4.77
+    },
+    {
+      "term": "boost credit",
+      "weight": 4.77
+    },
+    {
+      "term": "aspirasi",
+      "weight": 4.77
+    },
+    {
+      "term": "pembiayaan",
+      "weight": 4.147
+    },
+    {
+      "term": "peribadi",
+      "weight": 3.67
+    },
+    {
+      "term": "maybank personal",
+      "weight": 3.651
+    },
+    {
+      "term": "personal financing",
+      "weight": 3.651
+    },
+    {
+      "term": "bank rakyat",
+      "weight": 3.59
+    },
+    {
+      "term": "rakyat",
+      "weight": 3.527
+    },
+    {
+      "term": "plus loan",
+      "weight": 3.25
+    },
+    {
+      "term": "cash plus",
+      "weight": 3.25
+    },
+    {
+      "term": "cimb cash",
+      "weight": 3.25
+    },
+    {
+      "term": "credit",
+      "weight": 3.143
+    },
+    {
+      "term": "rakyat pembiayaan",
+      "weight": 2.965
+    },
+    {
+      "term": "pembiayaan peribadi",
+      "weight": 2.933
+    },
+    {
+      "term": "financing",
+      "weight": 2.676
+    },
+    {
+      "term": "boost",
+      "weight": 2.537
+    },
+    {
+      "term": "easy personal",
+      "weight": 2.417
+    },
+    {
+      "term": "rhb easy",
+      "weight": 2.417
+    }
+  ],
+  "Shopping||Beauty, Skincare & Grooming": [
+    {
+      "term": "occitane",
+      "weight": 8.468
+    },
+    {
+      "term": "innisfree",
+      "weight": 8.289
+    },
+    {
+      "term": "body",
+      "weight": 6.865
+    },
+    {
+      "term": "sephora malaysia",
+      "weight": 6.256
+    },
+    {
+      "term": "sephora",
+      "weight": 6.256
+    },
+    {
+      "term": "sasa",
+      "weight": 6.162
+    },
+    {
+      "term": "sasa malaysia",
+      "weight": 6.162
+    },
+    {
+      "term": "salon",
+      "weight": 5.888
+    },
+    {
+      "term": "skintific",
+      "weight": 5.138
+    },
+    {
+      "term": "healthland wellness",
+      "weight": 5.097
+    },
+    {
+      "term": "healthland",
+      "weight": 5.097
+    },
+    {
+      "term": "skintific official",
+      "weight": 4.976
+    },
+    {
+      "term": "watsons skinlab",
+      "weight": 4.898
+    },
+    {
+      "term": "skinlab",
+      "weight": 4.898
+    },
+    {
+      "term": "body shop",
+      "weight": 4.617
+    },
+    {
+      "term": "joe barbershop",
+      "weight": 4.407
+    },
+    {
+      "term": "barbershop",
+      "weight": 4.407
+    },
+    {
+      "term": "joe",
+      "weight": 4.407
+    },
+    {
+      "term": "watsons",
+      "weight": 4.29
+    },
+    {
+      "term": "official",
+      "weight": 3.983
+    },
+    {
+      "term": "wellness",
+      "weight": 3.78
+    },
+    {
+      "term": "cut",
+      "weight": 3.763
+    },
+    {
+      "term": "cut salon",
+      "weight": 3.473
+    },
+    {
+      "term": "hair",
+      "weight": 3.296
+    },
+    {
+      "term": "olive young",
+      "weight": 3.269
+    }
+  ],
+  "Shopping||Clothing, Bags & Footwear": [
+    {
+      "term": "skechers",
+      "weight": 7.241
+    },
+    {
+      "term": "bonia",
+      "weight": 7.221
+    },
+    {
+      "term": "cotton",
+      "weight": 7.036
+    },
+    {
+      "term": "zara",
+      "weight": 5.444
+    },
+    {
+      "term": "uniqlo",
+      "weight": 5.377
+    },
+    {
+      "term": "bata",
+      "weight": 5.094
+    },
+    {
+      "term": "zara malaysia",
+      "weight": 5.019
+    },
+    {
+      "term": "uniqlo malaysia",
+      "weight": 4.956
+    },
+    {
+      "term": "jd sports",
+      "weight": 4.943
+    },
+    {
+      "term": "bata malaysia",
+      "weight": 4.852
+    },
+    {
+      "term": "brands",
+      "weight": 4.773
+    },
+    {
+      "term": "brands outlet",
+      "weight": 4.773
+    },
+    {
+      "term": "love",
+      "weight": 4.575
+    },
+    {
+      "term": "muji apparel",
+      "weight": 4.541
+    },
+    {
+      "term": "apparel",
+      "weight": 4.516
+    },
+    {
+      "term": "christy ng",
+      "weight": 4.44
+    },
+    {
+      "term": "christy",
+      "weight": 4.44
+    },
+    {
+      "term": "charles",
+      "weight": 4.345
+    },
+    {
+      "term": "love bonito",
+      "weight": 4.315
+    },
+    {
+      "term": "bonito",
+      "weight": 4.315
+    },
+    {
+      "term": "charles keith",
+      "weight": 4.231
+    },
+    {
+      "term": "keith",
+      "weight": 4.231
+    }
+  ],
+  "Shopping||Electronics & Gadgets": [
+    {
+      "term": "senheng",
+      "weight": 7.849
+    },
+    {
+      "term": "hypermarket",
+      "weight": 7.677
+    },
+    {
+      "term": "thundermatch",
+      "weight": 6.023
+    },
+    {
+      "term": "tmt",
+      "weight": 5.658
+    },
+    {
+      "term": "store",
+      "weight": 5.505
+    },
+    {
+      "term": "apple",
+      "weight": 5.177
+    },
+    {
+      "term": "official",
+      "weight": 4.844
+    },
+    {
+      "term": "harvey norman",
+      "weight": 4.733
+    },
+    {
+      "term": "harvey",
+      "weight": 4.733
+    },
+    {
+      "term": "norman",
+      "weight": 4.73
+    },
+    {
+      "term": "anker",
+      "weight": 4.368
+    },
+    {
+      "term": "anker official",
+      "weight": 3.887
+    },
+    {
+      "term": "tablet",
+      "weight": 3.187
+    },
+    {
+      "term": "smartphone",
+      "weight": 3.168
+    },
+    {
+      "term": "sony",
+      "weight": 3.124
+    },
+    {
+      "term": "samsung",
+      "weight": 3.088
+    },
+    {
+      "term": "tech",
+      "weight": 3.078
+    },
+    {
+      "term": "tmt megastore",
+      "weight": 3.06
+    },
+    {
+      "term": "megastore",
+      "weight": 3.06
+    },
+    {
+      "term": "thundermatch tmt",
+      "weight": 2.811
+    },
+    {
+      "term": "store klcc",
+      "weight": 2.751
+    },
+    {
+      "term": "tech pc",
+      "weight": 2.743
+    },
+    {
+      "term": "ideal",
+      "weight": 2.743
+    },
+    {
+      "term": "ideal tech",
+      "weight": 2.743
+    }
+  ],
+  "Shopping||Home & Living": [
+    {
+      "term": "ninso",
+      "weight": 8.743
+    },
+    {
+      "term": "home",
+      "weight": 7.807
+    },
+    {
+      "term": "muji malaysia",
+      "weight": 6.721
+    },
+    {
+      "term": "objet",
+      "weight": 6.648
+    },
+    {
+      "term": "objet malaysia",
+      "weight": 6.498
+    },
+    {
+      "term": "muji",
+      "weight": 6.134
+    },
+    {
+      "term": "spotlight",
+      "weight": 5.689
+    },
+    {
+      "term": "noko store",
+      "weight": 5.632
+    },
+    {
+      "term": "noko",
+      "weight": 5.632
+    },
+    {
+      "term": "spotlight malaysia",
+      "weight": 5.488
+    },
+    {
+      "term": "living",
+      "weight": 5.092
+    },
+    {
+      "term": "living cabin",
+      "weight": 4.926
+    },
+    {
+      "term": "cabin",
+      "weight": 4.926
+    },
+    {
+      "term": "eco",
+      "weight": 4.889
+    },
+    {
+      "term": "diy plus",
+      "weight": 4.774
+    },
+    {
+      "term": "furnishing",
+      "weight": 4.761
+    },
+    {
+      "term": "kaison",
+      "weight": 4.69
+    },
+    {
+      "term": "kaison furnishing",
+      "weight": 4.69
+    },
+    {
+      "term": "eco shop",
+      "weight": 4.184
+    },
+    {
+      "term": "dollar",
+      "weight": 4.152
+    },
+    {
+      "term": "mr dollar",
+      "weight": 4.152
+    },
+    {
+      "term": "daiso",
+      "weight": 4.124
+    },
+    {
+      "term": "daiso japan",
+      "weight": 4.124
+    },
+    {
+      "term": "japan",
+      "weight": 4.124
+    }
+  ],
+  "Shopping||Online Marketplace (Shopee / Lazada / TikTok)": [
+    {
+      "term": "temu",
+      "weight": 10.428
+    },
+    {
+      "term": "shein",
+      "weight": 9.383
+    },
+    {
+      "term": "prestomall",
+      "weight": 8.362
+    },
+    {
+      "term": "lazada",
+      "weight": 7.019
+    },
+    {
+      "term": "shopee",
+      "weight": 6.919
+    },
+    {
+      "term": "tiktok shop",
+      "weight": 6.114
+    },
+    {
+      "term": "tiktok",
+      "weight": 6.035
+    },
+    {
+      "term": "taobao",
+      "weight": 5.561
+    },
+    {
+      "term": "shopee malaysia",
+      "weight": 5.548
+    },
+    {
+      "term": "zalora",
+      "weight": 5.542
+    },
+    {
+      "term": "zalora malaysia",
+      "weight": 5.478
+    },
+    {
+      "term": "pg mall",
+      "weight": 5.178
+    },
+    {
+      "term": "taobao malaysia",
+      "weight": 5.005
+    },
+    {
+      "term": "lazada malaysia",
+      "weight": 4.837
+    },
+    {
+      "term": "mall",
+      "weight": 4.752
+    },
+    {
+      "term": "shop",
+      "weight": 4.039
+    },
+    {
+      "term": "purchase",
+      "weight": 1.363
+    },
+    {
+      "term": "temu payment",
+      "weight": 1.214
+    },
+    {
+      "term": "order",
+      "weight": 1.136
+    }
+  ],
+  "Taxes & government||Government Service & Stamp Duty": [
+    {
+      "term": "stamping",
+      "weight": 8.044
+    },
+    {
+      "term": "stamping malaysia",
+      "weight": 7.961
+    },
+    {
+      "term": "mygovernment fee",
+      "weight": 6.674
+    },
+    {
+      "term": "mygovernment",
+      "weight": 6.674
+    },
+    {
+      "term": "stamp",
+      "weight": 5.932
+    },
+    {
+      "term": "stamp duty",
+      "weight": 5.831
+    },
+    {
+      "term": "duty",
+      "weight": 5.823
+    },
+    {
+      "term": "renewal",
+      "weight": 5.173
+    },
+    {
+      "term": "fee",
+      "weight": 4.978
+    },
+    {
+      "term": "ssm info",
+      "weight": 3.882
+    },
+    {
+      "term": "info renewal",
+      "weight": 3.863
+    },
+    {
+      "term": "passport",
+      "weight": 3.587
+    },
+    {
+      "term": "info",
+      "weight": 3.584
+    },
+    {
+      "term": "myimm passport",
+      "weight": 3.493
+    },
+    {
+      "term": "myimm",
+      "weight": 3.493
+    },
+    {
+      "term": "imigresen myimm",
+      "weight": 3.447
+    },
+    {
+      "term": "imigresen",
+      "weight": 3.447
+    },
+    {
+      "term": "renewal fee",
+      "weight": 3.012
+    },
+    {
+      "term": "jpn",
+      "weight": 2.964
+    },
+    {
+      "term": "mykad",
+      "weight": 2.913
+    },
+    {
+      "term": "mykad renewal",
+      "weight": 2.892
+    },
+    {
+      "term": "lhdn stamp",
+      "weight": 2.847
+    },
+    {
+      "term": "jpn mykad",
+      "weight": 2.654
+    },
+    {
+      "term": "stamps",
+      "weight": 2.639
+    }
+  ],
+  "Taxes & government||JPJ / Renewals / Summons": [
+    {
+      "term": "jpj",
+      "weight": 7.582
+    },
+    {
+      "term": "puspakom",
+      "weight": 6.275
+    },
+    {
+      "term": "inspection",
+      "weight": 5.842
+    },
+    {
+      "term": "renewal",
+      "weight": 5.818
+    },
+    {
+      "term": "puspakom inspection",
+      "weight": 5.695
+    },
+    {
+      "term": "traffic",
+      "weight": 4.189
+    },
+    {
+      "term": "myjpj",
+      "weight": 4.157
+    },
+    {
+      "term": "saman",
+      "weight": 4.123
+    },
+    {
+      "term": "mybayar",
+      "weight": 3.912
+    },
+    {
+      "term": "compound",
+      "weight": 3.881
+    },
+    {
+      "term": "pdrm",
+      "weight": 3.877
+    },
+    {
+      "term": "mybayar saman",
+      "weight": 3.86
+    },
+    {
+      "term": "license",
+      "weight": 3.797
+    },
+    {
+      "term": "traffic compound",
+      "weight": 3.74
+    },
+    {
+      "term": "license renewal",
+      "weight": 3.721
+    },
+    {
+      "term": "dbkl traffic",
+      "weight": 3.715
+    },
+    {
+      "term": "dbkl",
+      "weight": 3.689
+    },
+    {
+      "term": "saman pdrm",
+      "weight": 3.558
+    },
+    {
+      "term": "myjpj license",
+      "weight": 3.5
+    },
+    {
+      "term": "mysikap",
+      "weight": 3.163
+    },
+    {
+      "term": "jpj renewal",
+      "weight": 3.159
+    },
+    {
+      "term": "mysikap jpj",
+      "weight": 3.104
+    },
+    {
+      "term": "cdl",
+      "weight": 3.041
+    },
+    {
+      "term": "lesen",
+      "weight": 2.929
+    },
+    {
+      "term": "memandu",
+      "weight": 2.915
+    }
+  ],
+  "Taxes & government||LHDN Income Tax / PCB": [
+    {
+      "term": "pcb",
+      "weight": 7.533
+    },
+    {
+      "term": "filing",
+      "weight": 6.451
+    },
+    {
+      "term": "mytax",
+      "weight": 6.331
+    },
+    {
+      "term": "mytax filing",
+      "weight": 6.322
+    },
+    {
+      "term": "lhdn",
+      "weight": 6.006
+    },
+    {
+      "term": "lhdn byrhasil",
+      "weight": 4.494
+    },
+    {
+      "term": "byrhasil tax",
+      "weight": 4.494
+    },
+    {
+      "term": "byrhasil",
+      "weight": 4.494
+    },
+    {
+      "term": "instalment",
+      "weight": 4.337
+    },
+    {
+      "term": "income tax",
+      "weight": 4.213
+    },
+    {
+      "term": "income",
+      "weight": 4.213
+    },
+    {
+      "term": "hasil",
+      "weight": 3.616
+    },
+    {
+      "term": "hasil billing",
+      "weight": 3.363
+    },
+    {
+      "term": "pcb pcb",
+      "weight": 3.231
+    },
+    {
+      "term": "billing income",
+      "weight": 3.074
+    },
+    {
+      "term": "billing",
+      "weight": 2.966
+    },
+    {
+      "term": "pcb lhdn",
+      "weight": 2.962
+    },
+    {
+      "term": "lhdn transaksi",
+      "weight": 0.801
+    }
+  ],
+  "Transport||Car Loan Installment": [
+    {
+      "term": "auto",
+      "weight": 7.137
+    },
+    {
+      "term": "financing",
+      "weight": 5.944
+    },
+    {
+      "term": "auto finance",
+      "weight": 5.426
+    },
+    {
+      "term": "finance",
+      "weight": 5.017
+    },
+    {
+      "term": "capital malaysia",
+      "weight": 4.855
+    },
+    {
+      "term": "capital",
+      "weight": 4.855
+    },
+    {
+      "term": "toyota capital",
+      "weight": 4.855
+    },
+    {
+      "term": "toyota",
+      "weight": 4.795
+    },
+    {
+      "term": "maybank hire",
+      "weight": 4.694
+    },
+    {
+      "term": "hire purchase",
+      "weight": 4.518
+    },
+    {
+      "term": "hire",
+      "weight": 4.489
+    },
+    {
+      "term": "vehicle financing",
+      "weight": 4.387
+    },
+    {
+      "term": "vehicle",
+      "weight": 4.105
+    },
+    {
+      "term": "loan",
+      "weight": 3.996
+    },
+    {
+      "term": "car",
+      "weight": 3.866
+    },
+    {
+      "term": "car loan",
+      "weight": 3.668
+    },
+    {
+      "term": "kenderaan",
+      "weight": 3.446
+    },
+    {
+      "term": "bsn",
+      "weight": 3.006
+    },
+    {
+      "term": "bsn sewa",
+      "weight": 2.934
+    },
+    {
+      "term": "beli",
+      "weight": 2.934
+    },
+    {
+      "term": "beli kenderaan",
+      "weight": 2.934
+    },
+    {
+      "term": "sewa beli",
+      "weight": 2.934
+    },
+    {
+      "term": "installment",
+      "weight": 2.906
+    },
+    {
+      "term": "maybank",
+      "weight": 2.86
+    },
+    {
+      "term": "loan installment",
+      "weight": 2.853
+    }
+  ],
+  "Transport||E-Hailing (Grab / AirAsia Ride)": [
+    {
+      "term": "grabcar",
+      "weight": 11.041
+    },
+    {
+      "term": "ride",
+      "weight": 9.113
+    },
+    {
+      "term": "indrive malaysia",
+      "weight": 7.06
+    },
+    {
+      "term": "indrive",
+      "weight": 7.06
+    },
+    {
+      "term": "hailing",
+      "weight": 6.8
+    },
+    {
+      "term": "grabshare",
+      "weight": 6.349
+    },
+    {
+      "term": "grabshare kl",
+      "weight": 6.349
+    },
+    {
+      "term": "lalamove express",
+      "weight": 5.949
+    },
+    {
+      "term": "lalamove",
+      "weight": 5.522
+    },
+    {
+      "term": "express",
+      "weight": 4.35
+    },
+    {
+      "term": "mycar",
+      "weight": 4.168
+    },
+    {
+      "term": "airasia ride",
+      "weight": 3.873
+    },
+    {
+      "term": "maxim",
+      "weight": 3.841
+    },
+    {
+      "term": "maxim hailing",
+      "weight": 3.696
+    },
+    {
+      "term": "mycar hailing",
+      "weight": 3.647
+    },
+    {
+      "term": "grab",
+      "weight": 3.581
+    },
+    {
+      "term": "kumpool",
+      "weight": 3.443
+    },
+    {
+      "term": "kumpool van",
+      "weight": 3.329
+    },
+    {
+      "term": "van",
+      "weight": 3.329
+    },
+    {
+      "term": "van demand",
+      "weight": 3.329
+    },
+    {
+      "term": "demand",
+      "weight": 2.961
+    },
+    {
+      "term": "airasia",
+      "weight": 2.599
+    },
+    {
+      "term": "mula",
+      "weight": 2.59
+    },
+    {
+      "term": "mula ride",
+      "weight": 2.52
+    }
+  ],
+  "Transport||Parking": [
+    {
+      "term": "parking",
+      "weight": 12.895
+    },
+    {
+      "term": "jomparking",
+      "weight": 10.591
+    },
+    {
+      "term": "flexiparking",
+      "weight": 10.406
+    },
+    {
+      "term": "autopay",
+      "weight": 6.226
+    },
+    {
+      "term": "smart",
+      "weight": 2.877
+    },
+    {
+      "term": "suria klcc",
+      "weight": 2.766
+    },
+    {
+      "term": "suria",
+      "weight": 2.759
+    },
+    {
+      "term": "pyramid autopay",
+      "weight": 2.637
+    },
+    {
+      "term": "sunway pyramid",
+      "weight": 2.603
+    },
+    {
+      "term": "pyramid",
+      "weight": 2.603
+    },
+    {
+      "term": "klcc autopay",
+      "weight": 2.558
+    },
+    {
+      "term": "ewallet parking",
+      "weight": 2.509
+    },
+    {
+      "term": "smart parking",
+      "weight": 2.034
+    },
+    {
+      "term": "mbpj smart",
+      "weight": 2.034
+    },
+    {
+      "term": "pavilion kl",
+      "weight": 1.963
+    },
+    {
+      "term": "setel parking",
+      "weight": 1.922
+    },
+    {
+      "term": "sunway",
+      "weight": 1.882
+    },
+    {
+      "term": "utama parking",
+      "weight": 1.859
+    },
+    {
+      "term": "parking autopay",
+      "weight": 1.859
+    },
+    {
+      "term": "megamall",
+      "weight": 1.847
+    },
+    {
+      "term": "valley megamall",
+      "weight": 1.847
+    },
+    {
+      "term": "megamall parking",
+      "weight": 1.828
+    },
+    {
+      "term": "mid",
+      "weight": 1.813
+    },
+    {
+      "term": "mid valley",
+      "weight": 1.813
+    },
+    {
+      "term": "mbpj",
+      "weight": 1.806
+    }
+  ],
+  "Transport||Petrol & EV Charging": [
+    {
+      "term": "evconnection",
+      "weight": 7.575
+    },
+    {
+      "term": "jomcharge",
+      "weight": 7.183
+    },
+    {
+      "term": "chargesini",
+      "weight": 7.135
+    },
+    {
+      "term": "chargev",
+      "weight": 6.758
+    },
+    {
+      "term": "charging",
+      "weight": 5.477
+    },
+    {
+      "term": "ev charging",
+      "weight": 5.248
+    },
+    {
+      "term": "shell",
+      "weight": 5.235
+    },
+    {
+      "term": "bhpetrol",
+      "weight": 4.957
+    },
+    {
+      "term": "tnb electron",
+      "weight": 4.626
+    },
+    {
+      "term": "electron",
+      "weight": 4.626
+    },
+    {
+      "term": "fuel",
+      "weight": 4.267
+    },
+    {
+      "term": "tesla supercharger",
+      "weight": 4.184
+    },
+    {
+      "term": "supercharger",
+      "weight": 4.184
+    },
+    {
+      "term": "tesla",
+      "weight": 4.184
+    },
+    {
+      "term": "caltex journey",
+      "weight": 4.172
+    },
+    {
+      "term": "petron",
+      "weight": 4.137
+    },
+    {
+      "term": "petron miles",
+      "weight": 4.137
+    },
+    {
+      "term": "caltex",
+      "weight": 4.045
+    },
+    {
+      "term": "miles",
+      "weight": 3.919
+    },
+    {
+      "term": "bhpetrol infiniti",
+      "weight": 3.919
+    },
+    {
+      "term": "infiniti",
+      "weight": 3.919
+    },
+    {
+      "term": "journey",
+      "weight": 3.87
+    },
+    {
+      "term": "dc handal",
+      "weight": 3.785
+    },
+    {
+      "term": "handal",
+      "weight": 3.785
+    }
+  ],
+  "Transport||Public Transit (MRT / LRT / Bus)": [
+    {
+      "term": "rapid",
+      "weight": 7.906
+    },
+    {
+      "term": "bus",
+      "weight": 6.48
+    },
+    {
+      "term": "klia",
+      "weight": 6.313
+    },
+    {
+      "term": "ktmb",
+      "weight": 5.942
+    },
+    {
+      "term": "mrt",
+      "weight": 5.741
+    },
+    {
+      "term": "lrt",
+      "weight": 5.403
+    },
+    {
+      "term": "prasarana",
+      "weight": 5.123
+    },
+    {
+      "term": "prasarana mrt",
+      "weight": 4.678
+    },
+    {
+      "term": "rapid penang",
+      "weight": 4.669
+    },
+    {
+      "term": "aerobus",
+      "weight": 4.571
+    },
+    {
+      "term": "myrapid bus",
+      "weight": 4.333
+    },
+    {
+      "term": "myrapid",
+      "weight": 4.333
+    },
+    {
+      "term": "ticket",
+      "weight": 4.084
+    },
+    {
+      "term": "transit",
+      "weight": 4.076
+    },
+    {
+      "term": "komuter",
+      "weight": 3.992
+    },
+    {
+      "term": "klia transit",
+      "weight": 3.921
+    },
+    {
+      "term": "rapid demand",
+      "weight": 3.835
+    },
+    {
+      "term": "ktmb komuter",
+      "weight": 3.735
+    },
+    {
+      "term": "pass",
+      "weight": 3.451
+    },
+    {
+      "term": "demand",
+      "weight": 3.333
+    },
+    {
+      "term": "rapidkl",
+      "weight": 3.294
+    }
+  ],
+  "Transport||Road Tax & Motor Insurance": [
+    {
+      "term": "motor",
+      "weight": 8.997
+    },
+    {
+      "term": "road",
+      "weight": 7.39
+    },
+    {
+      "term": "takaful",
+      "weight": 6.543
+    },
+    {
+      "term": "auto",
+      "weight": 6.297
+    },
+    {
+      "term": "road tax",
+      "weight": 5.076
+    },
+    {
+      "term": "qoala",
+      "weight": 4.678
+    },
+    {
+      "term": "qoala malaysia",
+      "weight": 4.268
+    },
+    {
+      "term": "malaysia auto",
+      "weight": 4.268
+    },
+    {
+      "term": "zurich general",
+      "weight": 4.174
+    },
+    {
+      "term": "general takaful",
+      "weight": 4.144
+    },
+    {
+      "term": "motor takaful",
+      "weight": 4.12
+    },
+    {
+      "term": "policystreet",
+      "weight": 3.926
+    },
+    {
+      "term": "general",
+      "weight": 3.916
+    },
+    {
+      "term": "auto insurance",
+      "weight": 3.775
+    },
+    {
+      "term": "insurance",
+      "weight": 3.772
+    },
+    {
+      "term": "policystreet auto",
+      "weight": 3.589
+    },
+    {
+      "term": "zurich",
+      "weight": 3.282
+    },
+    {
+      "term": "road warrior",
+      "weight": 3.074
+    },
+    {
+      "term": "warrior",
+      "weight": 3.074
+    },
+    {
+      "term": "allianz road",
+      "weight": 3.037
+    },
+    {
+      "term": "ikhlas motor",
+      "weight": 2.807
+    },
+    {
+      "term": "ikhlas",
+      "weight": 2.551
+    },
+    {
+      "term": "kurnia insurans",
+      "weight": 2.404
+    },
+    {
+      "term": "insurans motor",
+      "weight": 2.404
+    }
+  ],
+  "Transport||Toll (TNG / RFID / PayDirect)": [
+    {
+      "term": "toll",
+      "weight": 11.58
+    },
+    {
+      "term": "expressway",
+      "weight": 8.92
+    },
+    {
+      "term": "highway",
+      "weight": 7.884
+    },
+    {
+      "term": "rfid",
+      "weight": 5.767
+    },
+    {
+      "term": "paydirect",
+      "weight": 5.087
+    },
+    {
+      "term": "touch rfid",
+      "weight": 4.725
+    },
+    {
+      "term": "paydirect plus",
+      "weight": 4.351
+    },
+    {
+      "term": "tng paydirect",
+      "weight": 4.301
+    },
+    {
+      "term": "touch",
+      "weight": 4.151
+    },
+    {
+      "term": "highway toll",
+      "weight": 3.305
+    },
+    {
+      "term": "wce",
+      "weight": 3.282
+    },
+    {
+      "term": "wce expressway",
+      "weight": 3.174
+    },
+    {
+      "term": "dash highway",
+      "weight": 3.145
+    },
+    {
+      "term": "kesas",
+      "weight": 3.054
+    },
+    {
+      "term": "kesas highway",
+      "weight": 3.054
+    },
+    {
+      "term": "sprint",
+      "weight": 2.974
+    },
+    {
+      "term": "tng",
+      "weight": 2.916
+    },
+    {
+      "term": "sprint expressway",
+      "weight": 2.911
+    },
+    {
+      "term": "dash",
+      "weight": 2.71
+    },
+    {
+      "term": "suke expressway",
+      "weight": 2.65
+    },
+    {
+      "term": "suke",
+      "weight": 2.65
+    },
+    {
+      "term": "plus",
+      "weight": 2.618
+    },
+    {
+      "term": "npe",
+      "weight": 2.529
+    },
+    {
+      "term": "akleh",
+      "weight": 2.383
+    },
+    {
+      "term": "akleh toll",
+      "weight": 2.278
+    }
+  ],
+  "Transport||Vehicle Maintenance & Service": [
+    {
+      "term": "service",
+      "weight": 7.799
+    },
+    {
+      "term": "bateriku",
+      "weight": 6.043
+    },
+    {
+      "term": "bateriku com",
+      "weight": 6.043
+    },
+    {
+      "term": "workshop",
+      "weight": 5.922
+    },
+    {
+      "term": "studio",
+      "weight": 5.246
+    },
+    {
+      "term": "autodetailer studio",
+      "weight": 5.028
+    },
+    {
+      "term": "autodetailer",
+      "weight": 5.028
+    },
+    {
+      "term": "tayar",
+      "weight": 4.435
+    },
+    {
+      "term": "tyre",
+      "weight": 4.293
+    },
+    {
+      "term": "carro",
+      "weight": 4.166
+    },
+    {
+      "term": "seng",
+      "weight": 4.153
+    },
+    {
+      "term": "carro workshop",
+      "weight": 4.067
+    },
+    {
+      "term": "centre",
+      "weight": 3.91
+    },
+    {
+      "term": "auto",
+      "weight": 3.894
+    },
+    {
+      "term": "detailing",
+      "weight": 3.739
+    },
+    {
+      "term": "carwash pro",
+      "weight": 3.689
+    },
+    {
+      "term": "pro detailing",
+      "weight": 3.689
+    },
+    {
+      "term": "carwash",
+      "weight": 3.673
+    },
+    {
+      "term": "continental tyre",
+      "weight": 3.639
+    },
+    {
+      "term": "continental",
+      "weight": 3.639
+    },
+    {
+      "term": "tyre auto",
+      "weight": 3.639
+    },
+    {
+      "term": "honda",
+      "weight": 3.624
+    },
+    {
+      "term": "com",
+      "weight": 3.529
+    },
+    {
+      "term": "honda malaysia",
+      "weight": 3.523
+    },
+    {
+      "term": "malaysia service",
+      "weight": 3.502
+    }
+  ]
+}

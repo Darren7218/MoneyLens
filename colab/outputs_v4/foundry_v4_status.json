@@ -1,0 +1,9 @@
+{
+  "stage": "DONE",
+  "ts": "2026-11-20T17:08:26Z",
+  "total_samples": 27165,
+  "new_valid": 25281,
+  "v4_test": 5938,
+  "gz_bytes": 1830947,
+  "winner": "svc_bal_C0.30"
+}

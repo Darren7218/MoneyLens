@@ -1,0 +1,400 @@
+{
+  "total_seconds": 1969.6,
+  "generation": {
+    "model": "Qwen/Qwen2.5-32B-Instruct-AWQ",
+    "gpu": "Pre-generated v4 corpus (A100 32B-AWQ + L4 14B-AWQ resume)",
+    "seed_v3_kept": 1884,
+    "new_valid": 25281,
+    "total_combined": 27165,
+    "classes_covered": 74,
+    "min_class_count": 291,
+    "dropped": 3016,
+    "drop_reasons": {
+      "pair_format": 48,
+      "json_error": 330,
+      "leak_or_placeholder": 2141,
+      "pair_mismatch": 92,
+      "bad_amount": 198,
+      "missing_fx_cue": 203,
+      "duplicate": 4
+    },
+    "edge_case_counts": {
+      "standard_bank_push": 6435,
+      "truncated_merchant": 4717,
+      "ewallet_bnpl_digital": 3998,
+      "lhdn_notification": 1874,
+      "foreign_currency_fx": 3039,
+      "split_bill_p2p": 2225,
+      "lhdn_receipt": 1243,
+      "thermal_receipt_noisy_ocr": 1750
+    },
+    "train_only": true,
+    "prompt_leaks_removed": 117
+  },
+  "splits": {
+    "total": 27165,
+    "train": 19724,
+    "train_with_ood_misc": 20174,
+    "ood_misc_train_rows": 450,
+    "cal": 1119,
+    "v4_test": 5938,
+    "v3_holdout": 384,
+    "v3_group_shadow_in_test": 3105
+  },
+  "dataset_counts": {
+    "by_source": {
+      "thermal_receipt": 3951,
+      "payment_notification": 23214
+    },
+    "by_edge_case": {
+      "seed_v3": 1884,
+      "standard_bank_push": 6435,
+      "truncated_merchant": 4717,
+      "ewallet_bnpl_digital": 3998,
+      "lhdn_notification": 1874,
+      "foreign_currency_fx": 3039,
+      "split_bill_p2p": 2225,
+      "lhdn_receipt": 1243,
+      "thermal_receipt_noisy_ocr": 1750
+    },
+    "by_category": {
+      "Food & drinks": 2065,
+      "Groceries": 1387,
+      "Transport": 2777,
+      "Bills & utilities": 2112,
+      "Loans, BNPL & Credit": 1667,
+      "Housing & property": 1671,
+      "Shopping": 1806,
+      "Health & medical": 2633,
+      "Insurance & Takaful": 1567,
+      "Education": 1845,
+      "Family & gifts": 2009,
+      "Entertainment & travel": 1323,
+      "Investments & savings": 1987,
+      "Taxes & government": 1017,
+      "Fees & charges": 1299
+    },
+    "lhdn_non_null": 4148,
+    "classes_covered": 74,
+    "exported_model_classes": 75
+  },
+  "neural_teacher": {
+    "backbone": "xlm-roberta-base",
+    "amp_dtype": "bfloat16",
+    "epochs": 4,
+    "best_epoch": 2,
+    "train_seconds": 1411.2,
+    "v3_holdout": {
+      "raw_only": {
+        "cat_acc": 0.8464,
+        "subcat_acc": 0.7891,
+        "subcat_macro_f1": 0.7563,
+        "nll": 1.0681,
+        "ece": 0.0628,
+        "brier": 0.3267
+      },
+      "with_merchant": {
+        "cat_acc": 0.8542,
+        "subcat_acc": 0.7969,
+        "subcat_macro_f1": 0.7615,
+        "nll": 1.0411,
+        "ece": 0.0582,
+        "brier": 0.3135
+      }
+    },
+    "v4_test": {
+      "raw_only": {
+        "cat_acc": 0.7523,
+        "subcat_acc": 0.7019,
+        "subcat_macro_f1": 0.6372,
+        "nll": 1.3137,
+        "ece": 0.0426,
+        "brier": 0.3803
+      },
+      "with_merchant": {
+        "cat_acc": 0.8393,
+        "subcat_acc": 0.7912,
+        "subcat_macro_f1": 0.737,
+        "nll": 0.882,
+        "ece": 0.0338,
+        "brier": 0.2807
+      }
+    }
+  },
+  "sparse_candidates_on_cal": [
+    {
+      "name": "svc_bal_C0.30",
+      "config": {
+        "kind": "LinearSVC",
+        "C": 0.3,
+        "class_weight": "balanced"
+      },
+      "fit_seconds": 66.1,
+      "topk_prune_threshold": 0.0247,
+      "temperature": 0.1197,
+      "cal_mean_macro_f1": 0.6853,
+      "cal_mean_nll": 0.9283,
+      "cal_raw": {
+        "cat_acc": 0.8088,
+        "subcat_acc": 0.7721,
+        "subcat_macro_f1": 0.663,
+        "nll": 1.0174,
+        "ece": 0.0406,
+        "brier": 0.3125
+      },
+      "cal_both": {
+        "cat_acc": 0.8356,
+        "subcat_acc": 0.8079,
+        "subcat_macro_f1": 0.7076,
+        "nll": 0.8391,
+        "ece": 0.0339,
+        "brier": 0.2636
+      }
+    },
+    {
+      "name": "svc_bal_C0.50",
+      "config": {
+        "kind": "LinearSVC",
+        "C": 0.5,
+        "class_weight": "balanced"
+      },
+      "fit_seconds": 73.0,
+      "topk_prune_threshold": 0.028,
+      "temperature": 0.132,
+      "cal_mean_macro_f1": 0.6839,
+      "cal_mean_nll": 0.9361,
+      "cal_raw": {
+        "cat_acc": 0.8079,
+        "subcat_acc": 0.7712,
+        "subcat_macro_f1": 0.6559,
+        "nll": 1.0277,
+        "ece": 0.0369,
+        "brier": 0.3127
+      },
+      "cal_both": {
+        "cat_acc": 0.8293,
+        "subcat_acc": 0.8025,
+        "subcat_macro_f1": 0.7119,
+        "nll": 0.8445,
+        "ece": 0.041,
+        "brier": 0.2628
+      }
+    },
+    {
+      "name": "svc_bal_C0.75",
+      "config": {
+        "kind": "LinearSVC",
+        "C": 0.75,
+        "class_weight": "balanced"
+      },
+      "fit_seconds": 81.0,
+      "topk_prune_threshold": 0.0305,
+      "temperature": 0.1419,
+      "cal_mean_macro_f1": 0.681,
+      "cal_mean_nll": 0.9488,
+      "cal_raw": {
+        "cat_acc": 0.8034,
+        "subcat_acc": 0.7685,
+        "subcat_macro_f1": 0.6509,
+        "nll": 1.0444,
+        "ece": 0.0454,
+        "brier": 0.3152
+      },
+      "cal_both": {
+        "cat_acc": 0.8329,
+        "subcat_acc": 0.807,
+        "subcat_macro_f1": 0.7111,
+        "nll": 0.8533,
+        "ece": 0.0342,
+        "brier": 0.2621
+      }
+    },
+    {
+      "name": "svc_unbal_C0.50",
+      "config": {
+        "kind": "LinearSVC",
+        "C": 0.5,
+        "class_weight": null
+      },
+      "fit_seconds": 73.2,
+      "topk_prune_threshold": 0.0279,
+      "temperature": 0.1304,
+      "cal_mean_macro_f1": 0.6824,
+      "cal_mean_nll": 0.9364,
+      "cal_raw": {
+        "cat_acc": 0.8052,
+        "subcat_acc": 0.7676,
+        "subcat_macro_f1": 0.6477,
+        "nll": 1.0309,
+        "ece": 0.0398,
+        "brier": 0.3148
+      },
+      "cal_both": {
+        "cat_acc": 0.8329,
+        "subcat_acc": 0.8079,
+        "subcat_macro_f1": 0.717,
+        "nll": 0.8418,
+        "ece": 0.0331,
+        "brier": 0.262
+      }
+    }
+  ],
+  "winning_sparse_student": {
+    "name": "svc_bal_C0.30",
+    "config": {
+      "kind": "LinearSVC",
+      "C": 0.3,
+      "class_weight": "balanced"
+    },
+    "vocab_word": 16000,
+    "vocab_char": 14000,
+    "holdout_model_prune_threshold": 0.0197,
+    "holdout_model_temperature": 0.121,
+    "holdout_model_export_bytes": 6992928,
+    "holdout_model_gz_bytes": 1748731,
+    "holdout_model_active_features": 29437,
+    "holdout_model_nonzero_weights": 548573,
+    "cal_before_calibration": {
+      "cat_acc": 0.8217,
+      "subcat_acc": 0.7878,
+      "subcat_macro_f1": 0.6855,
+      "nll": 3.1733,
+      "ece": 0.7329,
+      "brier": 0.9101
+    },
+    "cal_after_calibration": {
+      "cat_acc": 0.8217,
+      "subcat_acc": 0.7878,
+      "subcat_macro_f1": 0.6855,
+      "nll": 0.9174,
+      "ece": 0.0299,
+      "brier": 0.2851
+    },
+    "eval_on_frozen_v3_holdout": {
+      "n": 384,
+      "raw_only": {
+        "cat_acc": 0.8411,
+        "subcat_acc": 0.7943,
+        "subcat_macro_f1": 0.7805,
+        "nll": 0.8676,
+        "ece": 0.0626,
+        "brier": 0.2895
+      },
+      "with_merchant": {
+        "cat_acc": 0.8516,
+        "subcat_acc": 0.7995,
+        "subcat_macro_f1": 0.7866,
+        "nll": 0.928,
+        "ece": 0.075,
+        "brier": 0.2942
+      },
+      "merchant_only": {
+        "cat_acc": 0.7188,
+        "subcat_acc": 0.6042,
+        "subcat_macro_f1": 0.5817,
+        "nll": 3.3337,
+        "ece": 0.2775,
+        "brier": 0.6578
+      },
+      "raw_misc_abstain_rate": 0.0078,
+      "both_misc_abstain_rate": 0.0078,
+      "by_edge_case": {
+        "seed_v3": {
+          "n": 384,
+          "raw_cat_acc": 0.8411,
+          "raw_subcat_acc": 0.7943
+        }
+      }
+    },
+    "eval_on_v4_test": {
+      "n": 5938,
+      "raw_only": {
+        "cat_acc": 0.8254,
+        "subcat_acc": 0.761,
+        "subcat_macro_f1": 0.7215,
+        "nll": 1.0819,
+        "ece": 0.0527,
+        "brier": 0.3401
+      },
+      "with_merchant": {
+        "cat_acc": 0.8683,
+        "subcat_acc": 0.7924,
+        "subcat_macro_f1": 0.7588,
+        "nll": 1.0181,
+        "ece": 0.0736,
+        "brier": 0.3072
+      },
+      "merchant_only": {
+        "cat_acc": 0.8063,
+        "subcat_acc": 0.6854,
+        "subcat_macro_f1": 0.6526,
+        "nll": 2.6235,
+        "ece": 0.2157,
+        "brier": 0.5277
+      },
+      "raw_misc_abstain_rate": 0.0054,
+      "both_misc_abstain_rate": 0.0056,
+      "by_edge_case": {
+        "ewallet_bnpl_digital": {
+          "n": 918,
+          "raw_cat_acc": 0.8442,
+          "raw_subcat_acc": 0.7756
+        },
+        "foreign_currency_fx": {
+          "n": 709,
+          "raw_cat_acc": 0.8195,
+          "raw_subcat_acc": 0.7489
+        },
+        "lhdn_notification": {
+          "n": 427,
+          "raw_cat_acc": 0.9625,
+          "raw_subcat_acc": 0.9391
+        },
+        "lhdn_receipt": {
+          "n": 316,
+          "raw_cat_acc": 0.9842,
+          "raw_subcat_acc": 0.9557
+        },
+        "seed_v3": {
+          "n": 168,
+          "raw_cat_acc": 0.8274,
+          "raw_subcat_acc": 0.7381
+        },
+        "split_bill_p2p": {
+          "n": 493,
+          "raw_cat_acc": 0.8966,
+          "raw_subcat_acc": 0.8418
+        },
+        "standard_bank_push": {
+          "n": 1484,
+          "raw_cat_acc": 0.8181,
+          "raw_subcat_acc": 0.7358
+        },
+        "thermal_receipt_noisy_ocr": {
+          "n": 384,
+          "raw_cat_acc": 0.9271,
+          "raw_subcat_acc": 0.8646
+        },
+        "truncated_merchant": {
+          "n": 1039,
+          "raw_cat_acc": 0.6468,
+          "raw_subcat_acc": 0.5871
+        }
+      }
+    }
+  },
+  "production_asset": {
+    "vocab_word": 16000,
+    "vocab_char": 14000,
+    "exported_classes": 75,
+    "active_features": 29455,
+    "nonzero_weights": 555985,
+    "prune_threshold": 0.024,
+    "temperature": 0.121,
+    "export_bytes": 7068829,
+    "gz_bytes": 1830947,
+    "under_2mb": true,
+    "lexicon_subcategories_covered": 74
+  },
+  "local_refit_seconds": 562.0
+}

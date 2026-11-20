@@ -47,9 +47,9 @@ public final class MlClassifier {
   private static final class Feature {
     final double idf;
     final int[] classIdx;
-    final double[] weights;
+    final float[] weights;
 
-    Feature(double idf, int[] classIdx, double[] weights) {
+    Feature(double idf, int[] classIdx, float[] weights) {
       this.idf = idf;
       this.classIdx = classIdx;
       this.weights = weights;
@@ -209,11 +209,11 @@ public final class MlClassifier {
       JSONArray pairs = entry.getJSONArray(2);
       int m = pairs.length();
       int[] cIdx = new int[m];
-      double[] w = new double[m];
+      float[] w = new float[m];
       for (int j = 0; j < m; j++) {
         JSONArray pw = pairs.getJSONArray(j);
         cIdx[j] = pw.getInt(0);
-        w[j] = pw.getDouble(1);
+        w[j] = (float) pw.getDouble(1);
       }
       Feature feat = new Feature(idf, cIdx, w);
       if (block == 0) wordMap.put(key, feat);
