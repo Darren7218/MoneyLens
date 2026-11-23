@@ -30,5 +30,16 @@ colab/outputs_receipt_v1/receipt_holdout_text.json
 colab/outputs_receipt_v1/moneylens_receipt_tagger.json
 colab/outputs_receipt_v1/moneylens_receipt_tagger.json.gz
 colab/outputs_receipt_v1/receipt_foundry_v1.log
+colab/outputs_v5/*.jsonl
+colab/outputs_v5/*.jsonl.gz
+colab/outputs_v5/*.npz
+colab/outputs_v5/*.bin
+colab/outputs_v5/*.bin.gz
+colab/outputs_v5/*.tmp
+colab/outputs_v5/moneylens_classifier*.json*
+colab/outputs_v5/foundry_v5.log
+colab/outputs_v5/v5_hard_test.json
+colab/outputs_v5/ood_misc_test.json
+colab/outputs_v5/gen_v5_progress.json
 __pycache__/
 *.pyc

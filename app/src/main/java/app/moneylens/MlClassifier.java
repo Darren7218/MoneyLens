@@ -31,9 +31,17 @@ public final class MlClassifier {
     public final double categoryProbability;
     public final double categoryMargin;
     public final int activeSignals;
+    final double[] classProbs;
+    final String[] classNames;
 
     Prediction(String category, String subcategory, double probability, double margin,
                double categoryProbability, double categoryMargin, int activeSignals) {
+      this(category, subcategory, probability, margin, categoryProbability, categoryMargin, activeSignals, null, null);
+    }
+
+    Prediction(String category, String subcategory, double probability, double margin,
+               double categoryProbability, double categoryMargin, int activeSignals,
+               double[] classProbs, String[] classNames) {
       this.category = category;
       this.subcategory = subcategory;
       this.probability = probability;
@@ -41,6 +49,8 @@ public final class MlClassifier {
       this.categoryProbability = categoryProbability;
       this.categoryMargin = categoryMargin;
       this.activeSignals = activeSignals;
+      this.classProbs = classProbs;
+      this.classNames = classNames;
     }
   }
 
@@ -57,6 +67,7 @@ public final class MlClassifier {
   }
 
   private static final class Model {
+    final String[] classPairs;
     final String[] categories;
     final String[] subcategories;
     final String[] uniqueCategories;
@@ -65,8 +76,9 @@ public final class MlClassifier {
     final Map<String, Feature> wordFeatures;
     final Map<String, Feature> charFeatures;
 
-    Model(String[] categories, String[] subcategories, double[] intercepts,
+    Model(String[] classPairs, String[] categories, String[] subcategories, double[] intercepts,
           Map<String, Feature> wordFeatures, Map<String, Feature> charFeatures) {
+      this.classPairs = classPairs;
       this.categories = categories;
       this.subcategories = subcategories;
       this.intercepts = intercepts;
@@ -91,12 +103,17 @@ public final class MlClassifier {
 
   private static volatile Model activeModel = null;
   private static volatile boolean autoLoadAttempted = false;
+  private static volatile boolean disabled = false;
   private static volatile java.util.function.Supplier<InputStream> streamSupplier = null;
 
   private MlClassifier() {}
 
   public static boolean isLoaded() {
     return activeModel != null;
+  }
+
+  public static synchronized void setDisabled(boolean off) {
+    disabled = off;
   }
 
   /** Registers an optional lazy model stream provider (used by Android assets without eagerly consuming RAM). */
@@ -114,6 +131,7 @@ public final class MlClassifier {
   public static synchronized void clear() {
     activeModel = null;
     autoLoadAttempted = false;
+    disabled = false;
     streamSupplier = null;
   }
 
@@ -135,6 +153,7 @@ public final class MlClassifier {
       }
       activeModel = parseModel(json);
       autoLoadAttempted = true;
+      disabled = false;
       return activeModel != null;
     } catch (Exception ignored) {
       return false;
@@ -181,11 +200,13 @@ public final class MlClassifier {
     JSONArray clsArr = root.getJSONArray("classes");
     JSONArray intArr = root.getJSONArray("intercepts");
     int numClasses = clsArr.length();
+    String[] classPairs = new String[numClasses];
     String[] cats = new String[numClasses];
     String[] subs = new String[numClasses];
     double[] intercepts = new double[numClasses];
     for (int i = 0; i < numClasses; i++) {
       String pair = clsArr.getString(i);
+      classPairs[i] = pair;
       int split = pair.indexOf("||");
       if (split >= 0) {
         cats[i] = pair.substring(0, split);
@@ -219,7 +240,7 @@ public final class MlClassifier {
       if (block == 0) wordMap.put(key, feat);
       else charMap.put(key, feat);
     }
-    return new Model(cats, subs, intercepts, wordMap, charMap);
+    return new Model(classPairs, cats, subs, intercepts, wordMap, charMap);
   }
 
   /** Exact bit-for-bit parity with Python java_parity_words(). */
@@ -241,6 +262,7 @@ public final class MlClassifier {
   }
 
   public static Prediction predict(String merchant, String text) {
+    if (disabled) return null;
     ensureLoaded();
     Model m = activeModel;
     if (m == null) return null;
@@ -290,9 +312,11 @@ public final class MlClassifier {
     }
     if (sumExp <= 0.0) return null;
 
+    double[] probs = new double[logits.length];
     double[] catProbs = new double[m.uniqueCategories.length];
     for (int i = 0; i < logits.length; i++) {
-      catProbs[m.classToCategory[i]] += exps[i] / sumExp;
+      probs[i] = exps[i] / sumExp;
+      catProbs[m.classToCategory[i]] += probs[i];
     }
     int bestCatIdx = 0;
     double bestCatProb = -1.0, secondCatProb = 0.0;
@@ -327,8 +351,8 @@ public final class MlClassifier {
         secondLogitOverall = logits[i];
       }
     }
-    double bestProb = exps[bestIdx] / sumExp;
-    double secondProb = secondLogitOverall == Double.NEGATIVE_INFINITY ? 0.0 : exps[findIndex(logits, bestIdx, secondLogitOverall)] / sumExp;
+    double bestProb = probs[bestIdx];
+    double secondProb = secondLogitOverall == Double.NEGATIVE_INFINITY ? 0.0 : probs[findIndex(logits, bestIdx, secondLogitOverall)];
     double subMargin = globalBestIdx == bestIdx ? Math.max(0.0, bestProb - secondProb) : bestProb;
     return new Prediction(
         m.categories[bestIdx],
@@ -337,7 +361,9 @@ public final class MlClassifier {
         subMargin,
         bestCatProb,
         Math.max(0.0, bestCatProb - secondCatProb),
-        activeSignals);
+        activeSignals,
+        probs,
+        m.classPairs);
   }
 
   private static int findIndex(double[] logits, int excludeIdx, double targetLogit) {

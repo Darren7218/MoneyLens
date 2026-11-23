@@ -23,6 +23,7 @@ public final class Vault {
   public static synchronized void trimCache(){
     cachedPlain=null;cachedMtime=-1L;cachedLen=-1L;
     MlClassifier.trim();
+    MlNeuralReranker.trim();
     ReceiptFieldTagger.trim();
   }
   private static void syncMeta(Context c,JSONObject s){
@@ -282,6 +283,12 @@ public final class Vault {
     final Context app=c.getApplicationContext();
     MlClassifier.setStreamSupplier(()->{
       for(String asset:new String[]{"moneylens_classifier.json.gz","moneylens_classifier.json"}){
+        try{return app.getAssets().open(asset);}catch(Exception ignored){}
+      }
+      return null;
+    });
+    MlNeuralReranker.setStreamSupplier(()->{
+      for(String asset:new String[]{"moneylens_reranker.bin.gz","moneylens_reranker.bin"}){
         try{return app.getAssets().open(asset);}catch(Exception ignored){}
       }
       return null;

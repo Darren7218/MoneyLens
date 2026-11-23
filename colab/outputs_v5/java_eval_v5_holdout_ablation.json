@@ -1,0 +1,236 @@
+{
+  "holdout_stage1_only": {
+    "v5_hard_test": {
+      "ms_per_sample": 0.725,
+      "parsed_rate": 0.7777,
+      "cat_acc": 0.5754,
+      "tier2_trigger_rate_on_ml": 0.4552,
+      "ml_routed_n": 547,
+      "n": 1498,
+      "subcat_acc": 0.5227,
+      "by_edge_case": {
+        "v5_disambiguation_lhdn": {
+          "cat_acc": 0.6623,
+          "n": 154,
+          "subcat_acc": 0.5714
+        },
+        "v5_digital_bnpl_fx": {
+          "cat_acc": 0.6769,
+          "n": 229,
+          "subcat_acc": 0.6157
+        },
+        "v5_receipt_item_body": {
+          "cat_acc": 0.9524,
+          "n": 126,
+          "subcat_acc": 0.9127
+        },
+        "v5_multilingual_bm_cjk": {
+          "cat_acc": 0.5519,
+          "n": 337,
+          "subcat_acc": 0.4896
+        },
+        "v5_truncated_gateway": {
+          "cat_acc": 0.4586,
+          "n": 652,
+          "subcat_acc": 0.4202
+        }
+      }
+    },
+    "v3_holdout": {
+      "ms_per_sample": 1.742,
+      "parsed_rate": 1,
+      "cat_acc": 0.8906,
+      "tier2_trigger_rate_on_ml": 0.3516,
+      "ml_routed_n": 91,
+      "n": 384,
+      "subcat_acc": 0.8125,
+      "by_edge_case": {
+        "unknown": {
+          "cat_acc": 0.8906,
+          "n": 384,
+          "subcat_acc": 0.8125
+        }
+      }
+    },
+    "ood_misc_test": {
+      "abstention_rate": 1,
+      "n": 200
+    },
+    "s2_load_ms": 0,
+    "s1_load_ms": 426,
+    "use_s2": false,
+    "v4_test": {
+      "ms_per_sample": 0.971,
+      "parsed_rate": 0.968,
+      "cat_acc": 0.851,
+      "tier2_trigger_rate_on_ml": 0.4223,
+      "ml_routed_n": 1596,
+      "n": 5938,
+      "subcat_acc": 0.7779,
+      "by_edge_case": {
+        "split_bill_p2p": {
+          "cat_acc": 0.9391,
+          "n": 493,
+          "subcat_acc": 0.856
+        },
+        "lhdn_notification": {
+          "cat_acc": 0.8548,
+          "n": 427,
+          "subcat_acc": 0.7471
+        },
+        "thermal_receipt_noisy_ocr": {
+          "cat_acc": 0.9453,
+          "n": 384,
+          "subcat_acc": 0.8776
+        },
+        "foreign_currency_fx": {
+          "cat_acc": 0.89,
+          "n": 709,
+          "subcat_acc": 0.8223
+        },
+        "truncated_merchant": {
+          "cat_acc": 0.5948,
+          "n": 1039,
+          "subcat_acc": 0.5419
+        },
+        "ewallet_bnpl_digital": {
+          "cat_acc": 0.8715,
+          "n": 918,
+          "subcat_acc": 0.8105
+        },
+        "lhdn_receipt": {
+          "cat_acc": 0.9557,
+          "n": 316,
+          "subcat_acc": 0.807
+        },
+        "standard_bank_push": {
+          "cat_acc": 0.9205,
+          "n": 1484,
+          "subcat_acc": 0.8531
+        },
+        "seed_v3": {
+          "cat_acc": 0.8631,
+          "n": 168,
+          "subcat_acc": 0.7738
+        }
+      }
+    }
+  },
+  "holdout_cascade": {
+    "v5_hard_test": {
+      "ms_per_sample": 0.745,
+      "parsed_rate": 0.7777,
+      "cat_acc": 0.6869,
+      "tier2_trigger_rate_on_ml": 0.4552,
+      "ml_routed_n": 547,
+      "n": 1498,
+      "subcat_acc": 0.6455,
+      "by_edge_case": {
+        "v5_disambiguation_lhdn": {
+          "cat_acc": 0.6623,
+          "n": 154,
+          "subcat_acc": 0.5714
+        },
+        "v5_digital_bnpl_fx": {
+          "cat_acc": 0.6812,
+          "n": 229,
+          "subcat_acc": 0.6201
+        },
+        "v5_receipt_item_body": {
+          "cat_acc": 0.9603,
+          "n": 126,
+          "subcat_acc": 0.9206
+        },
+        "v5_multilingual_bm_cjk": {
+          "cat_acc": 0.5816,
+          "n": 337,
+          "subcat_acc": 0.5312
+        },
+        "v5_truncated_gateway": {
+          "cat_acc": 0.6963,
+          "n": 652,
+          "subcat_acc": 0.6779
+        }
+      }
+    },
+    "v3_holdout": {
+      "ms_per_sample": 1.751,
+      "parsed_rate": 1,
+      "cat_acc": 0.9349,
+      "tier2_trigger_rate_on_ml": 0.3516,
+      "ml_routed_n": 91,
+      "n": 384,
+      "subcat_acc": 0.862,
+      "by_edge_case": {
+        "unknown": {
+          "cat_acc": 0.9349,
+          "n": 384,
+          "subcat_acc": 0.862
+        }
+      }
+    },
+    "ood_misc_test": {
+      "abstention_rate": 1,
+      "n": 200
+    },
+    "s2_load_ms": 19,
+    "s1_load_ms": 433,
+    "use_s2": true,
+    "v4_test": {
+      "ms_per_sample": 1.046,
+      "parsed_rate": 0.968,
+      "cat_acc": 0.9023,
+      "tier2_trigger_rate_on_ml": 0.4223,
+      "ml_routed_n": 1596,
+      "n": 5938,
+      "subcat_acc": 0.8402,
+      "by_edge_case": {
+        "split_bill_p2p": {
+          "cat_acc": 0.9513,
+          "n": 493,
+          "subcat_acc": 0.8742
+        },
+        "lhdn_notification": {
+          "cat_acc": 0.8548,
+          "n": 427,
+          "subcat_acc": 0.7471
+        },
+        "thermal_receipt_noisy_ocr": {
+          "cat_acc": 0.9609,
+          "n": 384,
+          "subcat_acc": 0.8958
+        },
+        "foreign_currency_fx": {
+          "cat_acc": 0.9069,
+          "n": 709,
+          "subcat_acc": 0.8434
+        },
+        "truncated_merchant": {
+          "cat_acc": 0.8335,
+          "n": 1039,
+          "subcat_acc": 0.8219
+        },
+        "ewallet_bnpl_digital": {
+          "cat_acc": 0.8769,
+          "n": 918,
+          "subcat_acc": 0.817
+        },
+        "lhdn_receipt": {
+          "cat_acc": 0.9557,
+          "n": 316,
+          "subcat_acc": 0.807
+        },
+        "standard_bank_push": {
+          "cat_acc": 0.9373,
+          "n": 1484,
+          "subcat_acc": 0.8753
+        },
+        "seed_v3": {
+          "cat_acc": 0.881,
+          "n": 168,
+          "subcat_acc": 0.8274
+        }
+      }
+    }
+  }
+}

@@ -1022,6 +1022,73 @@ public final class ExtendedTests {
    eq(ReceiptParser.parse("Cafe\nTotal 10.00\nTotal 12.00").getLong("amount"),0L);
   });
 
+  test("Track 2 Foundry v5 INT8 MlNeuralReranker cascade, consonant-skeleton alerts, BM/CJK, LHDN disambiguation & OOD safety",()->{
+   java.nio.file.Path clsAsset=java.nio.file.Paths.get("app/src/main/assets/moneylens_classifier.json.gz");
+   java.nio.file.Path nnAsset=java.nio.file.Paths.get("app/src/main/assets/moneylens_reranker.bin.gz");
+   yes(java.nio.file.Files.exists(clsAsset)&&java.nio.file.Files.size(clsAsset)<2_097_152L);
+   yes(java.nio.file.Files.exists(nnAsset)&&java.nio.file.Files.size(nnAsset)<2_097_152L);
+
+   MlClassifier.clear();
+   MlNeuralReranker.clear();
+   yes(MlClassifier.loadFromPath(clsAsset));
+   long nt0=System.nanoTime();
+   yes(MlNeuralReranker.loadFromPath(nnAsset));
+   long nnLoadMs=(System.nanoTime()-nt0)/1_000_000L;
+   yes(nnLoadMs<200L&&MlNeuralReranker.isLoaded());
+
+   // Trim frees RAM and lazy-reloads with identical logits
+   MlClassifier.Prediction s1Base=MlClassifier.predict("","TNGD*KMNTRTU BNGS RM 110.00");
+   MlNeuralReranker.Prediction nn1=MlNeuralReranker.predict("","TNGD*KMNTRTU BNGS RM 110.00",s1Base);
+   yes(nn1!=null&&nn1.category.equals("Education"));
+   MlNeuralReranker.trim();
+   yes(!MlNeuralReranker.isLoaded());
+   MlNeuralReranker.Prediction nn2=MlNeuralReranker.predict("","TNGD*KMNTRTU BNGS RM 110.00",s1Base);
+   yes(nn2!=null&&MlNeuralReranker.isLoaded()&&nn1.category.equals(nn2.category)&&nn1.subcategory.equals(nn2.subcategory)&&Math.abs(nn1.probability-nn2.probability)<1e-6);
+
+   // Vowel-dropped / truncated gateway alerts
+   String[] tr1=PaymentParser.classify("","Bank","PAY*KLR KRTSVSRVC 55.90 BNGK");
+   yes(tr1[0].equals("Transport")&&tr1[1].equals("Vehicle Maintenance & Service"));
+   String[] tr2=PaymentParser.classify("","Bank","TNGD*KMNTRTU BNGS RM 110.00");
+   yes(tr2[0].equals("Education"));
+   String[] tr3=PaymentParser.classify("","Bank","TNGD*SUSHICFMY BNGS RM 60.00");
+   yes(tr3[0].equals("Food & drinks"));
+   String[] tr4=PaymentParser.classify("","Bank","IPAY88*LZDOLN 15.50 MYR BNGK");
+   yes(tr4[0].equals("Shopping")&&tr4[1].equals("Online Marketplace (Shopee / Lazada / TikTok)"));
+
+   // Verify Stage-2 INT8 standalone also works when Stage-1 is disabled
+   MlClassifier.setDisabled(true);
+   try{
+    String[] nnOnly=PaymentParser.classify("","Bank","PAY*KLR KRTSVSRVC 55.90 BNGK");
+    yes(nnOnly[0].equals("Transport"));
+   }finally{
+    MlClassifier.setDisabled(false);
+   }
+
+   // Multilingual BM & CJK alerts
+   String[] bm1=PaymentParser.classify("","Bank","Pembayaran DuitNow QR berjaya sebanyak RM 18.50 kepada Klinik Kesihatan Sentosa");
+   yes(bm1[0].equals("Health & medical")&&bm1[1].equals("Clinic & GP"));
+   String[] cjk1=PaymentParser.classify("","Bank","Am PM医药 DuitNow RM88.50 已支付成功，感谢惠顾！");
+   yes(cjk1[0].equals("Health & medical"));
+   String[] cjk2=PaymentParser.classify("","Bank","Haji Kafe 哈吉咖啡 RM25.70 于 2026-06-01 在 Shah Alam, Selangor 成功完成支付");
+   yes(cjk2[0].equals("Food & drinks"));
+
+   // LHDN SSPN vs PTPTN Loan disambiguation
+   String[] sspn=PaymentParser.classify("Simpan SSPN Prime","Bank","myPTPTN Simpanan SSPN deposit RM 300.00 ref LHDN tax relief");
+   yes(sspn[0].equals("Investments & savings")&&sspn[1].equals("SSPN Savings"));
+   String[] ptptn=PaymentParser.classify("PTPTN Study Loan","Bank","myPTPTN bayaran balik pinjaman PTPTN RM 250.00");
+   yes(ptptn[0].equals("Loans, BNPL & Credit")&&ptptn[1].equals("PTPTN Study Loan"));
+
+   // Strict OOD Misc safety
+   for(String[] oodCase:new String[][]{
+     {"XYZ 123","You have paid RM 15.00 at XYZ 123"},
+     {"ABC Enterprise","You have paid RM 50.00 at ABC Enterprise"},
+     {"Perniagaan Maju 88","You have paid RM 99.00 at Perniagaan Maju 88"}
+   }){
+    String[] oodRes=PaymentParser.classify(oodCase[0],"Bank",oodCase[1]);
+    yes(oodRes[0].equals("Miscellaneous")&&oodRes[1].equals("Auto-Captured (Uncategorized)"));
+   }
+  });
+
   System.out.println("RESULT: "+passed+" extended tests passed");
  }
 }

@@ -413,13 +413,26 @@ public final class PaymentParser {
     return new String[]{"Miscellaneous","Auto-Captured (Uncategorized)"};
   }
 
-  /** Hybrid rules + hierarchical offline sparse TF-IDF classifier for Malaysian merchants. Returns {category, subcategory}. */
+  /** Hybrid rules + 2-stage cascaded offline neural reranker for Malaysian merchants. Returns {category, subcategory}. */
   public static String[] classify(String merchant,String source,String text){
     String[] ruleHit=classifyRulesOnly(merchant,source,text);
     if(!ruleHit[0].equals("Miscellaneous"))return ruleHit;
     boolean hasRichBody=text!=null&&text.trim().length()>=20;
     MlClassifier.Prediction ml=MlClassifier.predict(merchant,text);
-    if(ml!=null&&ml.activeSignals>=3&&(hasRichBody
+    if(ml!=null&&ml.activeSignals>=4&&ml.probability>=0.72&&ml.margin>=0.25&&!ml.category.equals("Miscellaneous")){
+      return new String[]{ml.category,ml.subcategory};
+    }
+    MlNeuralReranker.Prediction nn=MlNeuralReranker.predict(merchant,text,ml);
+    if(nn!=null&&nn.activeSignals>=2){
+      if(nn.category.equals("Miscellaneous")||nn.miscProbability>=MlNeuralReranker.getOodMiscThreshold()){
+        return ruleHit;
+      }
+      boolean okRich=hasRichBody&&(nn.probability>=0.22||(nn.categoryProbability>=0.34&&nn.categoryMargin>=0.08));
+      boolean okShort=!hasRichBody&&((nn.probability>=0.32&&nn.margin>=0.08)||(nn.categoryProbability>=0.40&&nn.categoryMargin>=0.12));
+      if(okRich||okShort)return new String[]{nn.category,nn.subcategory};
+      return ruleHit;
+    }
+    if(ml!=null&&ml.activeSignals>=3&&!ml.category.equals("Miscellaneous")&&(hasRichBody
         ?(ml.probability>=0.08||(ml.categoryProbability>=0.22&&ml.categoryMargin>=0.06))
         :((ml.probability>=0.24&&ml.margin>=0.06)||(ml.categoryProbability>=0.24&&ml.categoryMargin>=0.08)))){
       return new String[]{ml.category,ml.subcategory};

@@ -1,0 +1,9 @@
+{
+  "stage": "DONE",
+  "ts": "2026-11-23T20:52:35Z",
+  "total_samples": 37154,
+  "s1_gz_bytes": 1771286,
+  "s2_gz_bytes": 1343330,
+  "v4_raw_cas_cat": 0.8907,
+  "v4_both_cas_cat": 0.9421
+}

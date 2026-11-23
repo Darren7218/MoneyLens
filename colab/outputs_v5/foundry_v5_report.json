@@ -1,0 +1,449 @@
+{
+  "total_seconds": 4756.2,
+  "generation": {
+    "skipped_vllm": true,
+    "total_samples": 37154
+  },
+  "splits": {
+    "train_idx": 27716,
+    "cal_idx": 1618,
+    "v3_holdout_idx": 384,
+    "v4_test_idx": 5938,
+    "v5_hard_test_idx": 1498,
+    "v5_train_n": 7992,
+    "v5_cal_n": 499
+  },
+  "teachers": {
+    "teacher1": {
+      "backbone": "intfloat/multilingual-e5-base",
+      "epochs": 4,
+      "best_epoch": 4,
+      "train_seconds": 1307.9
+    },
+    "teacher2": {
+      "backbone": "xlm-roberta-base",
+      "epochs": 4,
+      "best_epoch": 4,
+      "train_seconds": 1314.6
+    },
+    "teacher3": {
+      "backbone": "HighDim-200k-5Fold-OOF",
+      "vocab_size": 200000,
+      "train_seconds": 97.5
+    },
+    "ensemble": {
+      "weights": [
+        0.3531,
+        0.1412,
+        0.5057
+      ],
+      "individual_temps": [
+        0.9248,
+        0.9611,
+        0.5888
+      ],
+      "v3_holdout": {
+        "raw_only": {
+          "cat_acc": 0.9401,
+          "subcat_acc": 0.9089,
+          "subcat_macro_f1": 0.8912,
+          "nll": 0.4167,
+          "ece": 0.0544,
+          "brier": 0.1582
+        },
+        "with_merchant": {
+          "cat_acc": 0.9349,
+          "subcat_acc": 0.9089,
+          "subcat_macro_f1": 0.8949,
+          "nll": 0.41,
+          "ece": 0.0401,
+          "brier": 0.1503
+        }
+      },
+      "v4_test": {
+        "raw_only": {
+          "cat_acc": 0.9266,
+          "subcat_acc": 0.8996,
+          "subcat_macro_f1": 0.8819,
+          "nll": 0.4291,
+          "ece": 0.0504,
+          "brier": 0.1505
+        },
+        "with_merchant": {
+          "cat_acc": 0.9705,
+          "subcat_acc": 0.9486,
+          "subcat_macro_f1": 0.9431,
+          "nll": 0.2098,
+          "ece": 0.0259,
+          "brier": 0.081
+        }
+      },
+      "v5_hard_test": {
+        "raw_only": {
+          "cat_acc": 0.8685,
+          "subcat_acc": 0.8411,
+          "subcat_macro_f1": 0.8342,
+          "nll": 0.7032,
+          "ece": 0.022,
+          "brier": 0.2026
+        },
+        "with_merchant": {
+          "cat_acc": 0.9359,
+          "subcat_acc": 0.9112,
+          "subcat_macro_f1": 0.904,
+          "nll": 0.3729,
+          "ece": 0.0238,
+          "brier": 0.1278
+        }
+      }
+    }
+  },
+  "stage1_student": {
+    "winner": "svc_bal_C0.30",
+    "n_downweighted": 19,
+    "holdout_gz_bytes": 1720370,
+    "holdout_active_features": 29312,
+    "prod_gz_bytes": 1771286,
+    "prod_active_features": 29418
+  },
+  "stage2_reranker": {
+    "holdout_gz_bytes": 1346571,
+    "prod_gz_bytes": 1343330,
+    "temperature": 0.7528,
+    "ood_misc_threshold": 0.18,
+    "best_cal_macro_f1": 0.8554
+  },
+  "zero_leakage_eval": {
+    "stage1_temperature": 0.122,
+    "stage2_temperature": 0.7528,
+    "ood_misc_threshold": 0.18,
+    "v3_holdout": {
+      "raw_only": {
+        "n": 384,
+        "stage1_only": {
+          "cat_acc": 0.8568,
+          "subcat_acc": 0.8021
+        },
+        "stage2_int8_only": {
+          "cat_acc": 0.875,
+          "subcat_acc": 0.8151
+        },
+        "cascade": {
+          "cat_acc": 0.8724,
+          "subcat_acc": 0.8177
+        },
+        "tier2_trigger_rate": 0.2578,
+        "by_edge": {
+          "seed_v3": {
+            "n": 384,
+            "s1_cat": 0.8568,
+            "cas_cat": 0.8724,
+            "s1_sub": 0.8021,
+            "cas_sub": 0.8177
+          }
+        }
+      },
+      "with_merchant": {
+        "n": 384,
+        "stage1_only": {
+          "cat_acc": 0.8672,
+          "subcat_acc": 0.8203
+        },
+        "stage2_int8_only": {
+          "cat_acc": 0.8776,
+          "subcat_acc": 0.8125
+        },
+        "cascade": {
+          "cat_acc": 0.888,
+          "subcat_acc": 0.8255
+        },
+        "tier2_trigger_rate": 0.1901,
+        "by_edge": {
+          "seed_v3": {
+            "n": 384,
+            "s1_cat": 0.8672,
+            "cas_cat": 0.888,
+            "s1_sub": 0.8203,
+            "cas_sub": 0.8255
+          }
+        }
+      }
+    },
+    "v4_test": {
+      "raw_only": {
+        "n": 5938,
+        "stage1_only": {
+          "cat_acc": 0.8823,
+          "subcat_acc": 0.8429
+        },
+        "stage2_int8_only": {
+          "cat_acc": 0.8781,
+          "subcat_acc": 0.8304
+        },
+        "cascade": {
+          "cat_acc": 0.8907,
+          "subcat_acc": 0.8457
+        },
+        "tier2_trigger_rate": 0.2553,
+        "by_edge": {
+          "ewallet_bnpl_digital": {
+            "n": 918,
+            "s1_cat": 0.9248,
+            "cas_cat": 0.9227,
+            "s1_sub": 0.8922,
+            "cas_sub": 0.8824
+          },
+          "foreign_currency_fx": {
+            "n": 709,
+            "s1_cat": 0.8999,
+            "cas_cat": 0.8999,
+            "s1_sub": 0.8575,
+            "cas_sub": 0.8561
+          },
+          "lhdn_notification": {
+            "n": 427,
+            "s1_cat": 0.9883,
+            "cas_cat": 0.9977,
+            "s1_sub": 0.9696,
+            "cas_sub": 0.9859
+          },
+          "lhdn_receipt": {
+            "n": 316,
+            "s1_cat": 0.9873,
+            "cas_cat": 0.9937,
+            "s1_sub": 0.9684,
+            "cas_sub": 0.9778
+          },
+          "seed_v3": {
+            "n": 168,
+            "s1_cat": 0.8631,
+            "cas_cat": 0.8631,
+            "s1_sub": 0.8036,
+            "cas_sub": 0.7917
+          },
+          "split_bill_p2p": {
+            "n": 493,
+            "s1_cat": 0.9513,
+            "cas_cat": 0.9554,
+            "s1_sub": 0.9148,
+            "cas_sub": 0.927
+          },
+          "standard_bank_push": {
+            "n": 1484,
+            "s1_cat": 0.903,
+            "cas_cat": 0.9111,
+            "s1_sub": 0.8605,
+            "cas_sub": 0.8565
+          },
+          "thermal_receipt_noisy_ocr": {
+            "n": 384,
+            "s1_cat": 0.9609,
+            "cas_cat": 0.9609,
+            "s1_sub": 0.9115,
+            "cas_sub": 0.9167
+          },
+          "truncated_merchant": {
+            "n": 1039,
+            "s1_cat": 0.6689,
+            "cas_cat": 0.6997,
+            "s1_sub": 0.6208,
+            "cas_sub": 0.6372
+          }
+        }
+      },
+      "with_merchant": {
+        "n": 5938,
+        "stage1_only": {
+          "cat_acc": 0.9427,
+          "subcat_acc": 0.901
+        },
+        "stage2_int8_only": {
+          "cat_acc": 0.9311,
+          "subcat_acc": 0.8857
+        },
+        "cascade": {
+          "cat_acc": 0.9421,
+          "subcat_acc": 0.8979
+        },
+        "tier2_trigger_rate": 0.125,
+        "by_edge": {
+          "ewallet_bnpl_digital": {
+            "n": 918,
+            "s1_cat": 0.9368,
+            "cas_cat": 0.9368,
+            "s1_sub": 0.8943,
+            "cas_sub": 0.8878
+          },
+          "foreign_currency_fx": {
+            "n": 709,
+            "s1_cat": 0.921,
+            "cas_cat": 0.9182,
+            "s1_sub": 0.8702,
+            "cas_sub": 0.8674
+          },
+          "lhdn_notification": {
+            "n": 427,
+            "s1_cat": 0.9906,
+            "cas_cat": 0.9953,
+            "s1_sub": 0.9719,
+            "cas_sub": 0.9789
+          },
+          "lhdn_receipt": {
+            "n": 316,
+            "s1_cat": 0.9905,
+            "cas_cat": 0.9905,
+            "s1_sub": 0.9589,
+            "cas_sub": 0.9715
+          },
+          "seed_v3": {
+            "n": 168,
+            "s1_cat": 0.8929,
+            "cas_cat": 0.8869,
+            "s1_sub": 0.8036,
+            "cas_sub": 0.7976
+          },
+          "split_bill_p2p": {
+            "n": 493,
+            "s1_cat": 0.9655,
+            "cas_cat": 0.9635,
+            "s1_sub": 0.9331,
+            "cas_sub": 0.9351
+          },
+          "standard_bank_push": {
+            "n": 1484,
+            "s1_cat": 0.9212,
+            "cas_cat": 0.9232,
+            "s1_sub": 0.8767,
+            "cas_sub": 0.8713
+          },
+          "thermal_receipt_noisy_ocr": {
+            "n": 384,
+            "s1_cat": 0.9766,
+            "cas_cat": 0.9766,
+            "s1_sub": 0.9349,
+            "cas_sub": 0.9323
+          },
+          "truncated_merchant": {
+            "n": 1039,
+            "s1_cat": 0.9442,
+            "cas_cat": 0.9394,
+            "s1_sub": 0.9038,
+            "cas_sub": 0.8961
+          }
+        }
+      },
+      "ood_misc_test": {
+        "n": 200,
+        "abstention_rate": 1.0
+      }
+    },
+    "v5_hard_test": {
+      "raw_only": {
+        "n": 1498,
+        "stage1_only": {
+          "cat_acc": 0.8104,
+          "subcat_acc": 0.7757
+        },
+        "stage2_int8_only": {
+          "cat_acc": 0.8304,
+          "subcat_acc": 0.8024
+        },
+        "cascade": {
+          "cat_acc": 0.8351,
+          "subcat_acc": 0.8057
+        },
+        "tier2_trigger_rate": 0.2737,
+        "by_edge": {
+          "v5_digital_bnpl_fx": {
+            "n": 229,
+            "s1_cat": 0.9913,
+            "cas_cat": 0.9956,
+            "s1_sub": 0.9825,
+            "cas_sub": 0.9869
+          },
+          "v5_disambiguation_lhdn": {
+            "n": 154,
+            "s1_cat": 0.9805,
+            "cas_cat": 0.987,
+            "s1_sub": 0.9675,
+            "cas_sub": 0.974
+          },
+          "v5_multilingual_bm_cjk": {
+            "n": 337,
+            "s1_cat": 0.8754,
+            "cas_cat": 0.905,
+            "s1_sub": 0.8398,
+            "cas_sub": 0.8694
+          },
+          "v5_receipt_item_body": {
+            "n": 126,
+            "s1_cat": 0.9921,
+            "cas_cat": 0.9841,
+            "s1_sub": 0.9841,
+            "cas_sub": 0.9762
+          },
+          "v5_truncated_gateway": {
+            "n": 652,
+            "s1_cat": 0.638,
+            "cas_cat": 0.6779,
+            "s1_sub": 0.5844,
+            "cas_sub": 0.6365
+          }
+        }
+      },
+      "with_merchant": {
+        "n": 1498,
+        "stage1_only": {
+          "cat_acc": 0.8885,
+          "subcat_acc": 0.8632
+        },
+        "stage2_int8_only": {
+          "cat_acc": 0.8885,
+          "subcat_acc": 0.8625
+        },
+        "cascade": {
+          "cat_acc": 0.8945,
+          "subcat_acc": 0.8718
+        },
+        "tier2_trigger_rate": 0.1542,
+        "by_edge": {
+          "v5_digital_bnpl_fx": {
+            "n": 229,
+            "s1_cat": 0.9913,
+            "cas_cat": 0.9913,
+            "s1_sub": 0.9825,
+            "cas_sub": 0.9825
+          },
+          "v5_disambiguation_lhdn": {
+            "n": 154,
+            "s1_cat": 0.9935,
+            "cas_cat": 0.9935,
+            "s1_sub": 0.974,
+            "cas_sub": 0.974
+          },
+          "v5_multilingual_bm_cjk": {
+            "n": 337,
+            "s1_cat": 0.8902,
+            "cas_cat": 0.905,
+            "s1_sub": 0.8516,
+            "cas_sub": 0.8754
+          },
+          "v5_receipt_item_body": {
+            "n": 126,
+            "s1_cat": 0.9841,
+            "cas_cat": 0.9762,
+            "s1_sub": 0.9683,
+            "cas_sub": 0.9683
+          },
+          "v5_truncated_gateway": {
+            "n": 652,
+            "s1_cat": 0.8083,
+            "cas_cat": 0.816,
+            "s1_sub": 0.7807,
+            "cas_sub": 0.7883
+          }
+        }
+      }
+    }
+  }
+}

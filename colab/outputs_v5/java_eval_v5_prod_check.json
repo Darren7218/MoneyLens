@@ -1,0 +1,117 @@
+{
+  "v5_hard_test": {
+    "ms_per_sample": 0.755,
+    "parsed_rate": 0.7777,
+    "cat_acc": 0.7016,
+    "tier2_trigger_rate_on_ml": 0.2431,
+    "ml_routed_n": 547,
+    "n": 1498,
+    "subcat_acc": 0.6656,
+    "by_edge_case": {
+      "v5_disambiguation_lhdn": {
+        "cat_acc": 0.6623,
+        "n": 154,
+        "subcat_acc": 0.5779
+      },
+      "v5_digital_bnpl_fx": {
+        "cat_acc": 0.6812,
+        "n": 229,
+        "subcat_acc": 0.6245
+      },
+      "v5_receipt_item_body": {
+        "cat_acc": 0.9683,
+        "n": 126,
+        "subcat_acc": 0.9286
+      },
+      "v5_multilingual_bm_cjk": {
+        "cat_acc": 0.5875,
+        "n": 337,
+        "subcat_acc": 0.546
+      },
+      "v5_truncated_gateway": {
+        "cat_acc": 0.7255,
+        "n": 652,
+        "subcat_acc": 0.7117
+      }
+    }
+  },
+  "v3_holdout": {
+    "ms_per_sample": 1.784,
+    "parsed_rate": 1,
+    "cat_acc": 0.9401,
+    "tier2_trigger_rate_on_ml": 0,
+    "ml_routed_n": 91,
+    "n": 384,
+    "subcat_acc": 0.8724,
+    "by_edge_case": {
+      "unknown": {
+        "cat_acc": 0.9401,
+        "n": 384,
+        "subcat_acc": 0.8724
+      }
+    }
+  },
+  "ood_misc_test": {
+    "abstention_rate": 1,
+    "n": 200
+  },
+  "s2_load_ms": 19,
+  "s1_load_ms": 470,
+  "use_s2": true,
+  "v4_test": {
+    "ms_per_sample": 1,
+    "parsed_rate": 0.968,
+    "cat_acc": 0.9118,
+    "tier2_trigger_rate_on_ml": 0.0345,
+    "ml_routed_n": 1596,
+    "n": 5938,
+    "subcat_acc": 0.8515,
+    "by_edge_case": {
+      "split_bill_p2p": {
+        "cat_acc": 0.9513,
+        "n": 493,
+        "subcat_acc": 0.8763
+      },
+      "lhdn_notification": {
+        "cat_acc": 0.8571,
+        "n": 427,
+        "subcat_acc": 0.7494
+      },
+      "thermal_receipt_noisy_ocr": {
+        "cat_acc": 0.9609,
+        "n": 384,
+        "subcat_acc": 0.8958
+      },
+      "foreign_currency_fx": {
+        "cat_acc": 0.9126,
+        "n": 709,
+        "subcat_acc": 0.8505
+      },
+      "truncated_merchant": {
+        "cat_acc": 0.8672,
+        "n": 1039,
+        "subcat_acc": 0.8633
+      },
+      "ewallet_bnpl_digital": {
+        "cat_acc": 0.8791,
+        "n": 918,
+        "subcat_acc": 0.8203
+      },
+      "lhdn_receipt": {
+        "cat_acc": 0.9557,
+        "n": 316,
+        "subcat_acc": 0.807
+      },
+      "standard_bank_push": {
+        "cat_acc": 0.9461,
+        "n": 1484,
+        "subcat_acc": 0.8841
+      },
+      "seed_v3": {
+        "cat_acc": 0.8869,
+        "n": 168,
+        "subcat_acc": 0.8333
+      }
+    }
+  }
+}
