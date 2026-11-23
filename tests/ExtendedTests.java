@@ -968,6 +968,60 @@ public final class ExtendedTests {
    }
   });
 
+  test("Track 1 ReceiptFieldTagger CRF asset, OCR-typo receipts, flat LHDN MyInvois, items & TIN metadata",()->{
+   java.nio.file.Path taggerAsset=java.nio.file.Paths.get("app/src/main/assets/moneylens_receipt_tagger.json.gz");
+   yes(java.nio.file.Files.exists(taggerAsset)&&java.nio.file.Files.size(taggerAsset)<512_000L);
+   ReceiptFieldTagger.clear();
+   long rt0=System.nanoTime();
+   yes(ReceiptFieldTagger.loadFromPath(taggerAsset));
+   long rLoadMs=(System.nanoTime()-rt0)/1_000_000L;
+   yes(rLoadMs<500L&&ReceiptFieldTagger.isLoaded());
+
+   String[] sampleLines=ReceiptFieldTagger.normalizeLines("99 SPEEDMART\n15/10/2026\nMilo UHT 11.90\nTOTAL RM 11.90");
+   ReceiptFieldTagger.TaggedLines tg1=ReceiptFieldTagger.tag(sampleLines);
+   yes(tg1!=null&&tg1.labelIds.length==sampleLines.length);
+   ReceiptFieldTagger.trim();
+   yes(!ReceiptFieldTagger.isLoaded());
+   ReceiptFieldTagger.TaggedLines tg2=ReceiptFieldTagger.tag(sampleLines);
+   yes(tg2!=null&&ReceiptFieldTagger.isLoaded()&&Arrays.equals(tg1.labelIds,tg2.labelIds)&&Math.abs(tg1.sequenceScore-tg2.sequenceScore)<1e-6);
+
+   // OCR-typo & rotated-merge receipts
+   JSONObject rTypo=ReceiptParser.parse("TAX INVOICE\nKEDAI BUKU BESTARI\n0ct 09,202611:26\nSPM Reference Book  40.00\nSUBT0TAL RM 40.00\nSST 6% RM 2.40\nNET AM0UNT RN1 42.40\nTHANK YOU");
+   eq(rTypo.getLong("amount"),4240L);
+   yes(rTypo.getString("date").equals("2026-10-09"));
+   yes(rTypo.getString("merchant").toLowerCase(Locale.ROOT).contains("kedai buku bestari"));
+   yes(rTypo.has("items")&&rTypo.getJSONArray("items").length()>=1);
+   eq(rTypo.optLong("sstMinor",0L),240L);
+
+   JSONObject rMerged=ReceiptParser.parse("OFFICIAL RECEIPT\nKedai Farmasi Sihat\n14/05/2026\nPanadol Actifast  15.90\nTOTAL AFTER ROUNDING  Tunai RM 100.00  Rm 98.60\nBaki Kembali RM 1.40");
+   eq(rMerged.getLong("amount"),9860L);
+   yes(rMerged.getString("date").equals("2026-05-14"));
+
+   // Flat LHDN MyInvois receipts
+   JSONObject rEv=ReceiptParser.parse("EV CONNECTION   TIN: C456789012345   202401031248   09-02-2026   80mm Thermal Receipt  Item: Electric Vehicle Charging  Amount: RM 52.70  SST 6%: RM 3.16  Total: RM 55.86  Final Amount (Rounded): RM 55.90  Invoice: INV-20260299");
+   eq(rEv.getLong("amount"),5590L);
+   yes(rEv.getString("merchant").equals("EV CONNECTION"));
+   yes(rEv.getString("date").equals("2026-02-09"));
+   yes(rEv.optString("lhdnTin","").equals("C456789012345"));
+   yes(rEv.optString("lhdnInvoiceRef","").equals("INV-20260299"));
+   eq(rEv.optLong("sstMinor",0L),316L);
+
+   JSONObject rLab=ReceiptParser.parse("Gribbles Pathology | 202401031245 | TIN: 789456123098 | Date: 14/09/2026 | Items: Full Medical Checkup | Price: MYR 991.20 | SST 6%: MYR 59.47 | Total: MYR 1,050.67 | Rounding: -MYR 0.07 | Final Total: MYR 991.20");
+   eq(rLab.getLong("amount"),99120L);
+   yes(rLab.getString("merchant").equals("Gribbles Pathology"));
+   yes(rLab.getString("date").equals("2026-09-14"));
+   yes(rLab.optString("lhdnTin","").equals("789456123098"));
+
+   // Flat noisy thermal receipt with '...' delimiters & DuitNow QR
+   JSONObject rFlat=ReceiptParser.parse("PASAR PAGI PUCHONG 2026-07-21... LETTUCE 3.20... SUBTOTAL RM 12.65... SST 0.00... 5 SEN ROUNDING -0.05... TOTAL RM 27.45... DuitNow QR 27.45");
+   eq(rFlat.getLong("amount"),2745L);
+   yes(rFlat.getString("date").equals("2026-07-21"));
+   yes(rFlat.getString("merchant").toLowerCase(Locale.ROOT).contains("pasar pagi puchong"));
+
+   // Ambiguous receipt total guard must remain strict
+   eq(ReceiptParser.parse("Cafe\nTotal 10.00\nTotal 12.00").getLong("amount"),0L);
+  });
+
   System.out.println("RESULT: "+passed+" extended tests passed");
  }
 }

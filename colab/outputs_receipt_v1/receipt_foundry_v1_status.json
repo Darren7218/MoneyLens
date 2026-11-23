@@ -1,0 +1,9 @@
+{
+  "stage": "DONE",
+  "ts": "2026-11-22T14:51:46Z",
+  "total": 15000,
+  "gz_bytes": 122623,
+  "ocr_line_acc": 0.9943,
+  "ocr_exact_amt": 0.954,
+  "txt_exact_amt": 0.889
+}

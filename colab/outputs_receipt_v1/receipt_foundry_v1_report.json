@@ -1,0 +1,252 @@
+{
+  "total_seconds": 125.8,
+  "ocr_engine": "rapidocr-onnxruntime",
+  "ocr_probe_ips": 2.2,
+  "dataset_counts": {
+    "total": 15000,
+    "real_gpu_ocr": 6000,
+    "ocr_aligned_ok": 5878,
+    "text_augmented": 9000,
+    "train_usable": 11912,
+    "val_usable": 987,
+    "test_real_ocr": 1000,
+    "test_text_augmented": 1000
+  },
+  "tagger_asset": {
+    "labels": 11,
+    "vocab_total": 4548,
+    "active_features": 4538,
+    "nonzero_weights": 44904,
+    "raw_bytes": 556785,
+    "gz_bytes": 122623,
+    "under_512kb": true
+  },
+  "eval_val": {
+    "n_receipts": 987,
+    "n_lines": 13544,
+    "line_acc": 0.9977,
+    "exact_grand_total_amt": 0.9281,
+    "merchant_tag_match": 0.8967,
+    "date_line_hit": 0.9048,
+    "per_label": {
+      "MERCHANT": {
+        "precision": 0.9978,
+        "recall": 0.9913,
+        "f1": 0.9946,
+        "support": 921
+      },
+      "HEADER_META": {
+        "precision": 0.9969,
+        "recall": 0.9991,
+        "f1": 0.998,
+        "support": 3228
+      },
+      "DATE": {
+        "precision": 0.9989,
+        "recall": 1.0,
+        "f1": 0.9994,
+        "support": 893
+      },
+      "ITEM": {
+        "precision": 0.999,
+        "recall": 0.997,
+        "f1": 0.998,
+        "support": 2980
+      },
+      "SUBTOTAL": {
+        "precision": 0.992,
+        "recall": 0.994,
+        "f1": 0.993,
+        "support": 498
+      },
+      "TAX_SST": {
+        "precision": 1.0,
+        "recall": 0.9953,
+        "f1": 0.9976,
+        "support": 213
+      },
+      "ROUNDING": {
+        "precision": 0.9986,
+        "recall": 1.0,
+        "f1": 0.9993,
+        "support": 727
+      },
+      "GRAND_TOTAL": {
+        "precision": 0.9945,
+        "recall": 1.0,
+        "f1": 0.9973,
+        "support": 1093
+      },
+      "PAYMENT_TENDER": {
+        "precision": 1.0,
+        "recall": 0.995,
+        "f1": 0.9975,
+        "support": 1204
+      },
+      "LHDN_META": {
+        "precision": 0.9984,
+        "recall": 1.0,
+        "f1": 0.9992,
+        "support": 1262
+      },
+      "OTHER": {
+        "precision": 0.9962,
+        "recall": 0.9981,
+        "f1": 0.9971,
+        "support": 525
+      }
+    }
+  },
+  "eval_blind_real_ocr": {
+    "n_receipts": 1000,
+    "n_lines": 13913,
+    "line_acc": 0.9943,
+    "exact_grand_total_amt": 0.954,
+    "merchant_tag_match": 0.933,
+    "date_line_hit": 0.945,
+    "per_label": {
+      "MERCHANT": {
+        "precision": 0.9916,
+        "recall": 0.9634,
+        "f1": 0.9773,
+        "support": 984
+      },
+      "HEADER_META": {
+        "precision": 0.9895,
+        "recall": 0.9971,
+        "f1": 0.9933,
+        "support": 3417
+      },
+      "DATE": {
+        "precision": 0.9958,
+        "recall": 0.9989,
+        "f1": 0.9974,
+        "support": 946
+      },
+      "ITEM": {
+        "precision": 0.9984,
+        "recall": 0.9962,
+        "f1": 0.9973,
+        "support": 3178
+      },
+      "SUBTOTAL": {
+        "precision": 0.9831,
+        "recall": 0.9943,
+        "f1": 0.9887,
+        "support": 527
+      },
+      "TAX_SST": {
+        "precision": 1.0,
+        "recall": 0.9961,
+        "f1": 0.9981,
+        "support": 258
+      },
+      "ROUNDING": {
+        "precision": 0.9969,
+        "recall": 0.9953,
+        "f1": 0.9961,
+        "support": 636
+      },
+      "GRAND_TOTAL": {
+        "precision": 0.9947,
+        "recall": 0.9938,
+        "f1": 0.9943,
+        "support": 1132
+      },
+      "PAYMENT_TENDER": {
+        "precision": 0.9967,
+        "recall": 0.995,
+        "f1": 0.9959,
+        "support": 1212
+      },
+      "LHDN_META": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 1080
+      },
+      "OTHER": {
+        "precision": 0.9909,
+        "recall": 1.0,
+        "f1": 0.9954,
+        "support": 543
+      }
+    }
+  },
+  "eval_blind_text_augmented": {
+    "n_receipts": 1000,
+    "n_lines": 13358,
+    "line_acc": 0.9958,
+    "exact_grand_total_amt": 0.889,
+    "merchant_tag_match": 0.848,
+    "date_line_hit": 0.865,
+    "per_label": {
+      "MERCHANT": {
+        "precision": 0.9976,
+        "recall": 0.9603,
+        "f1": 0.9786,
+        "support": 882
+      },
+      "HEADER_META": {
+        "precision": 0.9894,
+        "recall": 0.9991,
+        "f1": 0.9942,
+        "support": 3168
+      },
+      "DATE": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 865
+      },
+      "ITEM": {
+        "precision": 0.9983,
+        "recall": 0.999,
+        "f1": 0.9986,
+        "support": 2879
+      },
+      "SUBTOTAL": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 559
+      },
+      "TAX_SST": {
+        "precision": 0.9957,
+        "recall": 1.0,
+        "f1": 0.9979,
+        "support": 234
+      },
+      "ROUNDING": {
+        "precision": 1.0,
+        "recall": 0.9987,
+        "f1": 0.9993,
+        "support": 758
+      },
+      "GRAND_TOTAL": {
+        "precision": 0.9917,
+        "recall": 0.9991,
+        "f1": 0.9954,
+        "support": 1073
+      },
+      "PAYMENT_TENDER": {
+        "precision": 0.9975,
+        "recall": 0.9943,
+        "f1": 0.9959,
+        "support": 1228
+      },
+      "LHDN_META": {
+        "precision": 0.9992,
+        "recall": 0.9983,
+        "f1": 0.9988,
+        "support": 1211
+      },
+      "OTHER": {
+        "precision": 0.998,
+        "recall": 0.992,
+        "f1": 0.995,
+        "support": 501
+      }
+    }
+  }
+}

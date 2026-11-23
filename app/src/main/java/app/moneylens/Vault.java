@@ -23,6 +23,7 @@ public final class Vault {
   public static synchronized void trimCache(){
     cachedPlain=null;cachedMtime=-1L;cachedLen=-1L;
     MlClassifier.trim();
+    ReceiptFieldTagger.trim();
   }
   private static void syncMeta(Context c,JSONObject s){
     try{
@@ -285,13 +286,25 @@ public final class Vault {
       }
       return null;
     });
+    ReceiptFieldTagger.setStreamSupplier(()->{
+      for(String asset:new String[]{"moneylens_receipt_tagger.json.gz","moneylens_receipt_tagger.json"}){
+        try{return app.getAssets().open(asset);}catch(Exception ignored){}
+      }
+      return null;
+    });
   }
   public static void initClassifier(Context c){
     if(c==null)return;
     configureClassifierLazy(c);
-    if(MlClassifier.isLoaded())return;
-    for(String asset:new String[]{"moneylens_classifier.json.gz","moneylens_classifier.json"}){
-      try(InputStream in=c.getAssets().open(asset)){if(MlClassifier.loadFromStream(in))return;}catch(Exception ignored){}
+    if(!MlClassifier.isLoaded()){
+      for(String asset:new String[]{"moneylens_classifier.json.gz","moneylens_classifier.json"}){
+        try(InputStream in=c.getAssets().open(asset)){if(MlClassifier.loadFromStream(in))break;}catch(Exception ignored){}
+      }
+    }
+    if(!ReceiptFieldTagger.isLoaded()){
+      for(String asset:new String[]{"moneylens_receipt_tagger.json.gz","moneylens_receipt_tagger.json"}){
+        try(InputStream in=c.getAssets().open(asset)){if(ReceiptFieldTagger.loadFromStream(in))break;}catch(Exception ignored){}
+      }
     }
   }
 }

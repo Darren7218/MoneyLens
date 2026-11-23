@@ -6,11 +6,12 @@ import java.time.format.*;
 import java.util.*;
 /** Extracts suggestions; never commits OCR text directly to the ledger. */
 public final class ReceiptParser {
- private static final Pattern AMOUNT=Pattern.compile("(?i)(?:(?:RM|MYR)\\s*([0-9]{1,3}(?:,[0-9]{3})+(?:\\.[0-9]{1,2})?|[0-9]{1,9}(?:\\.[0-9]{1,2})?)|([0-9]{1,3}(?:,[0-9]{3})+\\.[0-9]{2}|[0-9]{1,9}\\.[0-9]{2}))(?![0-9]|\\.[0-9])");
- private static final Pattern STANDALONE_AMOUNT=Pattern.compile("(?i)^\\s*(?:(?:RM|MYR)\\s*([0-9]{1,3}(?:,[0-9]{3})+(?:\\.[0-9]{1,2})?|[0-9]{1,9}(?:\\.[0-9]{1,2})?)|([0-9]{1,3}(?:,[0-9]{3})+\\.[0-9]{2}|[0-9]{1,9}\\.[0-9]{2}))\\s*$");
- private static final Pattern GENERIC_HEADER=Pattern.compile("(?i)^(?:(?:simplified\\s+)?tax\\s+invoice|invoice|official\\s+receipt|cash\\s+bill|sales\\s+receipt|customer\\s+copy|merchant\\s+copy|duplicate|reprint|resit\\s+rasmi|invois\\s+cukai|credit\\s+card\\s+(?:statement|payment\\s+receipt)|toll\\s+payment|road\\s+tax|cukai\\s+jalan|resit\\s+bayaran|tarikan\\s+kasir|slip\\s+transaksi|slip\\s+bayaran|tanda\\s+bayar|items?(?:\\s+paid)?|itemized(?:\\s+charges)?|bill\\s+details|late\\s+payment\\s+fee|thank\\s+you.*|terima\\s+kasih.*|welcome(?:\\s+to)?)$");
+ private static final Pattern AMOUNT=Pattern.compile("(?i)(?:(?:RM|MYR|RN1)\\s*([0-9]{1,3}(?:,[0-9]{3})+(?:\\.[0-9]{1,2})?|[0-9]{1,9}(?:\\.[0-9]{1,2})?)|([0-9]{1,3}(?:,[0-9]{3})+\\.[0-9]{2}|[0-9]{1,9}\\.[0-9]{2}))(?![0-9]|\\.[0-9])");
+ private static final Pattern DEC_AMOUNT=Pattern.compile("([0-9]{1,3}(?:,[0-9]{3})+\\.[0-9]{2}|[0-9]{1,9}\\.[0-9]{2})(?![0-9]|\\.[0-9])");
+ private static final Pattern STANDALONE_AMOUNT=Pattern.compile("(?i)^\\s*(?:(?:RM|MYR|RN1)\\s*([0-9]{1,3}(?:,[0-9]{3})+(?:\\.[0-9]{1,2})?|[0-9]{1,9}(?:\\.[0-9]{1,2})?)|([0-9]{1,3}(?:,[0-9]{3})+\\.[0-9]{2}|[0-9]{1,9}\\.[0-9]{2}))\\s*$");
+ private static final Pattern GENERIC_HEADER=Pattern.compile("(?i)^(?:(?:simplified\\s+)?tax\\s+invoice|lhdn\\s+e-?invoice(?:\\s+receipt)?|80mm\\s+thermal\\s+receipt|invoice|official\\s+receipt|cash\\s+bill|sales\\s+receipt|customer\\s+copy|merchant\\s+copy|duplicate|reprint|resit\\s+rasmi|invois\\s+cukai|credit\\s+card\\s+(?:statement|payment\\s+receipt)|toll\\s+payment|road\\s+tax|cukai\\s+jalan|resit\\s+bayaran|tarikan\\s+kasir|slip\\s+transaksi|slip\\s+bayaran|tanda\\s+bayar|items?(?:\\s+paid)?|itemized(?:\\s+charges)?|bill\\s+details|late\\s+payment\\s+fee|thank\\s+you.*|terima\\s+kasih.*|welcome(?:\\s+to)?)$");
  private static final Pattern WELCOME_PREFIX=Pattern.compile("(?i)^welcome\\s+to\\s+(.{2,})$");
- private static final Pattern NOISE_META=Pattern.compile("(?i)^(?:sst|gst|ssm|reg(?:\\.|istration)?\\s*(?:no|id)|roc|rob|co\\.?\\s*reg|company\\s*(?:no|reg)|tin|msic|brn|tel|hp|phone|fax|hotline|call|email|web|www|http|date|tarikh|time|masa|cashier|staff|server|waiter|table|meja|pax|order|bill|receipt|rcv|rdc|ref|terminal|pos|shift|batch|trace|approval|items?(?:\\s+paid)?|itemized|customer\\s*(?:name|id)?|client|subscriber|service|description|desc|qty|quantity|amount|payment\\s+(?:of|for)|due\\s+date|invoice\\s+no|job|produk|barang|harga|perkhidmatan|penyertaan|bill\\s+details|late\\s+payment\\s+fee)\\b[:.#\\s-]*.*");
+ private static final Pattern NOISE_META=Pattern.compile("(?i)^(?:sst|gst|ssm|reg(?:\\.|istration)?\\s*(?:no|id)|roc|rob|co\\.?\\s*reg|company\\s*(?:no|reg)|tin|myinvois|einvoice|e-invoice|lhdn\\s+(?:bucket|tax\\s+relief)|msic|brn|tel|hp|phone|fax|hotline|call|email|web|www|http|date|tarikh|time|masa|cashier|staff|server|waiter|table|meja|pax|order|bill|receipt|rcv|rdc|ref|terminal|pos|shift|batch|trace|approval|items?(?:\\s+paid)?|itemized|customer\\s*(?:name|id)?|client|subscriber|service|description|desc|qty|quantity|amount|payment\\s+(?:of|for)|due\\s+date|invoice\\s+no|job|produk|barang|harga|perkhidmatan|penyertaan|payee|bill\\s+details|late\\s+payment\\s+fee)\\b[:.#\\s-]*.*");
  private static final Pattern ADDRESS_LINE=Pattern.compile("(?i)^(?:[0-9]{1,4}[a-z]?(?:-[0-9]{1,4})?[,\\s]+)?(?:no\\.?|lot|plot|level|lvl|floor|flr|unit|suite|block|blk|ground\\s+floor|g-|lg-|ug-|b1-|jalan|jln|lorong|lrg|persiaran|lebuh|taman|tmn|bandar|seksyen|section|kampung|kg\\.?|kompleks|pusat\\s+(?:bandar|komersial|membeli))\\b.*");
  private static final Pattern STREET_TOKEN=Pattern.compile("(?i)\\b(?:jalan|jln|lorong|lrg|persiaran|lebuhraya|lebuh)\\b");
  private static final Pattern BIZ_SUFFIX=Pattern.compile("(?i).*\\b(?:sdn\\.?\\s*bhd|bhd|berhad|enterprise|trading|services|solutions|holdings|kindergarten|tadika|taska|school|sekolah|klinik|clinic|farmasi|pharmacy|restoran|restaurant|cafe|café|mart|store|grocer|supermarket|motors?|workshop|bengkel|resources|ventures)\\b\\.?$");
@@ -20,32 +21,39 @@ public final class ReceiptParser {
  private static final Pattern STORE_HINT=Pattern.compile("(?i)\\b(?:sdn\\.?\\s*bhd\\.?|bhd|berhad|plt|llp|enterprise|trading|holdings|resources|services|solutions|restoran|restaurant|kedai|warung|warong|gerai|medan\\s+selera|hawker|mamak|kandar|penyet|lemak|kopitiam|bistro|cafe|café|kafe|coffee|kopi|pelita|q\\s*bistro|oriental\\s+kopi|oldtown|tealive|zus|chagee|mixue|gigi|starbucks|mcdonald|kfc|burger\\s+king|marrybrown|subway|bakery|farmasi|pharmacy|obat|ubat|klinik|clinic|hospital|dental|optometrist|optical|speedmart|kk\\s*(?:super\\s*)?mart|mynews|familymart|cu\\s*mart|emart24|bilabila|econsave|mydin|lotus|aeon|giant|jaya\\s+grocer|village\\s+grocer|segi\\s+fresh|hero\\s*market|tf\\s+value|watsons|guardian|mr\\.?\\s*diy|ecoshop|daiso|popular|uniqlo|padini|mart|supermarket|hypermarket|pasaraya|pasar|grocer|mini\\s*market|petrol|petronas|shell|caltex|bhpetrol|setel|gentari|jomcharge|chargev|ev\\s+charging|station|hardware|carpentry|maintenance|electronics|marketplace|store|bookshop|bookstore|kindergarten|tadika|plaza\\s+tol|toll\\s+plaza|condominium|condo)\\b");
  private static final Pattern BODY_SECTION=Pattern.compile("(?i)^(?:items?(?:\\s+paid)?|itemized(?:\\s+charges)?|bill\\s+details|subtotal|qty|quantity|description)\\b.*");
  private static final String MONTHS="januari|january|jan|februari|february|feb|march|mac|mar|april|apr|may|mei|june|jun|julai|july|jul|ogos|august|aug|september|sept|sep|oktober|october|oct|okt|november|nov|disember|december|dis|dec";
- private static final Pattern MONTH_DATE=Pattern.compile("(?i)\\b([0-9]{1,2})(?:st|nd|rd|th)?[-/\\s]+("+MONTHS+")[-/\\s,]+(20[0-9]{2}|[0-9]{2})\\b");
- private static final Pattern MONTH_FIRST_DATE=Pattern.compile("(?i)\\b("+MONTHS+")\\s+([0-9]{1,2})(?:st|nd|rd|th)?[,\\s]+(20[0-9]{2}|[0-9]{2})\\b");
+ private static final Pattern MONTH_DATE=Pattern.compile("(?i)\\b([0-9]{1,2})(?:st|nd|rd|th)?[-/\\s]+("+MONTHS+")[-/\\s,]+(20[0-9]{2}|[0-9]{2})(?=[^0-9]|[0-9]{2}:|$)");
+ private static final Pattern MONTH_FIRST_DATE=Pattern.compile("(?i)\\b("+MONTHS+")\\s+([0-9]{1,2})(?:st|nd|rd|th)?[,\\s]+(20[0-9]{2}|[0-9]{2})(?=[^0-9]|[0-9]{2}:|$)");
  private static final Pattern YMD_MONTH_DATE=Pattern.compile("(?i)\\b(20[0-9]{2})[-/\\s]+("+MONTHS+")[-/\\s]+([0-9]{1,2})(?:st|nd|rd|th)?\\b");
- private static final Pattern NUM_DMY_SPACED=Pattern.compile("\\b([0-9]{1,2})[-/.\\s]+([0-9]{1,2})[-/.\\s]+(20[0-9]{2})\\b");
- private static final Pattern LABELED_DMY_COMPACT=Pattern.compile("(?i)(?:date|tarikh)\\s*[:.]?\\s*([0-9]{2})[-/.\\s]*([0-9]{2})[-/.\\s]*(20[0-9]{2})\\b");
- private static final Pattern NUM_DMY_SHORT=Pattern.compile("\\b([0-9]{1,2})[-/.]([0-9]{1,2})[-/.]([0-9]{2})\\b");
+ private static final Pattern NUM_DMY_SPACED=Pattern.compile("\\b([0-9]{1,2})[-/.\\s]+([0-9]{1,2})[-/.\\s]+(20[0-9]{2})(?=[^0-9]|[0-9]{2}:|$)");
+ private static final Pattern LABELED_DMY_COMPACT=Pattern.compile("(?i)(?:date|tarikh)\\s*[:.]?\\s*([0-9]{2})[-/.\\s]*([0-9]{2})[-/.\\s]*(20[0-9]{2})(?=[^0-9]|[0-9]{2}:|$)");
+ private static final Pattern NUM_DMY_SHORT=Pattern.compile("\\b([0-9]{1,2})[-/.]([0-9]{1,2})[-/.]([0-9]{2})(?=[^0-9]|[0-9]{2}:|$)");
+ private static final Pattern LHDN_TIN_EXTRACT=Pattern.compile("(?i)\\bT[1I]N[:#?\\s]*([A-Z]{0,3}[0-9]{9,14})(?=\\b|Inv|SSM|Tel|Date|$)");
+ private static final Pattern LHDN_INV_EXTRACT=Pattern.compile("(?i)\\b(?:MyInV[0o]is\\s*UUID|Inv[0o]ice(?:\\s*(?:No|Ref))?)\\s*[:#]\\s*([A-Za-z0-9-]{6,36})(?=\\b|MyIn|TIN|$)");
 
  public static JSONObject parse(String text)throws Exception{
   if(text==null)text="";
-  String[] lines=text.split("\\r?\\n");
-  if(lines.length<=2){
-   String flat=text.replace('\u00A0',' ').trim();
-   flat=flat.replaceAll("\\s*\\|\\s*","\n");
-   flat=flat.replaceAll("(?i)\\s+(?=(?:sub\\s*-?\\s*total|sub\\s+ttl|sst|gst|service\\s+(?:tax|charge)|rounding(?:\\s+adjustment)?|runding|rundingan|penggenapan|grand\\s+total|total\\s+payable|net(?:t)?\\s+(?:total|amount|payable)|amount\\s+(?:paid|due|payable)|jumlah\\s+(?:perlu\\s+)?dibayar|jumlah\\s+(?:bayaran|bersih|besar)|total\\s+(?:sales|incl|amount|rm|myr)|total|tendered|tunai|change|baki|thank\\s+you|terima\\s+kasih|invoice\\s+no|ref(?:erence)?\\s+no|no\\.?\\s*rujukan|ssm(?:\\s+reg)?|tarikh|date|tel)(?:\\b|:))","\n");
-   flat=flat.replaceAll("(?i),\\s+(?=(?:sub\\s*-?\\s*total|sst|rounding|runding|grand\\s+total|total|jumlah|tarikh|date|no\\.?\\s*rujukan|item)(?:\\b|:))","\n");
-   flat=flat.replaceAll("(?i)\\s+(?=[0-9]{1,4}(?:,|\\s+)(?:jalan|jln|lorong|lot|unit|level|persiaran|taman)\\b|\\b(?:unit|lot|no\\.?|jalan|jln)\\s+[0-9]{1,4}\\b|\\b[0-9]{12}\\b)","\n");
-   flat=flat.replaceAll("(?i)\\s+(?=[0-9]{1,2}[.)]\\s+(?:[0-9]{1,2}[x×]|\\p{L})|item\\s*:)","\n");
-   lines=flat.split("\\r?\\n");
-  }
-  String merchant=extractMerchant(lines);
+  String[] lines=splitReceiptLines(text);
+  ReceiptFieldTagger.TaggedLines tagged=ReceiptFieldTagger.tag(lines);
+  String merchant=extractMerchant(lines,tagged);
 
   boolean hasRoundingLine=false;
   for(String line:lines){
-   String low=line.toLowerCase(Locale.ROOT);
-   if((low.contains("rounding")||low.contains("penggenapan"))&&!low.contains("after rounding")&&!low.contains("rounded")&&!low.contains("jumlah genap")){
+   String low=normTotalText(line);
+   if((low.contains("rounding")||low.contains("penggenapan")||low.contains("5-sen round")||low.contains("5 sen round"))&&!low.contains("after rounding")&&!low.contains("rounded")&&!low.contains("jumlah genap")){
     hasRoundingLine=true;break;
+   }
+  }
+
+  long subtotalMinor=0L,sstMinor=0L;
+  if(tagged!=null){
+   for(int i=0;i<lines.length;i++){
+    int lbl=tagged.labelIds[i];
+    if(lbl==ReceiptFieldTagger.LABEL_SUBTOTAL){
+     List<Long> sa=extractPreferredAmounts(lines[i]);
+     if(!sa.isEmpty())subtotalMinor=sa.get(sa.size()-1);
+    }else if(lbl==ReceiptFieldTagger.LABEL_TAX_SST){
+     for(long v:extractPreferredAmounts(lines[i]))sstMinor+=v;
+    }
    }
   }
 
@@ -53,9 +61,9 @@ public final class ReceiptParser {
   for(int i=0;i<lines.length;i++){
    String line=lines[i];
    int s=scoreTotalLine(line);
-   if(s<0)continue;
-   List<Long> found=extractPositiveAmounts(line);
-   if(found.isEmpty()&&s>=3&&i+1<lines.length){
+   if(s<3)continue;
+   List<Long> found=extractTotalLineAmounts(line,s);
+   if(found.isEmpty()&&i+1<lines.length){
     Matcher nextStandalone=STANDALONE_AMOUNT.matcher(lines[i+1]);
     if(nextStandalone.find()){
      long n=parseMinor(amountGroup(nextStandalone));
@@ -80,8 +88,8 @@ public final class ReceiptParser {
   }else if(score>=3&&!ambiguous&&best>0&&bestLineIdx>=0){
    long postTax=0,tendered=-1,change=-1;
    for(int i=0;i<lines.length;i++){
-    String low=lines[i].toLowerCase(Locale.ROOT);
-    List<Long> vals=extractPositiveAmounts(lines[i]);
+    String low=normTotalText(lines[i]);
+    List<Long> vals=extractPreferredAmounts(lines[i]);
     if(low.contains("tunai")||low.contains("tendered")||low.contains("cash")){
      if(!vals.isEmpty()&&tendered<0)tendered=vals.get(vals.size()-1);
     }else if(low.contains("baki")||low.contains("change")){
@@ -100,7 +108,68 @@ public final class ReceiptParser {
    }
   }
 
-  String date=extractDate(text);
+  // Fusion with Linear-Chain CRF GRAND_TOTAL predictions (preserving strict ambiguity rejection)
+  if(!ambiguous&&tagged!=null){
+   List<Long> crfAmts=new ArrayList<>();
+   List<Integer> crfIdxs=new ArrayList<>();
+   List<Double> crfProbs=new ArrayList<>();
+   for(int i=0;i<lines.length;i++){
+    if(tagged.labelIds[i]!=ReceiptFieldTagger.LABEL_GRAND_TOTAL)continue;
+    List<Long> found=extractTotalLineAmounts(lines[i],5);
+    int srcIdx=i;
+    if(found.isEmpty()&&i+1<lines.length){
+     Matcher ns=STANDALONE_AMOUNT.matcher(lines[i+1]);
+     if(ns.find()){
+      long n=parseMinor(amountGroup(ns));
+      if(n>0){found.add(n);srcIdx=i+1;}
+     }
+    }
+    if(!found.isEmpty()){
+     crfAmts.add(found.get(found.size()-1));
+     crfIdxs.add(srcIdx);
+     crfProbs.add(tagged.lineProbs[i][ReceiptFieldTagger.LABEL_GRAND_TOTAL]);
+    }
+   }
+   if(!crfAmts.isEmpty()){
+    Set<Long> uniq=new LinkedHashSet<>(crfAmts);
+    if(best<=0||score<4){
+     if(uniq.size()==1){
+      best=crfAmts.get(0);score=Math.max(score,3);bestLineIdx=crfIdxs.get(0);
+     }else{
+      long lastAmt=crfAmts.get(crfAmts.size()-1),firstAmt=crfAmts.get(0);
+      boolean roundedDiff=hasRoundingLine&&Math.abs(lastAmt-firstAmt)<=4&&(lastAmt%5==0);
+      boolean sumMatch=subtotalMinor>0&&Math.abs(lastAmt-(subtotalMinor+sstMinor))<=4;
+      if(score<3&&(roundedDiff||sumMatch)){
+       best=lastAmt;score=4;bestLineIdx=crfIdxs.get(crfIdxs.size()-1);
+      }
+     }
+    }
+    if(score==3&&!ambiguous&&crfAmts.size()==1){
+     long cand=crfAmts.get(0);int cIdx=crfIdxs.get(0);double cProb=crfProbs.get(0);
+     String nl=normTotalText(lines[cIdx]);
+     boolean highKw=nl.contains("final")||nl.contains("rounded")||nl.contains("bersih")||nl.contains("net");
+     boolean sumMatch=subtotalMinor>0&&Math.abs(cand-(subtotalMinor+sstMinor))<=4&&Math.abs(best-(subtotalMinor+sstMinor))>4;
+     if(cand!=best&&cProb>=0.70&&(highKw||sumMatch)){
+      best=cand;bestLineIdx=cIdx;
+     }
+    }
+   }
+   // Recover truncated decimal grand total (e.g. "MYR 1747.") from non-cash payment tender ("Paid via TNG eWallet RM1747.95")
+   if(best>0&&best%100L==0L&&bestLineIdx>=0&&lines[bestLineIdx].trim().endsWith(".")){
+    for(int i=bestLineIdx+1;i<lines.length;i++){
+     String pl=normTotalText(lines[i]);
+     if(pl.contains("duitnow")||pl.contains("ewallet")||pl.contains("tng")||pl.contains("mae")||pl.contains("visa")||pl.contains("master")||pl.contains("mydebit")||pl.contains("paid via")){
+      List<Long> pa=extractPreferredAmounts(lines[i]);
+      if(!pa.isEmpty()){
+       long tender=pa.get(pa.size()-1);
+       if(tender/100L==best/100L&&tender!=best){best=tender;break;}
+      }
+     }
+    }
+   }
+  }
+
+  String date=extractDate(text,lines,tagged);
   String overrideText=Pattern.compile("(?i)\\b(?:late\\s+payment\\s+fee|caj\\s+lewat\\s+bayar|hire\\s+purchase\\s+installment|road\\s+tax|cukai\\s+jalan)\\b").matcher(text).find()?text:"";
   String[] cs=PaymentParser.classifyRulesOnly(merchant,"Receipt scan",overrideText);
   if(cs[0].equals("Miscellaneous")&&!text.trim().isEmpty()){
@@ -120,10 +189,57 @@ public final class ReceiptParser {
    .put("revision",1)
    .put("reason",ambiguous||score<3?"OCR found no unambiguous total. Enter the receipt total and check all details.":"Suggested from receipt text. Verify the total, date, merchant and account.");
   if(!cs[1].isEmpty())out.put("subcategory",cs[1]);
+  attachStructuredMetadata(out,lines,tagged,subtotalMinor,sstMinor);
   return out;
  }
 
- private static String extractMerchant(String[] lines){
+ private static void attachStructuredMetadata(JSONObject out,String[] lines,ReceiptFieldTagger.TaggedLines tagged,long subtotalMinor,long sstMinor)throws Exception{
+  if(subtotalMinor>0L)out.put("subtotalMinor",subtotalMinor);
+  if(sstMinor>0L)out.put("sstMinor",sstMinor);
+  if(tagged!=null){
+   JSONArray items=new JSONArray();
+   String lhdnTin="",lhdnInv="";
+   for(int i=0;i<lines.length;i++){
+    int lbl=tagged.labelIds[i];
+    if(lbl==ReceiptFieldTagger.LABEL_ITEM){
+     List<Long> ia=extractPreferredAmounts(lines[i]);
+     if(!ia.isEmpty()){
+      long itemAmt=ia.get(ia.size()-1);
+      String itemName=lines[i]
+       .replaceAll("(?i)(?:RM|MYR|RN1)\\s*[0-9,]+(?:\\.[0-9]{1,2})?"," ")
+       .replaceAll("[0-9,]+\\.[0-9]{2}"," ")
+       .replaceFirst("(?i)^(?:[0-9]{1,2}[.)]\\s+|[-*•]\\s+|[0-9]+\\s*[xX×]\\s+)","")
+       .replaceAll("(?i)\\s*[xX×]\\s*[0-9]+\\b","")
+       .replaceAll("\\s+"," ").trim();
+      if(itemName.length()>=2&&itemAmt>0L){
+       items.put(new JSONObject().put("name",itemName).put("amount",itemAmt));
+      }
+     }
+    }
+    if(lbl==ReceiptFieldTagger.LABEL_LHDN_META||lbl==ReceiptFieldTagger.LABEL_HEADER_META){
+     if(lhdnTin.isEmpty()){
+      Matcher tm=LHDN_TIN_EXTRACT.matcher(lines[i]);
+      if(tm.find())lhdnTin=tm.group(1).toUpperCase(Locale.ROOT);
+     }
+     if(lhdnInv.isEmpty()){
+      Matcher im=LHDN_INV_EXTRACT.matcher(lines[i]);
+      if(im.find())lhdnInv=im.group(1);
+     }
+    }
+   }
+   if(lhdnTin.isEmpty()){
+    for(String ln:lines){Matcher tm=LHDN_TIN_EXTRACT.matcher(ln);if(tm.find()){lhdnTin=tm.group(1).toUpperCase(Locale.ROOT);break;}}
+   }
+   if(lhdnInv.isEmpty()){
+    for(String ln:lines){Matcher im=LHDN_INV_EXTRACT.matcher(ln);if(im.find()){lhdnInv=im.group(1);break;}}
+   }
+   if(items.length()>0)out.put("items",items);
+   if(!lhdnTin.isEmpty())out.put("lhdnTin",lhdnTin);
+   if(!lhdnInv.isEmpty())out.put("lhdnInvoiceRef",lhdnInv);
+  }
+ }
+
+ private static String extractMerchant(String[] lines,ReceiptFieldTagger.TaggedLines tagged){
   String bestMerchant="Receipt";
   int bestScore=0;
   int inspected=0;
@@ -154,9 +270,19 @@ public final class ReceiptParser {
     String[] cls=PaymentParser.classifyRulesOnly(candidate,"Receipt scan","");
     if(!cls[0].equals("Miscellaneous"))s+=25;
    }
+   if(tagged!=null&&i<tagged.labelIds.length){
+    int lbl=tagged.labelIds[i];
+    double prob=tagged.lineProbs[i][lbl];
+    if(lbl==ReceiptFieldTagger.LABEL_MERCHANT&&!NOISE_META.matcher(candidate).matches()&&!isAddr){
+     s+=(int)Math.round(35.0*prob);
+    }else if(prob>=0.65&&(lbl==ReceiptFieldTagger.LABEL_HEADER_META||lbl==ReceiptFieldTagger.LABEL_DATE||lbl==ReceiptFieldTagger.LABEL_ITEM||lbl==ReceiptFieldTagger.LABEL_LHDN_META||lbl==ReceiptFieldTagger.LABEL_SUBTOTAL||lbl==ReceiptFieldTagger.LABEL_TAX_SST||lbl==ReceiptFieldTagger.LABEL_GRAND_TOTAL||lbl==ReceiptFieldTagger.LABEL_PAYMENT_TENDER)){
+     s-=(int)Math.round(22.0*prob);
+    }
+   }
    if(s>bestScore){
     bestScore=s;
-    bestMerchant=PaymentParser.stripSsmSuffix(candidate);
+    String cleaned=candidate.replaceFirst("(?i)(?:\\s*20[0-9]{7,10})+$","").trim();
+    bestMerchant=PaymentParser.stripSsmSuffix(cleaned.length()>=2?cleaned:candidate);
    }
   }
   if(bestMerchant.isEmpty())bestMerchant="Receipt";
@@ -164,24 +290,102 @@ public final class ReceiptParser {
   return bestMerchant;
  }
 
+ private static final Pattern SCORE5_KW_RE=Pattern.compile("(?i)(?:final\\s+(?:total|amount)|total\\s+paid|total\\s+after\\s+rounding|rounded\\s+total|total\\s+rounded|nett?\\s+total|nett?\\s+amount|total\\s+payable|nett?\\s+payable|amount\\s+payable|payable\\s*\\((?:rm|myr)\\)|amount\\s+paid|amount\\s+due|total\\s+due|balance\\s+due|total\\s+incl\\.?\\s*sst|total\\s+inclusive\\s+of\\s+sst|grand\\s+total|jumlah\\s+perlu\\s+dibayar|jumlah\\s+bayaran|jumlah\\s+dibayar|jumlah\\s+bersih|jumlah\\s+genap|jumlah\\s+besar|应付金额|实付金额|实收金额|总计|總計|\\bt[a-z]{2,5}\\s*[a-z]*p[a-z]*y[a-z]*bl\\b|\\b[a-z]*p[a-z]*y[a-z]*bl\\s*\\((?:rm|myr)\\)|\\b[a-z]*pbyl\\s*\\((?:rm|myr)\\))");
+ private static final Pattern SCORE4_KW_RE=Pattern.compile("(?i)(?:total\\s+sales|total\\s+incl|total\\s+amount|total\\s+myr|total\\s+rm|total\\s*\\((?:rm|myr)\\)|jumlah|合计|合計|总额|總額)");
+ private static final Pattern TOTAL_WORD_RE=Pattern.compile("(?<![\\p{L}0-9])(total|tot|bayaran)(?![\\p{L}0-9])");
+
+ private static String normTotalText(String s){
+  return ReceiptFieldTagger.ocrNormText(s)
+   .replace("am0unt","amount")
+   .replace("jumlahbersih","jumlah bersih")
+   .replace("chnage","change")
+   .replace("sbtotal","subtotal");
+ }
+
+ private static String[] splitReceiptLines(String text){
+  String[] split=text.replace('\u00A0',' ').split("\\r?\\n");
+  List<String> raw=new ArrayList<>();
+  boolean hasLongMultiAmt=false;
+  for(String ln:split){
+   String t=ln.trim();
+   if(!t.isEmpty()){
+    raw.add(t);
+    if(t.length()>140){
+     Matcher dm=DEC_AMOUNT.matcher(t);
+     int c=0;
+     while(dm.find()){if(++c>=2){hasLongMultiAmt=true;break;}}
+    }
+   }
+  }
+  if(raw.size()<=2||hasLongMultiAmt){
+   List<String> out=new ArrayList<>();
+   for(String ln:raw){
+    if(raw.size()<=2||ln.length()>140){
+     String flat=ln
+      .replaceAll("\\s*\\|\\s*","\n")
+      .replaceAll("\\s*\\.{3,}\\s*","\n")
+      .replaceAll("\\s*-{3,}\\s*","\n")
+      .replaceAll("(?i)[ \\t]+-[ \\t]+(?=(?:20[0-9]{2}|[0-9]{2}[/-]|tin\\b|ssm\\b|sst\\b|myr\\b|rm\\b|total\\b|subtotal\\b|lhdn\\b|jalan\\b|lot\\b|invoice\\b|date\\b|tarikh\\b))","\n")
+      .replaceAll("(?i)(?:[,.;:]?[ \\t]+|(?<=[0-9]))(?=(?:sub\\s*-?\\s*total|sub\\s+ttl|sbtotal|sub\\s*:|sst(?:\\s*@|\\s*[0-9]|[:\\s])|service\\s+(?:tax|charge)|(?<!5[- ]sen\\s)(?<!after\\s)(?:(?:5[- ]?sen\\s+)?round(?:ing)?(?:\\s+(?:adj|adjustment|off))?|runding|penggenapan)|final\\s+(?:total|amount)|grand\\s+total|total\\s+payable|net(?:t)?\\s+(?:total|amount|payable)|(?<!final\\s)(?<!net\\s)(?<!nett\\s)amount\\s+(?:paid|due|payable)|jumlah\\s+(?:kecil|perlu|bayaran|dibayar|bersih|genap|besar)|jumlah(?=:|[ \\t]+(?:rm|myr))|(?<!final\\s)(?<!grand\\s)(?<!sub\\s)(?<!net\\s)(?<!nett\\s)(?<!rounded\\s)(?:total\\s*(?::|\\b(?:after|incl|sales|amount|myr|rm|due|payable))|total\\b(?=[ \\t]+(?:rm|myr|[0-9])))|tot:|duitnow\\s*qr|cash(?:\\s+(?:paid|tendered))?|tunai|tendered|change\\b|chnage\\b|baki\\b|balance\\s+due|tin\\s*:|ssm(?:\\s+reg)?\\s*:|invoice(?:\\s+(?:no|ref))?\\s*:|receipt(?:\\s+no)?\\s*:|date\\s*:|tarikh\\s*:|no\\.?\\s*(?:rujukan|pelanggan)|ref(?:erence)?(?:\\s+no)?\\s*:|lhdn\\s+bucket|item\\s*:|items\\s*:|(?<!final\\s)(?<!net\\s)(?<!nett\\s)(?<!total\\s)amount\\s*:|price\\s*:|payee\\s*:|[0-9]{1,4}(?:,|[ \\t]+)(?:jalan|jln|lorong|lot|unit|level|persiaran|taman)\\b|(?:unit|lot|no\\.?|jalan|jln)\\s+[0-9]{1,4}\\b|20[0-9]{10}\\b|[0-9]{1,2}[.)]\\s+(?:[0-9]{1,2}[xX\\u00d7]|\\p{L})))","\n")
+      .replaceAll("(?i)(?<![ \\t])(?<!date:)(?<!tarikh:)(?<!date)(?<!tarikh)[ \\t]+(?=(?:20[0-9]{2}[-/.][0-9]{1,2}[-/.][0-9]{1,2}|[0-9]{1,2}[-/.][0-9]{1,2}[-/.]20[0-9]{2}|[0-9]{1,2}[ \\t]+(?:januari|january|jan|februari|february|feb|march|mac|mar|april|apr|may|mei|june|jun|julai|july|jul|ogos|august|aug|september|sept|sep|oktober|october|oct|okt|november|nov|disember|december|dis|dec)[ \\t]+20[0-9]{2})\\b)","\n");
+     for(String p:flat.split("\\r?\\n")){
+      String pt=p.trim();
+      if(!pt.isEmpty())out.add(pt);
+     }
+    }else{
+     out.add(ln);
+    }
+   }
+   if(!out.isEmpty())return out.toArray(new String[0]);
+  }
+  return raw.toArray(new String[0]);
+ }
+
  private static int scoreTotalLine(String line){
-  String low=line.toLowerCase(Locale.ROOT).trim();
+  String low=normTotalText(line).trim();
   if(low.isEmpty())return 0;
-  if(low.contains("subtotal")||low.contains("sub total")||low.contains("sub-total")||low.contains("sub ttl")||low.contains("before rounding")||low.contains("unrounded")||low.contains("before tax")||low.contains("excl"))return -1;
-  if((low.contains("rounding")||low.contains("penggenapan"))&&!low.contains("after rounding")&&!low.contains("rounded")&&!low.contains("jumlah genap"))return -1;
-  if(low.contains("change")||low.contains("baki")||low.contains("cash tendered")||low.contains("tendered")||low.contains("tunai")||low.contains("discount")||low.contains("diskaun")||low.contains("you saved")||low.contains("total saving")||low.contains("total qty")||low.contains("total item"))return -1;
-  if(low.contains("total after rounding")||low.contains("rounded total")||low.contains("total rounded")||low.contains("nett total")||low.contains("net total")||low.contains("net amount")||low.contains("nett amount")||low.contains("total payable")||low.contains("net payable")||low.contains("amount payable")||low.contains("payable (rm)")||low.contains("payable (myr)")||low.contains("amount paid")||low.contains("amount due")||low.contains("total due")||low.contains("balance due")||low.contains("total incl. sst")||low.contains("total incl sst")||low.contains("total inclusive of sst")||low.contains("grand total")||low.contains("jumlah perlu dibayar")||low.contains("jumlah bayaran")||low.contains("jumlah dibayar")||low.contains("jumlah bersih")||low.contains("jumlah genap")||low.contains("jumlah besar")||low.contains("应付金额")||low.contains("实付金额")||low.contains("实收金额")||low.contains("总计")||low.contains("總計")||Pattern.compile("\\b(?:t[a-z]{2,5}\\s*[a-z]*p[a-z]*y[a-z]*bl|[a-z]*p[a-z]*y[a-z]*bl\\s*\\((?:rm|myr)\\)|[a-z]*pbyl\\s*\\((?:rm|myr)\\))").matcher(low).find())return 5;
-  if(low.contains("total sales")||low.contains("total incl")||low.contains("total amount")||low.contains("total myr")||low.contains("total rm")||low.contains("total (rm)")||low.contains("total (myr)")||low.contains("jumlah")||low.contains("合计")||low.contains("合計")||low.contains("总额")||low.contains("總額"))return 4;
-  if(Pattern.compile("(?<![\\p{L}0-9])(total|bayaran)(?![\\p{L}0-9])").matcher(low).find())return 3;
+  // Exclude pure negative/non-total lines unless a higher-priority Score-5 Grand Total phrase is also on a merged OCR line
+  boolean hasScore5=SCORE5_KW_RE.matcher(low).find();
+  if(hasScore5)return 5;
+  if(low.contains("subtotal")||low.contains("sub total")||low.contains("sub-total")||low.contains("sub ttl")||low.contains("jumlah kecil")||low.matches(".*\\bsub\\s*:.*")||low.contains("before rounding")||low.contains("unrounded")||low.contains("before tax")||low.contains("excl"))return -1;
+  if((low.contains("rounding")||low.contains("penggenapan")||low.contains("5-sen round")||low.contains("5 sen round"))&&!low.contains("after rounding")&&!low.contains("rounded")&&!low.contains("jumlah genap"))return -1;
+  if(low.contains("change")||low.contains("baki")||low.contains("cash tendered")||low.contains("cash paid")||low.contains("tendered")||low.contains("tunai")||low.contains("discount")||low.contains("diskaun")||low.contains("you saved")||low.contains("total saving")||low.contains("total qty")||low.contains("total item"))return -1;
+  if(SCORE4_KW_RE.matcher(low).find())return 4;
+  if(TOTAL_WORD_RE.matcher(low).find())return 3;
   return 0;
+ }
+
+ private static List<Long> extractTotalLineAmounts(String line,int score){
+  if(score>=4){
+   String low=normTotalText(line);
+   if(low.contains("tunai")||low.contains("cash")||low.contains("tendered")||low.contains("subtotal")||low.contains("sub-total")||low.contains("sub total")||low.contains("rounding")||low.contains("penggenapan")||low.contains("baki")||low.contains("change")){
+    String cleaned=line
+     .replaceAll("(?i)\\b(?:tunai|cash|tendered|subtotal|sub\\s*-?\\s*total|baki|change|sst(?:\\s*[0-9]+%)?)\\b[^0-9\\r\\n]{0,16}(?:RM|MYR|RN1)?\\s*[0-9,]+(?:\\.[0-9]{1,2})?"," ")
+     .replaceAll("(?i)(?<!after\\s)\\b(?:rounding(?:\\s+adj)?|penggenapan|5[- ]?sen\\s+round(?:ing)?)\\b[^0-9+\\-\\r\\n]{0,28}(?:[+\\-]\\s*)?(?:RM|MYR|RN1)?\\s*(?:0\\.[0-9]{1,2}|[0-9,]+(?:\\.[0-9]{1,2})?)"," ");
+    List<Long> sub=extractPreferredAmounts(cleaned);
+    if(!sub.isEmpty())return sub;
+   }
+  }
+  return extractPreferredAmounts(line);
+ }
+
+ private static List<Long> extractPreferredAmounts(String line){
+  Matcher dec=DEC_AMOUNT.matcher(line);
+  List<Long> decOut=new ArrayList<>();
+  while(dec.find()){
+   long n=parseMinor(dec.group(1));
+   if(n>0)decOut.add(n);
+  }
+  if(!decOut.isEmpty())return decOut;
+  return extractPositiveAmounts(line);
  }
 
  private static long resolveSingleOrCashDiff(String[] lines){
   Set<Long> charges=new LinkedHashSet<>();
-  long tendered=-1,change=-1;
+  long tendered=-1,change=-1,tenderPay=0L;
   for(String line:lines){
-   String low=line.toLowerCase(Locale.ROOT);
-   List<Long> vals=extractPositiveAmounts(line);
+   String low=normTotalText(line);
+   List<Long> vals=extractPreferredAmounts(line);
    if(low.contains("tunai")||low.contains("tendered")||low.contains("cash")){
     if(!vals.isEmpty()&&tendered<0)tendered=vals.get(0);
     continue;
@@ -195,11 +399,15 @@ public final class ReceiptParser {
     }
     continue;
    }
+   if((low.contains("duitnow")||low.contains("paid via")||low.contains("tng")||low.contains("mae")||low.contains("visa"))&&!vals.isEmpty()){
+    tenderPay=vals.get(vals.size()-1);
+   }
    if(scoreTotalLine(line)<0||low.contains("sst")||low.contains("cukai")||low.contains("tax")||low.contains("service charge")||low.contains("ip address"))continue;
    charges.addAll(vals);
   }
   if(charges.size()==1)return charges.iterator().next();
   if(charges.isEmpty()&&tendered>0&&change>=0&&tendered>change)return tendered-change;
+  if(tenderPay>0&&charges.contains(tenderPay))return tenderPay;
   return 0;
  }
 
@@ -222,9 +430,31 @@ public final class ReceiptParser {
   try{return Ledger.minor(raw.replace(",",""));}catch(IllegalArgumentException ignored){return -1;}
  }
 
- private static String extractDate(String text){
-  String date=LocalDate.now().toString();
-  Matcher dm=Pattern.compile("\\b(20[0-9]{2})[-/.]([0-9]{1,2})[-/.]([0-9]{1,2})\\b").matcher(text);
+ private static String normalizeDateText(String raw){
+  return String.valueOf(raw)
+   .replaceAll("(?i)\\b0ct\\b","Oct")
+   .replaceAll("(?i)\\b0gos\\b","Ogos")
+   .replaceAll("(?i)\\b0kt\\b","Okt")
+   .replaceAll("(?i)\\bn0v\\b","Nov")
+   .replaceAll("(?i)\\bd1s\\b","Dis")
+   .replaceAll("(?i)\\b[j1]an\\b","Jan");
+ }
+
+ private static String extractDate(String fullText,String[] lines,ReceiptFieldTagger.TaggedLines tagged){
+  if(tagged!=null){
+   for(int i=0;i<lines.length;i++){
+    if(tagged.labelIds[i]==ReceiptFieldTagger.LABEL_DATE){
+     String d=extractDateFromString(normalizeDateText(lines[i]));
+     if(d!=null)return d;
+    }
+   }
+  }
+  String d=extractDateFromString(normalizeDateText(fullText));
+  return d!=null?d:LocalDate.now().toString();
+ }
+
+ private static String extractDateFromString(String text){
+  Matcher dm=Pattern.compile("\\b(20[0-9]{2})[-/.]([0-9]{1,2})[-/.]([0-9]{1,2})(?=[^0-9]|[0-9]{2}:|$)").matcher(text);
   try{
    if(dm.find())return LocalDate.of(Integer.parseInt(dm.group(1)),Integer.parseInt(dm.group(2)),Integer.parseInt(dm.group(3))).toString();
    dm=YMD_MONTH_DATE.matcher(text);
@@ -257,7 +487,7 @@ public final class ReceiptParser {
     return LocalDate.of(yr,Integer.parseInt(dm.group(2)),Integer.parseInt(dm.group(1))).toString();
    }
   }catch(Exception ignored){}
-  return date;
+  return null;
  }
 
  private static int monthNum(String abbr){

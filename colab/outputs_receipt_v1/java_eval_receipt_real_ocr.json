@@ -1,0 +1,430 @@
+{
+  "rules_no_tagger": {
+    "merchant_match": 0.885,
+    "date_exact": 0.975,
+    "lhdn_tin_exact": 0,
+    "cat_acc": 0.636,
+    "items_extracted_rate": 0,
+    "use_tagger": false,
+    "n": 1000,
+    "amount_exact": 0.948,
+    "subcat_acc": 0.58,
+    "sst_exact": 0.741,
+    "sample_misses": [
+      {
+        "expected_merchant": "Taylor's University Finance",
+        "expected_amt": 174795,
+        "raw": "TAX INVOICE\nTAYLOR'S UNIVERSITY FINANCI\nSSM Reg No: 202301023718\n88, Jalan Theatre, Ipoh\n30300 Perak\nTIN:IG17590927982  Invoice:INV-2026l\nDate: 14 Mar 2026  21:20\nEXAM REGISTRATION FEE X3  RM468.36\n3X LABORATORY RESOURCE",
+        "got_merchant": "TAYLOR'S UNIVERSITY FINANCI",
+        "id": "ocr_test_5135",
+        "got_amt": 174700
+      },
+      {
+        "expected_merchant": "Kumon Tuition Centre",
+        "expected_amt": 133590,
+        "raw": "OFFICIAL RECEIPT\nKUMON TUITION CENTRE SDN BH\nSSM Reg No: (366157-C)\nLot 6, Jalan Tun Fuad Stephens, Kota Kinabalu\n88000 Sabah\nTIN:C4674128723  Invoice: INV-202611\nMyInVois UUID: 459173MY2026LHDN54\nDate:18/11/2026  10:11\n",
+        "got_merchant": "KUMON TUITION CENTRE SDN BH",
+        "id": "ocr_test_5186",
+        "got_amt": 133500
+      },
+      {
+        "expected_merchant": "Gerai Selera Timur",
+        "expected_amt": 43370,
+        "raw": "SIMPLIFIED TAX INVOICE\nGERAI SELERA TIMUR 202201060\nNo. 22, Jalan Merdeka, Melaka Raya\n75000 Melaka\nReceipt No:INV-2026055230\nDate:03/05/2026\nOW-20 FULLY SYNTH ENGINE OIL  RM 187.1\nMF BATTERY 46B24L  RM 246.66\n5-Sen Roun",
+        "got_merchant": "GERAI SELERA TIMUR",
+        "id": "ocr_test_5187",
+        "got_amt": 43371
+      },
+      {
+        "expected_merchant": "Bengkel Servis ProAuto",
+        "expected_amt": 395865,
+        "raw": "BENGKEL SERVIS PROAUTO\n3o, Lebuh Pantai, George Town\n10300 Pulau Pinang\nTel: 08-3207 4451\nTIN:C5587827822  Invoice:INV-2026125893\nMyInvois UUID: 350744MY2026LHDN75\n23 Dis 2026\n3X DATA ANALYTICS COURSE  1235.16\n2X CLOUD P",
+        "got_merchant": "BENGKEL SERVIS PROAUTO",
+        "id": "ocr_test_5217",
+        "got_amt": 395860
+      },
+      {
+        "expected_merchant": "Gerai Selera Timur",
+        "expected_amt": 112380,
+        "raw": "GERAI SELERA TIMUR\nLot 6, Jalan Tun Fuad Stephens, Kota Kinabal\n88000 Sabah\nTel: 08-3501 7785\nReceipt No: INV-2026116275\nDate:05-11-2026  18:40\n2X CASUAL SNEAKERS  361.24\nSLIM TAPERED JEANS  RM 179.25\nOXFORD SHIRT L/S 3 ",
+        "got_merchant": "GERAI SELERA TIMUR",
+        "id": "ocr_test_5221",
+        "got_amt": 112300
+      },
+      {
+        "expected_merchant": "IKEA Damansara",
+        "expected_amt": 18235,
+        "raw": "TAX INVOICE\nIKEA Damansara Sdn Bhd 202501\nNo. 72, Jalan Meru, Klang\n4105o Selangor\nTIN:IG52781468455  Invoice: INV-2026\nMyInVois UUID: 251612MY2026LHDN81\nJun 21, 2026\nStainless Pan 24cm  RM 45.36\nStainless Pan 24cm  52.4",
+        "got_merchant": "IKEA Damansara Sdn Bhd 202501",
+        "id": "ocr_test_5258",
+        "got_amt": 18200
+      },
+      {
+        "expected_merchant": "Restoran Rasa Kampung",
+        "expected_amt": 115735,
+        "raw": "Restoran Rasa Kampung Sdn B\nSSM Reg No: 202501050433\nLevel 2, Lot 45, Jalan Bukit Bintang, TRX Kl\n5510Q Kuala Lumpur\nTIN:IG43917426883  Invoice: INV-2026\nDate: 16 Apr 2026  09:35\n2x Comprehensive Blood Profile  492.0\nLiv",
+        "got_merchant": "Restoran Rasa Kampung Sdn B",
+        "id": "ocr_test_5271",
+        "got_amt": 115730
+      },
+      {
+        "expected_merchant": "Kedai Hardware Permai",
+        "expected_amt": 29795,
+        "raw": "OFFICIAL RECEIPT\nKEDAI HARDWARE PERMAI\nSSM Reg No:(463453-H)\nLot 9, Jalan Raja Muda Musa, Shah Alam\n4000o Selangor\nTet: 07-3957 1170\n26/09/2026\nDC FAST CHARGE 42.5  KWH  RM 59.70\nIDLE OVERSTAY FEE  5.67\nV-POWER 97 FUEL  ",
+        "got_merchant": "KEDAI HARDWARE PERMAI",
+        "id": "ocr_test_5333",
+        "got_amt": 29790
+      },
+      {
+        "expected_merchant": "Celebrity Fitness",
+        "expected_amt": 123045,
+        "raw": "Celebrity Fitness Sdn Bhd\nSSM Reg No: (390380-X)\nIoI, Jalan Austin Heights 3, Johor Bahru\n8110o Johor\nTIN: C6932671654 InVoice: INV-2026116647\nNov 14, 2026  20:32\nYogamat 8mm Non-Slip RM 64.41\nTreadmill Day Pass RM 44.84",
+        "got_merchant": "Celebrity Fitness",
+        "id": "ocr_test_5338",
+        "got_amt": 123000
+      },
+      {
+        "expected_merchant": "Yakiniku Like",
+        "expected_amt": 10696,
+        "raw": "RESIT RASMI\nYAKINIKU LIKE\nSSM Reg No: (363982-T)\nLot G-12, Jalan Ss15/4, Subang Jaya\n4750o Selangor\nDate: Nov 11, 2026  14:31\n2x WAGYU SET 200G  99.04\nJumlah Kecil  RM99.04\nSST 8% MYR 7.92\nTunai  JUMLAH BERSIH  MYR 110.0",
+        "got_merchant": "YAKINIKU LIKE",
+        "id": "ocr_test_5354",
+        "got_amt": 0
+      },
+      {
+        "expected_merchant": "Kedai Hardware Permai",
+        "expected_amt": 522595,
+        "raw": "Kedai Hardware Permai 202101@\nNo. 15, Lorong Selamat, Kuching\n93100 Sarawak\nTIN: C1443520264Invoice: INV-202601\nMyInV0is UUID: 337476MY2026LHDN79\nJan 20,2026 13:21\nPRs Growth Fund Contrib  1395.41\n3x PRS Growth Fund Cont",
+        "got_merchant": "Kedai Hardware Permai 202101@",
+        "id": "ocr_test_5363",
+        "got_amt": 522500
+      },
+      {
+        "expected_merchant": "Bengkel Servis ProAuto",
+        "expected_amt": 473340,
+        "raw": "TAX INVOICE\nBENGKEL SERVIS PROAUTO\n24, Jalan Tun Razak, Kuala Lumpur\n5040o wP Kuala Lumpur\nTIN:C1890413085  Invoice:INV-202605\n2026-05-01  11:00\nCLOUD PRACTITIONER EXAM X3  RM1338.21\n3X DATA ANALYTICS COURSE  1268.10\nDAT",
+        "got_merchant": "BENGKEL SERVIS PROAUTO",
+        "id": "ocr_test_5372",
+        "got_amt": 0
+      },
+      {
+        "expected_merchant": "Kumon Tuition Centre",
+        "expected_amt": 78400,
+        "raw": "OFFICIAL RECEIPT\nKumon Tuition Centre (409404\nNo. 15, Lorong Selamat, Kuching\n93100 Sarawak\nTIN:C2099339915  Invoice: INV-202601\nMyInv0is UUID: 676261MY2026LHDN38\nDate:2026-01-18\nMonthly Tuition Math+Sci x2 RM642.70\nExam",
+        "got_merchant": "Kumon Tuition Centre (409404",
+        "id": "ocr_test_5404",
+        "got_amt": 0
+      },
+      {
+        "expected_merchant": "Gerai Selera Timur",
+        "expected_amt": 206250,
+        "raw": "GERAI SELERA TIMUR\nLot 6,Jalan Tun Fuad Stephens,Kota Kinabali\n8800eSabah\n2026-08-25  TIN:C3403204327  Invoice:INV-20260\n3X DISCHARGE MEDICATION  311.67\nDISCHARGE MEDICATION  RM 107.54\nRounding Adj  WARD ADMISSION DEPOSI",
+        "got_merchant": "GERAI SELERA TIMUR",
+        "id": "ocr_test_5433",
+        "got_amt": 0
+      },
+      {
+        "expected_merchant": "Gerai Selera Timur",
+        "expected_amt": 206740,
+        "raw": "GERAI SELERA TIMUR SDN BHD\nLot 9, Jalan Raja Muda Musa, Shah Alam\n4000o Selangor\nTel: 05-7186 9269\nTIN:IG19249197310  Invoice: INV-2026\nMyInV0is UUID:843558MY2026LHDN93\nTarikh: 2026-04-09\nCARUMAN SUKARELA I-SARAAN X3 RMI",
+        "got_merchant": "GERAI SELERA TIMUR",
+        "id": "ocr_test_5466",
+        "got_amt": 206700
+      },
+      {
+        "expected_merchant": "Sarawak Energy SESCO",
+        "expected_amt": 1635,
+        "raw": "RESIT RASMI\nSARAWAK ENERGY SESCO\nLot 6, Jalan Tun Fuad Stephens, Kota Kinabali\n88000 Sabah\nTel:04-47567175\n2026-01-20\nICPT & KWTBB ADJUSTMENT  RM 5.01\nICPT & KWTBB ADJUSTMENT  5.10\nICPT & KWTBB ADJUSTMENT  RM 4.75\nSub-To",
+        "got_merchant": "SARAWAK ENERGY SESCO",
+        "id": "ocr_test_5467",
+        "got_amt": 0
+      },
+      {
+        "expected_merchant": "Domino's Pizza MY",
+        "expected_amt": 12283,
+        "raw": "DOMINO'S PIZZA MY\nSSM Reg No: 202501055377\nNo. 72, Jalan Meru, Klang\n4105o Selangor\nTel: 05-4191 3705\nReceipt No: INV-2026056369\nDate: 27 Mei 2026  11:04\n3PC TENDERS BOX x2  RM38.82\n2PC SNACK PLATE COMBO  RM 22.85\nCHICKE",
+        "got_merchant": "DOMINO'S PIZZA MY",
+        "id": "ocr_test_5471",
+        "got_amt": 2283
+      },
+      {
+        "expected_merchant": "Restoran Kayu",
+        "expected_amt": 1167,
+        "raw": "SSMRegNo:202601021275  Restoran Kayu Sdn Bhd\n24,Jalan Tun Razak,Kuala Lumpur\n50400 WP Kuala Lumpur\nReceiptNo:INV-2826059483\nTarikh: 14-05-2026\nRoti Canai x2  RM 3.51\n2x Kopi Peng  8.16\nCASH  JUMLAH BERSIH  RM 20.00  RM 1",
+        "got_merchant": "SSMRegNo:202601021275  Restoran Kayu",
+        "id": "ocr_test_5494",
+        "got_amt": 0
+      },
+      {
+        "expected_merchant": "Borong Sayur Segar",
+        "expected_amt": 15070,
+        "raw": "BORONG SAYUR SEGAR SDN BHD\nSSM Reg No: (900204-H)\nIol, Jalan Austin Heights 3, Johor Bahru\n8l10o Johor\nReceipt No:INV-2026028707\n27/02/2026\nAYAM KAMPUNG 1 EKOR X3  RM60.15\nCILI PADI MERAH  4.75\nSIAKAP FRESH 800G X3  RM53",
+        "got_merchant": "BORONG SAYUR SEGAR",
+        "id": "ocr_test_5504",
+        "got_amt": 0
+      },
+      {
+        "expected_merchant": "myTNB Tenaga Nasional",
+        "expected_amt": 27080,
+        "raw": "SIMPLIFIEDTAXINVOICE\nMYTNB TENAGA NASIONAL SDN BHD\nNo.18,Jalan Telawi 3,Bangsar Baru\n59100 KualaLumpur\nTel:08-86932065\nReceiptNo:INV-2026084042\nDate: Aug 05, 2026\nICPTKWTBBADJUSTMENTX3  RM13.11\nELECTRICITYUSAGE412KWHX2  ",
+        "got_merchant": "MYTNB TENAGA NASIONAL",
+        "id": "ocr_test_5508",
+        "got_amt": 25545
+      },
+      {
+        "expected_merchant": "Gerai Selera Timur",
+        "expected_amt": 166755,
+        "raw": "RESITRASMI\nGERAI SELERA TIMUR\n24,Jalan Tun Razak,Kuala Lumpur\n50400 WP KualaLumpur\n2026-09-19  09:23\nCASUAL SNEAKERS X2  RM401.20\nOXFORD SHIRT L/S x3  RM453.54\nCASUAL SNEAKERS  176.50\nAIRISM COTTON TEE  57.77\nOXFORD SHIR",
+        "got_merchant": "GERAI SELERA TIMUR",
+        "id": "ocr_test_5533",
+        "got_amt": 166750
+      },
+      {
+        "expected_merchant": "Taylor's University Finance",
+        "expected_amt": 1509250,
+        "raw": "Taylor's University Financ\n1o1,Jalan Austin Heights 3,Johor Bahru\n81188 Johor\nTIN:C7622969669Invoice:INV-202606\nTarikh:09 Jun 2026  509:16\nLaboratory Resource Fee148.39\n3x Semester Tuition Instaliment  Semester Tuition I",
+        "got_merchant": "Taylor's University Financ",
+        "id": "ocr_test_5598",
+        "got_amt": 1509200
+      },
+      {
+        "expected_merchant": "Kedai Hardware Permai",
+        "expected_amt": 351930,
+        "raw": "KEDAI HARDWARE PERMAI SDN BHD\nNo.18, Jalan Telawi 3, Bangsar Baru\n59100 Kuala Lumpur\nTIN:IG41204495945  Invoice:INV-2026033848\n16Mac2026  19:49\n2X PRS GROWTH FUND CONTRIB  3519.28\nPenggenapan  1+0.02\nT0TALPAYABLE\uff08RM)3519",
+        "got_merchant": "KEDAI HARDWARE PERMAI",
+        "id": "ocr_test_5660",
+        "got_amt": 0
+      },
+      {
+        "expected_merchant": "Kedai Buku Bestari",
+        "expected_amt": 18545,
+        "raw": "SSM Reg No: (368058-H)  Kedai Buku Bestari Sdn Bhd\nNo. I5, Lorong Selamat, Kuching\n93100 Sarawak\nTIN:C7157315481 Invoice:INV-202611636\nTarikh:2026-11-04  19:58\n3x Vitamin C 1000mg 60s  121.68\nVitamin C i000mg 60s  sRM 46",
+        "got_merchant": "SSM Reg No: (368058-H)  Kedai Buku Bestari",
+        "id": "ocr_test_5668",
+        "got_amt": 0
+      },
+      {
+        "expected_merchant": "Bengkel Servis ProAuto",
+        "expected_amt": 415850,
+        "raw": "SSM Reg No:(277058-X)  Bengkel Servis ProAuto Sdn Bh\nLot G-12, Jalan Ss15/4, Subang Jaya\n4750oSelangor\nTIN:C8987698284Inv0ice:INV-2026057765\nTarikh:10/05/2026  15:53\ncloud Practitioner Exam  cloud Practitioner Exam  3x C",
+        "got_merchant": "4750oSelangor",
+        "id": "ocr_test_5681",
+        "got_amt": 5850
+      }
+    ]
+  },
+  "fused_with_tagger": {
+    "merchant_match": 0.891,
+    "date_exact": 0.975,
+    "lhdn_tin_exact": 0.9691,
+    "cat_acc": 0.64,
+    "items_extracted_rate": 0.997,
+    "use_tagger": true,
+    "n": 1000,
+    "amount_exact": 0.959,
+    "subcat_acc": 0.584,
+    "sst_exact": 0.992,
+    "sample_misses": [
+      {
+        "expected_merchant": "Gerai Selera Timur",
+        "expected_amt": 43370,
+        "raw": "SIMPLIFIED TAX INVOICE\nGERAI SELERA TIMUR 202201060\nNo. 22, Jalan Merdeka, Melaka Raya\n75000 Melaka\nReceipt No:INV-2026055230\nDate:03/05/2026\nOW-20 FULLY SYNTH ENGINE OIL  RM 187.1\nMF BATTERY 46B24L  RM 246.66\n5-Sen Roun",
+        "got_merchant": "GERAI SELERA TIMUR",
+        "id": "ocr_test_5187",
+        "got_amt": 43371
+      },
+      {
+        "expected_merchant": "Bengkel Servis ProAuto",
+        "expected_amt": 395865,
+        "raw": "BENGKEL SERVIS PROAUTO\n3o, Lebuh Pantai, George Town\n10300 Pulau Pinang\nTel: 08-3207 4451\nTIN:C5587827822  Invoice:INV-2026125893\nMyInvois UUID: 350744MY2026LHDN75\n23 Dis 2026\n3X DATA ANALYTICS COURSE  1235.16\n2X CLOUD P",
+        "got_merchant": "BENGKEL SERVIS PROAUTO",
+        "id": "ocr_test_5217",
+        "got_amt": 395860
+      },
+      {
+        "expected_merchant": "Gerai Selera Timur",
+        "expected_amt": 112380,
+        "raw": "GERAI SELERA TIMUR\nLot 6, Jalan Tun Fuad Stephens, Kota Kinabal\n88000 Sabah\nTel: 08-3501 7785\nReceipt No: INV-2026116275\nDate:05-11-2026  18:40\n2X CASUAL SNEAKERS  361.24\nSLIM TAPERED JEANS  RM 179.25\nOXFORD SHIRT L/S 3 ",
+        "got_merchant": "GERAI SELERA TIMUR",
+        "id": "ocr_test_5221",
+        "got_amt": 112300
+      },
+      {
+        "expected_merchant": "IKEA Damansara",
+        "expected_amt": 18235,
+        "raw": "TAX INVOICE\nIKEA Damansara Sdn Bhd 202501\nNo. 72, Jalan Meru, Klang\n4105o Selangor\nTIN:IG52781468455  Invoice: INV-2026\nMyInVois UUID: 251612MY2026LHDN81\nJun 21, 2026\nStainless Pan 24cm  RM 45.36\nStainless Pan 24cm  52.4",
+        "got_merchant": "IKEA Damansara Sdn Bhd 202501",
+        "id": "ocr_test_5258",
+        "got_amt": 18200
+      },
+      {
+        "expected_merchant": "Restoran Rasa Kampung",
+        "expected_amt": 115735,
+        "raw": "Restoran Rasa Kampung Sdn B\nSSM Reg No: 202501050433\nLevel 2, Lot 45, Jalan Bukit Bintang, TRX Kl\n5510Q Kuala Lumpur\nTIN:IG43917426883  Invoice: INV-2026\nDate: 16 Apr 2026  09:35\n2x Comprehensive Blood Profile  492.0\nLiv",
+        "got_merchant": "Restoran Rasa Kampung Sdn B",
+        "id": "ocr_test_5271",
+        "got_amt": 115730
+      },
+      {
+        "expected_merchant": "Kedai Hardware Permai",
+        "expected_amt": 29795,
+        "raw": "OFFICIAL RECEIPT\nKEDAI HARDWARE PERMAI\nSSM Reg No:(463453-H)\nLot 9, Jalan Raja Muda Musa, Shah Alam\n4000o Selangor\nTet: 07-3957 1170\n26/09/2026\nDC FAST CHARGE 42.5  KWH  RM 59.70\nIDLE OVERSTAY FEE  5.67\nV-POWER 97 FUEL  ",
+        "got_merchant": "KEDAI HARDWARE PERMAI",
+        "id": "ocr_test_5333",
+        "got_amt": 29790
+      },
+      {
+        "expected_merchant": "Celebrity Fitness",
+        "expected_amt": 123045,
+        "raw": "Celebrity Fitness Sdn Bhd\nSSM Reg No: (390380-X)\nIoI, Jalan Austin Heights 3, Johor Bahru\n8110o Johor\nTIN: C6932671654 InVoice: INV-2026116647\nNov 14, 2026  20:32\nYogamat 8mm Non-Slip RM 64.41\nTreadmill Day Pass RM 44.84",
+        "got_merchant": "Celebrity Fitness",
+        "id": "ocr_test_5338",
+        "got_amt": 123000
+      },
+      {
+        "expected_merchant": "Yakiniku Like",
+        "expected_amt": 10696,
+        "raw": "RESIT RASMI\nYAKINIKU LIKE\nSSM Reg No: (363982-T)\nLot G-12, Jalan Ss15/4, Subang Jaya\n4750o Selangor\nDate: Nov 11, 2026  14:31\n2x WAGYU SET 200G  99.04\nJumlah Kecil  RM99.04\nSST 8% MYR 7.92\nTunai  JUMLAH BERSIH  MYR 110.0",
+        "got_merchant": "YAKINIKU LIKE",
+        "id": "ocr_test_5354",
+        "got_amt": 0
+      },
+      {
+        "expected_merchant": "Kedai Hardware Permai",
+        "expected_amt": 522595,
+        "raw": "Kedai Hardware Permai 202101@\nNo. 15, Lorong Selamat, Kuching\n93100 Sarawak\nTIN: C1443520264Invoice: INV-202601\nMyInV0is UUID: 337476MY2026LHDN79\nJan 20,2026 13:21\nPRs Growth Fund Contrib  1395.41\n3x PRS Growth Fund Cont",
+        "got_merchant": "Kedai Hardware Permai 202101@",
+        "id": "ocr_test_5363",
+        "got_amt": 522500
+      },
+      {
+        "expected_merchant": "Bengkel Servis ProAuto",
+        "expected_amt": 473340,
+        "raw": "TAX INVOICE\nBENGKEL SERVIS PROAUTO\n24, Jalan Tun Razak, Kuala Lumpur\n5040o wP Kuala Lumpur\nTIN:C1890413085  Invoice:INV-202605\n2026-05-01  11:00\nCLOUD PRACTITIONER EXAM X3  RM1338.21\n3X DATA ANALYTICS COURSE  1268.10\nDAT",
+        "got_merchant": "BENGKEL SERVIS PROAUTO",
+        "id": "ocr_test_5372",
+        "got_amt": 473341
+      },
+      {
+        "expected_merchant": "Gerai Selera Timur",
+        "expected_amt": 206250,
+        "raw": "GERAI SELERA TIMUR\nLot 6,Jalan Tun Fuad Stephens,Kota Kinabali\n8800eSabah\n2026-08-25  TIN:C3403204327  Invoice:INV-20260\n3X DISCHARGE MEDICATION  311.67\nDISCHARGE MEDICATION  RM 107.54\nRounding Adj  WARD ADMISSION DEPOSI",
+        "got_merchant": "GERAI SELERA TIMUR",
+        "id": "ocr_test_5433",
+        "got_amt": 0
+      },
+      {
+        "expected_merchant": "Gerai Selera Timur",
+        "expected_amt": 206740,
+        "raw": "GERAI SELERA TIMUR SDN BHD\nLot 9, Jalan Raja Muda Musa, Shah Alam\n4000o Selangor\nTel: 05-7186 9269\nTIN:IG19249197310  Invoice: INV-2026\nMyInV0is UUID:843558MY2026LHDN93\nTarikh: 2026-04-09\nCARUMAN SUKARELA I-SARAAN X3 RMI",
+        "got_merchant": "GERAI SELERA TIMUR",
+        "id": "ocr_test_5466",
+        "got_amt": 206700
+      },
+      {
+        "expected_merchant": "Domino's Pizza MY",
+        "expected_amt": 12283,
+        "raw": "DOMINO'S PIZZA MY\nSSM Reg No: 202501055377\nNo. 72, Jalan Meru, Klang\n4105o Selangor\nTel: 05-4191 3705\nReceipt No: INV-2026056369\nDate: 27 Mei 2026  11:04\n3PC TENDERS BOX x2  RM38.82\n2PC SNACK PLATE COMBO  RM 22.85\nCHICKE",
+        "got_merchant": "DOMINO'S PIZZA MY",
+        "id": "ocr_test_5471",
+        "got_amt": 2283
+      },
+      {
+        "expected_merchant": "Restoran Kayu",
+        "expected_amt": 1167,
+        "raw": "SSMRegNo:202601021275  Restoran Kayu Sdn Bhd\n24,Jalan Tun Razak,Kuala Lumpur\n50400 WP Kuala Lumpur\nReceiptNo:INV-2826059483\nTarikh: 14-05-2026\nRoti Canai x2  RM 3.51\n2x Kopi Peng  8.16\nCASH  JUMLAH BERSIH  RM 20.00  RM 1",
+        "got_merchant": "SSMRegNo:202601021275  Restoran Kayu",
+        "id": "ocr_test_5494",
+        "got_amt": 0
+      },
+      {
+        "expected_merchant": "myTNB Tenaga Nasional",
+        "expected_amt": 27080,
+        "raw": "SIMPLIFIEDTAXINVOICE\nMYTNB TENAGA NASIONAL SDN BHD\nNo.18,Jalan Telawi 3,Bangsar Baru\n59100 KualaLumpur\nTel:08-86932065\nReceiptNo:INV-2026084042\nDate: Aug 05, 2026\nICPTKWTBBADJUSTMENTX3  RM13.11\nELECTRICITYUSAGE412KWHX2  ",
+        "got_merchant": "MYTNB TENAGA NASIONAL",
+        "id": "ocr_test_5508",
+        "got_amt": 25545
+      },
+      {
+        "expected_merchant": "Gerai Selera Timur",
+        "expected_amt": 166755,
+        "raw": "RESITRASMI\nGERAI SELERA TIMUR\n24,Jalan Tun Razak,Kuala Lumpur\n50400 WP KualaLumpur\n2026-09-19  09:23\nCASUAL SNEAKERS X2  RM401.20\nOXFORD SHIRT L/S x3  RM453.54\nCASUAL SNEAKERS  176.50\nAIRISM COTTON TEE  57.77\nOXFORD SHIR",
+        "got_merchant": "GERAI SELERA TIMUR",
+        "id": "ocr_test_5533",
+        "got_amt": 166750
+      },
+      {
+        "expected_merchant": "Taylor's University Finance",
+        "expected_amt": 1509250,
+        "raw": "Taylor's University Financ\n1o1,Jalan Austin Heights 3,Johor Bahru\n81188 Johor\nTIN:C7622969669Invoice:INV-202606\nTarikh:09 Jun 2026  509:16\nLaboratory Resource Fee148.39\n3x Semester Tuition Instaliment  Semester Tuition I",
+        "got_merchant": "Taylor's University Financ",
+        "id": "ocr_test_5598",
+        "got_amt": 1509200
+      },
+      {
+        "expected_merchant": "Kedai Buku Bestari",
+        "expected_amt": 18545,
+        "raw": "SSM Reg No: (368058-H)  Kedai Buku Bestari Sdn Bhd\nNo. I5, Lorong Selamat, Kuching\n93100 Sarawak\nTIN:C7157315481 Invoice:INV-202611636\nTarikh:2026-11-04  19:58\n3x Vitamin C 1000mg 60s  121.68\nVitamin C i000mg 60s  sRM 46",
+        "got_merchant": "SSM Reg No: (368058-H)  Kedai Buku Bestari",
+        "id": "ocr_test_5668",
+        "got_amt": 0
+      },
+      {
+        "expected_merchant": "Bengkel Servis ProAuto",
+        "expected_amt": 415850,
+        "raw": "SSM Reg No:(277058-X)  Bengkel Servis ProAuto Sdn Bh\nLot G-12, Jalan Ss15/4, Subang Jaya\n4750oSelangor\nTIN:C8987698284Inv0ice:INV-2026057765\nTarikh:10/05/2026  15:53\ncloud Practitioner Exam  cloud Practitioner Exam  3x C",
+        "got_merchant": "4750oSelangor",
+        "id": "ocr_test_5681",
+        "got_amt": 5850
+      },
+      {
+        "expected_merchant": "Gerai Selera Timur",
+        "expected_amt": 171910,
+        "raw": "GERAI SELERA TIMURSDNBHD\nLotG-12,Jalan SS15/4,SubangJaya\n4750o Selangor\nTIN:C1438535075Invoice:INV-202602110:\nMyInV0isUUID:463589MY2026LHDN81\n2026-02-05\nCHILD EDUCATION PLAN  RM 280.06\nCHILD EDUCATION PLAN X3  RM1057.08\n",
+        "got_merchant": "GERAI SELERA TIMURSDNBHD",
+        "id": "ocr_test_5683",
+        "got_amt": 171916
+      },
+      {
+        "expected_merchant": "AIA EduSmart",
+        "expected_amt": 194265,
+        "raw": "AIA EDUSMART\nLot 6, Jalan Tun Fuad Stephens, Kota Kinabal\n88000 Sabah\nTIN:C9717256169  Invoice: INV-202612\nMyInVois UUID: 535617MY2026LHDN87\nTarikh: 2026-12-11  08:07\nCHILD EDUCATION PLAN X2  RM609.96\nCHILD EDUCATION PLA",
+        "got_merchant": "AIA EDUSMART",
+        "id": "ocr_test_5690",
+        "got_amt": 194200
+      },
+      {
+        "expected_merchant": "Kedai Hardware Permai",
+        "expected_amt": 163790,
+        "raw": "OFFICIAL RECEIPT\nKEDAI HARDWARE PERMAI 20240108!\nLot 6,Jalan Tun Fuad Stephens,Kota Kinabalu\n88000 Sabah\nTel:05-35455601\nTIN:C2011925844  Invoice:INV-202606499\nMyInV0is UUID:893289MY2026LHDN11\nDate:09-06-2026  11:56\nPRS ",
+        "got_merchant": "KEDAI HARDWARE PERMAI 20240108!",
+        "id": "ocr_test_5715",
+        "got_amt": 16379000
+      },
+      {
+        "expected_merchant": "Zara Malaysia",
+        "expected_amt": 24340,
+        "raw": "Zara Malaysia Sdn Bhd 2023010\nLevel 2, Lot 45, Jalan Bukit Bintang, TRX KL\n55100 Kuala Lumpur\nTel:08-24524451\nReceipt No:INV-2026081717\nTarikh: Aug 05, 2026  11:05\n0xford Shirt L/s  140.82\nCanvas Tote Bag  84.57\nJumlah K",
+        "got_merchant": "Zara Malaysia Sdn Bhd 2023010",
+        "id": "ocr_test_5733",
+        "got_amt": 24300
+      },
+      {
+        "expected_merchant": "Lotus's Malaysia",
+        "expected_amt": 11140,
+        "raw": "Lotus's Malaysia Sdn Bhd\nSSM Reg No: (100343-X)\nNo. 72, Jalan Meru, Klang\n4105o Selangor\nReceipt No:INV-2026053393\nDate: 24 Mei 2026\nAnchor Unsalted Butter RM 17.51\nJasmine Fragrant Rice 5kg x3 RM93.90\nSub-Total Rm 111.4",
+        "got_merchant": "Lotus's Malaysia",
+        "id": "ocr_test_5738",
+        "got_amt": 100
+      },
+      {
+        "expected_merchant": "Tsutaya Books Pavilion",
+        "expected_amt": 29660,
+        "raw": "OFFICIAL RECEIPT\nTSUTAYA BOOKS PAVILION\nLot G-12, Jalan ss15/4, Subang Jaya\n4750o Selangor\nTIN: C9662404407Inv0ice: INV-2026062084\nMyInV0isUUID:666813MY2026LHDN95\nTarikh: 06 Jun 2026  08:30\nATOMIC HABITS PAPERBACK RM 6I.",
+        "got_merchant": "TSUTAYA BOOKS PAVILION",
+        "id": "ocr_test_5755",
+        "got_amt": 0
+      }
+    ]
+  }
+}

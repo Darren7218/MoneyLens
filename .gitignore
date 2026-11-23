@@ -23,5 +23,12 @@ colab/outputs_v4/moneylens_classifier_holdout.json
 colab/outputs_v4/moneylens_classifier_holdout.json.gz
 colab/outputs_v4/*.jsonl.gz
 colab/outputs_v4/*.tmp
+colab/outputs_receipt_v1/*.jsonl
+colab/outputs_receipt_v1/*.jsonl.gz
+colab/outputs_receipt_v1/receipt_holdout_real_ocr.json
+colab/outputs_receipt_v1/receipt_holdout_text.json
+colab/outputs_receipt_v1/moneylens_receipt_tagger.json
+colab/outputs_receipt_v1/moneylens_receipt_tagger.json.gz
+colab/outputs_receipt_v1/receipt_foundry_v1.log
 __pycache__/
 *.pyc
