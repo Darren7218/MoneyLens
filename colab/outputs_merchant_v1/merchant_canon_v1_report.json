@@ -1,0 +1,26 @@
+{
+  "train_seconds": 82.0,
+  "gz_bytes": 450031,
+  "num_catalog": 800,
+  "num_train_pairs": 29536,
+  "calibrated_thresholds": {
+    "brandMatchThreshold": 0.48,
+    "brandMatchMargin": 0.02,
+    "pairSameThreshold": 0.62
+  },
+  "catalog_blind_eval": {
+    "n_queries": 1222,
+    "top1_unthresholded_acc": 0.8764,
+    "recall_at_threshold": 0.8707,
+    "precision_at_threshold": 0.911,
+    "unseen_sme_false_canon_rate": 0.0194,
+    "n_unseen_sme": 103
+  },
+  "zero_shot_pairwise_eval": {
+    "n_pairs": 404,
+    "roc_auc": 0.999,
+    "f1": 0.9802,
+    "tpr": 0.9612,
+    "hard_negative_fpr": 0.0
+  }
+}

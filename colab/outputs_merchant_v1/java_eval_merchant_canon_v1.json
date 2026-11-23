@@ -1,0 +1,254 @@
+{
+  "trim_reload_ok": true,
+  "unseen_sme_pairs": {
+    "roc_auc": 0.999,
+    "by_kind": {
+      "trunc_vs_trunc": {
+        "acc": 1,
+        "neg": 0,
+        "pos": 103,
+        "tpr": 1,
+        "fpr": null,
+        "fp": 0,
+        "tp": 103,
+        "n": 103
+      },
+      "clean_vs_trunc": {
+        "acc": 0.9223,
+        "neg": 0,
+        "pos": 103,
+        "tpr": 0.9223,
+        "fpr": null,
+        "fp": 0,
+        "tp": 95,
+        "n": 103
+      },
+      "hard_neg_same_cat": {
+        "acc": 1,
+        "neg": 99,
+        "pos": 0,
+        "tpr": null,
+        "fpr": 0,
+        "fp": 0,
+        "tp": 0,
+        "n": 99
+      },
+      "hard_neg_trunc": {
+        "acc": 1,
+        "neg": 99,
+        "pos": 0,
+        "tpr": null,
+        "fpr": 0,
+        "fp": 0,
+        "tp": 0,
+        "n": 99
+      }
+    },
+    "tpr": 0.9612,
+    "fn": 8,
+    "fpr": 0,
+    "accuracy": 0.9802,
+    "fp": 0,
+    "tn": 198,
+    "tp": 198,
+    "n": 404
+  },
+  "avg_encode_ms": 0.252,
+  "probe_surfaces": [
+    {
+      "margin": 0.4422,
+      "similarity": 0.8601,
+      "raw": "PAY*CRNGPHARM-TRX",
+      "matched": true,
+      "canonical": "CARiNG Pharmacy",
+      "noisy_surface": true,
+      "category": "Health & medical",
+      "subcategory": "Pharmacy & Medicine"
+    },
+    {
+      "margin": 0.4847,
+      "similarity": 0.9286,
+      "raw": "DNQR*99SPDM-KJ",
+      "matched": true,
+      "canonical": "99 Speedmart",
+      "noisy_surface": true,
+      "category": "Groceries",
+      "subcategory": "Convenience Store (99 Speedmart / 7-Eleven / FamilyMart)"
+    },
+    {
+      "margin": 0.4845,
+      "similarity": 0.9091,
+      "raw": "TNGD*GRDNPHARM-TRX",
+      "matched": true,
+      "canonical": "Guardian Pharmacy",
+      "noisy_surface": true,
+      "category": "Health & medical",
+      "subcategory": "Pharmacy & Medicine"
+    },
+    {
+      "margin": 0.2586,
+      "similarity": 0.655,
+      "raw": "MYDEBIT*WSNSPHARM-TRX",
+      "matched": true,
+      "canonical": "Watsons Pharmacy",
+      "noisy_surface": true,
+      "category": "Health & medical",
+      "subcategory": "Pharmacy & Medicine"
+    },
+    {
+      "margin": 0.2002,
+      "similarity": 0.7543,
+      "raw": "IPAY88*TRPCOM FLT",
+      "matched": true,
+      "canonical": "Trip.com Flights",
+      "noisy_surface": true,
+      "category": "Entertainment & travel",
+      "subcategory": "Flights & Transport"
+    },
+    {
+      "margin": 0.1441,
+      "similarity": 0.6839,
+      "raw": "TNGD*EZBKXPRSS",
+      "matched": true,
+      "canonical": "Easybook Express",
+      "noisy_surface": true,
+      "category": "Entertainment & travel",
+      "subcategory": "Flights & Transport"
+    },
+    {
+      "margin": 0.1476,
+      "similarity": 0.5604,
+      "raw": "PAY*QNDM-TRX",
+      "matched": true,
+      "canonical": "Etiqa Medical Takaful",
+      "noisy_surface": true,
+      "category": "Insurance & Takaful",
+      "subcategory": "Medical & Health Card"
+    },
+    {
+      "margin": 0.261,
+      "similarity": 0.7557,
+      "raw": "D0MIN0'SPIZZA",
+      "matched": true,
+      "canonical": "Domino's Pizza MY",
+      "noisy_surface": true,
+      "category": "Food & drinks",
+      "subcategory": "Fast Food"
+    },
+    {
+      "margin": 0.0361,
+      "similarity": 0.4859,
+      "raw": "FPX*PAY*ALORMT S/B",
+      "matched": true,
+      "canonical": "i-Sayang EPF Transfer",
+      "noisy_surface": true,
+      "category": "Investments & savings",
+      "subcategory": "EPF Voluntary (i-Saraan)"
+    },
+    {
+      "margin": 0.5551,
+      "similarity": 0.9583,
+      "raw": "99 SPEEDMART SDN BHD (519537-X)",
+      "matched": true,
+      "canonical": "99 Speedmart",
+      "noisy_surface": false,
+      "category": "Groceries",
+      "subcategory": "Convenience Store (99 Speedmart / 7-Eleven / FamilyMart)"
+    }
+  ],
+  "cold_load_ms": 36,
+  "avg_canonicalize_ms": 0.4116,
+  "max_trim_emb_diff": 0,
+  "avg_pair_ms": 0.4042,
+  "asset_bytes": 450031,
+  "track3_downstream_eval": {
+    "v4_holdout_split": {
+      "parsed_rate": 0.9821,
+      "cat_acc": 0.9252,
+      "n": 5938,
+      "amount_exact": 0.9559,
+      "subcat_acc": 0.8641
+    },
+    "v4_holdout_truncated_merchant": {
+      "merchant_match": 0.3667,
+      "parsed_rate": 0.9307,
+      "cat_acc": 0.9182,
+      "n": 1039,
+      "amount_exact": 0.8884,
+      "subcat_acc": 0.9143
+    },
+    "v4_all_notifications": {
+      "merchant_match": 0.622,
+      "parsed_rate": 0.9767,
+      "cat_acc": 0.9093,
+      "n": 23214,
+      "amount_exact": 0.9671,
+      "subcat_acc": 0.8657
+    },
+    "v5_prod_cascade": {
+      "v4_test": {
+        "ms_per_sample": 1.162,
+        "parsed_rate": 0.9821,
+        "cat_acc": 0.9252,
+        "tier2_trigger_rate_on_ml": 0.0264,
+        "ml_routed_n": 1366,
+        "n": 5938,
+        "subcat_acc": 0.8641
+      },
+      "v4_test_truncated": {
+        "cat_acc": 0.9182,
+        "n": 1039,
+        "subcat_acc": 0.9143
+      },
+      "v3_holdout": {
+        "ms_per_sample": 1.969,
+        "parsed_rate": 1,
+        "cat_acc": 0.9401,
+        "tier2_trigger_rate_on_ml": 0,
+        "ml_routed_n": 91,
+        "n": 384,
+        "subcat_acc": 0.8724
+      },
+      "v5_hard_test": {
+        "ms_per_sample": 1.007,
+        "parsed_rate": 0.8765,
+        "cat_acc": 0.7984,
+        "tier2_trigger_rate_on_ml": 0.1847,
+        "ml_routed_n": 498,
+        "n": 1498,
+        "subcat_acc": 0.761
+      },
+      "v5_hard_by_edge": {
+        "v5_disambiguation_lhdn": {
+          "cat_acc": 0.6948,
+          "n": 154,
+          "subcat_acc": 0.6039
+        },
+        "v5_digital_bnpl_fx": {
+          "cat_acc": 0.7467,
+          "n": 229,
+          "subcat_acc": 0.6856
+        },
+        "v5_receipt_item_body": {
+          "cat_acc": 0.9683,
+          "n": 126,
+          "subcat_acc": 0.9286
+        },
+        "v5_multilingual_bm_cjk": {
+          "cat_acc": 0.6647,
+          "n": 337,
+          "subcat_acc": 0.6231
+        },
+        "v5_truncated_gateway": {
+          "cat_acc": 0.8773,
+          "n": 652,
+          "subcat_acc": 0.8635
+        }
+      },
+      "ood_misc_test": {
+        "abstention_rate": 1,
+        "n": 200
+      }
+    }
+  }
+}

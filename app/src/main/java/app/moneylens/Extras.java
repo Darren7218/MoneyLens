@@ -435,6 +435,7 @@ public final class Extras {
     if(!mNorm.isEmpty()&&!oNorm.isEmpty()){
      if(mNorm.equals(oNorm))score+=65;
      else if(mNorm.length()>=4&&oNorm.length()>=4&&(mNorm.contains(oNorm)||oNorm.contains(mNorm)))score+=50;
+     else if(MerchantCanonicalizer.sameEntity(merchant,t.optString("merchant","")))score+=60;
      else{for(String tok:mNorm.split(" "))if(tok.length()>=4&&oNorm.contains(tok)){score+=35;break;}}
     }
     if(!acct.isEmpty()&&acct.equals(t.optString("account","")))score+=25;
@@ -666,6 +667,8 @@ public final class Extras {
   if(!rA&&!rB&&!nA.isEmpty()&&nA.equals(nB))return 2;
   List<String> tA=brandTokens(nA),tB=brandTokens(nB);
   if(!rA&&!rB){
+   if(MerchantCanonicalizer.sameEntity(mA,mB))return 2;
+   if(MerchantCanonicalizer.hasDistinctEntityConflict(mA,mB))return 0;
    for(String a:tA){
     for(String b:tB){
      if(a.equals(b)||(a.length()>=5&&b.length()>=5&&(a.startsWith(b)||b.startsWith(a))))return 2;

@@ -59,7 +59,7 @@ public final class PaymentParser {
   }
 
   private static final String NUM="([0-9]{1,3}(?:,[0-9]{3})+(?:\\.[0-9]{1,2})?|[0-9]{1,9}(?:\\.[0-9]{1,2})?)(?![0-9]|\\.[0-9])";
-  private static final Pattern AMOUNT=Pattern.compile("(?i)(?:RM|MYR)[\\s\\u00A0]*"+NUM);
+  private static final Pattern AMOUNT=Pattern.compile("(?i)(?:(?:RM|MYR)[\\s\\u00A0]*"+NUM+"|(?<![0-9:/-])"+NUM+"[\\s\\u00A0]*(?:RM|MYR)(?![A-Za-z]))");
   private static final Pattern FOREIGN_AMT=Pattern.compile("(?i)\\b(SGD|USD|THB|JPY|IDR|EUR|GBP|AUD|CNY|HKD|TWD|KRW|VND)[\\s\\u00A0]*([0-9]{1,3}(?:,[0-9]{3})+(?:\\.[0-9]{1,2})?|[0-9]{1,9}(?:\\.[0-9]{1,2})?)(?![0-9]|\\.[0-9])");
   private static final Pattern TNG_PAID=Pattern.compile("(?i)\\byou\\s+have\\s+paid\\s+(?:RM|MYR)\\s*[0-9,]+(?:\\.[0-9]{1,2})?\\s+(?:at|to)\\s+([^\\r\\n]+)");
   private static final Pattern PURCHASE_AT=Pattern.compile("(?i)\\bfor\\s+(?:your\\s+)?(?:recent\\s+)?(?:purchase|order|transaction|payment)\\s+(?:at|to|from)\\s+([\\p{L}0-9][\\p{L}0-9 &'._/()#,+*-]{1,79})");
@@ -73,7 +73,9 @@ public final class PaymentParser {
   private static final Pattern LEADING_SUBJECT=Pattern.compile("(?im)^\\s*([\\p{L}0-9][\\p{L}0-9 &'._/()#,+*-]{1,60})\\s+has\\s+(?:deducted|charged|debited|received)\\b");
   private static final Pattern VERBLESS_PREP=Pattern.compile("(?i)(?:RM|MYR)\\s*"+NUM+"\\)?(?:\\s+(?:at|to|di|kepada)\\s+|[ \\t]*[@\\-\\u2013\\u2014][ \\t]*)([\\p{L}0-9][\\p{L}0-9 &'._/()#,+*-]{1,79})");
   private static final Pattern VERBLESS_CAPS=Pattern.compile("(?:RM|MYR)\\s*"+NUM+"\\s+([A-Z0-9][A-Z0-9&'._/()#+*-]*(?:[ ]+[A-Z0-9&'._/()#+*-]+){0,6})");
-  private static final Pattern GATEWAY_PREFIX=Pattern.compile("(?im)(?:^|\\b)(?:pay|dnqr|fpx|shopeepay|spaylater|ipay88|razerms|tngd?|mydebit|visa|mc|pos|qr|spay|grab)\\*\\s*([\\p{L}0-9][^\\r\\n]{1,70})");
+  private static final Pattern GATEWAY_PREFIX=Pattern.compile("(?im)(?:^|\\b)(?:pay|dnqr|fpx|shopeepay|shopeep|spaylater|spay|ipay88|razerms|tngd?|mydebit|cimbl|visa|mc|pos|qr|grab)\\*\\s*([\\p{L}0-9][^\\r\\n]{1,70})");
+  private static final Pattern CJK_COMPLETED=Pattern.compile("(?:已支付|付款成功|支付成功|到账成功|转账成功|已完成|完成支付|成功完成|收到|扣款|已消费)");
+  private static final Pattern CJK_TRIGGER=Pattern.compile("(?:已支付|付款成功|支付成功|到账成功|转账成功|已完成|完成支付|成功完成|收到|扣款|已消费|令吉)");
   /** Security advice footers ("Never share your TAC/OTP") are removed before any filtering. */
   private static final Pattern FOOTER=Pattern.compile("(?i)\\b(?:never|do\\s+not|don'?t|jangan)\\s+(?:share|disclose|reveal|give|kongsi|dedahkan|berikan)\\b[^.!\\n]*");
   private static final Pattern EXCLUDE_BEFORE=Pattern.compile("(?i)\\b(?:balance|bal|baki|limit|cashback|cash\\s+back|reward|rewards|points|pts|rebate|earned|earn|available|avail|remaining|outstanding|saved|worth|up\\s+to|min(?:imum)?\\s+spend)\\b[^0-9]*$");
@@ -88,7 +90,7 @@ public final class PaymentParser {
     String normalized=text.replace('\u00A0',' ').trim();
     String core=FOOTER.matcher(normalized).replaceAll(" ").trim();
     String low=core.toLowerCase(Locale.ROOT);
-    boolean completed=low.matches("(?s).*\\b(you have paid|paid|successful|successfully|succeeded|completed|confirmed|settled|processed|approved|donated|deducted|charged|debited|credited|dikreditkan|received|repaid|berjaya|diterima|menerima|dibayar|membayar|selesai|lulus|authori[sz]ed a payment|spent|payment\\s+(?:of|to|confirmation)|refunded|reversed|chargeback|credited\\s+back|dikembalikan|dipulangkan|bayaran\\s+balik|pulangan\\s+(?:bayaran|wang|tunai|dana)|refund\\s+(?:of\\s+(?:rm|myr)|from|processed|completed|issued|approved))\\b.*");
+    boolean completed=low.matches("(?s).*\\b(you have paid|paid|successful|successfully|succeeded|completed|confirmed|settled|processed|approved|donated|deducted|charged|debited|credited|dikreditkan|received|repaid|berjaya|diterima|menerima|dibayar|membayar|selesai|lulus|authori[sz]ed a payment|spent|payment\\s+(?:of|to|confirmation)|refunded|reversed|chargeback|credited\\s+back|dikembalikan|dipulangkan|bayaran\\s+balik|pulangan\\s+(?:bayaran|wang|tunai|dana)|refund\\s+(?:of\\s+(?:rm|myr)|from|processed|completed|issued|approved))\\b.*")||CJK_COMPLETED.matcher(core).find();
     if(low.matches("(?s).*\\b(declined|failed|unsuccessful|gagal|rejected)\\b.*"))return null;
     boolean otpWord=low.matches("(?s).*\\b(otp|tac|verification\\s+code|kod\\s+pengesahan|one.?time\\s+(?:pin|password|passcode)|security\\s+code)\\b.*");
     if(otpWord&&!completed&&low.matches("(?s).*(?<![0-9.,])[0-9]{4,8}(?![0-9.,]).*"))return null;
@@ -96,14 +98,15 @@ public final class PaymentParser {
     if(!completed&&low.matches("(?s).*\\b(secure2u|authorise|authorize|approve|approval)\\b.*"))return null;
     if(low.matches("(?s).*\\b(pending|processing|pre.?authori[sz]ation|awaiting)\\b.*")||(!completed&&low.matches("(?s).*\\b(requested|scheduled)\\b.*")))return null;
     if(low.matches("(?s).*\\b(?:refund|pulangan|bayaran\\s+balik)\\b.*")&&low.matches("(?s).*\\b(?:request(?:ed)?|permohonan|dimohon|policy|polisi)\\b.*")&&!low.matches("(?s).*\\b(?:approved|completed|processed|credited|dikembalikan|dipulangkan|lulus|selesai)\\b.*"))return null;
-    boolean trigger=low.matches("(?s).*\\b(paid|pay|payment|repayment|repaid|instal?ment|ansuran|purchase|pembelian|dibeli|spent|debited|debit|deducted|deduct|deduction|charged|charge|sale|credited|dikreditkan|received|refund|refunded|reversal|reversed|chargeback|bayaran\\s+balik|pulangan|dikembalikan|dipulangkan|pembatalan\\s+transaksi|transfer|transferred|withdrawal|top.?up|reload|reloaded|toll|paydirect|rfid|duitnow|fpx|jompay|giro|ibft|auto.?debit|paywave|contactless|qrpay|qr\\s*pay|bayar|bayaran|pembayaran|dibayar|membayar|diterima|menerima|transaksi|potongan|selesai|transaction|processed|completed|settled|donated|fx\\s*rate|exchange\\s+rate|currency\\s+conversion|gxbank|aeon\\s*bank|ryt\\s*bank|boost\\s*bank|shopeepay|spaylater|lazpaylater|paylater|payflex|atome|grabpay|grabpaylater|bnpl|setel|ptptn|lhdn|tax\\s+relief)\\b.*");
+    boolean trigger=low.matches("(?s).*\\b(paid|pay|payment|repayment|repaid|instal?ment|ansuran|purchase|pembelian|dibeli|spent|debited|debit|deducted|deduct|deduction|charged|charge|sale|credited|dikreditkan|received|refund|refunded|reversal|reversed|chargeback|bayaran\\s+balik|pulangan|dikembalikan|dipulangkan|pembatalan\\s+transaksi|transfer|transferred|withdrawal|top.?up|reload|reloaded|toll|paydirect|rfid|duitnow|fpx|jompay|giro|ibft|auto.?debit|paywave|contactless|qrpay|qr\\s*pay|bayar|bayaran|pembayaran|dibayar|membayar|diterima|menerima|transaksi|potongan|selesai|transaction|processed|completed|settled|donated|fx\\s*rate|exchange\\s+rate|currency\\s+conversion|gxbank|aeon\\s*bank|ryt\\s*bank|boost\\s*bank|shopeepay|spaylater|lazpaylater|paylater|payflex|atome|grabpay|grabpaylater|bnpl|setel|ptptn|lhdn|tax\\s+relief)\\b.*")||CJK_TRIGGER.matcher(core).find();
     Matcher vp=VERBLESS_PREP.matcher(core),vc=VERBLESS_CAPS.matcher(core);
     boolean prep=vp.find(),caps=!prep&&vc.find(),gwTrigger=GATEWAY_PREFIX.matcher(core).find();
     if(!trigger&&!prep&&!caps&&!gwTrigger)return null;
 
     Matcher m=AMOUNT.matcher(core);JSONArray candidates=new JSONArray();long primary=0,firstIncluded=0,totalMatch=0;int count=0;boolean primaryFound=false,totalFound=false;
     while(m.find()){
-      long v;try{v=Ledger.minor(m.group(1).replace(",",""));}catch(IllegalArgumentException ignored){continue;}
+      String amtTok=m.group(1)!=null?m.group(1):m.group(2);
+      long v;try{v=Ledger.minor(amtTok.replace(",",""));}catch(IllegalArgumentException ignored){continue;}
       count++;candidates.put(v);
       String before=core.substring(Math.max(0,m.start()-30),m.start()),after=core.substring(m.end(),Math.min(core.length(),m.end()+16));
       if(EXCLUDE_BEFORE.matcher(before).find()||EXCLUDE_AFTER.matcher(after).find())continue;
@@ -159,6 +162,14 @@ public final class PaymentParser {
       if("income".equals(kind)&&!validMerchant(merchant)){Matcher inf=MERCHANT_FROM.matcher(core);while(inf.find()){String c=cleanMerchant(inf.group(1));if(validMerchant(c)){merchant=c;break;}}}
       if(!validMerchant(merchant))while(mm.find()){String c=cleanMerchant(mm.group(1));if(validMerchant(c)){merchant=c;break;}}
     }
+    if(!validMerchant(merchant)&&gwTrigger){
+      Matcher gw=GATEWAY_PREFIX.matcher(core);
+      if(gw.find()){
+        String rawGw=gw.group(1).replaceAll("(?i)(?:,|\\s*(?:rmyr|myr|rm)(?=\\s*[0-9])|\\b(?:rmyr|myr|rm)\\b|[0-9]+\\.[0-9]{2}|\\b[0-9]{2}[/-][0-9]{2}(?:[/-][0-9]{2,4})?\\b|\\s+(?:charge|paid|completed|approved|confirmed)\\b).*","");
+        String c=cleanMerchant(rawGw);
+        if(validMerchant(c))merchant=c;
+      }
+    }
     if(!validMerchant(merchant)){
       merchant="";Matcher mf=MERCHANT_FOR.matcher(core);
       while(mf.find()){String c=cleanMerchant(mf.group(1));if(validMerchant(c)&&!c.matches("(?i)^(?:ref|reference|order|payment|your|my|this|that|a)\\b.*")){merchant=c;break;}}
@@ -176,7 +187,6 @@ public final class PaymentParser {
     }
     if(!validMerchant(merchant)&&prep){String c=cleanMerchant(vp.group(2));if(validMerchant(c))merchant=c;}
     if(!validMerchant(merchant)&&caps){String c=cleanMerchant(vc.group(2));if(validMerchant(c))merchant=c;}
-    if(!validMerchant(merchant)&&gwTrigger){Matcher gw=GATEWAY_PREFIX.matcher(core);if(gw.find()){String rawGw=gw.group(1).replaceAll("(?i)\\s*(?:,|\\b(?:rm|myr)\\b|[0-9]+\\.[0-9]{2}|\\b[0-9]{2}[/-][0-9]{2}(?:[/-][0-9]{2,4})?\\b).*","");String c=cleanMerchant(rawGw);if(validMerchant(c))merchant=c;}}
     if(!validMerchant(merchant)&&core.contains("\n")){
       String[] lines=core.split("\\r?\\n");
       for(int i=0;i<lines.length&&i<8;i++){
@@ -203,8 +213,19 @@ public final class PaymentParser {
       else merchant="Detected payment";
     }
 
-    String[] cs=kind.equals("income")?new String[]{"Other income",""}:classify(merchant,source,low);
+    String origMerchant=merchant;
+    MerchantCanonicalizer.Result canon=!"Detected payment".equals(origMerchant)?MerchantCanonicalizer.canonicalize(origMerchant,""):null;
+    boolean canonStrong=canon!=null&&canon.matchedCatalog&&canon.similarity>=0.62;
+    if(canonStrong&&MerchantCanonicalizer.isNoisyTruncatedSurface(origMerchant)){
+      merchant=canon.canonicalName;
+    }
+    String[] cs=kind.equals("income")?new String[]{"Other income",""}:classify(origMerchant,source,low);
+    if(!kind.equals("income")&&canonStrong&&"Miscellaneous".equals(cs[0])){
+      String[] ccs=classify(canon.canonicalName,source,low);
+      if(!"Miscellaneous".equals(ccs[0]))cs=ccs;
+    }
     JSONObject d=new JSONObject().put("id",Ledger.id()).put("amount",amount).put("primaryAmount",amount).put("kind",kind).put("merchant",merchant).put("category",cs[0]).put("date",LocalDate.now().toString()).put("source",source).put("state","review").put("reason",reason).put("amountCandidates",candidates).put("adapter","generic-5").put("revision",1).put("created",System.currentTimeMillis());
+    if(canonStrong)d.put("canonicalMerchant",canon.canonicalName).put("canonicalScore",Math.round(canon.similarity*1000.0)/1000.0);
     if(!cs[1].isEmpty())d.put("subcategory",cs[1]);
     if(!origCur.isEmpty()&&kind.equals("expense")){
       d.put("originalCurrency",origCur).put("originalAmount",origAmt).put("exchangeRate",java.math.BigDecimal.valueOf(amount,2).divide(new java.math.BigDecimal(origAmt),8,java.math.RoundingMode.HALF_UP).toPlainString());
@@ -271,9 +292,9 @@ public final class PaymentParser {
     if(s.matches("(?i)^(?:your|my)\\s+(?:account|akaun|wallet|dompet|e.?wallet|card|kad|bank|mae|tng|touch\\s*'?n\\s*go|shopeepay|gxbank|boost|bigpay)\\b.*"))return "";
     s=s.replaceAll("[.!]\\s+(?=(?:RM|MYR)\\s*[0-9]|\\p{Lu}\\p{Ll}).*","").trim();
     s=s.replaceAll("[.,;:!\\-\\u2013\\u2014\\s]+$","").replaceAll("^[.,;:!\\-\\u2013\\u2014\\s]+","").trim();
-    String noGw=s.replaceFirst("(?i)^(?:fpx|dnqr|duitnow\\s*qr|duitnow|paynet|ipay88|razerms|razer\\s*ms|molpay|billplz|senangpay|gkash|stripe|curlec|2c2p|revpay|kiple|shopeepay|spaylater|atome|payflex)\\s*(?:[*_/:-]+\\s*)","").trim();
+    String noGw=s.replaceFirst("(?i)^(?:fpx|dnqr|duitnow\\s*qr|duitnow|paynet|ipay88|razerms|razer\\s*ms|molpay|billplz|senangpay|gkash|stripe|curlec|2c2p|revpay|kiple|shopeepay|spaylater|atome|payflex|shopeep|cimbl)\\s*(?:[*_/:-]+\\s*)","").trim();
     if(noGw.length()>=2)s=noGw;
-    String noWalletGw=s.replaceFirst("(?i)^(?:tngd?|grab|spay|pyt|sq|pp)\\s*[*_/:]+\\s*","").trim();
+    String noWalletGw=s.replaceFirst("(?i)^(?:tngd?|grab|spay|pyt|sq|pp|shopeep|cimbl)\\s*[*_/:]+\\s*","").trim();
     if(noWalletGw.length()>=2)s=noWalletGw;
     String noAddr=s.replaceAll("(?i)\\s*,\\s*(?:no\\.?\\s*[0-9]|lot\\s+[0-9]|jalan\\b|jln\\b|unit\\b|level\\b|lvl\\b|block\\b|blk\\b|persiaran\\b|taman\\b|bandar\\b|seksyen\\b).*","").trim();
     if(noAddr.length()>=2)s=noAddr;
@@ -314,7 +335,7 @@ public final class PaymentParser {
     }
     if(!hasDigit)return false;
     if(FAST_LIKELY_CURRENCY.matcher(text).find())return true;
-    return !FAST_LIKELY_OTP.matcher(text).find()&&FAST_LIKELY_CUE.matcher(text).find();
+    return !FAST_LIKELY_OTP.matcher(text).find()&&(FAST_LIKELY_CUE.matcher(text).find()||CJK_TRIGGER.matcher(text).find());
   }
 
   static boolean has(String hay,String alternatives){

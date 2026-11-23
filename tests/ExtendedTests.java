@@ -1089,6 +1089,104 @@ public final class ExtendedTests {
    }
   });
 
+  test("Track 3 INT8 MerchantCanonicalizer, zero-shot SME entity resolution, anomaly/refund/twin wiring, suffix MYR & CJK alerts",()->{
+   java.nio.file.Path canonAsset=java.nio.file.Paths.get("app/src/main/assets/moneylens_merchant_canon.bin.gz");
+   yes(java.nio.file.Files.exists(canonAsset)&&java.nio.file.Files.size(canonAsset)<512_000L);
+   MerchantCanonicalizer.clear();
+   long ct0=System.nanoTime();
+   yes(MerchantCanonicalizer.loadFromPath(canonAsset));
+   long cLoadMs=(System.nanoTime()-ct0)/1_000_000L;
+   yes(cLoadMs<100L&&MerchantCanonicalizer.isLoaded());
+
+   float[] embPre=MerchantCanonicalizer.encode("PAY*CRNGPHARM-TRX");
+   MerchantCanonicalizer.trim();
+   yes(!MerchantCanonicalizer.isLoaded());
+   float[] embPost=MerchantCanonicalizer.encode("PAY*CRNGPHARM-TRX");
+   yes(MerchantCanonicalizer.isLoaded()&&embPre!=null&&embPost!=null&&embPre.length==embPost.length);
+   double maxTrimDiff=0.0;
+   for(int i=0;i<embPre.length;i++)maxTrimDiff=Math.max(maxTrimDiff,Math.abs(embPre[i]-embPost[i]));
+   yes(maxTrimDiff<1e-6);
+
+   // Noisy truncated alerts upgrade to clean catalog canonical names + metadata
+   String[][] canonCases={
+     {"You have paid RM 48.90 at PAY*CRNGPHARM-TRX","CARiNG Pharmacy","Health & medical"},
+     {"DuitNow QR RM 18.50 paid to DNQR*99SPDM-KJ","99 Speedmart","Groceries"},
+     {"Payment of RM 32.00 at TNGD*GRDNPHARM-TRX approved","Guardian Pharmacy","Health & medical"},
+     {"RM 41.20 charged at MYDEBIT*WSNSPHARM-TRX","Watsons Pharmacy","Health & medical"},
+     {"Payment of RM 320.90 at IPAY88*TRPCOM FLT confirmed","Trip.com Flights","Entertainment & travel"},
+     {"You have paid RM 45.00 at TNGD*EZBKXPRSS","Easybook Express","Entertainment & travel"}
+   };
+   for(String[] tc:canonCases){
+    JSONObject p=PaymentParser.parse(tc[0],"Bank / eWallet");
+    yes(p!=null&&tc[1].equals(p.getString("merchant")));
+    yes(tc[1].equals(p.optString("canonicalMerchant",""))&&p.optDouble("canonicalScore",0.0)>=0.62);
+    yes(tc[2].equals(p.getString("category")));
+   }
+
+   // Clean uppercase names stay intact
+   String[][] cleanCases={
+     {"Card approved RM 52.00 at POPULAR BOOK CO","POPULAR BOOK CO"},
+     {"Payment of RM 120.00 at TENAGA NASIONAL successful","TENAGA NASIONAL"},
+     {"Paid RM 16.50 at RESTORAN PELITA","RESTORAN PELITA"},
+     {"RM 2.30 deducted at DUKE TOLL","DUKE TOLL"},
+     {"Touch 'n Go deducted RM 3.10 at LDP TOLL PLAZA","LDP TOLL PLAZA"}
+   };
+   for(String[] cc:cleanCases){
+    JSONObject p=PaymentParser.parse(cc[0],"Bank / eWallet");
+    yes(p!=null&&cc[1].equals(p.getString("merchant")));
+   }
+
+   // Zero-shot unseen SME pairwise entity resolution & hard-negative conflict rejection
+   yes(MerchantCanonicalizer.sameEntity("Klinik Pergigian Harmoni","PAY*KLNKPRGGN HRMN-PJ"));
+   yes(!MerchantCanonicalizer.sameEntity("Klinik Pergigian Harmoni","Klinik Pergigian Sentosa"));
+   yes(!MerchantCanonicalizer.sameEntity("Dooki Kitchen","PERTIWI Soup Kitchen"));
+
+   // Downstream Finance.detectSpendAnomaly & Extras.findMatchingRefund across truncated vs clean names
+   JSONObject s=Ledger.initial();
+   Ledger.apply(s,"account",new JSONObject().put("name","MAE").put("type","bank").put("opening","2000.00"));
+   String maeId=s.getJSONArray("accounts").getJSONObject(1).getString("id");
+   String today=LocalDate.now().toString();
+   for(int i=1;i<=3;i++){
+    Ledger.post(s,new JSONObject().put("key","t3-anom-"+i).put("kind","expense").put("amount","15.00").put("account",maeId).put("category","Health & medical").put("merchant","CARiNG Pharmacy").put("date",LocalDate.now().minusDays(i*2).toString()));
+   }
+   JSONObject anom=Finance.detectSpendAnomaly(s,"PAY*CRNGPHARM-TRX","Health & medical",8000L,LocalDate.now(),"");
+   yes(anom.getBoolean("isAnomaly")&&anom.getLong("median")==1500L);
+
+   Ledger.post(s,new JSONObject().put("key","t3-99").put("kind","expense").put("amount","18.50").put("account",maeId).put("category","Groceries").put("merchant","99 Speedmart").put("date",today));
+   JSONArray txArr=s.getJSONArray("transactions");
+   String orig99Id=txArr.getJSONObject(txArr.length()-1).getString("id");
+   Extras.apply(s,"draft",new JSONObject().put("id","t3-ref-99").put("kind","refund").put("amount",1850L).put("account",maeId).put("merchant","DNQR*99SPDM-KJ").put("date",today).put("autoCapture",true));
+   yes(orig99Id.equals(txArr.getJSONObject(txArr.length()-1).optString("originalId","")));
+
+   // Cross-source twin dedup merges truncated vs clean twin, rejects distinct SMEs sharing trade word
+   JSONObject st=Ledger.initial();
+   JSONObject tw1=Extras.captureState(st,"my.com.tngdigital.ewallet","TNG eWallet","t3-tw1","You have paid RM 48.90 at CARiNG Pharmacy",5_000_000L);
+   JSONObject tw2=Extras.captureState(st,"com.maybank2u.life","Maybank MAE","t3-tw2","Card transaction RM 48.90 at PAY*CRNGPHARM-TRX approved",5_060_000L);
+   yes(tw1!=null&&tw1.optBoolean("autoRecorded")&&tw2!=null&&tw1.getString("transactionId").equals(tw2.optString("duplicateOf")));
+   JSONObject hd1=Extras.captureState(st,"my.com.tngdigital.ewallet","TNG eWallet","t3-hd1","You have paid RM 65.00 at Klinik Pergigian Harmoni",6_000_000L);
+   JSONObject hd2=Extras.captureState(st,"com.maybank2u.life","Maybank MAE","t3-hd2","You have paid RM 65.00 at Klinik Pergigian Sentosa",6_060_000L);
+   yes(hd1!=null&&hd1.optBoolean("autoRecorded")&&hd2!=null&&hd2.optBoolean("autoRecorded")&&!hd2.has("duplicateOf"));
+
+   // Suffix MYR, SHOPEEP*/CIMBL* gateway prefixes, and CJK payment alerts
+   JSONObject sfx1=PaymentParser.parse("Payment of 82.30 RM at CARiNG Pharmacy successful","Bank");
+   yes(sfx1!=null&&sfx1.getLong("amount")==8230L);
+   JSONObject sfx2=PaymentParser.parse("Paid 150.80 MYR to POPULAR BOOK CO","Bank");
+   yes(sfx2!=null&&sfx2.getLong("amount")==15080L);
+   JSONObject gw1=PaymentParser.parse("You have paid RM 18.50 at SHOPEEP*99SPDM-KJ","ShopeePay");
+   yes(gw1!=null&&"99 Speedmart".equals(gw1.getString("merchant")));
+   JSONObject gw2=PaymentParser.parse("Payment RM 24.00 at CIMBL*CRNGPHARM-TRX approved","CIMB");
+   yes(gw2!=null&&"CARiNG Pharmacy".equals(gw2.getString("merchant")));
+   String cjkMsg1="微信支付已支付 RM 28.50 亚坤咖椰吐司";
+   String cjkMsg2="付款成功 35.00 RM 余仁生药材店";
+   yes(PaymentParser.isLikelyPayment(cjkMsg1)&&PaymentParser.isLikelyPayment(cjkMsg2));
+   JSONObject cjkP1=PaymentParser.parse(cjkMsg1,"Wallet");
+   JSONObject cjkP2=PaymentParser.parse(cjkMsg2,"Wallet");
+   yes(cjkP1!=null&&cjkP1.getLong("amount")==2850L);
+   yes(cjkP2!=null&&cjkP2.getLong("amount")==3500L);
+   Ledger.validate(s);
+   Ledger.validate(st);
+  });
+
   System.out.println("RESULT: "+passed+" extended tests passed");
  }
 }

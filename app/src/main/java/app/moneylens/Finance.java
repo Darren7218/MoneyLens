@@ -1043,7 +1043,7 @@ public final class Finance {
    if(dt.isBefore(cutoff)||dt.isAfter(on))continue;
    String tm=normalizeMerchant(t.optString("merchant",""));
    if(tm.isEmpty())continue;
-   if(tm.equals(target)||(target.length()>=4&&tm.length()>=4&&(tm.startsWith(target+" ")||target.startsWith(tm+" ")))){
+   if(tm.equals(target)||(target.length()>=4&&tm.length()>=4&&(tm.startsWith(target+" ")||target.startsWith(tm+" ")))||MerchantCanonicalizer.sameEntity(merchant,t.optString("merchant",""))){
     samples.add(t.getLong("amount"));
    }
   }

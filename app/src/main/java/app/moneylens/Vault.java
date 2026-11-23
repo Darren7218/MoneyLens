@@ -24,6 +24,7 @@ public final class Vault {
     cachedPlain=null;cachedMtime=-1L;cachedLen=-1L;
     MlClassifier.trim();
     MlNeuralReranker.trim();
+    MerchantCanonicalizer.trim();
     ReceiptFieldTagger.trim();
   }
   private static void syncMeta(Context c,JSONObject s){
@@ -289,6 +290,12 @@ public final class Vault {
     });
     MlNeuralReranker.setStreamSupplier(()->{
       for(String asset:new String[]{"moneylens_reranker.bin.gz","moneylens_reranker.bin"}){
+        try{return app.getAssets().open(asset);}catch(Exception ignored){}
+      }
+      return null;
+    });
+    MerchantCanonicalizer.setStreamSupplier(()->{
+      for(String asset:new String[]{"moneylens_merchant_canon.bin.gz","moneylens_merchant_canon.bin"}){
         try{return app.getAssets().open(asset);}catch(Exception ignored){}
       }
       return null;
