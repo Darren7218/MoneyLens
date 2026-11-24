@@ -996,6 +996,20 @@ public final class Finance {
    .put("schedule",schedule)
    .put("perDebt",perDebt);
  }
+ public static final int TAX_BUCKET_CACHE_MAX = 2048;
+ private static final Map<String,String> taxBucketCache=Collections.synchronizedMap(new LinkedHashMap<String,String>(256,0.75f,true){
+  @Override protected boolean removeEldestEntry(Map.Entry<String,String> eldest){return size()>TAX_BUCKET_CACHE_MAX;}
+ });
+ /** Returns the primary LHDN tax relief bucket for a transaction, or empty string if not claimable. */
+ public static String taxReliefBucket(JSONObject t){
+  if(t==null)return "";
+  String key=t.optString("category","")+"|"+t.optString("subcategory","")+"|"+t.optString("merchant","")+"|"+t.optString("note","");
+  String cached=taxBucketCache.get(key);
+  if(cached!=null)return cached;
+  String res=applyTaxBuckets(t,0L,new long[9]);
+  taxBucketCache.put(key,res);
+  return res;
+ }
  /** Applies a signed sen delta across LHDN tax relief buckets and returns the primary bucket label. */
  private static String applyTaxBuckets(JSONObject t,long signedAmt,long[] acc){
   String cat=t.optString("category",""),sub=t.optString("subcategory",""),low=(cat+" "+sub+" "+t.optString("merchant","")+" "+t.optString("note","")).toLowerCase(Locale.ROOT);
@@ -1370,5 +1384,197 @@ public final class Finance {
    .put("hasBackup",backupMs>0L)
    .put("daysSinceBackup",daysSinceBackup)
    .put("reason",reason);
+ }
+ /** Hybrid offline multilingual search (exact/fuzzy lexical + structured constraints + MLSS v1 semantic vectors). */
+ public static JSONObject searchTransactions(JSONObject s,String rawQuery,String kindFilter,JSONObject advFilters,LocalDate today)throws Exception{
+  long t0=System.nanoTime();
+  JSONObject st=s==null?Ledger.initial():s;
+  LocalDate refToday=today!=null?today:LocalDate.now();
+  String kFilter=(kindFilter==null||kindFilter.trim().isEmpty())?"all":kindFilter.trim();
+  JSONObject adv=advFilters==null?new JSONObject():advFilters;
+  String advExactDate=adv.optString("exactDate","").trim();
+  String advCat=adv.optString("category","").trim();
+  boolean advNeedsNote=adv.optBoolean("needsNote",false);
+  String advFrom=adv.optString("from","").trim();
+  String advUntil=adv.optString("until","").trim();
+  String advAcct=adv.optString("account","").trim();
+  long advMin=parseAdvRmMinor(adv.opt("min"),-1L);
+  long advMax=parseAdvRmMinor(adv.opt("max"),-1L);
+  String advSource=adv.optString("source","").trim();
+  String advTag=adv.optString("tag","").trim().toLowerCase(Locale.ROOT);
+
+  SemanticSearch.ParsedQuery pq=SemanticSearch.parseQueryFilters(rawQuery,refToday);
+  boolean hasSemanticText=!pq.semanticText.isEmpty();
+  boolean hasConceptualIntent=hasSemanticText||pq.taxReliefQuery||!pq.kindBoost.isEmpty();
+  float[] qVec=hasSemanticText?SemanticSearch.encodeQuery(pq.semanticText):(hasConceptualIntent?SemanticSearch.encodeQuery(pq.rawQuery):null);
+  boolean semanticUsed=qVec!=null&&SemanticSearch.isLoaded();
+  double semTh=semanticUsed?SemanticSearch.semanticThreshold():0.46;
+
+  List<String> semTokens=new ArrayList<>();
+  String semLow=pq.semanticText.toLowerCase(Locale.ROOT).trim();
+  if(!semLow.isEmpty()){
+   for(String tk:semLow.split("\\s+")){
+    if(tk.length()>=2||(!tk.isEmpty()&&tk.charAt(0)>=0x3400))semTokens.add(tk);
+   }
+  }
+
+  Map<String,String> acctNames=new HashMap<>();
+  JSONArray accts=st.optJSONArray("accounts");
+  if(accts!=null){
+   for(int i=0;i<accts.length();i++){
+    JSONObject a=accts.getJSONObject(i);
+    acctNames.put(a.optString("id",""),a.optString("name",""));
+   }
+  }
+
+  final class Hit{
+   final String id;final String mode;final double score;final String date;final long created;
+   Hit(String id,String mode,double score,String date,long created){this.id=id;this.mode=mode;this.score=score;this.date=date;this.created=created;}
+  }
+  List<Hit> hits=new ArrayList<>();
+  JSONArray txs=st.optJSONArray("transactions");
+  if(txs!=null){
+   for(int i=0;i<txs.length();i++){
+    JSONObject t=txs.getJSONObject(i);
+    String kind=t.optString("kind","");
+    if(t.optBoolean("voided")||"opening".equals(kind))continue;
+    if("splits".equals(kFilter)){if(!"shared".equals(kind)&&!"reimbursement".equals(kind))continue;}
+    else if("anomaly".equals(kFilter)){if(!(t.optBoolean("anomaly")&&!t.optBoolean("anomalyDismissed")))continue;}
+    else if(!"all".equals(kFilter)&&!kFilter.equals(kind))continue;
+
+    String date=t.optString("date","");
+    long amt=t.optLong("amount",0L);
+    String acct=t.optString("account",""),toAcct=t.optString("to","");
+    String cat=t.optString("category",""),sub=t.optString("subcategory","");
+    String merch=t.optString("merchant",""),note=t.optString("note",""),person=t.optString("person","");
+    String src=t.optString("source","manual");if(src.isEmpty())src="manual";
+    String tagsStr="";
+    Object rawTags=t.opt("tags");
+    if(rawTags instanceof JSONArray){
+     JSONArray ta=(JSONArray)rawTags;StringBuilder tsb=new StringBuilder();
+     for(int j=0;j<ta.length();j++){if(j>0)tsb.append(' ');tsb.append(ta.optString(j,""));}
+     tagsStr=tsb.toString();
+    }else if(rawTags!=null)tagsStr=String.valueOf(rawTags);
+
+    if(!advExactDate.isEmpty()&&!advExactDate.equals(date))continue;
+    if(!advCat.isEmpty()&&!advCat.equals(cat))continue;
+    if(advNeedsNote&&!t.optBoolean("needsNote"))continue;
+    if(!advFrom.isEmpty()&&date.compareTo(advFrom)<0)continue;
+    if(!advUntil.isEmpty()&&date.compareTo(advUntil)>0)continue;
+    if(!advAcct.isEmpty()&&!advAcct.equals(acct)&&!advAcct.equals(toAcct))continue;
+    if(advMin>=0L&&amt<advMin)continue;
+    if(advMax>=0L&&amt>advMax)continue;
+    if(!advSource.isEmpty()&&!advSource.equals(src))continue;
+    if(!advTag.isEmpty()&&!tagsStr.toLowerCase(Locale.ROOT).contains(advTag))continue;
+
+    // Structured constraints inferred from natural-language query
+    if(pq.minMinor>=0L&&amt<pq.minMinor)continue;
+    if(pq.maxMinor>=0L&&amt>pq.maxMinor)continue;
+    if(!pq.fromDate.isEmpty()&&date.compareTo(pq.fromDate)<0)continue;
+    if(!pq.untilDate.isEmpty()&&date.compareTo(pq.untilDate)>0)continue;
+    if(!pq.hardKind.isEmpty()){
+     if("shared".equals(pq.hardKind)){if(!"shared".equals(kind)&&!"reimbursement".equals(kind))continue;}
+     else if(!pq.hardKind.equals(kind))continue;
+    }
+    String acctName=acctNames.getOrDefault(acct,"");
+    String toName=toAcct.isEmpty()?"":acctNames.getOrDefault(toAcct,"");
+    if(!pq.accountHint.isEmpty()){
+     String ah=(acct+" "+acctName+" "+toAcct+" "+toName).toLowerCase(Locale.ROOT);
+     if(!ah.contains(pq.accountHint))continue;
+    }
+
+    String id=t.optString("id","");
+    long created=t.optLong("created",0L);
+    if(!hasConceptualIntent){
+     hits.add(new Hit(id,"filter",1.0,date,created));
+     continue;
+    }
+
+    String taxBucket=taxReliefBucket(t);
+    double lexScore=0.0;
+    String merchLow=merch.toLowerCase(Locale.ROOT);
+    String hay=(merch+" "+cat+" "+sub+" "+acctName+" "+toName+" "+note+" "+person+" "+tagsStr+" "+taxBucket).toLowerCase(Locale.ROOT);
+    if(!semLow.isEmpty()){
+     if(!merchLow.isEmpty()&&merchLow.contains(semLow)){
+      lexScore+=(merchLow.equals(semLow)||merchLow.startsWith(semLow))?1.25:1.00;
+     }else if(hay.contains(semLow)){
+      lexScore+=0.90;
+     }else if(semTokens.size()>=2){
+      int matched=0,contentMatched=0,contentTotal=0;
+      for(String tk:semTokens){
+       boolean isContent=tk.length()>=4||tk.charAt(0)>=0x3400;
+       if(isContent)contentTotal++;
+       if(hay.contains(tk)){matched++;if(isContent)contentMatched++;}
+      }
+      if(matched==semTokens.size())lexScore+=0.78;
+      else if(contentTotal>0&&contentMatched>0&&((double)matched/semTokens.size())>=0.67)lexScore+=0.48*((double)matched/semTokens.size());
+     }
+     if(lexScore<0.75&&MerchantCanonicalizer.isLoaded()&&pq.semanticText.length()>=4&&(!semanticUsed||merch.indexOf('*')>=0||pq.semanticText.indexOf('*')>=0)&&MerchantCanonicalizer.sameEntity(merch,pq.semanticText)){
+      lexScore+=0.85;
+     }
+    }
+    if(pq.taxReliefQuery&&!taxBucket.isEmpty())lexScore+=0.95;
+    if(!pq.kindBoost.isEmpty()){
+     boolean km="shared".equals(pq.kindBoost)?("shared".equals(kind)||"reimbursement".equals(kind)):pq.kindBoost.equals(kind);
+     if(km)lexScore+=0.95;
+    }
+
+    double semScore=0.0;
+    if(semanticUsed){
+     float[] dVec=SemanticSearch.encodeTransaction(t,acctName,taxBucket);
+     semScore=SemanticSearch.dot(qVec,dVec);
+    }
+
+    boolean keep=lexScore>0.0||(semanticUsed&&semScore>=semTh);
+    if(!keep)continue;
+    String mode=lexScore>=0.75?"exact":(lexScore>0.0&&semanticUsed&&semScore>=semTh?"hybrid":(lexScore>0.0?"exact":"semantic"));
+    double comb=lexScore*0.70+Math.max(0.0,semScore)*0.55;
+    hits.add(new Hit(id,mode,comb,date,created));
+   }
+  }
+
+  hits.sort((a,b)->{
+   if(!hasConceptualIntent){
+    int dc=b.date.compareTo(a.date);
+    return dc!=0?dc:Long.compare(b.created,a.created);
+   }
+   int sc=Double.compare(b.score,a.score);
+   if(sc!=0)return sc;
+   int dc=b.date.compareTo(a.date);
+   return dc!=0?dc:Long.compare(b.created,a.created);
+  });
+
+  JSONArray ids=new JSONArray();
+  JSONObject matches=new JSONObject();
+  JSONObject scores=new JSONObject();
+  for(Hit h:hits){
+   ids.put(h.id);
+   matches.put(h.id,h.mode);
+   scores.put(h.id,Math.round(h.score*10000.0)/10000.0);
+  }
+  JSONObject pf=new JSONObject()
+   .put("semanticText",pq.semanticText)
+   .put("minMinor",pq.minMinor)
+   .put("maxMinor",pq.maxMinor)
+   .put("fromDate",pq.fromDate)
+   .put("untilDate",pq.untilDate)
+   .put("hardKind",pq.hardKind)
+   .put("kindBoost",pq.kindBoost)
+   .put("accountHint",pq.accountHint)
+   .put("taxReliefQuery",pq.taxReliefQuery);
+  double ms=(System.nanoTime()-t0)/1_000_000.0;
+  return new JSONObject()
+   .put("ids",ids)
+   .put("matches",matches)
+   .put("scores",scores)
+   .put("parsedFilters",pf)
+   .put("semanticUsed",semanticUsed)
+   .put("queryMs",Math.round(ms*100.0)/100.0);
+ }
+ private static long parseAdvRmMinor(Object raw,long def){
+  if(raw==null)return def;
+  String s=String.valueOf(raw).trim();
+  if(s.isEmpty()||"null".equals(s))return def;
+  try{return Math.max(0L,Math.round(Double.parseDouble(s)*100.0));}catch(Exception ignored){return def;}
  }
 }

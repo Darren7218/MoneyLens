@@ -26,6 +26,7 @@ public final class Vault {
     MlNeuralReranker.trim();
     MerchantCanonicalizer.trim();
     ReceiptFieldTagger.trim();
+    SemanticSearch.trim();
   }
   private static void syncMeta(Context c,JSONObject s){
     try{
@@ -302,6 +303,12 @@ public final class Vault {
     });
     ReceiptFieldTagger.setStreamSupplier(()->{
       for(String asset:new String[]{"moneylens_receipt_tagger.json.gz","moneylens_receipt_tagger.json"}){
+        try{return app.getAssets().open(asset);}catch(Exception ignored){}
+      }
+      return null;
+    });
+    SemanticSearch.setStreamSupplier(()->{
+      for(String asset:new String[]{"moneylens_search.bin.gz","moneylens_search.bin"}){
         try{return app.getAssets().open(asset);}catch(Exception ignored){}
       }
       return null;

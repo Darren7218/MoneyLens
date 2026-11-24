@@ -944,54 +944,292 @@ public final class Extras {
   if(!src.isEmpty())return head+" · "+src+(ms?" · Ketik Semak":" · Tap Review");
   return head+(ms?" · Ketik untuk semak butiran.":" · Tap to review details.");
  }
- /** Parses a natural-language quick entry phrase (e.g. "Nasi Lemak 12.50 cash", "Dinner 60 split Sarah") into form fields. */
+ private static final String[][] QE_ACCOUNT_ALIASES={
+  {"cash","Cash","cash"},
+  {"tunai","Cash","cash"},
+  {"现金","Cash","cash"},
+  {"现钱","Cash","cash"},
+  {"touch n go","Touch 'n Go eWallet","tng"},
+  {"touch 'n go","Touch 'n Go eWallet","tng"},
+  {"tngdigital","Touch 'n Go eWallet","tng"},
+  {"tngo","Touch 'n Go eWallet","tng"},
+  {"tng","Touch 'n Go eWallet","tng"},
+  {"一触即通","Touch 'n Go eWallet","tng"},
+  {"maybank2u","Maybank","MAE"},
+  {"maybank","Maybank","MAE"},
+  {"马来亚银行","Maybank","MAE"},
+  {"m2u","MAE","Maybank"},
+  {"mae","MAE","Maybank"},
+  {"cimb octo","CIMB","cimb"},
+  {"cimb","CIMB","cimb"},
+  {"联昌","CIMB","cimb"},
+  {"public bank","Public Bank","pbb"},
+  {"mypb","Public Bank","pbb"},
+  {"pbb","Public Bank","pbb"},
+  {"大众银行","Public Bank","pbb"},
+  {"rhb","RHB","rhb"},
+  {"hong leong","HLB","hong leong"},
+  {"hlb","HLB","hlb"},
+  {"丰隆","HLB","hlb"},
+  {"gxbank","GXBank","gx"},
+  {"gx","GXBank","gx"},
+  {"aeon bank","AEON Bank","aeon"},
+  {"aeon","AEON","aeon"},
+  {"ryt bank","Ryt Bank","ryt"},
+  {"ryt","Ryt","ryt"},
+  {"shopeepay","ShopeePay","spay"},
+  {"spay","ShopeePay","spay"},
+  {"grabpay","GrabPay","grabpay"},
+  {"boost bank","Boost Bank","boost"},
+  {"boost","Boost","boost"},
+  {"bigpay","BigPay","bigpay"},
+  {"setel","Setel","setel"},
+  {"信用卡","Credit Card","card"}
+ };
+ private static String[] findQuickAccountMatch(JSONArray accounts,String text,String excludeId)throws Exception{
+  if(accounts==null||text==null||text.trim().isEmpty())return null;
+  String bestId="",bestTok="",bestHint="";int bestLen=0;
+  for(int i=0;i<accounts.length();i++){
+   JSONObject a=accounts.getJSONObject(i);String id=a.optString("id","");
+   if(id.equals(excludeId))continue;
+   String aname=a.optString("name","").trim();
+   if(aname.isEmpty())continue;
+   String pat=isAsciiOnlyToken(aname)?("(?i)(?<![A-Za-z0-9])"+java.util.regex.Pattern.quote(aname)+"(?![A-Za-z0-9])"):("(?i)"+java.util.regex.Pattern.quote(aname));
+   java.util.regex.Matcher m=java.util.regex.Pattern.compile(pat).matcher(text);
+   if(m.find()&&aname.length()>bestLen){
+    bestId=id;bestTok=m.group(0);bestHint=aname;bestLen=aname.length();
+   }
+  }
+  if(!bestId.isEmpty())return new String[]{bestId,bestTok,bestHint};
+  for(String[] al:QE_ACCOUNT_ALIASES){
+   String key=al[0];
+   String pat=isAsciiOnlyToken(key)?("(?i)(?<![A-Za-z0-9])"+java.util.regex.Pattern.quote(key)+"(?![A-Za-z0-9])"):("(?i)"+java.util.regex.Pattern.quote(key));
+   java.util.regex.Matcher m=java.util.regex.Pattern.compile(pat).matcher(text);
+   if(!m.find())continue;
+   String id=Finance.matchAccountByName(accounts,al[1],"",excludeId);
+   if(id.isEmpty()&&!al[2].isEmpty())id=Finance.matchAccountByName(accounts,al[2],"",excludeId);
+   if(id.isEmpty()&&"Cash".equalsIgnoreCase(al[1])){
+    for(int i=0;i<accounts.length();i++){
+     JSONObject a=accounts.getJSONObject(i);
+     if("cash".equals(a.optString("type"))&&!a.optString("id","").equals(excludeId)){id=a.getString("id");break;}
+    }
+   }
+   if(!id.isEmpty())return new String[]{id,m.group(0),al[1]};
+  }
+  return null;
+ }
+ private static boolean isAsciiOnlyToken(String s){
+  for(int i=0;i<s.length();i++)if(s.charAt(i)>127)return false;
+  return true;
+ }
+ private static int parseChineseOrIntCount(String raw){
+  if(raw==null||raw.trim().isEmpty())return -1;
+  String t=raw.trim();
+  if(t.matches("[0-9]+"))return Integer.parseInt(t);
+  switch(t){
+   case "二":case "两":case "兩":return 2;
+   case "三":return 3;
+   case "四":return 4;
+   case "五":return 5;
+   case "六":return 6;
+   case "七":return 7;
+   case "八":return 8;
+   case "九":return 9;
+   case "十":return 10;
+   default:return -1;
+  }
+ }
+ /** Parses a natural-language EN/BM/Manglish/ZH quick entry phrase into structured transaction fields. */
  public static JSONObject parseQuickEntry(JSONObject s,String rawText,LocalDate today)throws Exception{
   String raw=rawText==null?"":rawText.trim();
   if(raw.isEmpty())return null;
-  String work=raw.replaceAll("\\b20[0-9]{2}-[0-9]{2}-[0-9]{2}\\b"," ").replaceAll("\\s+"," ").trim();
-  java.util.regex.Matcher rmMatch=java.util.regex.Pattern.compile("(?i)\\b(?:rm|myr)\\s*([0-9]{1,7}(?:\\.[0-9]{1,2})?)").matcher(work);
-  java.util.regex.Matcher bareMatch=java.util.regex.Pattern.compile("(?<![0-9.:/-])([0-9]{1,6}(?:\\.[0-9]{1,2})?)(?![0-9.:/-])").matcher(work);
-  String amtToken="";int amtStart=-1,amtEnd=-1;
-  if(rmMatch.find()){amtToken=rmMatch.group(1);amtStart=rmMatch.start();amtEnd=rmMatch.end();}
-  else if(bareMatch.find()){amtToken=bareMatch.group(1);amtStart=bareMatch.start();amtEnd=bareMatch.end();}
-  if(amtToken.isEmpty())return null;
-  long amountMinor=Ledger.minor(amtToken);
-  String withoutAmt=(work.substring(0,amtStart)+" "+work.substring(amtEnd)).replaceAll("\\s+"," ").trim();
+  LocalDate refToday=today!=null?today:LocalDate.now();
+  LocalDate parsedDate=refToday;
+  String work=raw;
 
-  String kind="expense",person="",ownAmount="",sourceHint="";
-  java.util.regex.Matcher sp=java.util.regex.Pattern.compile("(?i)\\b(?:split(?:\\s+with)?|kongsi(?:\\s+dengan)?)\\s+([\\p{L}0-9][\\p{L}0-9 .'_-]{0,40})").matcher(withoutAmt);
-  if(sp.find()){
-   kind="shared";
-   person=sp.group(1).replaceAll("(?i)\\s+(?:via|by|using|with|pada|melalui|on)\\s+(?:cash|tunai|tng|mae|maybank|cimb|rhb|hlb|gxbank|aeon|ryt|shopeepay|grabpay|boost|bigpay|bank|card).*$","")
-    .replaceAll("(?i)\\s+(?:cash|tunai|tng|mae|maybank|cimb|rhb|hlb|gxbank|shopeepay|grabpay|boost|bigpay)$","").trim();
-   withoutAmt=(withoutAmt.substring(0,sp.start())+" "+withoutAmt.substring(sp.end())).replaceAll("\\s+"," ").trim();
-   ownAmount=BigDecimal.valueOf(amountMinor/2L,2).toPlainString();
-  }else if(withoutAmt.matches("(?i).*\\b(?:received|terima|daripada|gaji|salary|income)\\b.*")||withoutAmt.matches("(?i).*\\bfrom\\s+[\\p{L}].*")){
-   if(!withoutAmt.matches("(?i).*\\b(?:transfer|pindah|top.?up|reload)\\b.*"))kind="income";
-  }else if(withoutAmt.matches("(?i).*\\b(?:transfer|pindah|top.?up|reload)\\b.*")){
-   kind="transfer";
-  }
-
-  JSONArray accounts=s!=null?s.optJSONArray("accounts"):null;
-  String matchedAcct="",matchedAcctToken="";
-  String low=(" "+withoutAmt.toLowerCase(Locale.ROOT)+" ");
-  if(accounts!=null){
-   for(int i=0;i<accounts.length();i++){
-    JSONObject a=accounts.getJSONObject(i);
-    String aname=a.optString("name","").trim().toLowerCase(Locale.ROOT);
-    if(!aname.isEmpty()&&low.contains(" "+aname+" ")){matchedAcct=a.getString("id");matchedAcctToken=a.optString("name","");sourceHint=a.optString("name","");break;}
-   }
-   if(matchedAcct.isEmpty()){
-    String[][] aliases={{"cash","Cash"},{"tunai","Cash"},{"tng","Touch 'n Go eWallet"},{"touch n go","Touch 'n Go eWallet"},{"mae","MAE"},{"maybank","Maybank"},{"cimb","CIMB"},{"rhb","RHB"},{"gxbank","GXBank"},{"gx","GXBank"},{"aeon","AEON"},{"ryt","Ryt"},{"shopeepay","ShopeePay"},{"spay","ShopeePay"},{"grabpay","GrabPay"},{"boost","Boost"},{"bigpay","BigPay"}};
-    for(String[] al:aliases){
-     if(java.util.regex.Pattern.compile("(?i)(?:^|\\s)"+java.util.regex.Pattern.quote(al[0])+"(?:\\s|$)").matcher(withoutAmt).find()){
-      String id=Finance.matchAccountByName(accounts,al[1],"");
-      if(id.isEmpty()&&"cash".equals(al[1].toLowerCase(Locale.ROOT))){
-       for(int i=0;i<accounts.length();i++)if("cash".equals(accounts.getJSONObject(i).optString("type"))){id=accounts.getJSONObject(i).getString("id");break;}
+  // 1. Extract explicit or relative EN/BM/Manglish/ZH dates BEFORE amount extraction
+  java.util.regex.Matcher isoM=java.util.regex.Pattern.compile("\\b(20[0-9]{2}-[01][0-9]-[0-3][0-9])\\b").matcher(work);
+  if(isoM.find()){
+   try{parsedDate=LocalDate.parse(isoM.group(1));}catch(Exception ignored){}
+   work=(work.substring(0,isoM.start())+" "+work.substring(isoM.end())).trim();
+  }else{
+   java.util.regex.Matcher dmyM=java.util.regex.Pattern.compile("(?<![0-9.])([0-3]?[0-9])/([01]?[0-9])(?:/(20[0-9]{2}))?(?![0-9.])").matcher(work);
+   if(dmyM.find()){
+    try{
+     int d=Integer.parseInt(dmyM.group(1)),m=Integer.parseInt(dmyM.group(2));
+     int y=dmyM.group(3)!=null?Integer.parseInt(dmyM.group(3)):refToday.getYear();
+     if(m>=1&&m<=12&&d>=1&&d<=31){
+      parsedDate=LocalDate.of(y,m,Math.min(d,YearMonth.of(y,m).lengthOfMonth()));
+      work=(work.substring(0,dmyM.start())+" "+work.substring(dmyM.end())).trim();
+     }
+    }catch(Exception ignored){}
+   }else{
+    java.util.regex.Matcher zhDt=java.util.regex.Pattern.compile("(1[0-2]|[1-9])月([123]?[0-9])[日号]").matcher(work);
+    if(zhDt.find()){
+     try{
+      int m=Integer.parseInt(zhDt.group(1)),d=Integer.parseInt(zhDt.group(2));
+      parsedDate=LocalDate.of(refToday.getYear(),m,Math.min(d,YearMonth.of(refToday.getYear(),m).lengthOfMonth()));
+      work=(work.substring(0,zhDt.start())+" "+work.substring(zhDt.end())).trim();
+     }catch(Exception ignored){}
+    }else{
+     java.util.regex.Matcher agoM=java.util.regex.Pattern.compile("(?i)(?:\\b([0-9]{1,2})\\s*(?:days?\\s+ago|hari\\s+(?:lepas|lalu))\\b|([0-9]{1,2})\\s*天前)").matcher(work);
+     if(agoM.find()){
+      int n=Integer.parseInt(agoM.group(1)!=null?agoM.group(1):agoM.group(2));
+      if(n>=0&&n<=90)parsedDate=refToday.minusDays(n);
+      work=(work.substring(0,agoM.start())+" "+work.substring(agoM.end())).trim();
+     }else{
+      java.util.regex.Matcher relM=java.util.regex.Pattern.compile("(?i)(?:\\b(?:yesterday|semalam|smlm|kelmarin|today|hari\\s+ini|harini|tadi)\\b|大前天|前天|前晚|昨天|昨晚|昨日|今天|今日|刚才|刚刚)").matcher(work);
+      if(relM.find()){
+       String tk=relM.group(0).toLowerCase(Locale.ROOT).replaceAll("\\s+"," ").trim();
+       if("yesterday".equals(tk)||"semalam".equals(tk)||"smlm".equals(tk)||"昨天".equals(tk)||"昨晚".equals(tk)||"昨日".equals(tk))parsedDate=refToday.minusDays(1);
+       else if("kelmarin".equals(tk)||"前天".equals(tk)||"前晚".equals(tk))parsedDate=refToday.minusDays(2);
+       else if("大前天".equals(tk))parsedDate=refToday.minusDays(3);
+       work=(work.substring(0,relM.start())+" "+work.substring(relM.end())).trim();
       }
-      if(!id.isEmpty()){matchedAcct=id;matchedAcctToken=al[0];sourceHint=al[1];break;}
      }
     }
+   }
+  }
+  work=work.replaceAll("\\s+"," ").trim();
+
+  // 2. Multilingual amount extraction (comma thousands, EN/BM/ZH currency units, sen, brand-number trap immunity)
+  String amtToken="";int amtStart=-1,amtEnd=-1;boolean isSenOnly=false;
+  java.util.regex.Matcher pfxM=java.util.regex.Pattern.compile("(?i)(?:(?<![A-Za-z0-9])(?:rm|myr)|马币)\\s*([0-9]{1,3}(?:,[0-9]{3})+|[0-9]{1,7})(?:\\.([0-9]{1,2}))?").matcher(work);
+  java.util.regex.Matcher sfxM=java.util.regex.Pattern.compile("(?i)([0-9]{1,3}(?:,[0-9]{3})+|[0-9]{1,7})(?:\\.([0-9]{1,2}))?\\s*(?:(?:rm|myr|ringgit|hinggit|bucks)(?![A-Za-z0-9])|块钱|块|元|令吉|马币|蚊)").matcher(work);
+  if(pfxM.find()){
+   amtToken=pfxM.group(1).replace(",","")+(pfxM.group(2)!=null?("."+pfxM.group(2)):"");
+   amtStart=pfxM.start();amtEnd=pfxM.end();
+  }else if(sfxM.find()){
+   amtToken=sfxM.group(1).replace(",","")+(sfxM.group(2)!=null?("."+sfxM.group(2)):"");
+   amtStart=sfxM.start();amtEnd=sfxM.end();
+  }else{
+   java.util.regex.Matcher senM=java.util.regex.Pattern.compile("(?i)(?<![0-9.])([0-9]{1,3})\\s*sen(?![A-Za-z0-9])").matcher(work);
+   if(senM.find()){
+    isSenOnly=true;amtToken=senM.group(1);amtStart=senM.start();amtEnd=senM.end();
+   }else{
+    java.util.regex.Matcher bareM=java.util.regex.Pattern.compile("(?<![0-9.:/-])([0-9]{1,3}(?:,[0-9]{3})+(?:\\.[0-9]{1,2})?|[0-9]{1,6}(?:\\.[0-9]{1,2})?)(?![0-9.:/-])").matcher(work);
+    int bestScore=Integer.MIN_VALUE;
+    while(bareM.find()){
+     String tok=bareM.group(1);int st=bareM.start(),en=bareM.end();
+     String before=work.substring(Math.max(0,st-18),st).toLowerCase(Locale.ROOT);
+     String after=work.substring(en,Math.min(work.length(),en+18)).toLowerCase(Locale.ROOT);
+     int score=0;
+     if(tok.indexOf('.')>=0||tok.indexOf(',')>=0)score+=100;
+     if(after.matches("^\\s*(?:speedmart|eleven|utama|fingers|plus)\\b.*")||after.matches("^[\\s-]*(?:speedmart|eleven|utama|fingers|plus)\\b.*"))score-=250;
+     if(after.matches("^\\s*(?:pax|orang|org|ways?|am|pm|%|h|km|ml|kg|g|gb|人|个|位|杯|碗|点|份).*"))score-=200;
+     if(before.matches(".*\\b(?:split|kongsi|bahagi|divide)\\s*$")||before.matches(".*(?:平分|均摊)\\s*$"))score-=160;
+     score+=st/20; // mild preference for amount placed after merchant name
+     if(score>bestScore){bestScore=score;amtToken=tok.replace(",","");amtStart=st;amtEnd=en;}
+    }
+   }
+  }
+  if(amtToken.isEmpty())return null;
+  long amountMinor=isSenOnly?Long.parseLong(amtToken):Ledger.minor(amtToken);
+  if(amountMinor<=0L)return null;
+  String withoutAmt=(work.substring(0,amtStart)+" "+work.substring(amtEnd)).replaceAll("\\s+"," ").trim();
+  String rawWithoutAmt=withoutAmt;
+
+  // 3. Kind detection: shared -> refund -> transfer -> income -> expense
+  String kind="expense",person="",ownAmount="",sourceHint="",payerHint="";
+  int splitWays=2;
+  boolean paidForFriendOnly=false;
+
+  java.util.regex.Matcher pffEn=java.util.regex.Pattern.compile("(?i)\\b(?:paid|pay|spotted|cover(?:ed)?)\\s+(?:for|on\\s+behalf\\s+of)\\s+([\\p{L}0-9._-]{1,24}(?:\\s*&\\s*[\\p{L}0-9._-]{1,20})?)\\b").matcher(withoutAmt);
+  java.util.regex.Matcher pffBm=java.util.regex.Pattern.compile("(?i)\\b(?:bayar\\s+dulu|dahulukan)\\s+untuk\\s+([\\p{L}0-9._-]{1,24}(?:\\s*&\\s*[\\p{L}0-9._-]{1,20})?)\\b").matcher(withoutAmt);
+  java.util.regex.Matcher pffZh=java.util.regex.Pattern.compile("(?:帮|替)\\s*([A-Za-z0-9._-]+|[\\u4e00-\\u9fff]{1,5}?)\\s*(?:先?垫付|代付|先付)").matcher(withoutAmt);
+  if(pffEn.find()){
+   kind="shared";paidForFriendOnly=true;person=pffEn.group(1).trim();
+   withoutAmt=(withoutAmt.substring(0,pffEn.start())+" "+withoutAmt.substring(pffEn.end())).trim();
+  }else if(pffBm.find()){
+   kind="shared";paidForFriendOnly=true;person=pffBm.group(1).trim();
+   withoutAmt=(withoutAmt.substring(0,pffBm.start())+" "+withoutAmt.substring(pffBm.end())).trim();
+  }else if(pffZh.find()){
+   kind="shared";paidForFriendOnly=true;person=pffZh.group(1).trim();
+   withoutAmt=(withoutAmt.substring(0,pffZh.start())+" "+withoutAmt.substring(pffZh.end())).trim();
+  }else{
+   java.util.regex.Matcher spEn=java.util.regex.Pattern.compile("(?i)\\b(?:split|kongsi|share|dutch|tong[\\s-]?tong|bahagi)(?:\\s+([0-9]{1,2})\\s*(?:ways?|orang|org))?(?:\\s+(?:with|dengan|dgn))?\\s+([\\p{L}0-9][\\p{L}0-9 .,'&_-]{0,44})").matcher(withoutAmt);
+   java.util.regex.Matcher spZh=java.util.regex.Pattern.compile("(?:和|跟|与)\\s*([A-Za-z0-9._\\u4e00-\\u9fff&、,， ]{1,36}?)(?:([0-9一二两三四五六七八九十]+)\\s*人)?\\s*(?:平分|AA|aa制|均摊|分摊)").matcher(withoutAmt);
+   java.util.regex.Matcher spZhBare=java.util.regex.Pattern.compile("(?:([0-9一二两三四五六七八九十]+)\\s*人)?\\s*(?:平分|AA|aa制|均摊)").matcher(withoutAmt);
+   if(spEn.find()){
+    kind="shared";
+    int w=parseChineseOrIntCount(spEn.group(1));
+    if(w>=2)splitWays=w;
+    person=spEn.group(2)
+     .replaceAll("(?i)\\s+(?:via|by|using|with|pada|melalui|on)\\s+(?:cash|tunai|tng|mae|maybank|cimb|rhb|hlb|gxbank|aeon|ryt|shopeepay|grabpay|boost|bigpay|bank|card).*$","")
+     .replaceAll("(?i)\\s+(?:cash|tunai|tng|mae|maybank|cimb|rhb|hlb|gxbank|aeon|ryt|shopeepay|spay|grabpay|boost|bigpay|bank|card)$","")
+     .replaceAll("[\\s,.]+$","").trim();
+    withoutAmt=(withoutAmt.substring(0,spEn.start())+" "+withoutAmt.substring(spEn.end())).trim();
+   }else if(spZh.find()){
+    kind="shared";
+    int w=parseChineseOrIntCount(spZh.group(2));
+    if(w>=2)splitWays=w;
+    person=spZh.group(1).replaceAll("(?:还有|以及|和|与|及|、|，|,)+"," & ").replaceAll("\\s+&\\s+"," & ").trim();
+    withoutAmt=(withoutAmt.substring(0,spZh.start())+" "+withoutAmt.substring(spZh.end())).trim();
+   }else if(spZhBare.find()){
+    kind="shared";
+    int w=parseChineseOrIntCount(spZhBare.group(1));
+    if(w>=2)splitWays=w;
+    person="Friend";
+    withoutAmt=(withoutAmt.substring(0,spZhBare.start())+" "+withoutAmt.substring(spZhBare.end())).trim();
+   }
+  }
+  if("shared".equals(kind)){
+   if(paidForFriendOnly){
+    ownAmount="0.00";
+   }else{
+    if(splitWays<=2&&!person.isEmpty()){
+     int extraPeople=person.split("\\s*(?:&|\\band\\b|\\bdan\\b|,)\\s*").length;
+     if(extraPeople>=2)splitWays=extraPeople+1;
+    }
+    ownAmount=BigDecimal.valueOf(amountMinor/Math.max(2,splitWays),2).toPlainString();
+   }
+  }
+
+  String woLow=withoutAmt.toLowerCase(Locale.ROOT);
+  if("expense".equals(kind)){
+   boolean isIncomingSignal=java.util.regex.Pattern.compile("(?i)(?:\\b(?:received|terima|dapat|daripada|gaji|salary|bonus|payday|income|dividend|dividen|commission|komisen|freelance)\\b|收到|工资|薪水|发薪|奖金|收入|入账|进账|报销)").matcher(withoutAmt).find();
+   boolean hasTransferExpenseKw=java.util.regex.Pattern.compile("(?i)(?:\\b(?:prabayar|prepaid|postpaid|data|line|celcom|maxis|digi|umobile|hotlink|vitamin|vitamins|supplement|supplements|prs|asb|asnb|epf|kwsp|fee|fees|charge|charges|saving|savings|investment)\\b|流量|话费|维他命|保健|基金|费用|手续费|储蓄|投资)").matcher(withoutAmt).find();
+   if(java.util.regex.Pattern.compile("(?i)(?:\\b(?:refund|refunded|reversal|chargeback|bayaran\\s+balik|pulangan(?:\\s+wang)?)\\b|退款|退回|退钱|赔付)").matcher(withoutAmt).find()){
+    kind="refund";
+   }else if(!isIncomingSignal&&!hasTransferExpenseKw&&java.util.regex.Pattern.compile("(?i)(?:\\b(?:transfer|transferred|pindah|top[\\s-]?up|reload|reloaded|tambah\\s+nilai)\\b|转账|充值|加额|转到|转去|转入)").matcher(withoutAmt).find()){
+    kind="transfer";
+   }else if(isIncomingSignal||java.util.regex.Pattern.compile("(?i)\\bfrom\\s+[\\p{L}]").matcher(withoutAmt).find()){
+    kind="income";
+   }
+  }
+
+  // 4. Account resolution (handles directional "topup X from Y" / "从Y充值到X" vs "transfer Y to X")
+  JSONArray accounts=s!=null?s.optJSONArray("accounts"):null;
+  String matchedAcct="",matchedAcctToken="",toAcct="",toAcctToken="";
+  if(accounts!=null){
+   if("transfer".equals(kind)){
+    java.util.regex.Matcher fromM=java.util.regex.Pattern.compile("(?i)(?:\\b(?:from|dari|daripada)\\s+|从\\s*)([\\p{L}0-9 .'_-]{2,32})").matcher(withoutAmt);
+    java.util.regex.Matcher toM=java.util.regex.Pattern.compile("(?i)(?:\\b(?:to|ke|into)\\s+|(?:到|去|进|给)\\s*)([\\p{L}0-9 .'_-]{2,32})").matcher(withoutAmt);
+    if(fromM.find()){
+     String[] srcHit=findQuickAccountMatch(accounts,fromM.group(1),"");
+     if(srcHit!=null){matchedAcct=srcHit[0];matchedAcctToken=srcHit[1];sourceHint=srcHit[2];}
+    }
+    if(toM.find()){
+     String[] dstHit=findQuickAccountMatch(accounts,toM.group(1),matchedAcct);
+     if(dstHit!=null){toAcct=dstHit[0];toAcctToken=dstHit[1];}
+    }
+    if(matchedAcct.isEmpty()){
+     String restForSrc=withoutAmt;
+     if(!toAcctToken.isEmpty())restForSrc=restForSrc.replaceAll("(?i)"+java.util.regex.Pattern.quote(toAcctToken)," ");
+     String[] srcHit=findQuickAccountMatch(accounts,restForSrc,toAcct);
+     if(srcHit!=null){matchedAcct=srcHit[0];matchedAcctToken=srcHit[1];sourceHint=srcHit[2];}
+    }
+    if(toAcct.isEmpty()&&!matchedAcct.isEmpty()){
+     String restForDst=withoutAmt;
+     if(!matchedAcctToken.isEmpty())restForDst=restForDst.replaceAll("(?i)"+java.util.regex.Pattern.quote(matchedAcctToken)," ");
+     String[] dstHit=findQuickAccountMatch(accounts,restForDst,matchedAcct);
+     if(dstHit!=null){toAcct=dstHit[0];toAcctToken=dstHit[1];}
+    }
+   }
+   if(matchedAcct.isEmpty()){
+    String[] hit=findQuickAccountMatch(accounts,withoutAmt,"");
+    if(hit==null&&!rawWithoutAmt.equals(withoutAmt))hit=findQuickAccountMatch(accounts,rawWithoutAmt,"");
+    if(hit!=null){matchedAcct=hit[0];matchedAcctToken=hit[1];sourceHint=hit[2];}
    }
   }
   if(matchedAcct.isEmpty()&&s!=null&&accounts!=null){
@@ -1003,20 +1241,68 @@ public final class Extras {
    if(matchedAcct.isEmpty()&&accounts.length()>0)matchedAcct=accounts.getJSONObject(0).optString("id","cash");
   }
 
+  // 5. Clean multilingual merchant / description
   String merchantClean=withoutAmt;
   if(!matchedAcctToken.isEmpty()){
-   merchantClean=merchantClean.replaceAll("(?i)(?:\\b(?:via|with|using|by|at|on|melalui|ke|dari)\\s+)?"+java.util.regex.Pattern.quote(matchedAcctToken)+"\\b"," ");
+   String pat=isAsciiOnlyToken(matchedAcctToken)
+     ?("(?i)(?:(?:\\b(?:via|with|using|by|at|on|melalui|ke|dari|daripada|into|masuk)\\s+|(?:用|从|到|进|刷)\\s*))?(?<![A-Za-z0-9])"+java.util.regex.Pattern.quote(matchedAcctToken)+"(?![A-Za-z0-9])")
+     :("(?i)(?:用|从|到|进|刷)?\\s*"+java.util.regex.Pattern.quote(matchedAcctToken));
+   merchantClean=merchantClean.replaceAll(pat," ");
   }
-  merchantClean=merchantClean.replaceAll("(?i)\\b(?:paid|pay|spent|bought|bayar|beli|received|terima|duitnow|fpx|qr|via|melalui|from|daripada|at|di|for|untuk|to|kepada|on|today|hari ini)\\b"," ")
-   .replaceAll("[.,;:!\\-]+$","").replaceAll("^[.,;:!\\-]+","").replaceAll("\\s+"," ").trim();
+  if(!toAcctToken.isEmpty()){
+   String pat=isAsciiOnlyToken(toAcctToken)
+     ?("(?i)(?:(?:\\b(?:to|ke|into)\\s+|(?:到|去|进|给)\\s*))?(?<![A-Za-z0-9])"+java.util.regex.Pattern.quote(toAcctToken)+"(?![A-Za-z0-9])")
+     :("(?i)(?:到|去|进|给)?\\s*"+java.util.regex.Pattern.quote(toAcctToken));
+   merchantClean=merchantClean.replaceAll(pat," ");
+  }
   if("income".equals(kind)){
    java.util.regex.Matcher frm=java.util.regex.Pattern.compile("(?i)\\b(?:from|daripada)\\s+([\\p{L}0-9 .'_-]{2,40})").matcher(withoutAmt);
-   if(frm.find())merchantClean=frm.group(1).replaceAll("(?i)\\b(?:via|duitnow|mae|tng|cash|tunai|bank).*","").trim();
+   java.util.regex.Matcher zhFrm=java.util.regex.Pattern.compile("收到(?:来自|了)?\\s*([A-Za-z0-9._-]+|[\\u4e00-\\u9fff]{1,6}?)\\s*(?:的)?(?:转账|汇款|红包|转来|还)").matcher(withoutAmt);
+   if(frm.find())payerHint=frm.group(1).replaceAll("(?i)\\b(?:via|duitnow|mae|tng|cash|tunai|bank).*","").trim();
+   else if(zhFrm.find())payerHint=zhFrm.group(1).trim();
   }
-  if(merchantClean.isEmpty())merchantClean="shared".equals(kind)?"Shared expense":"income".equals(kind)?"Incoming transfer":"Quick expense";
+  merchantClean=merchantClean
+   .replaceAll("(?i)\\b(?:paid|pay|spent|bought|spend|bayar|beli|received|terima|dapat|masuk|duitnow|fpx|qr|via|using|with|melalui|from|daripada|at|di|for|untuk|to|kepada|on)\\b"," ")
+   .replaceAll("(?:买了|花了|吃了|喝了|用了|付了|交了|给了|收到|到|进|在|去)"," ")
+   .replaceAll("[.,;:!\\-\\s]+$","").replaceAll("^[.,;:!\\-\\s]+","").replaceAll("\\s+"," ").trim();
+  if(!payerHint.isEmpty())merchantClean=payerHint;
+  if("refund".equals(kind)){
+   String noRef=merchantClean.replaceAll("(?i)(?:\\b(?:refund|refunded|reversal|bayaran\\s+balik|pulangan)\\b|退款|退回|退钱)"," ").replaceAll("\\s+"," ").trim();
+   if(noRef.length()>=2)merchantClean=noRef;
+  }
+  if(merchantClean.isEmpty())merchantClean="shared".equals(kind)?"Shared expense":"income".equals(kind)?"Incoming transfer":"refund".equals(kind)?"Refund":"Quick expense";
   else if(Character.isLowerCase(merchantClean.charAt(0)))merchantClean=Character.toUpperCase(merchantClean.charAt(0))+merchantClean.substring(1);
 
-  String[] cls="income".equals(kind)?new String[]{"Other income",""}:PaymentParser.classify(merchantClean,sourceHint,rawText);
+  // 6. Classification cascade: Income/Transfer rules -> PaymentParser -> SemanticSearch -> MerchantCanonicalizer -> Finance.suggest
+  String[] cls;
+  if("income".equals(kind)){
+   boolean isSalary=java.util.regex.Pattern.compile("(?i)(?:\\b(?:salary|gaji|payday|bonus)\\b|工资|薪水|发薪|奖金)").matcher(woLow+" "+raw.toLowerCase(Locale.ROOT)).find();
+   cls=new String[]{isSalary?"Salary":"Other income",""};
+  }else if("transfer".equals(kind)){
+   cls=new String[]{"Miscellaneous",""};
+  }else{
+   MerchantCanonicalizer.Result canon=null;
+   if(merchantClean.length()>=3){
+    canon=MerchantCanonicalizer.canonicalize(merchantClean,"");
+    if(canon!=null&&canon.matchedCatalog&&canon.similarity>=0.72&&MerchantCanonicalizer.isNoisyTruncatedSurface(merchantClean)){
+     merchantClean=canon.canonicalName;
+    }
+   }
+   String[] ruleCls=PaymentParser.classifyRulesOnly(merchantClean,sourceHint,raw);
+   if(!"Miscellaneous".equals(ruleCls[0])){
+    cls=ruleCls;
+   }else if(canon!=null&&canon.matchedCatalog&&canon.similarity>=0.60&&!"Miscellaneous".equals(canon.defaultCategory)){
+    cls=new String[]{canon.defaultCategory,canon.defaultSubcategory};
+   }else{
+    SemanticSearch.CategoryPrediction pred=SemanticSearch.classifyMultilingual(merchantClean,raw);
+    if(pred!=null&&!"Miscellaneous".equals(pred.category)){
+     cls=new String[]{pred.category,pred.subcategory};
+    }else{
+     cls=PaymentParser.classify(merchantClean,sourceHint,raw);
+    }
+   }
+  }
+
   JSONObject res=new JSONObject()
    .put("kind",kind)
    .put("amount",BigDecimal.valueOf(amountMinor,2).toPlainString())
@@ -1025,38 +1311,23 @@ public final class Extras {
    .put("category",cls[0])
    .put("subcategory",cls[1])
    .put("account",matchedAcct)
-   .put("date",today.toString());
+   .put("date",parsedDate.toString());
   if(!ownAmount.isEmpty())res.put("ownAmount",ownAmount);
   if(!person.isEmpty())res.put("person",person);
   if(s!=null&&"expense".equals(kind)){
    JSONObject draft=new JSONObject().put("merchant",merchantClean).put("amount",amountMinor).put("source",sourceHint).put("category",cls[0]).put("subcategory",cls[1]).put("account",matchedAcct);
    Finance.suggest(s,draft);
-   res.put("category",draft.optString("category",cls[0]));
-   if(!draft.optString("subcategory").isEmpty())res.put("subcategory",draft.optString("subcategory"));
+   String sugCat=draft.optString("category","");
+   if(!sugCat.isEmpty()&&!"Miscellaneous".equals(sugCat)&&!"Other".equals(sugCat)){
+    res.put("category",sugCat);
+    if(!draft.optString("subcategory").isEmpty())res.put("subcategory",draft.optString("subcategory"));
+   }else if("Miscellaneous".equals(res.optString("category",""))&&!sugCat.isEmpty()){
+    res.put("category",sugCat);
+   }
    if(!draft.optString("account").isEmpty())res.put("account",draft.optString("account"));
   }
   if("transfer".equals(kind)&&accounts!=null&&accounts.length()>1){
-   String toAcct="";
-   java.util.regex.Matcher toM=java.util.regex.Pattern.compile("(?i)\\b(?:to|ke|into)\\s+([\\p{L}0-9 .'_-]{2,40})").matcher(withoutAmt);
-   String afterTo=toM.find()?toM.group(1):"";
-   String[][] toAliases={{"cash","Cash"},{"tunai","Cash"},{"tng","Touch 'n Go eWallet"},{"touch n go","Touch 'n Go eWallet"},{"mae","MAE"},{"maybank","Maybank"},{"cimb","CIMB"},{"rhb","RHB"},{"gxbank","GXBank"},{"gx","GXBank"},{"aeon","AEON"},{"ryt","Ryt"},{"shopeepay","ShopeePay"},{"spay","ShopeePay"},{"grabpay","GrabPay"},{"boost","Boost"},{"bigpay","BigPay"}};
-   if(!afterTo.isEmpty()){
-    for(int i=0;i<accounts.length();i++){
-     JSONObject a=accounts.getJSONObject(i);String id=a.getString("id");
-     if(id.equals(matchedAcct))continue;
-     String an=a.optString("name","").trim().toLowerCase(Locale.ROOT);
-     if(!an.isEmpty()&&(" "+afterTo.toLowerCase(Locale.ROOT)+" ").contains(" "+an+" ")){toAcct=id;break;}
-    }
-    if(toAcct.isEmpty()){
-     for(String[] al:toAliases){
-      if(java.util.regex.Pattern.compile("(?i)(?:^|\\s)"+java.util.regex.Pattern.quote(al[0])+"(?:\\s|$)").matcher(afterTo).find()){
-       String id=Finance.matchAccountByName(accounts,al[1],"");
-       if(!id.isEmpty()&&!id.equals(matchedAcct)){toAcct=id;break;}
-      }
-     }
-    }
-   }
-   if(toAcct.isEmpty()){
+   if(toAcct.isEmpty()||toAcct.equals(matchedAcct)){
     for(int i=0;i<accounts.length();i++){String id=accounts.getJSONObject(i).getString("id");if(!id.equals(matchedAcct)){toAcct=id;break;}}
    }
    if(!toAcct.isEmpty())res.put("to",toAcct);

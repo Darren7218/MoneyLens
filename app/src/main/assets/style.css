@@ -1077,3 +1077,6 @@ body.dark .pace-chip.watch { color: #fcd34d; }
 :root[data-theme="dark"] .backup-nudge-card { background: rgba(245, 158, 11, 0.09); border-color: rgba(245, 158, 11, 0.35); }
 .review-cat-row { padding: 8px 0; border-bottom: 1px solid var(--line); }
 .review-cat-row:last-child { border-bottom: 0; }
+.tx-pill.semantic-hit { background: rgba(99, 102, 241, 0.12); color: #4338ca; border-color: rgba(99, 102, 241, 0.22); }
+body.dark .tx-pill.semantic-hit { background: rgba(129, 140, 248, 0.16); color: #a5b4fc; border-color: rgba(129, 140, 248, 0.28); }
+.search-filter-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }

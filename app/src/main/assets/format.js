@@ -46,6 +46,7 @@ const defaultSubcategories={
 
 let state=null,status={},page='home',planTab='budgets',filter='all',query='',monthOffset=0,modalContext={},pending=new Map(),seq=0,busy=false,apps=[];
 let reportData=window.MONEYLENS_REPORT||null,importPreview=[],importInfo=null,advancedFilters={},debtStrategy='avalanche';
+let searchState={query:'',ids:null,matches:{},parsedFilters:null,semanticUsed:false,seq:0,timer:null};
 
 function activeCategories(){
   const hidden=new Set(((state?.settings?.hiddenCategories)||[]).map(x=>String(x).toLowerCase()));
@@ -222,51 +223,88 @@ function computeLocalDailyPacing(s,rep){
 }
 function localQuickParse(rawText){
   const raw=String(rawText||'').trim();if(!raw)return null;
-  const work=raw.replace(/\b20\d{2}-\d{2}-\d{2}\b/g,' ').replace(/\s+/g,' ').trim();
-  const rmM=work.match(/\b(?:rm|myr)\s*([0-9]{1,7}(?:\.[0-9]{1,2})?)/i);
-  const numM=rmM||work.match(/(?:^|[^0-9.:/-])([0-9]{1,6}(?:\.[0-9]{1,2})?)(?![0-9.:/-])/);
+  let parsedDate=today();let work=raw;
+  const isoM=work.match(/\b(20\d{2}-\d{2}-\d{2})\b/);
+  if(isoM){parsedDate=isoM[1];work=work.replace(isoM[0],' ');}
+  else{
+    const agoM=work.match(/(?:\b(\d{1,2})\s*(?:days?\s+ago|hari\s+(?:lepas|lalu))\b|(\d{1,2})\s*天前)/i);
+    if(agoM){
+      const d=new Date();d.setDate(d.getDate()-Number(agoM[1]||agoM[2]||0));
+      parsedDate=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      work=work.replace(agoM[0],' ');
+    }else{
+      const relM=work.match(/(?:\b(?:yesterday|semalam|smlm|kelmarin|today|hari\s+ini|harini|tadi)\b|前天|前晚|昨天|昨晚|昨日|今天|今日|刚才)/i);
+      if(relM){
+        const tk=relM[0].toLowerCase().trim();
+        let off=0;
+        if(['yesterday','semalam','smlm','昨天','昨晚','昨日'].includes(tk))off=1;
+        else if(['kelmarin','前天','前晚'].includes(tk))off=2;
+        if(off>0){const d=new Date();d.setDate(d.getDate()-off);parsedDate=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+        work=work.replace(relM[0],' ');
+      }
+    }
+  }
+  work=work.replace(/\s+/g,' ').trim();
+  const rmM=work.match(/(?:(?<![A-Za-z0-9])(?:rm|myr)|马币)\s*([0-9]{1,3}(?:,[0-9]{3})+|[0-9]{1,7})(?:\.([0-9]{1,2}))?/i);
+  const sfxM=work.match(/([0-9]{1,3}(?:,[0-9]{3})+|[0-9]{1,7})(?:\.([0-9]{1,2}))?\s*(?:(?:rm|myr|ringgit|hinggit|bucks)(?![A-Za-z0-9])|块钱|块|元|令吉|马币|蚊)/i);
+  const bareM=work.match(/(?:^|[^0-9.:/-])([0-9]{1,3}(?:,[0-9]{3})+|[0-9]{1,6})(?:\.([0-9]{1,2}))?(?![0-9.:/-])/);
+  const numM=rmM||sfxM||bareM;
   if(!numM)return null;
-  const val=Number(numM[1]);if(!(val>0))return null;
+  const numStr=numM[1].replaceAll(',','')+(numM[2]?'.'+numM[2]:'');
+  const val=Number(numStr);if(!(val>0))return null;
   const amtMinor=Math.round(val*100);
   const tokenStart=work.indexOf(numM[0]);
   let rest=(work.slice(0,tokenStart)+' '+work.slice(tokenStart+numM[0].length)).replace(/\s+/g,' ').trim();
   let kind='expense',person='',ownAmount='';
+  const rawRest=rest;
   const spM=rest.match(/\b(?:split(?:\s+with)?|kongsi(?:\s+dengan)?)\s+([A-Za-z0-9][A-Za-z0-9 .'_-]{0,40})/i);
+  const spZh=rest.match(/(?:和|跟|与)\s*([A-Za-z0-9._\u4e00-\u9fff]{1,20})\s*(?:平分|AA|aa)/);
+  const isIncomingSignal=/(?:\b(?:received|terima|daripada|gaji|salary)\b|收到|工资|薪水)/i.test(rest);
+  const hasTransferExpenseKw=/(?:\b(?:prabayar|prepaid|postpaid|data|line|vitamin|prs|asb|fee|fees)\b|流量|话费|费用|手续费)/i.test(rest);
   if(spM){
     kind='shared';
     person=spM[1].replace(/\s+(?:via|by|using|with|cash|tunai|tng|mae|maybank|cimb|rhb|gxbank|shopeepay|grabpay|boost|bank|card).*$/i,'').trim();
     rest=(rest.slice(0,spM.index)+' '+rest.slice(spM.index+spM[0].length)).replace(/\s+/g,' ').trim();
     ownAmount=(Math.floor(amtMinor/2)/100).toFixed(2);
-  }else if(/\b(?:received|terima|daripada|gaji|salary)\b/i.test(rest)||/\bfrom\s+[A-Za-z]/i.test(rest)){
-    if(!/\b(?:transfer|pindah|top.?up|reload)\b/i.test(rest))kind='income';
-  }else if(/\b(?:transfer|pindah|top.?up|reload)\b/i.test(rest))kind='transfer';
+  }else if(spZh){
+    kind='shared';
+    person=spZh[1].trim();
+    rest=(rest.slice(0,spZh.index)+' '+rest.slice(spZh.index+spZh[0].length)).replace(/\s+/g,' ').trim();
+    ownAmount=(Math.floor(amtMinor/2)/100).toFixed(2);
+  }else if(/(?:\b(?:refund|refunded|bayaran\s+balik)\b|退款|退钱)/i.test(rest)){
+    kind='refund';
+  }else if(!isIncomingSignal&&!hasTransferExpenseKw&&/\b(?:transfer|pindah|top.?up|reload|tambah\s+nilai)\b|转账|充值/i.test(rest)){
+    kind='transfer';
+  }else if(isIncomingSignal||/\bfrom\s+[A-Za-z]/i.test(rest)){
+    kind='income';
+  }
   const accts=state?.accounts||[];
-  let acct=accts.find(a=>new RegExp(`\\b${a.name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\b`,'i').test(rest))?.id||'';
+  let acct=accts.find(a=>new RegExp(`(?<![A-Za-z0-9])${a.name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}(?![A-Za-z0-9])`,'i').test(rest))?.id||'';
   if(!acct){
-    const aliases=[[/\b(?:cash|tunai)\b/i,'cash'],[/\b(?:tng|touch\s*'?n\s*go)\b/i,'tng'],[/\bmae\b/i,'mae'],[/\bmaybank\b/i,'maybank'],[/\bcimb\b/i,'cimb'],[/\bgxbank\b|\bgx\b/i,'gx'],[/\bshopeepay\b|\bspay\b/i,'shopee'],[/\bgrabpay\b/i,'grab']];
+    const aliases=[[/\b(?:cash|tunai)\b|现金/i,'cash'],[/\b(?:tng|touch\s*'?n\s*go)\b/i,'tng'],[/\bmae\b/i,'mae'],[/\bmaybank\b/i,'maybank'],[/\bcimb\b/i,'cimb'],[/\bgxbank\b|\bgx\b/i,'gx'],[/\bshopeepay\b|\bspay\b/i,'shopee'],[/\bgrabpay\b/i,'grab']];
     for(const[re,needle] of aliases){
-      if(re.test(rest)){
+      if(re.test(rawRest)){
         const hit=accts.find(a=>a.type===needle||a.name.toLowerCase().includes(needle));
         if(hit){acct=hit.id;rest=rest.replace(re,' ');break;}
       }
     }
   }
   if(!acct)acct=state?.settings?.lastAccount||accts[0]?.id||'cash';
-  let merchant=rest.replace(/\b(?:paid|pay|spent|bought|bayar|beli|received|terima|duitnow|fpx|qr|via|melalui|from|daripada|at|di|for|untuk|to|kepada)\b/ig,' ').replace(/\s+/g,' ').trim();
+  let merchant=rest.replace(/\b(?:paid|pay|spent|bought|bayar|beli|received|terima|duitnow|fpx|qr|via|melalui|from|daripada|at|di|for|untuk|to|kepada)\b/ig,' ').replace(/(?:买了|花了|吃了|喝了|用了|在|到)/g,' ').replace(/\s+/g,' ').trim();
   if(kind==='income'){const fm=rest.match(/\b(?:from|daripada)\s+([A-Za-z0-9 .'_-]{2,40})/i);if(fm)merchant=fm[1].replace(/\b(?:via|duitnow|mae|tng|cash|tunai|bank).*/i,'').trim();}
-  if(!merchant)merchant=kind==='shared'?'Shared expense':kind==='income'?'Incoming transfer':'Quick expense';
+  if(!merchant)merchant=kind==='shared'?'Shared expense':kind==='income'?'Incoming transfer':kind==='refund'?'Refund':'Quick expense';
   else merchant=merchant[0].toUpperCase()+merchant.slice(1);
   const low=(merchant+' '+raw).toLowerCase();
-  let category=kind==='income'?'Other income':'Miscellaneous',subcategory='';
-  if(kind!=='income'){
-    if(/\b(nasi|kopitiam|mamak|laksa|mee|food|lunch|dinner|breakfast|makan|teh|coffee|cafe|starbucks|zus|mixue|mcd|kfc)\b/.test(low)){category='Food & drinks';subcategory=/grabfood|foodpanda/.test(low)?'Food Delivery (GrabFood / Foodpanda)':'Hawker & Mamak';}
-    else if(/\b(grab|mrt|lrt|toll|petrol|shell|petronas|setel|parking)\b/.test(low)){category='Transport';subcategory=/grab/.test(low)?'E-Hailing (Grab / AirAsia Ride)':'';}
-    else if(/\b(speedmart|lotus|mydin|jaya|village grocer|aeon|groceries|market)\b/.test(low)){category='Groceries';}
-    else if(/\b(clinic|klinik|pharmacy|farmasi|watsons|guardian|doctor)\b/.test(low)){category='Health & medical';}
-    else if(/\b(shopee|lazada|uniqlo|shopping|watsons)\b/.test(low)){category='Shopping';}
-    else if(/\b(tnb|unifi|maxis|celcom|water|wifi|electric)\b/.test(low)){category='Bills & utilities';}
+  let category=kind==='income'?(/\b(salary|gaji)\b|工资|薪水/.test(low)?'Salary':'Other income'):'Miscellaneous',subcategory='';
+  if(kind!=='income'&&kind!=='transfer'){
+    if(/\b(nasi|kopitiam|mamak|laksa|mee|food|lunch|dinner|breakfast|makan|teh|coffee|kopi|cafe|starbucks|zus|mixue|mcd|kfc)\b|鸡饭|咖啡|奶茶|火锅|外卖|茶室/.test(low)){category='Food & drinks';subcategory=/grabfood|foodpanda|外卖/.test(low)?'Food Delivery (GrabFood / Foodpanda)':'Hawker & Mamak';}
+    else if(/\b(grab|mrt|lrt|toll|tol|petrol|minyak|shell|petronas|setel|parking)\b|打油|加油|过路费|停车|修车|打车/.test(low)){category='Transport';subcategory=/grab|打车/.test(low)?'E-Hailing (Grab / AirAsia Ride)':'';}
+    else if(/\b(speedmart|lotus|mydin|jaya|village grocer|aeon|groceries|market|barang dapur)\b|超市|买菜/.test(low)){category='Groceries';}
+    else if(/\b(clinic|klinik|pharmacy|farmasi|watsons|guardian|doctor|dentist|badminton)\b|看医生|诊所|买药|牙医|羽毛球/.test(low)){category='Health & medical';}
+    else if(/\b(shopee|lazada|uniqlo|shopping|refund)\b|网购|买衣服/.test(low)){category='Shopping';}
+    else if(/\b(tnb|unifi|maxis|celcom|water|wifi|electric)\b|电费|水费|网费|话费/.test(low)){category='Bills & utilities';}
   }
-  return{kind,amount:(amtMinor/100).toFixed(2),amountMinor:amtMinor,merchant,category,subcategory,account:acct,ownAmount,person,date:today()};
+  return{kind,amount:(amtMinor/100).toFixed(2),amountMinor:amtMinor,merchant,category,subcategory,account:acct,ownAmount,person,date:parsedDate};
 }
 const CAT_NOTIFICATION_PRESETS=[
   {key:'hawker',category:'Food & drinks',sub:'Hawker & Mamak',source:'ShopeePay MY',sample:'You have paid RM 8.50 at Nasi Lemak Wanjo Kampung Baru.'},

@@ -6,9 +6,10 @@ function renderTxRow(txRow){
   const refundPill=txRow.originalId?`<span class="tx-pill refund-link">↩ ${esc(tr('Linked refund'))}${origTx?.merchant?' · '+esc(origTx.merchant):''}</span>`:'';
   const splitPill=txRow.kind==='reimbursement'?`<span class="tx-pill split-link">🤝 ${esc(tr(txRow.autoReconciledSplit?'Auto-matched split':'Split repayment'))}${txRow.matchedPerson?' · '+esc(txRow.matchedPerson):''}</span>`:txRow.kind==='shared'?`<span class="tx-pill split-link">🤝 ${esc(tr('Split'))}${txRow.person?' · '+esc(txRow.person):''}</span>`:'';
   const anomalyPill=(txRow.anomaly&&!txRow.anomalyDismissed)?`<span class="tx-pill anomaly-warn">⚠ ${esc(txRow.anomalyRatio||'High')} ${esc(tr('usual'))}</span>`:'';
+  const semPill=(query.trim()&&searchState.query===query.trim()&&searchState.matches?.[txRow.id]==='semantic')?`<span class="tx-pill semantic-hit">✦ ${esc(tr('Semantic'))}</span>`:'';
   const pills=transfer
-    ? `<span class="tx-pill">${esc(account(txRow.account).name)} → ${esc(account(txRow.to).name)}</span>`
-    : `<span class="tx-pill cat-tint tone-${cm.tone}">${cm.emoji} ${esc(catLabel)}</span><span class="tx-pill">${esc(account(txRow.account).name)}</span>${fxPill}${refundPill}${splitPill}${anomalyPill}${txRow.autoRecorded?`<span class="tx-pill auto">${txRow.needsNote?'Auto · Add note':'Auto'}</span>`:''}${txRow.billId?`<span class="tx-pill">Linked · ${esc((state.bills.find(b=>b.id===txRow.billId)||{}).name||'Bill')}</span>`:''}${txRow.alsoSeenFrom?`<span class="tx-pill">Also from ${esc(txRow.alsoSeenFrom)}</span>`:''}`;
+    ? `<span class="tx-pill">${esc(account(txRow.account).name)} → ${esc(account(txRow.to).name)}</span>${semPill}`
+    : `<span class="tx-pill cat-tint tone-${cm.tone}">${cm.emoji} ${esc(catLabel)}</span><span class="tx-pill">${esc(account(txRow.account).name)}</span>${fxPill}${refundPill}${splitPill}${anomalyPill}${semPill}${txRow.autoRecorded?`<span class="tx-pill auto">${txRow.needsNote?'Auto · Add note':'Auto'}</span>`:''}${txRow.billId?`<span class="tx-pill">Linked · ${esc((state.bills.find(b=>b.id===txRow.billId)||{}).name||'Bill')}</span>`:''}${txRow.alsoSeenFrom?`<span class="tx-pill">Also from ${esc(txRow.alsoSeenFrom)}</span>`:''}`;
   const noteLine=txRow.note?`<p>${esc(txRow.note)}</p>`:'';
   const badgeIcon=transfer?`<div class="icon-bg ${c[2]}">${icon('transfer')}</div>`:`<div class="icon-bg cat-ico-badge tone-${cm.tone}">${txRow.kind==='income'?icon('down'):`<span class="cat-emoji">${cm.emoji}</span>`}</div>`;
   const inflow=['income','refund','reimbursement'].includes(txRow.kind),outflow=['expense','shared'].includes(txRow.kind);
@@ -69,7 +70,13 @@ function spendingCalendarCard(){
 }
 
 function filteredTransactions(){
-  const q=query.toLowerCase();
+  const qRaw=query.trim(),q=qRaw.toLowerCase();
+  if(qRaw&&searchState.query===qRaw&&Array.isArray(searchState.ids)){
+    const byId=new Map(validTx().map(t=>[t.id,t]));
+    const out=[];
+    for(const tid of searchState.ids){const row=byId.get(tid);if(row)out.push(row);}
+    return out;
+  }
   return validTx().filter(txRow=>{
     if(txRow.kind==='opening')return false;
     if(filter==='splits'){if(!['reimbursement','shared'].includes(txRow.kind))return false;}
@@ -77,6 +84,22 @@ function filteredTransactions(){
     else if(filter!=='all'&&txRow.kind!==filter)return false;
     return !q||[txRow.merchant,txRow.category,txRow.subcategory,account(txRow.account).name,txRow.note,txRow.person].join(' ').toLowerCase().includes(q);
   }).sort((a,b)=>b.date.localeCompare(a.date)||(b.created||0)-(a.created||0));
+}
+
+function renderSearchChips(){
+  const qRaw=query.trim();
+  if(!qRaw||searchState.query!==qRaw||!searchState.parsedFilters)return '';
+  const pf=searchState.parsedFilters,chips=[];
+  if(pf.minMinor>=0&&pf.maxMinor>=0)chips.push(`RM ${(pf.minMinor/100).toFixed(0)}–${(pf.maxMinor/100).toFixed(0)}`);
+  else if(pf.minMinor>=0)chips.push(`≥ RM ${(pf.minMinor/100).toFixed(2).replace(/\.00$/,'')}`);
+  else if(pf.maxMinor>=0)chips.push(`≤ RM ${(pf.maxMinor/100).toFixed(2).replace(/\.00$/,'')}`);
+  if(pf.fromDate||pf.untilDate)chips.push(`${pf.fromDate||''}${pf.untilDate&&pf.untilDate!==pf.fromDate?' → '+pf.untilDate:''}`);
+  if(pf.accountHint)chips.push(`Acct: ${pf.accountHint}`);
+  if(pf.hardKind||pf.kindBoost)chips.push(tr(pf.hardKind||pf.kindBoost));
+  if(pf.taxReliefQuery)chips.push(tr('Tax relief'));
+  if(searchState.semanticUsed)chips.push(`✦ ${tr('Offline semantic search')}`);
+  if(!chips.length)return '';
+  return `<div class="search-filter-chips">${chips.map(c=>`<span class="tx-pill semantic-hit">${esc(c)}</span>`).join('')}</div>`;
 }
 
 function renderTxResults(rows){
@@ -87,7 +110,7 @@ function renderTxResults(rows){
     else if(r.kind==='refund')refSum+=r.amount||0;
   }
   const summaryBar=`<div class="tx-summary-bar"><span><strong>${rows.length}</strong> ${esc(tr(rows.length===1?'record':'records'))}</span><span>${esc(tr('Out'))}: <strong class="money">${money(outSum)}</strong></span><span>${esc(tr('In'))}: <strong class="money">${money(inSum+refSum)}</strong></span></div>`;
-  return `${summaryBar}<section class="card">${transactionList(rows,true)}</section><p class="note" style="padding-top:12px">${esc(tr(rows.length===1?'{n} confirmed record · Grouped by day with daily net subtotals · Tap ✕ for 1-tap removal':'{n} confirmed records · Grouped by day with daily net subtotals · Tap ✕ for 1-tap removal',{n:rows.length}))}</p>`;
+  return `${renderSearchChips()}${summaryBar}<section class="card">${transactionList(rows,true)}</section><p class="note" style="padding-top:12px">${esc(tr(rows.length===1?'{n} confirmed record · Grouped by day with daily net subtotals · Tap ✕ for 1-tap removal':'{n} confirmed records · Grouped by day with daily net subtotals · Tap ✕ for 1-tap removal',{n:rows.length}))}</p>`;
 }
 
 function transactions(){
@@ -97,7 +120,7 @@ function transactions(){
   const topCats=activeCategories().slice(0,10).map(c=>c[0]);
   const catChips=`<div class="cat-filter-strip"><button type="button" class="chip ${!advancedFilters.category&&!advancedFilters.needsNote?'active':''}" data-action="filterCat" data-cat="">${esc(tr('All Categories'))} <span class="chip-count">${rows.length}</span></button><button type="button" class="chip ${advancedFilters.needsNote?'active':''}" data-action="filterNeedsNote">${esc(tr('Needs Purpose / Note'))}${needNoteCnt?` <span class="chip-count">${needNoteCnt}</span>`:''}</button>${topCats.map(c=>{const cnt=catCounts.get(c)||0;const cm=catMeta(c);return`<button type="button" class="chip ${advancedFilters.category===c?'active':''}" data-action="filterCat" data-cat="${esc(c)}">${cm.emoji} ${esc(tr(c))}${cnt?` <span class="chip-count">${cnt}</span>`:''}</button>`;}).join('')}</div>`;
   const kindChips=[['all',tr('All')],['expense',tr('Expenses')],['income',tr('Income')],['transfer',tr('Transfers')],['refund',tr('Refunds')],['splits',tr('Splits')],['anomaly',tr('Anomalies')]].map(([id,l])=>`<button class="chip ${filter===id?'active':''}" data-filter="${id}">${esc(l)}</button>`).join('');
-  return `<div class="tools-grid" style="margin-bottom:12px">${actionButton(tr('Filter records'),'filters')}${actionButton(tr('Import CSV'),'csvPick')}${actionButton(tr('Insights'),'insights')}</div>${spendingCalendarCard()}${catChips}${Object.keys(advancedFilters).length?`<p class="note" style="margin-bottom:10px">${esc(tr('Active filter'))}: ${esc(advancedFilters.exactDate||tr(advancedFilters.category)||(advancedFilters.needsNote?tr('Needs Note'):tr('Custom')))} ${actionButton(tr('Clear'),'clearFilters','','ghost')}</p>`:''}<div class="search">${icon('search')}<input id="search" type="search" placeholder="${esc(tr('Search merchant, category, subcategory or note'))}" value="${esc(query)}" aria-label="Search transactions"></div><div class="flex between" style="margin-bottom:18px"><div class="chips tx-kind-chips" style="flex:1;min-width:0">${kindChips}</div><button class="round desktop-add" data-action="add" aria-label="${esc(tr('Add transaction'))}">${icon('plus')}</button></div><div id="tx-results">${renderTxResults(rows)}</div>`;
+  return `<div class="tools-grid" style="margin-bottom:12px">${actionButton(tr('Filter records'),'filters')}${actionButton(tr('Import CSV'),'csvPick')}${actionButton(tr('Insights'),'insights')}</div>${spendingCalendarCard()}${catChips}${Object.keys(advancedFilters).length?`<p class="note" style="margin-bottom:10px">${esc(tr('Active filter'))}: ${esc(advancedFilters.exactDate||tr(advancedFilters.category)||(advancedFilters.needsNote?tr('Needs Note'):tr('Custom')))} ${actionButton(tr('Clear'),'clearFilters','','ghost')}</p>`:''}<div class="search">${icon('search')}<input id="search" type="search" placeholder="${esc(tr('Search merchant, concept (kopi, 咖啡, tax relief) or >50'))}" value="${esc(query)}" aria-label="Search transactions"></div><div class="flex between" style="margin-bottom:18px"><div class="chips tx-kind-chips" style="flex:1;min-width:0">${kindChips}</div><button class="round desktop-add" data-action="add" aria-label="${esc(tr('Add transaction'))}">${icon('plus')}</button></div><div id="tx-results">${renderTxResults(rows)}</div>`;
 }
 
 function inbox(){

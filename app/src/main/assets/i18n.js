@@ -585,6 +585,7 @@ const I18N_MS={
   'Out':'Keluar',
   'In':'Masuk',
   'Try: Nasi Lemak 12.50 cash or Dinner 60 split Sarah':'Cuba: Nasi Lemak 12.50 tunai atau Makan malam 60 kongsi Sarah',
+  'Try: Nasi Lemak 12.50 cash or 昨晚喝咖啡 15块 tng':'Cuba: Nasi Lemak 12.50 tunai atau Makan 60 kongsi Sarah semalam',
   'Smart quick entry':'Rekod pantas pintar',
   'Auto-fill':'Isi auto',
   'Enter an amount like "Nasi Lemak 12.50 cash".':'Masukkan amaun seperti "Nasi Lemak 12.50 tunai".',
@@ -680,7 +681,11 @@ const I18N_MS={
   'Active goals to top up':'Matlamat aktif untuk ditambah',
   'Apply Suggested Budgets':'Guna Bajet Dicadangkan',
   '20-transaction backup reminder notification':'Notifikasi peringatan sandaran 20 transaksi',
-  'Receive a gentle offline notification at 20+ transactions when due for backup':'Terima peringatan luar talian apabila mencapai ≥20 transaksi tanpa sandaran terkini'
+  'Receive a gentle offline notification at 20+ transactions when due for backup':'Terima peringatan luar talian apabila mencapai ≥20 transaksi tanpa sandaran terkini',
+  'Semantic':'Semantik',
+  'Offline semantic search':'Carian semantik luar talian',
+  'Tax relief':'Pelepasan cukai',
+  'Search merchant, concept (kopi, 咖啡, tax relief) or >50':'Cari peniaga, konsep (kopi, 咖啡, tax relief) atau >50'
 };
 function currentLang(){return (typeof state!=='undefined'&&state?.settings?.lang==='ms')?'ms':'en'}
 function appLocale(){return currentLang()==='ms'?'ms-MY':'en-MY'}

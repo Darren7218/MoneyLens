@@ -1187,6 +1187,104 @@ public final class ExtendedTests {
    Ledger.validate(st);
   });
 
+  test("Track 4 INT8 SemanticSearch, hybrid EN/BM/ZH retrieval, structured filters & multilingual QuickEntry",()->{
+   java.nio.file.Path searchAsset=java.nio.file.Paths.get("app/src/main/assets/moneylens_search.bin.gz");
+   yes(java.nio.file.Files.exists(searchAsset)&&java.nio.file.Files.size(searchAsset)<524_288L);
+   SemanticSearch.clear();
+   long st0=System.nanoTime();
+   yes(SemanticSearch.loadFromPath(searchAsset));
+   long sLoadMs=(System.nanoTime()-st0)/1_000_000L;
+   yes(sLoadMs<100L&&SemanticSearch.isLoaded());
+
+   float[] qPre=SemanticSearch.encodeQuery("咖啡");
+   SemanticSearch.trim();
+   yes(!SemanticSearch.isLoaded());
+   float[] qPost=SemanticSearch.encodeQuery("咖啡");
+   yes(SemanticSearch.isLoaded()&&qPre!=null&&qPost!=null&&qPre.length==qPost.length);
+   double maxTrimDiff=0.0;
+   for(int i=0;i<qPre.length;i++)maxTrimDiff=Math.max(maxTrimDiff,Math.abs(qPre[i]-qPost[i]));
+   yes(maxTrimDiff<1e-6);
+
+   // Build offline ledger for multilingual hybrid search + structured constraint verification
+   JSONObject s=Ledger.initial();
+   Ledger.apply(s,"account",new JSONObject().put("name","Touch 'n Go eWallet").put("type","wallet").put("opening","500.00"));
+   Ledger.apply(s,"account",new JSONObject().put("name","MAE").put("type","bank").put("opening","2000.00"));
+   String tngId=s.getJSONArray("accounts").getJSONObject(1).getString("id");
+   String maeId=s.getJSONArray("accounts").getJSONObject(2).getString("id");
+   LocalDate on=LocalDate.of(2026,11,24);
+   String today=on.toString();
+   String lastMonth=on.minusMonths(1).withDayOfMonth(15).toString();
+
+   Ledger.post(s,new JSONObject().put("key","t4-cafe").put("kind","expense").put("amount","14.50").put("account",tngId).put("category","Food & drinks").put("subcategory","Coffee, Tea & Drinks").put("merchant","Kopitiam Ah Seng").put("date",today));
+   Ledger.post(s,new JSONObject().put("key","t4-fuel").put("kind","expense").put("amount","68.00").put("account",tngId).put("category","Transport").put("subcategory","Petrol & EV Charging").put("merchant","Stesen Minyak Maju").put("date",today));
+   Ledger.post(s,new JSONObject().put("key","t4-med").put("kind","expense").put("amount","120.00").put("account",maeId).put("category","Health & medical").put("subcategory","Full Medical Checkup (LHDN)").put("merchant","PathLab Screening").put("date",lastMonth));
+   Ledger.post(s,new JSONObject().put("key","t4-book").put("kind","expense").put("amount","55.00").put("account",tngId).put("category","Education").put("subcategory","Books & Stationery").put("merchant","Kedai Buku Ilmu").put("date",lastMonth));
+   Ledger.post(s,new JSONObject().put("key","t4-grocery").put("kind","expense").put("amount","32.00").put("account",tngId).put("category","Groceries").put("subcategory","Convenience Store (99 Speedmart / 7-Eleven / FamilyMart)").put("merchant","Kedai Mini Cahaya").put("date",today));
+
+   JSONArray txArr=s.getJSONArray("transactions");
+   int baseTx=txArr.length()-5;
+   String cafeId=txArr.getJSONObject(baseTx).getString("id");
+   String fuelId=txArr.getJSONObject(baseTx+1).getString("id");
+   String medId=txArr.getJSONObject(baseTx+2).getString("id");
+   String bookId=txArr.getJSONObject(baseTx+3).getString("id");
+
+   JSONObject rKopi=Finance.searchTransactions(s,"咖啡","all",null,on);
+   yes(rKopi.getBoolean("semanticUsed")&&rKopi.getJSONArray("ids").toString().contains(cafeId));
+   JSONObject rFuel=Finance.searchTransactions(s,"打油","all",null,on);
+   yes(rFuel.getJSONArray("ids").toString().contains(fuelId));
+   JSONObject rLhdnBm=Finance.searchTransactions(s,"pelepasan cukai","all",null,on);
+   yes(rLhdnBm.getJSONArray("ids").toString().contains(medId)&&rLhdnBm.getJSONArray("ids").toString().contains(bookId));
+   JSONObject rLhdnZh=Finance.searchTransactions(s,"报税","all",null,on);
+   yes(rLhdnZh.getJSONArray("ids").toString().contains(medId));
+   JSONObject rStruct=Finance.searchTransactions(s,">50 via tng","all",null,on);
+   String structIds=rStruct.getJSONArray("ids").toString();
+   yes(structIds.contains(fuelId)&&structIds.contains(bookId)&&!structIds.contains(cafeId)&&!structIds.contains(medId));
+   JSONObject rLastMo=Finance.searchTransactions(s,"last month","all",null,on);
+   String lmIds=rLastMo.getJSONArray("ids").toString();
+   yes(lmIds.contains(medId)&&lmIds.contains(bookId)&&!lmIds.contains(fuelId));
+   JSONObject rOod=Finance.searchTransactions(s,"quantum computing shor algorithm","all",null,on);
+   eq(rOod.getJSONArray("ids").length(),0);
+
+   // Multilingual Quick-Entry: brand-number traps, commas, relative dates, splits/pad, transfers, refunds & ZH classification
+   JSONObject trap711=Extras.parseQuickEntry(s,"7-Eleven RM 8.90 cash",on);
+   yes(trap711!=null&&890L==trap711.getLong("amountMinor")&&"Groceries".equals(trap711.getString("category")));
+   JSONObject trap99=Extras.parseQuickEntry(s,"99 Speedmart 24.50 tng",on);
+   yes(trap99!=null&&2450L==trap99.getLong("amountMinor")&&tngId.equals(trap99.getString("account")));
+   JSONObject trap4f=Extras.parseQuickEntry(s,"4 Fingers crispy chicken 28.90 mae",on);
+   yes(trap4f!=null&&2890L==trap4f.getLong("amountMinor")&&maeId.equals(trap4f.getString("account")));
+   JSONObject commaRent=Extras.parseQuickEntry(s,"上个月房租 1,600元 MAE昨天",on);
+   yes(commaRent!=null&&160000L==commaRent.getLong("amountMinor")&&maeId.equals(commaRent.getString("account"))&&on.minusDays(1).toString().equals(commaRent.getString("date"))&&"Housing & property".equals(commaRent.getString("category")));
+
+   JSONObject qKelmarin=Extras.parseQuickEntry(s,"kopi RM 6.50 cash kelmarin",on);
+   yes(qKelmarin!=null&&on.minusDays(2).toString().equals(qKelmarin.getString("date")));
+   JSONObject qQiantian=Extras.parseQuickEntry(s,"前天吃面 12块 tng",on);
+   yes(qQiantian!=null&&on.minusDays(2).toString().equals(qQiantian.getString("date"))&&"Food & drinks".equals(qQiantian.getString("category")));
+   JSONObject qAgo=Extras.parseQuickEntry(s,"Lunch 18 cash 3 days ago",on);
+   yes(qAgo!=null&&on.minusDays(3).toString().equals(qAgo.getString("date")));
+
+   JSONObject qSplit3=Extras.parseQuickEntry(s,"Lunch RM 90 split 3 ways with Ali mae yesterday",on);
+   yes(qSplit3!=null&&"shared".equals(qSplit3.getString("kind"))&&"30.00".equals(qSplit3.getString("ownAmount"))&&"Ali".equals(qSplit3.getString("person"))&&maeId.equals(qSplit3.getString("account")));
+   JSONObject qPad=Extras.parseQuickEntry(s,"帮Ali垫付奶茶 18块 TNG 昨天",on);
+   yes(qPad!=null&&"shared".equals(qPad.getString("kind"))&&"0.00".equals(qPad.getString("ownAmount"))&&"Ali".equals(qPad.getString("person"))&&tngId.equals(qPad.getString("account"))&&"Food & drinks".equals(qPad.getString("category")));
+   JSONObject postedPad=Extras.postQuickEntry(s,"帮Ali垫付奶茶 18块 TNG 昨天",on,"t4-qe-pad");
+   eq(postedPad.getLong("amount"),1800L);
+
+   JSONObject qRef=Extras.parseQuickEntry(s,"Shopee退款 42.50块 到TNG 昨天",on);
+   yes(qRef!=null&&"refund".equals(qRef.getString("kind"))&&4250L==qRef.getLong("amountMinor")&&tngId.equals(qRef.getString("account")));
+   JSONObject qInc=Extras.parseQuickEntry(s,"收到Mei转账 50块 TNG 刚才",on);
+   yes(qInc!=null&&"income".equals(qInc.getString("kind"))&&"Other income".equals(qInc.getString("category")));
+   JSONObject qDirTr=Extras.parseQuickEntry(s,"从MAE充值 100块到TNG",on);
+   yes(qDirTr!=null&&"transfer".equals(qDirTr.getString("kind"))&&maeId.equals(qDirTr.getString("account"))&&tngId.equals(qDirTr.optString("to")));
+   JSONObject qData=Extras.parseQuickEntry(s,"昨天 流量充值 30元 TNG",on);
+   yes(qData!=null&&"expense".equals(qData.getString("kind"))&&"Bills & utilities".equals(qData.getString("category")));
+   JSONObject qOil=Extras.parseQuickEntry(s,"昨天打油65块TNG",on);
+   yes(qOil!=null&&"expense".equals(qOil.getString("kind"))&&6500L==qOil.getLong("amountMinor")&&"Transport".equals(qOil.getString("category"))&&tngId.equals(qOil.getString("account")));
+   JSONObject qLatte=Extras.parseQuickEntry(s,"喝咖啡 12.50 cash",on);
+   yes(qLatte!=null&&"Food & drinks".equals(qLatte.getString("category")));
+
+   Ledger.validate(s);
+  });
+
   System.out.println("RESULT: "+passed+" extended tests passed");
  }
 }

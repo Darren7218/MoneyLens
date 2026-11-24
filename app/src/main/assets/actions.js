@@ -38,7 +38,7 @@ function txForm(data={}){
   const historyCheck=prevCount>0?check(`Update ${prevCount} previous "${esc(merged.merchant)}" transaction${prevCount===1?'':'s'} to this category & remember for future`,'applyHistory',merged.category==='Miscellaneous'||merged.category==='Other'):'';
   const ruleCheck=check(tr('Remember merchant category and account for next time'),'rememberRule',!!merged.editId&&(merged.category==='Miscellaneous'||merged.category==='Other'));
   const title=merged.draftId?tr('Review payment'):merged.editId?tr('Edit transaction'):merged.billId?tr('Record bill payment'):tr('Add transaction');
-  const quickBar=(!merged.editId&&!merged.draftId)?`<div class="quick-parse-bar"><input type="text" id="quick-parse-input" placeholder="${esc(tr('Try: Nasi Lemak 12.50 cash or Dinner 60 split Sarah'))}" aria-label="${esc(tr('Smart quick entry'))}"><button type="button" class="btn secondary small" data-action="quickParseFill">${esc(tr('Auto-fill'))}</button></div>`:'';
+  const quickBar=(!merged.editId&&!merged.draftId)?`<div class="quick-parse-bar"><input type="text" id="quick-parse-input" placeholder="${esc(tr('Try: Nasi Lemak 12.50 cash or 昨晚喝咖啡 15块 tng'))}" aria-label="${esc(tr('Smart quick entry'))}"><button type="button" class="btn secondary small" data-action="quickParseFill">${esc(tr('Auto-fill'))}</button></div>`:'';
   modal(title,`<form id="transaction-form">${quickBar}<div class="chips">${chips}</div><div class="amount-input"><span>RM</span><input name="amount" id="f-amount" inputmode="decimal" aria-label="Amount in MYR" placeholder="0.00" value="${merged.amount?esc(typeof merged.amount==='number'?amount(merged.amount):merged.amount):''}" required pattern="[0-9]+([.][0-9]{1,2})?" autocomplete="off"></div>${merged.reason?`<div class="hint" style="margin:0">${esc(merged.reason)}</div>`:''}<div class="form-grid">${select(tr(kind==='transfer'?'From account':'Account'),'account',merged.draftId?[['',tr('Choose account')],...acctRows]:acctRows,merged.account||(merged.draftId?'':state.accounts[0].id))}${kind==='transfer'?select(tr('To account'),'to',acctRows,merged.to||state.accounts[1]?.id):select(tr('Category'),'category',catRows,selCat)}</div>${field(tr(kind==='transfer'?'Description':'Merchant / description'),'merchant',merged.merchant||'','text','maxlength="120"')}${field(tr('Date'),'date',merged.date||today(),'date','required')}<div><label for="f-note">${esc(tr('Note'))} <span class="muted">· ${esc(tr('optional'))}</span></label><textarea id="f-note" name="note" maxlength="500" placeholder="${esc(tr('Anything worth remembering?'))}">${esc(merged.note||'')}</textarea></div>${evidence}${thumb}${subRow}${sharedRows}${tagsField}${splitsBox}${fxBox}${historyCheck}${ruleCheck}<div class="error" role="alert"></div><div class="form-footer"><button class="btn" type="submit">${icon('check')}${esc(tr(merged.editId?'Save changes':'Record transaction'))}</button></div><p class="note">${esc(tr(kind==='transfer'?'A transfer moves money without adding an expense.':kind==='refund'?'A refund reduces spending in the selected category.':'Only confirmed records affect your balance.'))}</p></form>`);
   if(data.focusQuick)setTimeout(()=>{const q=$('#quick-parse-input');if(q){try{q.focus({preventScroll:true});}catch(_){}}},60);
   else if(data.focusSubmit)setTimeout(()=>{const btn=$('#transaction-form button[type="submit"]');if(btn){try{btn.focus({preventScroll:true});}catch(_){}}},60);
@@ -238,7 +238,7 @@ document.addEventListener('click',async e=>{
   const b=e.target.closest('button,[data-action="detail"]');
   if(!b||b.disabled)return;
   if(b.dataset.page){page=b.dataset.page;render();window.scrollTo(0,0);return}
-  if(b.dataset.filter){filter=b.dataset.filter;render();return}
+  if(b.dataset.filter){filter=b.dataset.filter;searchState.ids=null;render();if(query.trim().length>=2)scheduleNativeSearch();return}
   if(b.dataset.plan){planTab=b.dataset.plan;render();return}
   if(b.dataset.kind){const data=Object.fromEntries(new FormData($('#transaction-form')).entries());txForm({...modalContext,...data,kind:b.dataset.kind});return}
   const action=b.dataset.action,id=b.dataset.id;if(!action)return;
@@ -253,10 +253,10 @@ document.addEventListener('click',async e=>{
       case 'transfer':if(state.accounts.length<2){toast('Add a second account to make a transfer.');accountForm();}else txForm({kind:'transfer'});break;
       case 'prevMonth':monthOffset--;render();break;
       case 'nextMonth':monthOffset++;render();break;
-      case 'selectCalDay':{const d=b.dataset.date;if(advancedFilters.exactDate===d)delete advancedFilters.exactDate;else advancedFilters.exactDate=d;render();break;}
-      case 'filterCat':{const c=b.dataset.cat;delete advancedFilters.needsNote;if(!c||advancedFilters.category===c)delete advancedFilters.category;else advancedFilters.category=c;render();break;}
-      case 'filterNeedsNote':{delete advancedFilters.category;if(advancedFilters.needsNote)delete advancedFilters.needsNote;else advancedFilters.needsNote=true;render();break;}
-      case 'clearFilters':advancedFilters={};render();break;
+      case 'selectCalDay':{const d=b.dataset.date;if(advancedFilters.exactDate===d)delete advancedFilters.exactDate;else advancedFilters.exactDate=d;searchState.ids=null;render();if(query.trim().length>=2)scheduleNativeSearch();break;}
+      case 'filterCat':{const c=b.dataset.cat;delete advancedFilters.needsNote;if(!c||advancedFilters.category===c)delete advancedFilters.category;else advancedFilters.category=c;searchState.ids=null;render();if(query.trim().length>=2)scheduleNativeSearch();break;}
+      case 'filterNeedsNote':{delete advancedFilters.category;if(advancedFilters.needsNote)delete advancedFilters.needsNote;else advancedFilters.needsNote=true;searchState.ids=null;render();if(query.trim().length>=2)scheduleNativeSearch();break;}
+      case 'clearFilters':advancedFilters={};searchState.ids=null;render();if(query.trim().length>=2)scheduleNativeSearch();break;
       case 'addAccount':accountForm();break;
       case 'addBudget':budgetForm();break;
       case 'editBudget':budgetForm(state.budgets.find(x=>x.id===id));break;
@@ -602,11 +602,34 @@ document.addEventListener('submit',async e=>{
   }
 });
 
+function scheduleNativeSearch(){
+  clearTimeout(searchState.timer);
+  const q=query.trim();
+  if(!q){searchState={query:'',ids:null,matches:{},parsedFilters:null,semanticUsed:false,seq:searchState.seq+1,timer:null};return;}
+  if(!window.MoneyLensNative)return;
+  const reqSeq=++searchState.seq;
+  searchState.timer=setTimeout(async()=>{
+    try{
+      const r=await call('searchTransactions',{query:q,filter,advancedFilters});
+      if(reqSeq!==searchState.seq||query.trim()!==q)return;
+      searchState.query=q;
+      searchState.ids=Array.isArray(r.ids)?r.ids:[];
+      searchState.matches=r.matches||{};
+      searchState.parsedFilters=r.parsedFilters||null;
+      searchState.semanticUsed=!!r.semanticUsed;
+      const box=$('#tx-results');
+      if(box&&page==='transactions')box.innerHTML=renderTxResults(filteredTransactions());
+    }catch(_){}
+  },120);
+}
+
 document.addEventListener('input',e=>{
   if(e.target.id==='search'){
     query=e.target.value;
+    if(!query.trim())searchState={query:'',ids:null,matches:{},parsedFilters:null,semanticUsed:false,seq:searchState.seq+1,timer:null};
     const res=$('#tx-results');
     if(res)res.innerHTML=renderTxResults(filteredTransactions());
+    if(window.MoneyLensNative&&query.trim().length>=2)scheduleNativeSearch();
   }else if(e.target.id==='source-search'){
     const q=e.target.value;renderSources(q);const input=$('#source-search');if(input){input.focus();input.setSelectionRange(q.length,q.length);}
   }else if(e.target.name==='match'&&$('#rule-preview')){

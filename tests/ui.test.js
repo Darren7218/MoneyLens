@@ -344,4 +344,21 @@ test('Phase 19A scrollable Plan tabs, Cycle Review empty-income/prior wording, B
 
   run(`state.settings.lang=${JSON.stringify(prevLang)};reportData=${JSON.stringify(prevReport)};planTab='budgets';`);
 });
+
+test('Track 4 semantic search pills, parsed filter chips and multilingual localQuickParse',()=>{
+  const prevQuery=run(`query`),prevSearch=run(`searchState`);
+  run(`state.transactions=[{id:'t-sem-1',kind:'expense',amount:1650,account:'cash',category:'Food & drinks',subcategory:'Coffee, Tea & Drinks',merchant:'ZUS Coffee KLCC',date:today(),postings:[{account:'cash',amount:-1650},{account:'expense:Food & drinks',amount:1650}]}]`);
+  run(`query='咖啡 >10';searchState={query:'咖啡 >10',ids:['t-sem-1'],matches:{'t-sem-1':'semantic'},parsedFilters:{minMinor:1001,maxMinor:-1,fromDate:'',untilDate:'',hardKind:'',kindBoost:'',accountHint:'',taxReliefQuery:false},semanticUsed:true,seq:1,timer:null}`);
+  const html=run(`renderTxResults(filteredTransactions())`);
+  assert(html.includes('search-filter-chips')&&html.includes('Offline semantic search')&&html.includes('tx-pill semantic-hit')&&html.includes('ZUS Coffee KLCC'));
+
+  const qZh=run(`localQuickParse('昨晚买鸡饭 12.50块 cash')`);
+  const dYest=run(`(()=>{const d=new Date();d.setDate(d.getDate()-1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')})()`);
+  assert(qZh&&qZh.kind==='expense'&&qZh.amount==='12.50'&&qZh.date===dYest&&qZh.category==='Food & drinks');
+
+  const qRef=run(`localQuickParse('Shopee退款 39.90元 cash')`);
+  assert(qRef&&qRef.kind==='refund'&&qRef.amount==='39.90');
+
+  run(`query=${JSON.stringify(prevQuery)};searchState=${JSON.stringify(prevSearch)}`);
+});
 console.log('RESULT: '+passed+' UI tests passed');
