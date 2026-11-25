@@ -1012,20 +1012,47 @@ public final class Finance {
  }
  /** Applies a signed sen delta across LHDN tax relief buckets and returns the primary bucket label. */
  private static String applyTaxBuckets(JSONObject t,long signedAmt,long[] acc){
-  String cat=t.optString("category",""),sub=t.optString("subcategory",""),low=(cat+" "+sub+" "+t.optString("merchant","")+" "+t.optString("note","")).toLowerCase(Locale.ROOT);
+  String cat=t.optString("category",""),sub=t.optString("subcategory","");
+  String mn=(t.optString("merchant","")+" "+t.optString("note","")).toLowerCase(Locale.ROOT);
+  String low=(cat+" "+sub+" "+mn).toLowerCase(Locale.ROOT);
   String bucket="";
-  boolean isSport=PaymentParser.has(low,"sports?|gym|fitness|badminton|futsal|pickleball|decathlon|al-ikhsan|alikhsan|marathon");
-  if(cat.startsWith("Health")||PaymentParser.has(low,"clinic|klinik|hospital|medical|pharmacy|farmasi|dental|dentist|pergigian|pathlab|bp healthcare|gribbles|optometrist|gleneagles|kpj|columbia asia")){
-   if(isSport){acc[2]+=signedAmt;bucket="Sports & Gym";}
-   else{acc[0]+=signedAmt;bucket="Medical & Health";}
-  }else if(isSport){acc[2]+=signedAmt;bucket="Sports & Gym";}
-  if(cat.equals("Education")||PaymentParser.has(low,"tuition|university|universiti|upskill|course|coursera|udemy|certification")){acc[3]+=signedAmt;if(bucket.isEmpty())bucket="Education";}
-  if(sub.contains("Internet")||sub.contains("Mobile")||sub.contains("Books")||sub.contains("Electronics")||PaymentParser.has(low,"unifi|time fibre|time internet|maxis|celcom|digi|celcomdigi|yes 5g|umobile|books?|bookstore|bookshop|popular|kinokuniya|bookxcess|tsutaya|mph|laptop|macbook|smartphone|iphone|ipad|tablet|machines|harvey norman|all it|thundermatch|senheng")){acc[1]+=signedAmt;if(bucket.isEmpty())bucket="Lifestyle (Tech / Books / WiFi)";}
-  if(cat.equals("Insurance & Takaful")||PaymentParser.has(low,"takaful|prudential|prubsn|great eastern|aia|allianz|etiqa|zurich|manulife")){
-   if(sub.contains("Medical")||sub.contains("Education")||low.contains("medical card")||PaymentParser.has(low,"health")){acc[5]+=signedAmt;if(bucket.isEmpty())bucket="Medical & Edu Insurance";}
-   else{acc[4]+=signedAmt;if(bucket.isEmpty())bucket="Life Insurance / Takaful";}
+  boolean isIns=cat.equals("Insurance & Takaful")||PaymentParser.has(mn,"takaful|prudential|prubsn|great eastern|aia|allianz|etiqa|zurich|manulife|insurance|insurans");
+  boolean isNonClaimIns=PaymentParser.has(mn,"motor|car|road\\s*tax|vehicle|travel|fire|home\\s+fire|house\\s+fire|houseowner|householder|personal\\s+accident|pet\\s+insurance|gadget\\s+insurance")
+    ||sub.contains("Motor Insurance")||sub.contains("Personal Accident")||sub.contains("Home Repair");
+  if(isIns){
+   if(!isNonClaimIns){
+    if(sub.contains("Medical")||sub.contains("Education")||mn.contains("medical card")||PaymentParser.has(mn,"medical|health|education|pendidikan")){
+     acc[5]+=signedAmt;if(bucket.isEmpty())bucket="Medical & Edu Insurance";
+    }else if(cat.equals("Insurance & Takaful")||PaymentParser.has(mn,"life|nyawa|family\\s+takaful|takaful|hibah")){
+     acc[4]+=signedAmt;if(bucket.isEmpty())bucket="Life Insurance / Takaful";
+    }
+   }
+  }else{
+   boolean isSport=PaymentParser.has(low,"sports?|gym|fitness|badminton|futsal|pickleball|decathlon|al-ikhsan|alikhsan|marathon")
+     &&!PaymentParser.has(mn,"toto|4d|lottery|magnum|damacai|esports?|e-sports?|sport\\s*rim|alloy\\s*rim|tyre|tire|workshop|bengkel|playstation|ps5|xbox|steam|valorant|pubg|gaming");
+   boolean isNonClaimMed=PaymentParser.has(mn,"vet|veterinary|haiwan|animal\\s+clinic|pet\\s+clinic|dog|cat\\s+vaccination|kucing|anjing|botox|cosmetic|aesthetic|facial|spa|beauty|skincare|grooming|slimming|filler|salon|lipstick|shampoo|sunscreen|cosmetics|makeup|perfume|lotion|conditioner|body\\s+wash|deodorant|toiletries");
+   if(!isNonClaimMed&&(cat.startsWith("Health")||PaymentParser.has(mn,"clinic|klinik|hospital|medical|pharmacy|farmasi|dental|dentist|pergigian|pathlab|bp healthcare|gribbles|optometrist|gleneagles|kpj|columbia asia"))){
+    if(isSport){acc[2]+=signedAmt;bucket="Sports & Gym";}
+    else{acc[0]+=signedAmt;bucket="Medical & Health";}
+   }else if(isSport){acc[2]+=signedAmt;bucket="Sports & Gym";}
   }
-  if(PaymentParser.has(low,"sspn|prs|ev charging|gentari|chargev|jomcharge|chargenow|dc handal|shell recharge|evconnection|tesla supercharger")){acc[6]+=signedAmt;if(bucket.isEmpty())bucket="SSPN / PRS / EV";}
+  boolean isBooksSub=sub.contains("Books");
+  boolean isFoodOrParking=cat.startsWith("Food")||cat.equals("Transport")||PaymentParser.has(mn,"cafe|kopitiam|coffee|toast|bistro|restaurant|restoran|parking|carpark|valet");
+  boolean isNonClaimAppliance=PaymentParser.has(mn,"washing\\s+machine|dryer|fridge|refrigerator|freezer|air-?con|aircond|vacuum|microwave|oven|blender|tv|television|playstation|ps5|xbox|nintendo|console|netflix|spotify|disney|streaming|appliance");
+  if(!isFoodOrParking&&!isNonClaimAppliance&&(sub.contains("Internet")||sub.contains("Mobile")||isBooksSub||sub.contains("Electronics")||PaymentParser.has(mn,"unifi|time fibre|time internet|maxis|celcom|digi|celcomdigi|yes 5g|umobile|books?|bookstore|bookshop|popular|kinokuniya|bookxcess|tsutaya|mph|laptop|macbook|smartphone|iphone|ipad|tablet|machines|harvey norman|all it|thundermatch|senheng"))){
+   acc[1]+=signedAmt;if(bucket.isEmpty())bucket="Lifestyle (Tech / Books / WiFi)";
+  }
+  boolean isNonClaimEdu=isBooksSub||cat.startsWith("Food")||sub.contains("Games")||sub.contains("Childcare")
+    ||PaymentParser.has(mn,"tadika|taska|preschool|kindergarten|nursery|childcare|montessori|playschool|daycare|golf\\s+course|3-course|three-course|four-course|five-course|tasting\\s+menu|dinner|lunch|meal|bistro|restaurant|cafe|racecourse");
+  if(!isNonClaimEdu&&(cat.equals("Education")||PaymentParser.has(mn,"tuition|university|universiti|upskill|course|coursera|udemy|certification"))){
+   acc[3]+=signedAmt;if(bucket.isEmpty())bucket="Education";
+  }
+  boolean isSspnWithdraw=PaymentParser.has(mn,"withdrawal|pengeluaran|keluar");
+  boolean isPetrol=PaymentParser.has(mn,"ron95|ron97|diesel|fuel\\s+pump|petrol");
+  boolean isEvExplicit=PaymentParser.has(mn,"ev\\s*charging|ev\\s*hub|gentari|chargev|jomcharge|chargenow|dc handal|shell recharge|evconnection|tesla supercharger");
+  if((!isSspnWithdraw&&PaymentParser.has(mn,"sspn|prs"))||(!isPetrol&&isEvExplicit)){
+   acc[6]+=signedAmt;if(bucket.isEmpty())bucket="SSPN / PRS / EV";
+  }
   if(PaymentParser.has(low,"zakat|fitrah")){acc[7]+=signedAmt;if(bucket.isEmpty())bucket="Zakat / Fitrah Rebate";}
   if(PaymentParser.has(low,"lhdn|pcb|cp38")||sub.contains("LHDN")){acc[8]+=signedAmt;if(bucket.isEmpty())bucket="LHDN / PCB Paid";}
   return bucket;
@@ -1404,6 +1431,18 @@ public final class Finance {
   String advTag=adv.optString("tag","").trim().toLowerCase(Locale.ROOT);
 
   SemanticSearch.ParsedQuery pq=SemanticSearch.parseQueryFilters(rawQuery,refToday);
+  String rqTrim=rawQuery==null?"":rawQuery.trim();
+  String rqLow=rqTrim.toLowerCase(Locale.ROOT);
+  boolean isOodTrivia=(rqTrim.startsWith("{")&&(rqLow.contains("'question'")||rqLow.contains("\"question\"")))
+    ||(advExactDate.isEmpty()&&advCat.isEmpty()&&!advNeedsNote&&advAcct.isEmpty()&&advMin<0L&&advMax<0L
+       &&rqLow.matches("(?s)^(?:how\\s+does\\s+(?:an|a|the)\\b|what\\s+is\\s+the\\s+(?:name|average|simplified|difference|maximum|minimum)\\b|which\\s+(?:financial|bank|institution|malaysian)\\b|how\\s+many\\s+(?:working|business)\\s+days\\b).*"));
+  if(isOodTrivia){
+   double msEmpty=(System.nanoTime()-t0)/1_000_000.0;
+   return new JSONObject().put("ids",new JSONArray()).put("matches",new JSONObject()).put("scores",new JSONObject())
+    .put("parsedFilters",new JSONObject().put("semanticText","").put("minMinor",-1L).put("maxMinor",-1L)
+     .put("fromDate","").put("untilDate","").put("hardKind","").put("kindBoost","").put("accountHint","").put("taxReliefQuery",false))
+    .put("semanticUsed",false).put("queryMs",Math.round(msEmpty*100.0)/100.0);
+  }
   boolean hasSemanticText=!pq.semanticText.isEmpty();
   boolean hasConceptualIntent=hasSemanticText||pq.taxReliefQuery||!pq.kindBoost.isEmpty();
   float[] qVec=hasSemanticText?SemanticSearch.encodeQuery(pq.semanticText):(hasConceptualIntent?SemanticSearch.encodeQuery(pq.rawQuery):null);

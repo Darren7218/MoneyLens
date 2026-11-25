@@ -231,7 +231,7 @@ function renderSnapshotsModal(list){
 
 window.csvLoaded=info=>{importInfo=info;const am=info.autoMap||{};const rows=[[-1,tr('Not mapped')],...info.headers.map((h,i)=>[i,h||'Column '+(i+1)])];const pick=(k,fb=k)=>{if(typeof am[k]==='number'&&am[k]>=0)return am[k];return info.headers.findIndex(h=>h.toLowerCase().includes(fb));};const cols=[['date',tr('Date column'),'date'],['amount',tr('Amount column (single)'),'amount'],['debit',tr('Debit / Money Out column'),'debit'],['credit',tr('Credit / Money In column'),'credit'],['merchant',tr('Merchant / Description column'),'merchant'],['category',tr('Category column'),'category'],['kind',tr('Type column'),'kind'],['note',tr('Note column'),'note']];const presetHtml=am.preset?`<div class="soft-card" style="margin:0 0 12px"><span class="muted">${esc(tr('Detected bank format'))}:</span> <strong>${esc(am.preset)}</strong></div>`:'';modal(tr('Map your statement columns'),`<form data-extra="csvMap">${presetHtml}<p class="note">${esc(tr('{n} rows. Choose how your file maps to MoneyLens, then review before saving.',{n:info.count}))}</p>${cols.map(([k,lbl,fb])=>select(lbl,k,rows,pick(k,fb))).join('')}${acctSelect()}${select(tr('Date format'),'dateFormat',[['iso','YYYY-MM-DD'],['dmy','DD/MM/YYYY'],['dmmmy','DD MMM YYYY'],['mdy','MM/DD/YYYY']],am.dateFormat||'iso')}${select(tr('Default transaction type'),'defaultKind',[['expense',tr('Expense')],['income',tr('Income')],['refund',tr('Refund')]],'expense')}${check(tr('Signed amounts: negative expenses, positive income'),'signed',!!am.signed)}<details><summary>${esc(tr('First rows'))}</summary><pre class="csv-sample">${esc(info.sample.map(r=>r.join(' | ')).join('\n'))}</pre></details>${formFooter(tr('Preview import'))}</form>`)};
 function csvReview(rows){importPreview=rows;modal('Review CSV import',`<form data-extra="csvCommit"><p class="note">Possible duplicates start unchecked. Re-imported rows are blocked. Transfers need manual entry.</p><div class="review-list">${rows.map((r,i)=>`<label class="import-row"><input type="checkbox" name="row" value="${i}" ${r.error||r.duplicate?'disabled':r.possibleDuplicate?'':'checked'}><span><strong>${esc(r.merchant||'Row '+r.row)} ${r.amount?'· RM '+esc(r.amount):''}</strong><small>${esc(r.error||(r.date+' · '+r.kind+' · '+r.category))}</small>${r.duplicate?'<b>Already imported</b>':r.possibleDuplicate?'<b>Possible duplicate — check manually</b>':''}</span></label>`).join('')}</div>${formFooter('Import selected rows')}</form>`)}
-function batchForm(){const ds=state.drafts.filter(d=>d.state==='review').slice(0,100);modal('Review selected payments',`<form data-extra="batch"><p class="note">Choose payments with correct amount and category. The account below applies to every selected payment.</p>${acctSelect()}<div class="review-list">${ds.map(d=>`<label class="import-row"><input type="checkbox" name="draft" value="${esc(d.id)}" ${d.amount>0?'':'disabled'}><span><strong>${esc(d.merchant)} · ${money(d.amount)}</strong><small>${esc(d.category)} · ${esc(d.date)} · ${esc(d.reason)}</small></span></label>`).join('')}</div>${formFooter('Record selected payments')}${actionButton('Ignore selected','ignoreSelected','','ghost')}</form>`)}
+function batchForm(){const ds=state.drafts.filter(d=>d.state==='review').slice(0,100);modal('Review selected payments',`<form data-extra="batch"><p class="note">Choose payments with correct amount and category. The account below applies to every selected payment.</p>${acctSelect()}<div class="review-list">${ds.map(d=>`<label class="import-row"><input type="checkbox" name="draft" value="${esc(d.id)}" ${d.amount>0?'':'disabled'}><span><strong>${esc(d.merchant||d.category||'Payment')} · ${money(d.amount)}${d.kind&&d.kind!=='expense'?` <small>[${esc(d.kind)}]</small>`:''}</strong><small>${esc(d.category||'Miscellaneous')} · ${esc(d.date||today())}${d.transferHint?` · to ${esc(d.transferHint)}`:''} · ${esc(d.reason||'')}</small></span></label>`).join('')}</div>${formFooter('Record selected payments')}${actionButton('Ignore selected','ignoreSelected','','ghost')}</form>`)}
 function linkForm(id,bill=false){modalContext={id};modal(bill?'Match an existing payment':'Already recorded?',`<form data-extra="${bill?'matchBill':'linkDraft'}"><p class="note">Choose the same payment already in your ledger. This links the record without creating another expense.</p>${select('Recorded transaction','transactionId',validTx().filter(t=>!['opening','adjustment'].includes(t.kind)).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,200).map(t=>[t.id,t.date+' · '+(t.merchant||t.category)+' · '+money(t.amount)]),'')}${formFooter('Link payment')}</form>`)}
 
 document.addEventListener('click',async e=>{
@@ -499,7 +499,7 @@ document.addEventListener('click',async e=>{
       case 'diagnostics':{const d=await call('diagnostics');modalContext={diagnostics:JSON.stringify(d,null,2)};modal('Capture diagnostics',`<p class="note">This preview contains no merchants, amounts, account numbers or raw notifications.</p><pre class="csv-sample">${esc(JSON.stringify(d,null,2))}</pre>${actionButton('Export these diagnostics','diagnosticExport')}`);break;}
       case 'diagnosticExport':await call('diagnosticExport',{text:modalContext.diagnostics});break;
       case 'batch':batchForm();break;
-      case 'ignoreSelected':{const ids=[...document.querySelectorAll('input[name=draft]:checked')].map(x=>x.value);await mutate('ignoreBatch',{ids},'Selected suggestions ignored.');close();break;}
+      case 'ignoreSelected':{const ids=[...document.querySelectorAll('input[name=draft]:checked')].map(x=>x.value);if(!ids.length){toast('Select at least one payment first.');break;}await mutate('ignoreBatch',{ids},'Selected suggestions ignored.');close();break;}
       case 'linkDraft':linkForm(id);break;
       case 'matchBill':linkForm(id,true);break;
       case 'reconcile':modal('Compare with your statement',`<form data-extra="reconcile">${acctSelect()}${field('As-of date','date',today(),'date','required')}${field('Statement balance (RM)','actual','','text','required inputmode="decimal"')}<p class="note">For a card, enter debt as a negative balance, such as -125.50. You will review the difference before adjusting.</p>${field('Note','note','','text','maxlength="500"')}${formFooter('Compare balances')}</form>`);break;
@@ -555,7 +555,40 @@ document.addEventListener('submit',async e=>{
         case 'settlePerson':await mutate('settlePerson',args,tr('Split bills settled.'));busy=false;close();return;
         case 'csvMap':for(const k of ['date','amount','debit','credit','merchant','category','kind','note'])args[k]=Number(args[k]);args.signed=form.elements.signed.checked;csvReview(await call('csvPreview',args));stay=true;break;
         case 'csvCommit':args.indices=[...form.querySelectorAll('input[name=row]:checked')].map(x=>Number(x.value));if(!args.indices.length)throw new Error('Choose at least one valid row.');break;
-        case 'batch':{const ids=[...form.querySelectorAll('input[name=draft]:checked')].map(x=>x.value);if(!ids.length)throw new Error('Select the payments you checked.');args.rows=ids.map(did=>{const d=state.drafts.find(x=>x.id===did);return {...d,amount:amount(d.amount),account:args.account,draftId:did,draftRevision:d.revision||1,key:'draft:'+did}});method='confirmBatch';break;}
+        case 'batch':{
+          const ids=[...form.querySelectorAll('input[name=draft]:checked')].map(x=>x.value);
+          if(!ids.length)throw new Error('Select the payments you checked.');
+          args.rows=ids.map(did=>{
+            const d=state.drafts.find(x=>x.id===did)||{};
+            const row={
+              key:'draft:'+did,
+              draftId:did,
+              draftRevision:d.revision||1,
+              kind:d.kind||'expense',
+              amount:amount(d.amount),
+              account:args.account,
+              category:d.category||(d.kind==='income'?'Other income':'Miscellaneous'),
+              merchant:d.merchant||'',
+              date:d.date||today(),
+              note:d.note||''
+            };
+            if(d.subcategory)row.subcategory=d.subcategory;
+            if(d.to)row.to=d.to;
+            if(d.transferHint)row.transferHint=d.transferHint;
+            if(d.receiptId)row.receiptId=d.receiptId;
+            if(d.person)row.person=d.person;
+            if(d.ownAmount!==undefined&&d.ownAmount!=='')row.ownAmount=String(d.ownAmount);
+            if(d.reimbursementFor)row.reimbursementFor=d.reimbursementFor;
+            if(d.originalCurrency&&Number(d.originalAmount)>0){
+              row.originalCurrency=d.originalCurrency;
+              row.originalAmount=String(d.originalAmount);
+              if(d.foreignFee!==undefined&&d.foreignFee!=='')row.foreignFee=String(d.foreignFee);
+            }
+            return row;
+          });
+          method='confirmBatch';
+          break;
+        }
         case 'linkDraft':case 'matchBill':args.id=modalContext.id;break;
         case 'reconcile':{
           const actual=Number(args.actual);

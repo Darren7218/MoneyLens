@@ -247,14 +247,32 @@ function localQuickParse(rawText){
   work=work.replace(/\s+/g,' ').trim();
   const rmM=work.match(/(?:(?<![A-Za-z0-9])(?:rm|myr)|马币)\s*([0-9]{1,3}(?:,[0-9]{3})+|[0-9]{1,7})(?:\.([0-9]{1,2}))?/i);
   const sfxM=work.match(/([0-9]{1,3}(?:,[0-9]{3})+|[0-9]{1,7})(?:\.([0-9]{1,2}))?\s*(?:(?:rm|myr|ringgit|hinggit|bucks)(?![A-Za-z0-9])|块钱|块|元|令吉|马币|蚊)/i);
-  const bareM=work.match(/(?:^|[^0-9.:/-])([0-9]{1,3}(?:,[0-9]{3})+|[0-9]{1,6})(?:\.([0-9]{1,2}))?(?![0-9.:/-])/);
-  const numM=rmM||sfxM||bareM;
-  if(!numM)return null;
-  const numStr=numM[1].replaceAll(',','')+(numM[2]?'.'+numM[2]:'');
-  const val=Number(numStr);if(!(val>0))return null;
+  let numHit=null;
+  if(rmM){numHit={numStr:rmM[1].replaceAll(',','')+(rmM[2]?'.'+rmM[2]:''),idx:rmM.index,len:rmM[0].length};}
+  else if(sfxM){numHit={numStr:sfxM[1].replaceAll(',','')+(sfxM[2]?'.'+sfxM[2]:''),idx:sfxM.index,len:sfxM[0].length};}
+  else{
+    const bareRe=/([0-9]{1,3}(?:,[0-9]{3})+|[0-9]{1,6})(?:\.([0-9]{1,2}))?/g;
+    let bestScore=-1e9,bm;
+    while((bm=bareRe.exec(work))!==null){
+      const st=bm.index,en=st+bm[0].length;
+      if((st>0&&/[0-9.:/-]/.test(work[st-1]))||(en<work.length&&/[0-9.:/-]/.test(work[en])))continue;
+      const before=work.slice(Math.max(0,st-24),st).toLowerCase();
+      const after=work.slice(en,Math.min(work.length,en+24)).toLowerCase();
+      let score=bm[0].includes('.')||bm[0].includes(',')?100:0;
+      if(en<work.length&&/[a-z]/i.test(work[en]))score-=280;
+      if(st>0&&/[a-z]/i.test(work[st-1]))score-=260;
+      if(/(?:\b(?:iphone|galaxy\s*s?|pixel|ipad|macbook|ps|playstation|xbox|switch|xiaomi|redmi|oppo|vivo|realme|huawei|mate|pura|rtx|gtx|wifi|usb|series|gen|ver|v|model|lot|unit|no\.?|room|table|order)\s*|#\s*)$/i.test(before))score-=260;
+      if(/^[\s-]*(?:speedmart|eleven|utama|fingers|plus)\b/i.test(after))score-=260;
+      if(/^\s*(?:x\b|packs?|pcs?|pieces?|boxes?|bottles?|btl|cans?|cups?|plates?|bowls?|sets?|pairs?|items?|units?|tickets?|tix|pax|orang|org|ways?|am|pm|%|hrs?|hours?|mins?|minutes?|days?|weeks?|months?|pro|max|plus|ultra|mini|air|lite|fe|se|gen|generation|km|ml|kg|g|gb|tb|人|个|位|杯|碗|点|份)/i.test(after))score-=240;
+      if(/(?:\b(?:split|kongsi|bahagi|divide)\s*|平分|均摊)$/i.test(before))score-=160;
+      score+=Math.floor(st/5);
+      if(score>bestScore){bestScore=score;numHit={numStr:bm[1].replaceAll(',','')+(bm[2]?'.'+bm[2]:''),idx:st,len:bm[0].length};}
+    }
+  }
+  if(!numHit)return null;
+  const val=Number(numHit.numStr);if(!(val>0))return null;
   const amtMinor=Math.round(val*100);
-  const tokenStart=work.indexOf(numM[0]);
-  let rest=(work.slice(0,tokenStart)+' '+work.slice(tokenStart+numM[0].length)).replace(/\s+/g,' ').trim();
+  let rest=(work.slice(0,numHit.idx)+' '+work.slice(numHit.idx+numHit.len)).replace(/\s+/g,' ').trim();
   let kind='expense',person='',ownAmount='';
   const rawRest=rest;
   const spM=rest.match(/\b(?:split(?:\s+with)?|kongsi(?:\s+dengan)?)\s+([A-Za-z0-9][A-Za-z0-9 .'_-]{0,40})/i);
@@ -271,7 +289,7 @@ function localQuickParse(rawText){
     person=spZh[1].trim();
     rest=(rest.slice(0,spZh.index)+' '+rest.slice(spZh.index+spZh[0].length)).replace(/\s+/g,' ').trim();
     ownAmount=(Math.floor(amtMinor/2)/100).toFixed(2);
-  }else if(/(?:\b(?:refund|refunded|bayaran\s+balik)\b|退款|退钱)/i.test(rest)){
+  }else if(!(/(?:\b(?:non.?refundable|not\s+refundable|no\s+refund|tidak\s+boleh\s+dikembalikan)\b|不可退款|不能退款|不退不换|恕不退款)/i.test(rest))&&/(?:\b(?:refund|refunded|bayaran\s+balik)\b|退款|退钱)/i.test(rest)){
     kind='refund';
   }else if(!isIncomingSignal&&!hasTransferExpenseKw&&/\b(?:transfer|pindah|top.?up|reload|tambah\s+nilai)\b|转账|充值/i.test(rest)){
     kind='transfer';

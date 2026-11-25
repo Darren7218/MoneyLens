@@ -78,7 +78,7 @@
         "lang": "en"
       },
       {
-        "gotN": 69,
+        "gotN": 56,
         "slice": "concept",
         "query": "medical exam LHDN",
         "lang": "en"
@@ -147,11 +147,11 @@
     "recallAt5ByLang": {
       "en": 0.9211,
       "mg": 0.87,
-      "bm": 0.901,
+      "bm": 0.8911,
       "zh": 0.8641
     },
-    "recallAt5": 0.8868,
-    "recallAt10": 0.9158,
+    "recallAt5": 0.8842,
+    "recallAt10": 0.9132,
     "sampleMisses": [
       {
         "gotN": 4,
@@ -232,6 +232,12 @@
         "lang": "bm"
       },
       {
+        "gotN": 22,
+        "slice": "zero_lexical_overlap",
+        "query": "peralatan sekolah",
+        "lang": "bm"
+      },
+      {
         "gotN": 12,
         "slice": "zero_lexical_overlap",
         "query": "bahan rumah tangga",
@@ -244,7 +250,7 @@
         "lang": "bm"
       },
       {
-        "gotN": 122,
+        "gotN": 121,
         "slice": "concept",
         "query": "Credit card installment",
         "lang": "bm"
@@ -266,25 +272,19 @@
         "slice": "concept",
         "query": "event entry",
         "lang": "mg"
-      },
-      {
-        "gotN": 21,
-        "slice": "zero_lexical_overlap",
-        "query": "Injury Plan",
-        "lang": "mg"
       }
     ],
     "recallAt5BySlice": {
       "lhdn_tax": 1,
       "concept": 0.9282,
-      "zero_lexical_overlap": 0.8217,
+      "zero_lexical_overlap": 0.8153,
       "structured_constraint": 1,
       "kind_filter": 1
     },
-    "mrrAt10": 0.8119,
+    "mrrAt10": 0.815,
     "n": 380
   },
-  "bench1kWarmMs": 4.81,
+  "bench1kWarmMs": 6.22,
   "quickEntryTrack4": {
     "amountExact": 1,
     "categoryByLang": {
@@ -421,5 +421,5 @@
     "n": 800,
     "dateExact": 1
   },
-  "bench1kColdMs": 25.43
+  "bench1kColdMs": 38.68
 }

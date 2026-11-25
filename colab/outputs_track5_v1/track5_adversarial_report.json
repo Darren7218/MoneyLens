@@ -1,0 +1,27 @@
+{
+  "llm_teacher": "Qwen/Qwen2.5-3B-Instruct",
+  "llm_synth_counts": {
+    "promo_traps": 0,
+    "otp_traps": 25,
+    "failed_preauth_bill_traps": 0,
+    "real_noisy_payments": 23,
+    "search_trivia_ood": 30
+  },
+  "dev_total": 20000,
+  "blind_total": 4400,
+  "dev_by_surface": {
+    "notif_gate": 7000,
+    "twin_dedup": 3000,
+    "lhdn_tax": 4000,
+    "parser_receipt": 3500,
+    "quick_search": 2500
+  },
+  "blind_by_surface": {
+    "notif_gate": 1600,
+    "twin_dedup": 600,
+    "lhdn_tax": 800,
+    "parser_receipt": 800,
+    "quick_search": 600
+  },
+  "zero_leakage_verified": true
+}

@@ -90,13 +90,27 @@ public final class PaymentParser {
     String normalized=text.replace('\u00A0',' ').trim();
     String core=FOOTER.matcher(normalized).replaceAll(" ").trim();
     String low=core.toLowerCase(Locale.ROOT);
-    boolean completed=low.matches("(?s).*\\b(you have paid|paid|successful|successfully|succeeded|completed|confirmed|settled|processed|approved|donated|deducted|charged|debited|credited|dikreditkan|received|repaid|berjaya|diterima|menerima|dibayar|membayar|selesai|lulus|authori[sz]ed a payment|spent|payment\\s+(?:of|to|confirmation)|refunded|reversed|chargeback|credited\\s+back|dikembalikan|dipulangkan|bayaran\\s+balik|pulangan\\s+(?:bayaran|wang|tunai|dana)|refund\\s+(?:of\\s+(?:rm|myr)|from|processed|completed|issued|approved))\\b.*")||CJK_COMPLETED.matcher(core).find();
-    if(low.matches("(?s).*\\b(declined|failed|unsuccessful|gagal|rejected)\\b.*"))return null;
-    boolean otpWord=low.matches("(?s).*\\b(otp|tac|verification\\s+code|kod\\s+pengesahan|one.?time\\s+(?:pin|password|passcode)|security\\s+code)\\b.*");
-    if(otpWord&&!completed&&low.matches("(?s).*(?<![0-9.,])[0-9]{4,8}(?![0-9.,]).*"))return null;
-    if(!completed&&low.matches("(?s).*\\b(voucher|promo|promotion|discount|offer|deal|deals|lucky\\s+draw|win|redeem|claim\\s+now|get\\s+up\\s+to|enjoy|limited\\s+time|flash\\s+sale)\\b.*"))return null;
-    if(!completed&&low.matches("(?s).*\\b(secure2u|authorise|authorize|approve|approval)\\b.*"))return null;
-    if(low.matches("(?s).*\\b(pending|processing|pre.?authori[sz]ation|awaiting)\\b.*")||(!completed&&low.matches("(?s).*\\b(requested|scheduled)\\b.*")))return null;
+    boolean rejected=low.matches("(?s).*\\b(declined|failed|unsuccessful|gagal|rejected|tidak\\s+berjaya|tidak\\s+diluluskan|dibatalkan|baki\\s+tidak\\s+mencukupi|insufficient\\s+(?:funds|balance)|cancelled|canceled|unable\\s+to\\s+process)\\b.*")
+      ||core.matches("(?s).*(?:交易已取消|扣款失败|付款失败|支付失败|未扣款|余额不足|已被拒绝|交易失败).*");
+    if(rejected)return null;
+    boolean otpStrong=low.matches("(?s).*\\b(otp|tac|3ds|3d.?secure|one.?time\\s+(?:pin|password|passcode)|verification\\s+code|security\\s+code|kod\\s+pengesahan|kod\\s+keselamatan|pengesahan\\s+pembayaran|sila\\s+sahkan|sahkan\\s+pembayaran)\\b.*")
+      ||core.matches("(?s).*(?:验证码|动态口令|动态码|安全码).*");
+    if(otpStrong)return null;
+    boolean strongCompleted=low.matches("(?s).*(\\byou have paid\\b|\\bpaid\\b|\\bsuccessful\\b|\\bsuccessfully\\b|\\bsucceeded\\b|\\bcompleted\\b|\\bconfirmed\\b|\\bsettled\\b|\\bprocessed\\b|\\bapproved\\b|\\bdonated\\b|\\bdeducted\\b|\\bcharged\\b|\\bdebited\\b|\\bcredited\\b|\\bdikreditkan\\b|\\breceived\\b|\\brepaid\\b|(?<!tidak\\s)\\bberjaya\\b|\\bditerima\\b|\\bmenerima\\b|\\bdibayar\\b|\\bmembayar\\b|\\bselesai\\b|\\blulus\\b|\\bauthori[sz]ed a payment\\b|\\bspent\\b|\\brefunded\\b|\\breversed\\b|\\bchargeback\\b|\\bcredited\\s+back\\b|\\bdikembalikan\\b|\\bdipulangkan\\b|\\bbayaran\\s+balik\\b|\\bpulangan\\s+(?:bayaran|wang|tunai|dana)\\b|\\brefund\\s+(?:of\\s+(?:rm|myr)|from|processed|completed|issued|approved)\\b).*")||CJK_COMPLETED.matcher(core).find();
+    boolean promoWord=low.matches("(?s).*\\b(voucher|baucar|kupon|promo|promosi|promotion|discount|diskaun|tawaran|offer|deal|deals|lucky\\s+draw|cabutan\\s+bertuah|win|redeem|claim\\s+now|get\\s+up\\s+to|enjoy|limited\\s+time|flash\\s+sale|min(?:imum)?\\s+spend|perbelanjaan\\s+minimum|menanti\\s+anda|untuk\\s+dapatkan)\\b.*")
+      ||core.matches("(?s).*(?:优惠券|代金券|促销|立减|满[0-9]+减).*");
+    boolean spendPromoTrap=low.matches("(?s).*\\b(?:belanja|spend)\\b.*\\b(?:untuk\\s+dapatkan|to\\s+(?:get|earn|win|receive)|rebat|cashback|rebate|voucher|baucar)\\b.*");
+    if((!strongCompleted&&promoWord)||spendPromoTrap)return null;
+    boolean completed=strongCompleted||low.matches("(?s).*\\bpayment\\s+(?:of|to|confirmation)\\b.*");
+    boolean otpWord=low.matches("(?s).*\\b(secure2u|authorise|authorize|approve|approval)\\b.*");
+    if(otpWord&&!strongCompleted)return null;
+    if(low.matches("(?s).*\\b(pending|processing|pre.?authori[sz]ation|awaiting|pegangan\\s+sementara|sedang\\s+diproses|pra.?kebenaran|tertunda)\\b.*")
+      ||core.matches("(?s).*(?:待处理|预授权|处理中|冻结中).*")
+      ||(!strongCompleted&&low.matches("(?s).*\\b(requested|scheduled|menunggu)\\b.*")))return null;
+    boolean billReminderTrap=!strongCompleted&&(
+      low.matches("(?s).*\\b(peringatan\\s+bil|tarikh\\s+akhir|bayaran\\s+minimum|penyata\\s+(?:bulanan|anda)|monthly\\s+statement|statement\\b.*\\bis\\s+ready|minimum\\s+payment|pay\\s+before\\s+due|avoid\\s+late\\s+fee|elak(?:kan)?\\s+caj\\s+lewat|will\\s+be\\s+due\\s+on|is\\s+due\\s+on)\\b.*")
+      ||core.matches("(?s).*(?:账单提醒|最低还款|到期还款|可用余额|账户余额).*"));
+    if(billReminderTrap)return null;
     if(low.matches("(?s).*\\b(?:refund|pulangan|bayaran\\s+balik)\\b.*")&&low.matches("(?s).*\\b(?:request(?:ed)?|permohonan|dimohon|policy|polisi)\\b.*")&&!low.matches("(?s).*\\b(?:approved|completed|processed|credited|dikembalikan|dipulangkan|lulus|selesai)\\b.*"))return null;
     boolean trigger=low.matches("(?s).*\\b(paid|pay|payment|repayment|repaid|instal?ment|ansuran|purchase|pembelian|dibeli|spent|debited|debit|deducted|deduct|deduction|charged|charge|sale|credited|dikreditkan|received|refund|refunded|reversal|reversed|chargeback|bayaran\\s+balik|pulangan|dikembalikan|dipulangkan|pembatalan\\s+transaksi|transfer|transferred|withdrawal|top.?up|reload|reloaded|toll|paydirect|rfid|duitnow|fpx|jompay|giro|ibft|auto.?debit|paywave|contactless|qrpay|qr\\s*pay|bayar|bayaran|pembayaran|dibayar|membayar|diterima|menerima|transaksi|potongan|selesai|transaction|processed|completed|settled|donated|fx\\s*rate|exchange\\s+rate|currency\\s+conversion|gxbank|aeon\\s*bank|ryt\\s*bank|boost\\s*bank|shopeepay|spaylater|lazpaylater|paylater|payflex|atome|grabpay|grabpaylater|bnpl|setel|ptptn|lhdn|tax\\s+relief)\\b.*")||CJK_TRIGGER.matcher(core).find();
     Matcher vp=VERBLESS_PREP.matcher(core),vc=VERBLESS_CAPS.matcher(core);
@@ -134,7 +148,9 @@ public final class PaymentParser {
     if(amount<=0)return null;
 
     boolean outgoingCue=P_OUTGOING_CUE.matcher(low).find();
-    boolean refundCue=!low.matches("(?s).*\\b(?:non.?refundable|ptptn|pinjaman|hutang|loan\\s+repayment)\\b.*")&&P_REFUND_CUE.matcher(low).find();
+    boolean nonRefGuard=low.matches("(?s).*\\b(?:non.?refundable|not\\s+refundable|no\\s+refund|tidak\\s+boleh\\s+dikembalikan|ptptn|pinjaman|hutang|loan\\s+repayment)\\b.*")
+      ||core.matches("(?s).*(?:不可退款|不能退款|不退不换|恕不退款).*");
+    boolean refundCue=!nonRefGuard&&P_REFUND_CUE.matcher(low).find();
     String kind=refundCue?"refund":(!outgoingCue&&P_INCOME_CUE.matcher(low).find())?"income":"expense";
     String reason=count==1?"Recorded from a notification. Check the account, amount and type.":"Several amounts were found; MoneyLens used RM "+java.math.BigDecimal.valueOf(amount,2).toPlainString()+" as the payment. Edit it if that is wrong.";
     if(!kind.equals("income")&&P_TRANSFER_CUE.matcher(low).find()&&!P_NON_TRANSFER_CUE.matcher(low).find()){
@@ -187,6 +203,10 @@ public final class PaymentParser {
     }
     if(!validMerchant(merchant)&&prep){String c=cleanMerchant(vp.group(2));if(validMerchant(c))merchant=c;}
     if(!validMerchant(merchant)&&caps){String c=cleanMerchant(vc.group(2));if(validMerchant(c))merchant=c;}
+    if(!validMerchant(merchant)){
+      Matcher cjkM=Pattern.compile("(?:已支付|付款成功|支付成功|已消费|扣款)\\s*(?:RM|MYR)\\s*[0-9,]+(?:\\.[0-9]{1,2})?\\s+([\\p{L}0-9][\\p{L}0-9 .,'&_-]{1,50})").matcher(core);
+      if(cjkM.find()){String c=cleanMerchant(cjkM.group(1));if(validMerchant(c))merchant=c;}
+    }
     if(!validMerchant(merchant)&&core.contains("\n")){
       String[] lines=core.split("\\r?\\n");
       for(int i=0;i<lines.length&&i<8;i++){
@@ -438,9 +458,20 @@ public final class PaymentParser {
   public static String[] classify(String merchant,String source,String text){
     String[] ruleHit=classifyRulesOnly(merchant,source,text);
     if(!ruleHit[0].equals("Miscellaneous"))return ruleHit;
-    boolean hasRichBody=text!=null&&text.trim().length()>=20;
+    String rawM=String.valueOf(merchant).toLowerCase(Locale.ROOT);
+    String rawT=String.valueOf(text).toLowerCase(Locale.ROOT);
+    String extraBody=rawT;
+    if(!rawM.trim().isEmpty())extraBody=extraBody.replace(rawM.trim()," ");
+    extraBody=extraBody.replaceAll("\\b(?:payment|paid|to|at|from|of|for|in|on|via|rm|myr|successful|successfully|completed|approved|confirmed|settled|card|transaction|duitnow|fpx|jompay|detected)\\b"," ").replaceAll("[0-9.,:\\-/]+"," ").replaceAll("\\s+"," ").trim();
+    boolean hasRichBody=extraBody.length()>=16;
+    String hay=(rawM+" "+rawT).trim();
+    boolean hasEduCue=has(hay,"taska|tadika|kindergarten|preschool|childcare|montessori|nursery|school|sekolah|yuran|asuhan|pibg|kafa|kemas|kiddie|kids|children|tuition|tuisyen|academy|akademi|learning|college|kolej|university|universiti|edu|kumon|smart reader|genius|q-?dees|real kids|brainy|daycare|playschool|bootcamp|ielts|toefl|coursera|udemy|edx|pluralsight|datacamp|skillshare|upskill|certif|training|workshop|seminar");
+    boolean looksGenericSme=has(rawM,"sdn bhd|enterprise|ventures?|holdings|resources|solutions|supply|works|corp|hub|industries");
+    boolean hasUtilCue=has(hay,"tnb|tenaga|syabas|air selangor|iwk|indah water|sewerage|elektrik|electricity|unifi|time fibre|maxis|celcom|digi|astro|starlink|wifi|broadband|postpaid|telekom");
     MlClassifier.Prediction ml=MlClassifier.predict(merchant,text);
     if(ml!=null&&ml.activeSignals>=4&&ml.probability>=0.72&&ml.margin>=0.25&&!ml.category.equals("Miscellaneous")){
+      if(("School & Childcare Fees".equals(ml.subcategory)||"Upskilling & Certification".equals(ml.subcategory))&&!hasEduCue)return ruleHit;
+      if(looksGenericSme&&"Bills & utilities".equals(ml.category)&&!hasUtilCue)return ruleHit;
       return new String[]{ml.category,ml.subcategory};
     }
     MlNeuralReranker.Prediction nn=MlNeuralReranker.predict(merchant,text,ml);
@@ -448,14 +479,18 @@ public final class PaymentParser {
       if(nn.category.equals("Miscellaneous")||nn.miscProbability>=MlNeuralReranker.getOodMiscThreshold()){
         return ruleHit;
       }
+      if(("School & Childcare Fees".equals(nn.subcategory)||"Upskilling & Certification".equals(nn.subcategory))&&!hasEduCue)return ruleHit;
+      if(looksGenericSme&&"Bills & utilities".equals(nn.category)&&!hasUtilCue)return ruleHit;
       boolean okRich=hasRichBody&&(nn.probability>=0.22||(nn.categoryProbability>=0.34&&nn.categoryMargin>=0.08));
-      boolean okShort=!hasRichBody&&((nn.probability>=0.32&&nn.margin>=0.08)||(nn.categoryProbability>=0.40&&nn.categoryMargin>=0.12));
+      boolean okShort=!hasRichBody&&((nn.probability>=0.42&&nn.margin>=0.12)||(nn.categoryProbability>=0.52&&nn.categoryMargin>=0.16));
       if(okRich||okShort)return new String[]{nn.category,nn.subcategory};
       return ruleHit;
     }
     if(ml!=null&&ml.activeSignals>=3&&!ml.category.equals("Miscellaneous")&&(hasRichBody
         ?(ml.probability>=0.08||(ml.categoryProbability>=0.22&&ml.categoryMargin>=0.06))
-        :((ml.probability>=0.24&&ml.margin>=0.06)||(ml.categoryProbability>=0.24&&ml.categoryMargin>=0.08)))){
+        :((ml.probability>=0.34&&ml.margin>=0.10)||(ml.categoryProbability>=0.44&&ml.categoryMargin>=0.14)))){
+      if(("School & Childcare Fees".equals(ml.subcategory)||"Upskilling & Certification".equals(ml.subcategory))&&!hasEduCue)return ruleHit;
+      if(looksGenericSme&&"Bills & utilities".equals(ml.category)&&!hasUtilCue)return ruleHit;
       return new String[]{ml.category,ml.subcategory};
     }
     return ruleHit;

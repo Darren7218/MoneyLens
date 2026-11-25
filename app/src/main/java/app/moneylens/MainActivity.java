@@ -416,6 +416,8 @@ public final class MainActivity extends Activity {
           if(Arrays.asList("transaction","void","favorite","deleteExtra").contains(method)||(method.equals("settings")&&(args.has("appLock")||args.has("lang")||args.has("ecoCapture")))){KeepAliveService.refreshNotification(MainActivity.this);}
           if(method.equals("bill")||method.equals("deletePlan")||method.equals("cancelBill"))AlarmReceiver.scheduleNext(MainActivity.this);
           if(method.equals("ignore")||method.equals("transaction")){String did=args.optString("draftId",args.optString("id",""));if(!did.isEmpty())getSystemService(NotificationManager.class).cancel(CaptureService.promptId(did));}
+          if(method.equals("confirmBatch")){JSONArray rows=args.optJSONArray("rows");if(rows!=null)for(int ri=0;ri<rows.length();ri++){String did=rows.getJSONObject(ri).optString("draftId","");if(!did.isEmpty())getSystemService(NotificationManager.class).cancel(CaptureService.promptId(did));}}
+          if(method.equals("ignoreBatch")){JSONArray ids=args.optJSONArray("ids");if(ids!=null)for(int ri=0;ri<ids.length();ri++){String did=ids.optString(ri,"");if(!did.isEmpty())getSystemService(NotificationManager.class).cancel(CaptureService.promptId(did));}}
         }reply.put("ok",true).put("result",result);
       }catch(Exception e){try{String msg=e instanceof IllegalArgumentException||e instanceof IllegalStateException?e.getMessage():"Could not complete this action. Your existing saved data is unchanged.";reply.put("ok",false).put("error",msg);}catch(Exception ignored){}}
       js("window.nativeResponse && window.nativeResponse("+JSONObject.quote(rid)+","+reply.toString()+")");});

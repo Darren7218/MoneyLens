@@ -361,4 +361,23 @@ test('Track 4 semantic search pills, parsed filter chips and multilingual localQ
 
   run(`query=${JSON.stringify(prevQuery)};searchState=${JSON.stringify(prevSearch)}`);
 });
+
+test('Track 5 localQuickParse traps and batch review modal rendering',()=>{
+  const prevDrafts=run(`state.drafts`);
+  const qi=run(`localQuickParse('iPhone 16 Pro 4899 cash')`);
+  assert(qi&&qi.amount==='4899.00'&&qi.kind==='expense');
+  const qx=run(`localQuickParse('2x nasi lemak 16 cash')`);
+  assert(qx&&qx.amount==='16.00'&&qx.kind==='expense');
+  const qnr=run(`localQuickParse('不可退款机票 RM 380 cash')`);
+  assert(qnr&&qnr.amount==='380.00'&&qnr.kind==='expense');
+
+  run(`state.drafts=[{id:'d-b1',state:'review',revision:2,kind:'expense',amount:2550,merchant:'ZUS Coffee',category:'Food & drinks',date:today(),reason:'Recorded from notification'},{id:'d-b2',state:'review',revision:1,kind:'transfer',amount:5000,merchant:'TNG eWallet',transferHint:'TNG',category:'Miscellaneous',date:today(),reason:'Possible transfer'}]`);
+  let capTitle='',capBody='';
+  const prevModal=ctx.modal;
+  ctx.modal=(t,b)=>{capTitle=t;capBody=b;};
+  run(`batchForm()`);
+  assert(capTitle==='Review selected payments'&&capBody.includes('data-extra="batch"')&&capBody.includes('name="draft" value="d-b1"')&&capBody.includes('[transfer]')&&capBody.includes('to TNG'));
+  ctx.modal=prevModal;
+  run(`state.drafts=${JSON.stringify(prevDrafts)}`);
+});
 console.log('RESULT: '+passed+' UI tests passed');

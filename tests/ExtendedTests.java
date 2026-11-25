@@ -1285,6 +1285,121 @@ public final class ExtendedTests {
    Ledger.validate(s);
   });
 
+  test("Track 5 adversarial stress defenses and confirmBatch review hardening",()->{
+   // 1. Notification gate EN/BM/ZH traps rejected, real CJK merchant & non-refundable guard pass
+   String[] traps={
+    "Promosi hebat! Belanja RM 113.68 di ZUS Coffee KLCC Cheras untuk dapatkan rebat RM 8.00.",
+    "Baucar RM 2.50 menanti anda untuk pembelian min spend RM 222.18 di Kedai Kopi Ah Seng Cheras!",
+    "OTP 369730 for payment of RM 18.51 at Tenaga Nasional PJ. Never share this code.",
+    "{\"message\": \"SMS 3DS 175769 untuk pengesahan pembayaran RM 437.65 kepada Restoran Serai Damansara.\", \"type\": \"3DS\"}",
+    "Transaksi RM 429.78 di POPULAR Book Co Subang tidak berjaya kerana baki tidak mencukupi.",
+    "交易已取消：RM 31.52（Klinik Keluarga Impian PJ）未扣款。",
+    "Pegangan sementara RM 401.62 di 99 Speedmart PJ sedang diproses.",
+    "Your monthly statement from Unifi Fibre PJ is ready. Minimum payment: RM 47.28, due 2026-11-28."
+   };
+   for(String t:traps)yes(PaymentParser.parse(t,"Bank")==null);
+
+   JSONObject cjkReal=PaymentParser.parse("已支付 RM 38.50 Shell LDP","TNG eWallet");
+   yes(cjkReal!=null&&3850L==cjkReal.getLong("amount")&&"expense".equals(cjkReal.getString("kind"))&&"Shell LDP".equals(cjkReal.getString("merchant")));
+   JSONObject nonRef=PaymentParser.parse("Paid RM 380.00 for non-refundable ticket at AirAsia completed","MAE");
+   yes(nonRef!=null&&"expense".equals(nonRef.getString("kind")));
+   JSONObject nonRefZh=PaymentParser.parse("已支付 RM 380.00 不可退款机票","MAE");
+   yes(nonRefZh!=null&&"expense".equals(nonRefZh.getString("kind")));
+
+   // 2. Twin dedup: FX drift spread, 210s delayed rail, truncated gateway (MR DIY), distinct SME conflict separation
+   JSONObject sTwin=Ledger.initial();
+   Ledger.apply(sTwin,"account",new JSONObject().put("name","ShopeePay").put("type","wallet").put("opening","500.00"));
+   Ledger.apply(sTwin,"account",new JSONObject().put("name","MAE").put("type","bank").put("opening","2000.00"));
+   JSONObject fxA=Extras.captureState(sTwin,"com.shopee.pay.my","ShopeePay MY","fx-a","Paid USD 28.76 (RM 127.69) at Watsons Malaysia completed.",10_000_000L,10_000_000L);
+   JSONObject fxB=Extras.captureState(sTwin,"my.com.rhb.mobilebank","RHB Mobile Banking","fx-b","Card charged USD 28.76 (RM 129.71) at Watsons Malaysia approved.",10_090_000L,10_090_000L);
+   yes(fxA!=null&&fxB!=null&&fxB.has("duplicateOf"));
+
+   JSONObject dlyA=Extras.captureState(sTwin,"com.grabtaxi.passenger","GrabPay","dly-a","已支付 RM 65.00 Kedai Kopi Ah Seng",20_000_000L,20_000_000L);
+   JSONObject dlyB=Extras.captureState(sTwin,"com.maybank2u.life","MAE by Maybank2u","dly-b","Card payment of RM 65.00 at GrabPay approved.",20_210_000L,20_210_000L);
+   yes(dlyA!=null&&dlyB!=null&&dlyB.has("duplicateOf"));
+
+   JSONObject mrA=Extras.captureState(sTwin,"my.com.tngdigital.ewallet","Touch 'n Go eWallet","mr-a","You have paid RM 49.60 at MR DIY",30_000_000L,30_000_000L);
+   JSONObject mrB=Extras.captureState(sTwin,"com.maybank2u.life","MAE by Maybank2u","mr-b","Card payment of RM 49.60 at PAY*MRDY-SLNGR approved.",30_045_000L,30_045_000L);
+   yes(mrA!=null&&mrB!=null&&mrB.has("duplicateOf"));
+
+   JSONObject smA=Extras.captureState(sTwin,"my.com.setel.mobile","Setel","sm-a","You have paid RM 32.00 at Restoran Maju Jaya",40_000_000L,40_000_000L);
+   JSONObject smB=Extras.captureState(sTwin,"my.com.gxbank.mobile","GXBank","sm-b","Card payment RM 32.00 at Restoran Maju Setia approved.",40_045_000L,40_045_000L);
+   yes(smA!=null&&smB!=null&&!smB.has("duplicateOf"));
+   JSONObject bkA=Extras.captureState(sTwin,"my.com.setel.mobile","Setel","bk-a","You have paid RM 18.50 at Kedai Buku Ceria",50_000_000L,50_000_000L);
+   JSONObject bkB=Extras.captureState(sTwin,"my.com.gxbank.mobile","GXBank","bk-b","Card payment RM 18.50 at Kedai Buku Cahaya approved.",50_045_000L,50_045_000L);
+   yes(bkA!=null&&bkB!=null&&!bkB.has("duplicateOf"));
+
+   // 3. LHDN YA 2025/2026 relief disambiguation & non-claimable trap rejection
+   yes("Medical & Edu Insurance".equals(Finance.taxReliefBucket(new JSONObject().put("merchant","Prudential BSN").put("category","Insurance & Takaful").put("subcategory","Medical & Health Card").put("note","Annual medical card"))));
+   yes("Lifestyle (Tech / Books / WiFi)".equals(Finance.taxReliefBucket(new JSONObject().put("merchant","POPULAR Bookstore").put("category","Education").put("subcategory","Books & Stationery").put("note","Reference books"))));
+   String[][] taxTraps={
+    {"Sports Toto 4D Outlet","Entertainment & travel","Games & Hobbies","4D lottery ticket"},
+    {"Kedai Sport Rim Klang","Transport","Vehicle Maintenance & Service","Car alloy rim"},
+    {"Klinik Haiwan Vet PJ","Shopping","Home & Living","Dog vaccination at animal clinic"},
+    {"Beaute Aesthetic Clinic","Shopping","Beauty, Skincare & Grooming","Botox & cosmetic facial spa"},
+    {"Watsons Sunway","Health & medical","Pharmacy & Medicine","Lipstick, shampoo & sunscreen cosmetics"},
+    {"Senheng Mid Valley","Shopping","Electronics & Gadgets","Washing machine & inverter fridge"},
+    {"Etiqa Motor Insurance","Transport","Road Tax & Motor Insurance","Car insurance & roadtax"},
+    {"Zurich Home Fire Insurance","Housing & property","Home Repair & Maintenance","House fire insurance policy"},
+    {"Allianz Travel Care","Insurance & Takaful","Personal Accident","Overseas travel insurance"},
+    {"Saujana Golf Course","Entertainment & travel","Games & Hobbies","Weekend golf course green fee"},
+    {"Bistro Harmoni","Food & drinks","Restaurant & Cafe","3-course dinner tasting menu"},
+    {"Tadika Bintang Kecil","Education","School & Childcare Fees","Preschool monthly fee"},
+    {"MPH Plaza Parking","Transport","Parking","Hourly mall parking"},
+    {"Popular Cafe Damansara","Food & drinks","Restaurant & Cafe","Popular Hainam kopitiam toast"},
+    {"Shell Petrol Station","Transport","Petrol & EV Charging","RON95 fuel pump"},
+    {"PTPTN SSPN Prime","Investments & savings","SSPN Savings","SSPN withdrawal pengeluaran"}
+   };
+   for(String[] tt:taxTraps)yes("".equals(Finance.taxReliefBucket(new JSONObject().put("merchant",tt[0]).put("category",tt[1]).put("subcategory",tt[2]).put("note",tt[3]))));
+
+   // 4. OOD SME Misc safety + QuickEntry traps + Search OOD trivia guard
+   yes("Miscellaneous".equals(PaymentParser.classify("Permata Angkasa Sdn Bhd Hub","Bank","Payment RM 66.56 to Permata Angkasa Sdn Bhd Hub successful")[0]));
+   yes("Miscellaneous".equals(PaymentParser.classify("Indah Permai Supply Corp","Bank","Payment RM 74.95 to Indah Permai Supply Corp successful")[0]));
+
+   JSONObject qeState=Ledger.initial();
+   Ledger.apply(qeState,"account",new JSONObject().put("name","Touch 'n Go eWallet").put("type","wallet").put("opening","500.00"));
+   Ledger.apply(qeState,"account",new JSONObject().put("name","MAE").put("type","bank").put("opening","1000.00"));
+   LocalDate td=LocalDate.of(2026,11,25);
+   JSONObject q1=Extras.parseQuickEntry(qeState,"iPhone 16 Pro 4899 tng",td);
+   yes(q1!=null&&489900L==q1.getLong("amountMinor"));
+   JSONObject q2=Extras.parseQuickEntry(qeState,"2x nasi lemak 16 tng yesterday",td);
+   yes(q2!=null&&1600L==q2.getLong("amountMinor")&&"2026-11-24".equals(q2.getString("date")));
+   JSONObject q3=Extras.parseQuickEntry(qeState,"2 packs coffee pods 45.90 mae",td);
+   yes(q3!=null&&4590L==q3.getLong("amountMinor"));
+   JSONObject q4=Extras.parseQuickEntry(qeState,"不可退款机票 RM 380 MAE",td);
+   yes(q4!=null&&38000L==q4.getLong("amountMinor")&&"expense".equals(q4.getString("kind")));
+
+   JSONObject srOod=Finance.searchTransactions(qeState,"{\"question\": \"How does an individual initiate the process of e-filing their income tax return in Malaysia?\", \"language\": \"ms\"}","all",null,td);
+   eq(srOod.getJSONArray("ids").length(),0);
+
+   // 5. confirmBatch review hardening ("Review selected payments" bug fix)
+   JSONObject sb=Ledger.initial();
+   Ledger.apply(sb,"settings",new JSONObject().put("autoRecord",false));
+   Ledger.apply(sb,"account",new JSONObject().put("name","MAE").put("type","bank").put("opening","1000.00"));
+   Ledger.apply(sb,"account",new JSONObject().put("name","TNG eWallet").put("type","wallet").put("opening","100.00"));
+   String maeId=sb.getJSONArray("accounts").getJSONObject(1).getString("id");
+   String tngId=sb.getJSONArray("accounts").getJSONObject(2).getString("id");
+
+   JSONObject dExp=Extras.captureState(sb,"com.shopee.pay.my","ShopeePay","cb-1","You have paid RM 25.50 at ZUS Coffee",60_000_000L,60_000_000L);
+   JSONObject dTr=Extras.captureState(sb,"com.maybank2u.life","MAE","cb-2","You have transferred RM 50.00 to TNG eWallet",60_010_000L,60_010_000L);
+   JSONObject dUnresTr=Extras.captureState(sb,"com.maybank2u.life","MAE","cb-3","You have transferred RM 40.00 to Unknown Bank",60_020_000L,60_020_000L);
+   yes(dExp!=null&&dTr!=null&&dUnresTr!=null);
+
+   JSONArray goodRows=new JSONArray()
+    .put(new JSONObject().put("draftId",dExp.getString("id")).put("draftRevision",dExp.getInt("revision")).put("kind","expense").put("amount","25.50").put("account",maeId).put("merchant","ZUS Coffee").put("key","draft:"+dExp.getString("id")))
+    .put(new JSONObject().put("draftId",dTr.getString("id")).put("draftRevision",dTr.getInt("revision")).put("kind","transfer").put("amount","50.00").put("account",maeId).put("transferHint","TNG").put("merchant","TNG eWallet").put("key","draft:"+dTr.getString("id")));
+   yes(Extras.apply(sb,"confirmBatch",new JSONObject().put("rows",goodRows)));
+   eq(balance(sb,maeId),92450L);
+   eq(balance(sb,tngId),15000L);
+
+   JSONArray badRows=new JSONArray()
+    .put(new JSONObject().put("draftId",dUnresTr.getString("id")).put("draftRevision",dUnresTr.getInt("revision")).put("kind","transfer").put("amount","40.00").put("account",maeId).put("merchant","Unknown Bank").put("key","draft:"+dUnresTr.getString("id")));
+   rejects(()->Extras.apply(sb,"confirmBatch",new JSONObject().put("rows",badRows)));
+   eq(balance(sb,maeId),92450L);
+   Ledger.validate(sTwin);
+   Ledger.validate(sb);
+  });
+
   System.out.println("RESULT: "+passed+" extended tests passed");
  }
 }

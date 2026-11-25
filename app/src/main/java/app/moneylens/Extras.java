@@ -126,7 +126,60 @@ public final class Extras {
    case "draft":{JSONObject d=new JSONObject(a.toString()).put("id",a.optString("id",Ledger.id())).put("state","review").put("revision",1).put("created",System.currentTimeMillis());boolean auto=d.optBoolean("autoCapture");d.remove("autoCapture");d.remove("text");Finance.suggest(s,d);s.getJSONArray("drafts").put(d);if(auto)autoPost(s,d);return true;}
    case "linkDraft":{JSONObject d=Ledger.find(s.getJSONArray("drafts"),a.getString("id"));JSONObject t=Ledger.find(s.getJSONArray("transactions"),a.getString("transactionId"));if(t.optBoolean("voided"))throw new IllegalArgumentException("Choose a current transaction.");if(!d.optString("state").equals("review"))return true;d.put("state","linked").put("transactionId",t.getString("id"));if(d.has("receiptId")&&!t.has("receiptId"))t.put("receiptId",d.getString("receiptId"));return true;}
    case "ignoreBatch":{JSONArray ids=a.getJSONArray("ids");for(int i=0;i<ids.length();i++){JSONObject d=Ledger.find(s.getJSONArray("drafts"),ids.getString(i));if(d.optString("state").equals("review"))d.put("state","ignored");}return true;}
-   case "confirmBatch":{JSONArray rows=a.getJSONArray("rows");if(rows.length()>100)throw new IllegalArgumentException("Review at most 100 suggestions at once.");for(int i=0;i<rows.length();i++)Ledger.post(s,rows.getJSONObject(i));return true;}
+   case "confirmBatch":{
+    JSONArray rows=a.getJSONArray("rows");
+    if(rows.length()>100)throw new IllegalArgumentException("Review at most 100 suggestions at once.");
+    JSONArray drafts=s.getJSONArray("drafts"),accounts=s.getJSONArray("accounts"),receipts=s.optJSONArray("receipts");
+    for(int i=0;i<rows.length();i++){
+     JSONObject row=new JSONObject(rows.getJSONObject(i).toString());
+     String did=row.optString("draftId","").trim();
+     JSONObject draft=null;
+     if(!did.isEmpty()){
+      try{draft=Ledger.find(drafts,did);}catch(IllegalArgumentException ignored){}
+     }
+     String rKind=row.optString("kind","").trim();
+     if(rKind.isEmpty())rKind=draft!=null&&!draft.optString("kind","").isEmpty()?draft.optString("kind"):"expense";
+     row.put("kind",rKind);
+     if(row.optString("date","").trim().isEmpty())row.put("date",draft!=null&&!draft.optString("date","").isEmpty()?draft.optString("date"):LocalDate.now().toString());
+     if(row.optString("category","").trim().isEmpty())row.put("category","income".equals(rKind)?"Other income":"Miscellaneous");
+     String rAcct=row.optString("account","").trim();
+     if(rAcct.isEmpty()&&draft!=null)rAcct=draft.optString("account","");
+     if(rAcct.isEmpty()&&accounts.length()>0)rAcct=accounts.getJSONObject(0).getString("id");
+     row.put("account",rAcct);
+     String merch=row.optString("merchant","");if(merch.length()>120)row.put("merchant",merch.substring(0,120));
+     String catStr=row.optString("category","");if(catStr.length()>60)row.put("category",catStr.substring(0,60));
+     String noteStr=row.optString("note","");if(noteStr.length()>500)row.put("note",noteStr.substring(0,500));
+     if("".equals(row.optString("originalCurrency","").trim())||"".equals(row.optString("originalAmount","").trim())){
+      row.remove("originalCurrency");row.remove("originalAmount");row.remove("foreignFee");row.remove("exchangeRate");
+     }
+     String recId=row.optString("receiptId","").trim();
+     if(!recId.isEmpty()){
+      boolean recOk=false;
+      if(receipts!=null)for(int rj=0;rj<receipts.length();rj++)if(recId.equals(receipts.getJSONObject(rj).optString("id"))){recOk=true;break;}
+      if(!recOk)row.remove("receiptId");
+     }else row.remove("receiptId");
+     if("transfer".equals(rKind)){
+      String toId=row.optString("to","").trim();
+      if(toId.isEmpty()&&draft!=null)toId=draft.optString("to","").trim();
+      if(toId.isEmpty()||toId.equals(rAcct)){
+       String hint=row.optString("transferHint","").trim();
+       if(hint.isEmpty()&&draft!=null)hint=draft.optString("transferHint","").trim();
+       if(!hint.isEmpty())toId=Finance.matchAccountByName(accounts,hint,"",rAcct);
+      }
+      if(toId.isEmpty()||toId.equals(rAcct)){
+       throw new IllegalArgumentException("Transfer \""+row.optString("merchant","payment")+"\" needs both From and To accounts. Review it individually.");
+      }
+      row.put("to",toId);
+     }else if("reimbursement".equals(rKind)){
+      String rf=row.optString("reimbursementFor","").trim();
+      if(rf.isEmpty()&&draft!=null)rf=draft.optString("reimbursementFor","").trim();
+      if(rf.isEmpty())throw new IllegalArgumentException("Repayment \""+row.optString("merchant","payment")+"\" needs an open shared expense. Review it individually.");
+      row.put("reimbursementFor",rf);
+     }
+     Ledger.post(s,row);
+    }
+    return true;
+   }
    case "reconcile":{
     String account=a.getString("account"),dt=a.getString("date");Ledger.find(s.getJSONArray("accounts"),account);LocalDate.parse(dt);long actual=new BigDecimal(a.getString("actual")).movePointRight(2).longValueExact();if(Math.abs(actual)>Ledger.MAX)throw new IllegalArgumentException("Invalid balance.");Ledger.find(s.getJSONArray("accounts"),account).put("balanceVerified",true);long recorded=Finance.balance(s,account,dt),delta=actual-recorded;JSONObject r=new JSONObject().put("id",Ledger.id()).put("account",account).put("date",dt).put("actual",actual).put("recorded",recorded).put("difference",delta).put("adjusted",a.optBoolean("adjust"));
     if(a.optBoolean("adjust")&&delta!=0){String tid=Ledger.id();JSONObject t=new JSONObject().put("id",tid).put("kind","adjustment").put("amount",Math.abs(delta)).put("account",account).put("date",dt).put("merchant","Balance reconciliation").put("category","Adjustment").put("note",Ledger.str(a,"note",500)).put("created",System.currentTimeMillis()).put("postings",new JSONArray().put(Ledger.entry(account,delta)).put(Ledger.entry("equity",-delta)));s.getJSONArray("transactions").put(t);r.put("transactionId",tid);}s.getJSONArray("reconciliations").put(r);return true;
@@ -599,11 +652,11 @@ public final class Extras {
       linkReviewDraftToPosted(s,reviewTwin,d,postedId);
      }
      if("transfer".equals(d.optString("kind"))){
-      // Also fold any other pending reload-side review draft from another app within 3 minutes.
+      // Also fold any other pending reload-side review draft from another app within 4 minutes.
       for(int i=0;i<drafts.length();i++){
        JSONObject o=drafts.getJSONObject(i);
-       if(o==d||o==reviewTwin||!"review".equals(o.optString("state"))||!"transfer".equals(o.optString("kind"))||o.optLong("amount")!=d.optLong("amount"))continue;
-       if(pkg==null||pkg.equals(o.optString("package"))||Math.abs(eventTime-draftEventTime(o))>180_000L)continue;
+       if(o==d||o==reviewTwin||!"review".equals(o.optString("state"))||!"transfer".equals(o.optString("kind"))||!amountsMatchForTwin(o,d))continue;
+       if(pkg==null||pkg.equals(o.optString("package"))||Math.abs(eventTime-draftEventTime(o))>240_000L)continue;
        linkReviewDraftToPosted(s,o,d,postedId);
       }
      }
@@ -617,7 +670,7 @@ public final class Extras {
   seen.put(new JSONObject().put("hash",instanceDigest).put("contentHash",contentDigest).put("time",now));while(seen.length()>5000)seen.remove(0);
   s.put("lastCapture",now).put("revision",s.optLong("revision")+1);Ledger.validate(s);return d;
  }
- private static final Set<String> TWIN_EXACT_RAILS=new HashSet<>(Arrays.asList("tng digital","touch n go","tng","shopeepay","spaylater","grabpay","grabpaylater","boost","myboost","boost payflex","atome","lazpaylater","tiktok paylater","bigpay","duitnow","fpx","jompay","ipay88","razerpay","senangpay","billplz","stripe","molpay","apple pay","google pay","samsung pay","ewallet","e wallet","wallet","card transaction","online banking","qr pay","qrpay","detected payment"));
+ private static final Set<String> TWIN_EXACT_RAILS=new HashSet<>(Arrays.asList("tng digital","touch n go","tng","shopeepay","spaylater","grabpay","grabpaylater","boost","myboost","boost payflex","atome","lazpaylater","tiktok paylater","bigpay","setel","gxbank","aeon bank","ryt bank","boost bank","maybank","mae","cimb","cimb octo","rhb","public bank","mypb","hong leong","hlb","ambank","bank islam","duitnow","fpx","jompay","ipay88","razerpay","senangpay","billplz","stripe","molpay","apple pay","google pay","samsung pay","ewallet","e wallet","wallet","card transaction","online banking","qr pay","qrpay","detected payment"));
  private static final Set<String> TWIN_PLACE_WORDS=new HashSet<>(Arrays.asList("at","to","di","ke","no","in","on","of","by","kl","klcc","sunway","pyramid","mid","valley","pavilion","subang","puchong","petaling","jaya","shah","alam","damansara","bangsar","cheras","klang","penang","johor","ipoh","melaka","malaysia","my","online","store","shop","mart","cafe","restoran","restaurant","kedai","gerai","parking","payment","transfer","purchase","outlet","branch","cawangan","bhd","sdn","berhad","enterprise","enterprises","service","services"));
  private static long draftEventTime(JSONObject d){
   if(d==null)return Long.MIN_VALUE/2;
@@ -647,7 +700,7 @@ public final class Extras {
    if(r.length()>=4&&(mNorm.startsWith(r+" ")||mNorm.endsWith(" "+r)))return true;
   }
   String oMeta=(String.valueOf(otherSrc)+" "+String.valueOf(otherPkg)).toLowerCase(Locale.ROOT);
-  String[][] pairHints={{"tng","tng"},{"touch n go","tng"},{"mae","maybank"},{"maybank","maybank"},{"cimb","cimb"},{"rhb","rhb"},{"hong leong","hlb"},{"hlb","hlb"},{"public bank","pbe"},{"ambank","ambank"},{"gxbank","gx"},{"aeon","aeon"},{"ryt","ryt"},{"shopeepay","shopee"},{"shopee","shopee"},{"grab","grab"},{"boost","boost"},{"atome","atome"},{"bigpay","bigpay"},{"setel","setel"}};
+  String[][] pairHints={{"tng","tng"},{"touch n go","tng"},{"mae","maybank"},{"maybank","maybank"},{"cimb","cimb"},{"octo","cimb"},{"rhb","rhb"},{"hong leong","hlb"},{"hlb","hlb"},{"public bank","pbe"},{"publicbank","pbe"},{"mypb","pbe"},{"pbb","pbe"},{"ambank","ambank"},{"gxbank","gx"},{"aeon","aeon"},{"ryt","ryt"},{"shopeepay","shopee"},{"shopee","shopee"},{"grab","grab"},{"boost","boost"},{"atome","atome"},{"bigpay","bigpay"},{"setel","setel"}};
   for(String[] ph:pairHints){
    if(oMeta.contains(ph[1])&&(mNorm.equals(ph[0])||mNorm.startsWith(ph[0]+" ")||mNorm.endsWith(" "+ph[0])))return true;
   }
@@ -661,12 +714,51 @@ public final class Extras {
   }
   return out;
  }
+ private static List<String> conflictTokens(String mRaw){
+  List<String> out=new ArrayList<>();
+  String cleaned=mRaw==null?"":mRaw.replaceAll("(?i)^\\s*(?:pay|dnqr|fpx|shopeepay|shopeep|spaylater|spay|ipay88|razerms|tngd?|mydebit|cimbl|visa|mc|pos|qr|grab)\\*\\s*","");
+  String n=Finance.normalizeMerchant(cleaned);
+  if(n==null||n.isEmpty())return out;
+  for(String tok:n.split(" ")){
+   if(tok.length()<2||tok.matches("[0-9]+|[a-z]{1,2}[0-9]{1,3}|[0-9]{1,2}[a-z]{1,3}"))continue;
+   if(tok.matches("(?:at|to|di|ke|no|in|on|of|by|kl|klcc|pj|my|malaysia|trx|klia|bktjll|slngr|penang|johor|ipoh|melaka|subang|puchong|petaling|shah|alam|damansara|bangsar|cheras|klang|sunway|pyramid|mid|valley|pavilion|sdn|bhd|berhad|enterprise|enterprises|trading|services|service|official|personal|care|express|online|store|shop|mart|kedai|restoran|restaurant|klinik|farmasi|pasar|mini|station|stesen|clinic|pharmacy|plaza|outlet|branch|cawangan|company|co|corp|hub|ventures?|holdings)"))continue;
+   out.add(tok);
+  }
+  return out;
+ }
+ private static String consSkel(String s){
+  if(s==null)return "";
+  return s.replaceAll("[aeiou]","");
+ }
+ private static boolean tokenOverlapsSet(String tok,List<String> others,String otherJoinedSkel){
+  String tSkel=consSkel(tok);
+  if(tSkel.length()>=3&&otherJoinedSkel.contains(tSkel))return true;
+  if(tSkel.length()==2&&others.size()==1&&(otherJoinedSkel.startsWith(tSkel)||otherJoinedSkel.endsWith(tSkel)))return true;
+  for(String o:others){
+   if(tok.equals(o))return true;
+   if(tok.length()>=4&&o.length()>=4&&(tok.startsWith(o)||o.startsWith(tok)))return true;
+   String oSkel=consSkel(o);
+   if(tSkel.length()>=3&&oSkel.length()>=3&&(tSkel.equals(oSkel)||tSkel.contains(oSkel)||oSkel.contains(tSkel)))return true;
+   if(tSkel.length()>=2&&tSkel.equals(oSkel)&&!tok.isEmpty()&&!o.isEmpty()&&tok.charAt(0)==o.charAt(0))return true;
+  }
+  return false;
+ }
  private static int twinMerchantQuality(String mA,String srcA,String pkgA,String mB,String srcB,String pkgB){
   String nA=Finance.normalizeMerchant(mA),nB=Finance.normalizeMerchant(mB);
   boolean rA=isRailOrGeneric(nA,srcB,pkgB),rB=isRailOrGeneric(nB,srcA,pkgA);
   if(!rA&&!rB&&!nA.isEmpty()&&nA.equals(nB))return 2;
   List<String> tA=brandTokens(nA),tB=brandTokens(nB);
   if(!rA&&!rB){
+   List<String> cA=conflictTokens(mA),cB=conflictTokens(mB);
+   StringBuilder jA=new StringBuilder(),jB=new StringBuilder();
+   for(String a:cA)jA.append(consSkel(a));
+   for(String b:cB)jB.append(consSkel(b));
+   String skA=jA.toString(),skB=jB.toString();
+   boolean diffA=false,diffB=false;
+   for(String a:cA)if(!tokenOverlapsSet(a,cB,skB)){diffA=true;break;}
+   for(String b:cB)if(!tokenOverlapsSet(b,cA,skA)){diffB=true;break;}
+   if(diffA&&diffB)return 0;
+   if(!cA.isEmpty()&&!cB.isEmpty()&&!diffA&&!diffB&&!skA.isEmpty()&&!skB.isEmpty()&&(skA.equals(skB)||(skA.length()>=4&&skB.length()>=4&&(skA.contains(skB)||skB.contains(skA)))))return 2;
    if(MerchantCanonicalizer.sameEntity(mA,mB))return 2;
    if(MerchantCanonicalizer.hasDistinctEntityConflict(mA,mB))return 0;
    for(String a:tA){
@@ -677,6 +769,24 @@ public final class Extras {
   }
   if(rA||rB)return 1;
   return 0;
+ }
+ private static boolean amountsMatchForTwin(JSONObject a,JSONObject b){
+  long aAmt=a.optLong("amount",-1L),bAmt=b.optLong("amount",-1L);
+  if(aAmt<=0||bAmt<=0)return false;
+  if(aAmt==bAmt)return true;
+  String curA=a.optString("originalCurrency","").trim().toUpperCase(Locale.ROOT);
+  String curB=b.optString("originalCurrency","").trim().toUpperCase(Locale.ROOT);
+  if(!curA.isEmpty()&&curA.equals(curB)){
+   try{
+    BigDecimal oa=new BigDecimal(a.optString("originalAmount","").trim());
+    BigDecimal ob=new BigDecimal(b.optString("originalAmount","").trim());
+    if(oa.signum()>0&&oa.subtract(ob).abs().compareTo(new BigDecimal("0.01"))<=0){
+     long maxDiff=Math.max(150L,Math.round(Math.max(aAmt,bAmt)*0.04));
+     if(Math.abs(aAmt-bAmt)<=maxDiff)return true;
+    }
+   }catch(Exception ignored){}
+  }
+  return false;
  }
  private static boolean areKindsTwinCompatible(JSONObject a,JSONObject b){
   String kA=a.optString("kind","expense"),kB=b.optString("kind","expense");
@@ -702,14 +812,14 @@ public final class Extras {
   String dMerch=d.optString("merchant",""),dSrc=d.optString("source","");
   for(int i=drafts.length()-1;i>=0;i--){
    JSONObject o=drafts.getJSONObject(i);
-   if(o==d||o.has("duplicateOf")||o.optLong("amount")!=amt)continue;
+   if(o==d||o.has("duplicateOf")||!amountsMatchForTwin(o,d))continue;
    if(pkg.equals(o.optString("package")))continue;
    String txId=o.optString("transactionId","");
    if(txId.isEmpty()||(!o.optBoolean("autoRecorded")&&!"confirmed".equals(o.optString("state"))))continue;
    if(!areKindsTwinCompatible(o,d))continue;
    int q=twinMerchantQuality(o.optString("merchant",""),o.optString("source",""),o.optString("package",""),dMerch,dSrc,pkg);
    if(q==0)continue;
-   long maxWin=q>=2?300_000L:180_000L;
+   long maxWin=q>=2?300_000L:240_000L;
    if(Math.abs(eventTime-draftEventTime(o))>maxWin)continue;
    try{if(Ledger.find(s.getJSONArray("transactions"),txId).optBoolean("voided"))continue;}catch(IllegalArgumentException e){continue;}
    return o;
@@ -723,12 +833,12 @@ public final class Extras {
   String dMerch=d.optString("merchant",""),dSrc=d.optString("source","");
   for(int i=drafts.length()-1;i>=0;i--){
    JSONObject o=drafts.getJSONObject(i);
-   if(o==d||!"review".equals(o.optString("state"))||o.has("duplicateOf")||o.optLong("amount")!=amt)continue;
+   if(o==d||!"review".equals(o.optString("state"))||o.has("duplicateOf")||!amountsMatchForTwin(o,d))continue;
    if(pkg.equals(o.optString("package")))continue;
    if(!areKindsTwinCompatible(o,d))continue;
    int q=twinMerchantQuality(o.optString("merchant",""),o.optString("source",""),o.optString("package",""),dMerch,dSrc,pkg);
    if(q==0)continue;
-   long maxWin=q>=2?300_000L:180_000L;
+   long maxWin=q>=2?300_000L:240_000L;
    if(Math.abs(eventTime-draftEventTime(o))>maxWin)continue;
    return o;
   }
@@ -745,7 +855,7 @@ public final class Extras {
    if(t.optBoolean("voided")||t.has("importBatch"))continue;
    String tk=t.optString("kind","");
    if(!Arrays.asList("expense","transfer","income","refund","shared").contains(tk))continue;
-   if(t.optLong("amount")!=amt)continue;
+   if(!amountsMatchForTwin(t,d))continue;
    String sp=t.optString("sourcePackage","");
    if(!dPkg.isEmpty()&&dPkg.equals(sp))continue;
    if(!areKindsTwinCompatible(t,d))continue;
@@ -1111,14 +1221,17 @@ public final class Extras {
     int bestScore=Integer.MIN_VALUE;
     while(bareM.find()){
      String tok=bareM.group(1);int st=bareM.start(),en=bareM.end();
-     String before=work.substring(Math.max(0,st-18),st).toLowerCase(Locale.ROOT);
-     String after=work.substring(en,Math.min(work.length(),en+18)).toLowerCase(Locale.ROOT);
+     String before=work.substring(Math.max(0,st-24),st).toLowerCase(Locale.ROOT);
+     String after=work.substring(en,Math.min(work.length(),en+24)).toLowerCase(Locale.ROOT);
      int score=0;
      if(tok.indexOf('.')>=0||tok.indexOf(',')>=0)score+=100;
-     if(after.matches("^\\s*(?:speedmart|eleven|utama|fingers|plus)\\b.*")||after.matches("^[\\s-]*(?:speedmart|eleven|utama|fingers|plus)\\b.*"))score-=250;
-     if(after.matches("^\\s*(?:pax|orang|org|ways?|am|pm|%|h|km|ml|kg|g|gb|人|个|位|杯|碗|点|份).*"))score-=200;
+     if(en<work.length()&&Character.isLetter(work.charAt(en)))score-=280;
+     if(st>0&&Character.isLetter(work.charAt(st-1)))score-=260;
+     if(before.matches(".*\\b(?:iphone|galaxy\\s*s?|pixel|ipad|macbook|ps|playstation|xbox|switch|xiaomi|redmi|oppo|vivo|realme|huawei|mate|pura|rtx|gtx|wifi|usb|series|gen|ver|v|model|lot|unit|no\\.?|room|table|order)\\s*$")||before.matches(".*#\\s*$"))score-=260;
+     if(after.matches("^\\s*(?:speedmart|eleven|utama|fingers|plus)\\b.*")||after.matches("^[\\s-]*(?:speedmart|eleven|utama|fingers|plus)\\b.*"))score-=260;
+     if(after.matches("^\\s*(?:x\\b|packs?|pcs?|pieces?|boxes?|bottles?|btl|cans?|cups?|plates?|bowls?|sets?|pairs?|items?|units?|tickets?|tix|pax|orang|org|ways?|am|pm|%|hrs?|hours?|mins?|minutes?|days?|weeks?|months?|pro|max|plus|ultra|mini|air|lite|fe|se|gen|generation|km|ml|kg|g|gb|tb|人|个|位|杯|碗|点|份).*"))score-=240;
      if(before.matches(".*\\b(?:split|kongsi|bahagi|divide)\\s*$")||before.matches(".*(?:平分|均摊)\\s*$"))score-=160;
-     score+=st/20; // mild preference for amount placed after merchant name
+     score+=st/5;
      if(score>bestScore){bestScore=score;amtToken=tok.replace(",","");amtStart=st;amtEnd=en;}
     }
    }
@@ -1189,7 +1302,8 @@ public final class Extras {
   if("expense".equals(kind)){
    boolean isIncomingSignal=java.util.regex.Pattern.compile("(?i)(?:\\b(?:received|terima|dapat|daripada|gaji|salary|bonus|payday|income|dividend|dividen|commission|komisen|freelance)\\b|收到|工资|薪水|发薪|奖金|收入|入账|进账|报销)").matcher(withoutAmt).find();
    boolean hasTransferExpenseKw=java.util.regex.Pattern.compile("(?i)(?:\\b(?:prabayar|prepaid|postpaid|data|line|celcom|maxis|digi|umobile|hotlink|vitamin|vitamins|supplement|supplements|prs|asb|asnb|epf|kwsp|fee|fees|charge|charges|saving|savings|investment)\\b|流量|话费|维他命|保健|基金|费用|手续费|储蓄|投资)").matcher(withoutAmt).find();
-   if(java.util.regex.Pattern.compile("(?i)(?:\\b(?:refund|refunded|reversal|chargeback|bayaran\\s+balik|pulangan(?:\\s+wang)?)\\b|退款|退回|退钱|赔付)").matcher(withoutAmt).find()){
+   boolean isNonRefundable=java.util.regex.Pattern.compile("(?i)(?:\\b(?:non.?refundable|not\\s+refundable|no\\s+refund|tidak\\s+boleh\\s+dikembalikan)\\b|不可退款|不能退款|不退不换|恕不退款)").matcher(withoutAmt).find();
+   if(!isNonRefundable&&java.util.regex.Pattern.compile("(?i)(?:\\b(?:refund|refunded|reversal|chargeback|bayaran\\s+balik|pulangan(?:\\s+wang)?)\\b|退款|退回|退钱|赔付)").matcher(withoutAmt).find()){
     kind="refund";
    }else if(!isIncomingSignal&&!hasTransferExpenseKw&&java.util.regex.Pattern.compile("(?i)(?:\\b(?:transfer|transferred|pindah|top[\\s-]?up|reload|reloaded|tambah\\s+nilai)\\b|转账|充值|加额|转到|转去|转入)").matcher(withoutAmt).find()){
     kind="transfer";
