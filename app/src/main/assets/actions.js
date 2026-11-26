@@ -26,9 +26,10 @@ function txForm(data={}){
   const prevCount=merged.editId&&merged.merchant?sameMerchantCount(merged.merchant,merged.editId):0;
   const chips=kind==='reimbursement'
     ? `<span class="chip active">${esc(tr('Repayment received'))}</span>`
-    : `${['expense','income','transfer','refund'].map(k=>`<button type="button" class="chip ${kind===k?'active':''}" data-kind="${k}">${esc(tr(k[0].toUpperCase()+k.slice(1)))}</button>`).join('')}${kind==='shared'?`<span class="chip active">${esc(tr('Shared expense'))}</span>`:''}`;
+    : `${['expense','income','transfer','reload','refund'].map(k=>`<button type="button" class="chip ${kind===k?'active':''}" data-kind="${k}">${esc(tr(k[0].toUpperCase()+k.slice(1)))}</button>`).join('')}${kind==='shared'?`<span class="chip active">${esc(tr('Shared expense'))}</span>`:''}`;
   const evidence=merged.amountCandidates?.length>1?`<p class="note">${esc(tr('Amounts found: {list}. Choose the actual payment amount above.',{list:merged.amountCandidates.map(money).join(' · ')}))}</p>`:'';
   const thumb=merged.receiptId?`<img class="receipt-thumb" src="/receipt/${esc(merged.receiptId)}" alt="Attached receipt">`:'';
+  const isNeutralMove=kind==='transfer'||kind==='reload';
   const subRow=(!kind||['expense','refund','shared'].includes(kind))?subcategorySelect(selCat,merged.subcategory||''):'';
   const sharedRows=kind==='shared'?`${field(tr('Your own share (RM)'),'ownAmount',merged.ownAmount||'0','text','required inputmode="decimal"')}${field(tr('Who owes the rest?'),'person',merged.person||'','text','required maxlength="80"')}`:'';
   const tagsField=field(tr('Tags · comma separated'),'tags',Array.isArray(merged.tags)?merged.tags.join(', '):merged.tags||'','text','maxlength="200" placeholder="work, holiday"');
@@ -39,7 +40,10 @@ function txForm(data={}){
   const ruleCheck=check(tr('Remember merchant category and account for next time'),'rememberRule',!!merged.editId&&(merged.category==='Miscellaneous'||merged.category==='Other'));
   const title=merged.draftId?tr('Review payment'):merged.editId?tr('Edit transaction'):merged.billId?tr('Record bill payment'):tr('Add transaction');
   const quickBar=(!merged.editId&&!merged.draftId)?`<div class="quick-parse-bar"><input type="text" id="quick-parse-input" placeholder="${esc(tr('Try: Nasi Lemak 12.50 cash or 昨晚喝咖啡 15块 tng'))}" aria-label="${esc(tr('Smart quick entry'))}"><button type="button" class="btn secondary small" data-action="quickParseFill">${esc(tr('Auto-fill'))}</button></div>`:'';
-  modal(title,`<form id="transaction-form">${quickBar}<div class="chips">${chips}</div><div class="amount-input"><span>RM</span><input name="amount" id="f-amount" inputmode="decimal" aria-label="Amount in MYR" placeholder="0.00" value="${merged.amount?esc(typeof merged.amount==='number'?amount(merged.amount):merged.amount):''}" required pattern="[0-9]+([.][0-9]{1,2})?" autocomplete="off"></div>${merged.reason?`<div class="hint" style="margin:0">${esc(merged.reason)}</div>`:''}<div class="form-grid">${select(tr(kind==='transfer'?'From account':'Account'),'account',merged.draftId?[['',tr('Choose account')],...acctRows]:acctRows,merged.account||(merged.draftId?'':state.accounts[0].id))}${kind==='transfer'?select(tr('To account'),'to',acctRows,merged.to||state.accounts[1]?.id):select(tr('Category'),'category',catRows,selCat)}</div>${field(tr(kind==='transfer'?'Description':'Merchant / description'),'merchant',merged.merchant||'','text','maxlength="120"')}${field(tr('Date'),'date',merged.date||today(),'date','required')}<div><label for="f-note">${esc(tr('Note'))} <span class="muted">· ${esc(tr('optional'))}</span></label><textarea id="f-note" name="note" maxlength="500" placeholder="${esc(tr('Anything worth remembering?'))}">${esc(merged.note||'')}</textarea></div>${evidence}${thumb}${subRow}${sharedRows}${tagsField}${splitsBox}${fxBox}${historyCheck}${ruleCheck}<div class="error" role="alert"></div><div class="form-footer"><button class="btn" type="submit">${icon('check')}${esc(tr(merged.editId?'Save changes':'Record transaction'))}</button></div><p class="note">${esc(tr(kind==='transfer'?'A transfer moves money without adding an expense.':kind==='refund'?'A refund reduces spending in the selected category.':'Only confirmed records affect your balance.'))}</p></form>`);
+  const destRows=kind==='reload'?[['',tr('Same account (no balance change)')],...acctRows]:acctRows;
+  const destSelected=kind==='reload'?(merged.to||''):(merged.to||state.accounts[1]?.id||'');
+  const kindHint=kind==='reload'?'A reload records top-up history without counting as an expense or reducing your balance.':kind==='transfer'?'A transfer moves money without adding an expense.':kind==='refund'?'A refund reduces spending in the selected category.':'Only confirmed records affect your balance.';
+  modal(title,`<form id="transaction-form">${quickBar}<div class="chips">${chips}</div><div class="amount-input"><span>RM</span><input name="amount" id="f-amount" inputmode="decimal" aria-label="Amount in MYR" placeholder="0.00" value="${merged.amount?esc(typeof merged.amount==='number'?amount(merged.amount):merged.amount):''}" required pattern="[0-9]+([.][0-9]{1,2})?" autocomplete="off"></div>${merged.reason?`<div class="hint" style="margin:0">${esc(merged.reason)}</div>`:''}<div class="form-grid">${select(tr(kind==='transfer'?'From account':'Account'),'account',merged.draftId?[['',tr('Choose account')],...acctRows]:acctRows,merged.account||(merged.draftId?'':state.accounts[0].id))}${isNeutralMove?select(tr('To account'),'to',destRows,destSelected):select(tr('Category'),'category',catRows,selCat)}</div>${field(tr(isNeutralMove?'Description':'Merchant / description'),'merchant',merged.merchant||'','text','maxlength="120"')}${field(tr('Date'),'date',merged.date||today(),'date','required')}<div><label for="f-note">${esc(tr('Note'))} <span class="muted">· ${esc(tr('optional'))}</span></label><textarea id="f-note" name="note" maxlength="500" placeholder="${esc(tr('Anything worth remembering?'))}">${esc(merged.note||'')}</textarea></div>${evidence}${thumb}${subRow}${sharedRows}${tagsField}${splitsBox}${fxBox}${historyCheck}${ruleCheck}<div class="error" role="alert"></div><div class="form-footer"><button class="btn" type="submit">${icon('check')}${esc(tr(merged.editId?'Save changes':'Record transaction'))}</button></div><p class="note">${esc(tr(kindHint))}</p></form>`);
   if(data.focusQuick)setTimeout(()=>{const q=$('#quick-parse-input');if(q){try{q.focus({preventScroll:true});}catch(_){}}},60);
   else if(data.focusSubmit)setTimeout(()=>{const btn=$('#transaction-form button[type="submit"]');if(btn){try{btn.focus({preventScroll:true});}catch(_){}}},60);
 }
@@ -231,7 +235,30 @@ function renderSnapshotsModal(list){
 
 window.csvLoaded=info=>{importInfo=info;const am=info.autoMap||{};const rows=[[-1,tr('Not mapped')],...info.headers.map((h,i)=>[i,h||'Column '+(i+1)])];const pick=(k,fb=k)=>{if(typeof am[k]==='number'&&am[k]>=0)return am[k];return info.headers.findIndex(h=>h.toLowerCase().includes(fb));};const cols=[['date',tr('Date column'),'date'],['amount',tr('Amount column (single)'),'amount'],['debit',tr('Debit / Money Out column'),'debit'],['credit',tr('Credit / Money In column'),'credit'],['merchant',tr('Merchant / Description column'),'merchant'],['category',tr('Category column'),'category'],['kind',tr('Type column'),'kind'],['note',tr('Note column'),'note']];const presetHtml=am.preset?`<div class="soft-card" style="margin:0 0 12px"><span class="muted">${esc(tr('Detected bank format'))}:</span> <strong>${esc(am.preset)}</strong></div>`:'';modal(tr('Map your statement columns'),`<form data-extra="csvMap">${presetHtml}<p class="note">${esc(tr('{n} rows. Choose how your file maps to MoneyLens, then review before saving.',{n:info.count}))}</p>${cols.map(([k,lbl,fb])=>select(lbl,k,rows,pick(k,fb))).join('')}${acctSelect()}${select(tr('Date format'),'dateFormat',[['iso','YYYY-MM-DD'],['dmy','DD/MM/YYYY'],['dmmmy','DD MMM YYYY'],['mdy','MM/DD/YYYY']],am.dateFormat||'iso')}${select(tr('Default transaction type'),'defaultKind',[['expense',tr('Expense')],['income',tr('Income')],['refund',tr('Refund')]],'expense')}${check(tr('Signed amounts: negative expenses, positive income'),'signed',!!am.signed)}<details><summary>${esc(tr('First rows'))}</summary><pre class="csv-sample">${esc(info.sample.map(r=>r.join(' | ')).join('\n'))}</pre></details>${formFooter(tr('Preview import'))}</form>`)};
 function csvReview(rows){importPreview=rows;modal('Review CSV import',`<form data-extra="csvCommit"><p class="note">Possible duplicates start unchecked. Re-imported rows are blocked. Transfers need manual entry.</p><div class="review-list">${rows.map((r,i)=>`<label class="import-row"><input type="checkbox" name="row" value="${i}" ${r.error||r.duplicate?'disabled':r.possibleDuplicate?'':'checked'}><span><strong>${esc(r.merchant||'Row '+r.row)} ${r.amount?'· RM '+esc(r.amount):''}</strong><small>${esc(r.error||(r.date+' · '+r.kind+' · '+r.category))}</small>${r.duplicate?'<b>Already imported</b>':r.possibleDuplicate?'<b>Possible duplicate — check manually</b>':''}</span></label>`).join('')}</div>${formFooter('Import selected rows')}</form>`)}
-function batchForm(){const ds=state.drafts.filter(d=>d.state==='review').slice(0,100);modal('Review selected payments',`<form data-extra="batch"><p class="note">Choose payments with correct amount and category. The account below applies to every selected payment.</p>${acctSelect()}<div class="review-list">${ds.map(d=>`<label class="import-row"><input type="checkbox" name="draft" value="${esc(d.id)}" ${d.amount>0?'':'disabled'}><span><strong>${esc(d.merchant||d.category||'Payment')} · ${money(d.amount)}${d.kind&&d.kind!=='expense'?` <small>[${esc(d.kind)}]</small>`:''}</strong><small>${esc(d.category||'Miscellaneous')} · ${esc(d.date||today())}${d.transferHint?` · to ${esc(d.transferHint)}`:''} · ${esc(d.reason||'')}</small></span></label>`).join('')}</div>${formFooter('Record selected payments')}${actionButton('Ignore selected','ignoreSelected','','ghost')}</form>`)}
+function isSafeBatchDraft(d){
+  if(!d||!(d.amount>0)||d.batchError)return false;
+  const k=d.kind||'expense';
+  if(k==='reimbursement'&&!d.reimbursementFor)return false;
+  if(k==='transfer'&&!d.reload&&!d.to&&!d.transferHint)return false;
+  return true;
+}
+function batchForm(){
+  const ds=state.drafts.filter(d=>d.state==='review').slice(0,100);
+  const defAcct=state.settings.lastAccount||state.accounts[0]?.id||'cash';
+  const acctOpts=state.accounts.map(a=>[a.id,a.name]);
+  const catOpts=activeCategories().map(c=>[c[0],tr(c[0])]);
+  const kindOpts=[['expense',tr('Expense')],['income',tr('Income')],['transfer',tr('Transfer')],['reload',tr('Reload')],['refund',tr('Refund')]];
+  const rowsHtml=ds.map(d=>{
+    const rk=d.reload&&d.kind==='transfer'?'reload':(d.kind||'expense');
+    const rAcct=d.account||defAcct;
+    const isMove=rk==='transfer'||rk==='reload';
+    const destRows=rk==='reload'?[['',tr('Same account (no balance change)')],...acctOpts]:[['',tr('Choose To account')],...acctOpts];
+    const rCat=d.category||(rk==='income'?'Other income':'Miscellaneous');
+    const errHtml=d.batchError?`<p class="error" style="display:block;margin:4px 0 0;font-size:11px">⚠ ${esc(d.batchError)}</p>`:'';
+    return `<div class="import-row" data-batch-row="${esc(d.id)}" style="flex-direction:column;align-items:stretch;gap:6px"><label style="display:flex;gap:8px;align-items:flex-start"><input type="checkbox" name="draft" value="${esc(d.id)}" data-safe="${isSafeBatchDraft(d)?'1':'0'}" ${d.amount>0?(d.batchError?'checked':''):'disabled'}><span><strong>${esc(d.merchant||d.category||'Payment')} · ${money(d.amount)}</strong> <small class="muted">[${esc(rk)}]</small>${d.transferHint?` <small class="tag">to ${esc(d.transferHint)}</small>`:''}<br><small class="muted">${esc(d.date||today())} · ${esc(d.reason||'')}</small></span></label>${errHtml}<div class="form-grid" style="gap:6px"><select data-batch-field="account" aria-label="Row account" style="min-height:34px;font-size:12px">${options(acctOpts,rAcct)}</select><select data-batch-field="kind" aria-label="Row type" style="min-height:34px;font-size:12px">${options(kindOpts,rk)}</select></div><div data-batch-dest><select data-batch-field="${isMove?'to':'category'}" aria-label="${isMove?'Row destination':'Row category'}" style="min-height:34px;font-size:12px">${options(isMove?destRows:catOpts,isMove?(d.to||''):rCat)}</select></div></div>`;
+  }).join('');
+  modal(tr('Review selected payments'),`<form data-extra="batch"><p class="note">${esc(tr('Edit any row account, type or category below. Valid rows save even if another row needs attention.'))}</p><div class="flex" style="gap:8px;align-items:end;flex-wrap:wrap;margin-bottom:8px"><div style="flex:1;min-width:150px">${acctSelect(defAcct)}</div>${actionButton(tr('Apply to all'),'applyBatchAcct','','ghost')}${actionButton(tr('Select all safe'),'selectSafeBatch','','secondary')}</div><div class="review-list">${rowsHtml}</div>${formFooter(tr('Record selected payments'))}${actionButton(tr('Ignore selected'),'ignoreSelected','','ghost')}</form>`);
+}
 function linkForm(id,bill=false){modalContext={id};modal(bill?'Match an existing payment':'Already recorded?',`<form data-extra="${bill?'matchBill':'linkDraft'}"><p class="note">Choose the same payment already in your ledger. This links the record without creating another expense.</p>${select('Recorded transaction','transactionId',validTx().filter(t=>!['opening','adjustment'].includes(t.kind)).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,200).map(t=>[t.id,t.date+' · '+(t.merchant||t.category)+' · '+money(t.amount)]),'')}${formFooter('Link payment')}</form>`)}
 
 document.addEventListener('click',async e=>{
@@ -499,6 +526,26 @@ document.addEventListener('click',async e=>{
       case 'diagnostics':{const d=await call('diagnostics');modalContext={diagnostics:JSON.stringify(d,null,2)};modal('Capture diagnostics',`<p class="note">This preview contains no merchants, amounts, account numbers or raw notifications.</p><pre class="csv-sample">${esc(JSON.stringify(d,null,2))}</pre>${actionButton('Export these diagnostics','diagnosticExport')}`);break;}
       case 'diagnosticExport':await call('diagnosticExport',{text:modalContext.diagnostics});break;
       case 'batch':batchForm();break;
+      case 'selectSafeBatch':{
+        const boxes=[...document.querySelectorAll('form[data-extra="batch"] input[name="draft"]:not(:disabled)')];
+        let cnt=0;
+        for(const cb of boxes){
+          const rowEl=cb.closest('[data-batch-row]');
+          const k=rowEl?.querySelector('[data-batch-field="kind"]')?.value||'';
+          const dest=rowEl?.querySelector('[data-batch-field="to"]')?.value||'';
+          const dObj=state.drafts.find(x=>x.id===cb.value);
+          const safe=(cb.dataset.safe==='1')||(k==='reload')||(k==='transfer'&&!!dest);
+          cb.checked=!!safe;if(cb.checked)cnt++;
+        }
+        toast(cnt?tr('{n} safe payment(s) selected.',{n:cnt}):tr('No complete payments ready for batch save.'));
+        break;
+      }
+      case 'applyBatchAcct':{
+        const def=$('form[data-extra="batch"] select[name="account"]')?.value;
+        if(def)document.querySelectorAll('form[data-extra="batch"] [data-batch-field="account"]').forEach(sel=>{sel.value=def;});
+        toast(tr('Account applied to all rows.'));
+        break;
+      }
       case 'ignoreSelected':{const ids=[...document.querySelectorAll('input[name=draft]:checked')].map(x=>x.value);if(!ids.length){toast('Select at least one payment first.');break;}await mutate('ignoreBatch',{ids},'Selected suggestions ignored.');close();break;}
       case 'linkDraft':linkForm(id);break;
       case 'matchBill':linkForm(id,true);break;
@@ -508,7 +555,7 @@ document.addEventListener('click',async e=>{
       case 'installment':modal('Plan an installment purchase',`<form data-extra="installment">${field('Purchase name','name','','text','required maxlength="80"')}${field('Purchase price (RM)','amount','','text','required inputmode="decimal"')}${field('Total fees or interest (RM)','fee','0','text','required inputmode="decimal"')}${field('Number of monthly payments','months','12','number','min="2" max="60" required')}${field('First payment date','date',today(),'date','required')}${acctSelect()}${categorySelect('Shopping')}<p class="note">The full purchase plus fees is recorded once as spending on a new installment liability account. Monthly payments are transfers that reduce this debt.</p>${formFooter('Create purchase and payment plan')}</form>`);modalContext={key:cryptoId()};break;
       case 'filters':modal('Find the records you need',`<form data-extra="filters"><div class="form-grid">${field('From date','from',advancedFilters.from||'','date')}${field('Through date','until',advancedFilters.until||'','date')}</div>${select('Account','account',[['','All accounts'],...state.accounts.map(a=>[a.id,a.name])],advancedFilters.account||'')}<div class="form-grid">${field('Minimum RM','min',advancedFilters.min||'','number','min="0" step="0.01"')}${field('Maximum RM','max',advancedFilters.max||'','number','min="0" step="0.01"')}</div>${field('Tag contains','tag',advancedFilters.tag||'')}${select('Source','source',[['','All sources'],['manual','Manual entry'],...[...new Set(validTx().map(t=>t.source).filter(Boolean))].map(s=>[s,s])],advancedFilters.source||'')}${formFooter('Apply filters')}</form>`);break;
       case 'history':{let cur=state.transactions.find(x=>x.id===id),rows=[cur];while(cur.replaces){cur=state.transactions.find(x=>x.id===cur.replaces);if(!cur)break;rows.push(cur)}modal('Correction history',rows.map((r,i)=>`<section class="soft-card"><h3>${i===0?'Current record':'Previous version'}</h3><p>${esc(r.date)} · ${esc(r.merchant)} · ${money(r.amount)}</p><p class="note">${esc(r.category)}${r.subcategory?' › '+esc(r.subcategory):''} · ${esc(r.note||'')} · ${r.voided?'Superseded or voided':'Active'}</p></section>`).join(''));break;}
-      case 'preferences':modal('Personal preferences',`<form id="preferences-form">${field('Display name','name',state.settings.name||'','text','maxlength="50"')}${field('Monthly budget start day (1–31)','cycleDay',state.settings.cycleDay||1,'number','min="1" max="31" required')}<p class="note">Choose a day near payday. Short months use their last day. Day 31 returns to the 31st in longer months.</p><div class="error" role="alert"></div><button class="btn">Save preferences</button></form>`);break;
+      case 'preferences':modal(tr('Personal preferences'),`<form id="preferences-form">${field(tr('Display name'),'name',state.settings.name||'','text','maxlength="50"')}${select(tr('Budget cycle mode'),'cycleMode',[['monthly',tr('Calendar Monthly (1st to last day)')],['custom',tr('Custom payday cycle day')]],isMonthlyMode()?'monthly':'custom')}${field(tr('Monthly budget start day (1–31)'),'cycleDay',state.settings.cycleDay||1,'number','min="1" max="31" required')}<p class="note">${esc(tr('Calendar Monthly resets every 1st regardless of payday. Custom mode anchors on your chosen day each month.'))}</p><div class="error" role="alert"></div><button class="btn">${esc(tr('Save preferences'))}</button></form>`);break;
       case 'accountDetail':{const a=account(id),n=balance(id);modal(a.name,`<div class="detail-total money">${n<0?'−':''}${money(n)}</div><p class="note">Recorded balance · ${esc(a.type)}<br>For credit cards, a negative balance is money owed.</p><div style="margin-top:25px">${transactionList(validTx().filter(t=>t.kind!=='opening'&&t.postings.some(p=>p.account===id)).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8),false)}</div>`);break;}
     }
   }catch(err){toast(err.message)}
@@ -560,20 +607,26 @@ document.addEventListener('submit',async e=>{
           if(!ids.length)throw new Error('Select the payments you checked.');
           args.rows=ids.map(did=>{
             const d=state.drafts.find(x=>x.id===did)||{};
+            const rowEl=form.querySelector(`[data-batch-row="${CSS?.escape?CSS.escape(did):did}"]`);
+            const rowAcct=rowEl?.querySelector('[data-batch-field="account"]')?.value||args.account;
+            const rowKind=rowEl?.querySelector('[data-batch-field="kind"]')?.value||d.kind||'expense';
+            const rowCat=rowEl?.querySelector('[data-batch-field="category"]')?.value||d.category||(rowKind==='income'?'Other income':'Miscellaneous');
+            const rowTo=rowEl?.querySelector('[data-batch-field="to"]')?.value??d.to??'';
             const row={
               key:'draft:'+did,
               draftId:did,
               draftRevision:d.revision||1,
-              kind:d.kind||'expense',
+              kind:rowKind,
               amount:amount(d.amount),
-              account:args.account,
-              category:d.category||(d.kind==='income'?'Other income':'Miscellaneous'),
+              account:rowAcct,
+              category:rowCat,
               merchant:d.merchant||'',
               date:d.date||today(),
               note:d.note||''
             };
+            if(d.reload)row.reload=true;
             if(d.subcategory)row.subcategory=d.subcategory;
-            if(d.to)row.to=d.to;
+            if(rowTo)row.to=rowTo;
             if(d.transferHint)row.transferHint=d.transferHint;
             if(d.receiptId)row.receiptId=d.receiptId;
             if(d.person)row.person=d.person;
@@ -586,8 +639,19 @@ document.addEventListener('submit',async e=>{
             }
             return row;
           });
-          method='confirmBatch';
-          break;
+          args.partial=true;
+          await mutate('confirmBatch',args,'');
+          busy=false;
+          const res=state.lastBatchResult||{saved:args.rows.length,failed:[]};
+          const failCnt=(res.failed||[]).length,savedCnt=res.saved||0;
+          if(failCnt>0){
+            toast(tr('Saved {s} payment(s); {f} need attention.',{s:savedCnt,f:failCnt}));
+            batchForm();
+          }else{
+            toast(tr('Saved {s} payment(s) on your device.',{s:savedCnt}));
+            close();
+          }
+          return;
         }
         case 'linkDraft':case 'matchBill':args.id=modalContext.id;break;
         case 'reconcile':{
@@ -621,7 +685,7 @@ document.addEventListener('submit',async e=>{
           method='bill';args.monthly=args.frequency==='monthly';args.variable=!!form.elements.variable?.checked;args.subscription=!!form.elements.subscription?.checked;
           if(modalContext.kind)args.kind=modalContext.kind;if(modalContext.to)args.to=modalContext.to;if(modalContext.id)args.id=modalContext.id;break;
         case 'goal-form':method='goal';if(modalContext.id)args.id=modalContext.id;break;
-        case 'preferences-form':method='settings';args.cycleDay=Number(args.cycleDay);break;
+        case 'preferences-form':method='settings';if(args.cycleMode==='monthly')args.cycleDay=1;else args.cycleDay=Number(args.cycleDay);break;
         default:throw new Error('Unknown form.');
       }
       await mutate(method,args,'Saved on your device.');busy=false;close();
@@ -674,6 +738,22 @@ document.addEventListener('input',e=>{
 document.addEventListener('change',async e=>{
   const x=e.target;
   try{
+    if(x.dataset?.batchField==='kind'){
+      const box=x.closest('[data-batch-row]')?.querySelector('[data-batch-dest]');
+      if(box){
+        const k=x.value,isMove=k==='transfer'||k==='reload';
+        const acctOpts=state.accounts.map(a=>[a.id,a.name]);
+        const destRows=k==='reload'?[['',tr('Same account (no balance change)')],...acctOpts]:[['',tr('Choose To account')],...acctOpts];
+        const catOpts=activeCategories().map(c=>[c[0],tr(c[0])]);
+        box.innerHTML=`<select data-batch-field="${isMove?'to':'category'}" aria-label="${isMove?'Row destination':'Row category'}" style="min-height:34px;font-size:12px">${options(isMove?destRows:catOpts,isMove?'':(k==='income'?'Other income':'Miscellaneous'))}</select>`;
+      }
+    }
+    if(x.id==='cycleModeSelect'){
+      const cm=x.value==='monthly'?'monthly':'custom';
+      const payload=cm==='monthly'?{cycleMode:'monthly',cycleDay:1}:{cycleMode:'custom'};
+      if(window.MoneyLensNative)await mutate('settings',payload,cm==='monthly'?tr('Cycle switched to Calendar Monthly (1st–last day).'):tr('Custom cycle enabled.'));
+      else{state.settings.cycleMode=cm;if(cm==='monthly')state.settings.cycleDay=1;render();}
+    }
     if(x.name==='category'&&$('#f-subcategory'))$('#f-subcategory').innerHTML=subcatOptions(x.value,'');
     if(x.id==='langToggle'){
       const lg=x.value==='ms'?'ms':'en';

@@ -1400,6 +1400,194 @@ public final class ExtendedTests {
    Ledger.validate(sb);
   });
 
+  test("Track A cycleMode monthly pins cycleDay to 1 across setPayday and reverts cleanly in custom mode",()->{
+   JSONObject s=Ledger.initial();
+   Ledger.apply(s,"settings",new JSONObject().put("cycleMode","monthly").put("cycleDay",25));
+   yes(s.getJSONObject("settings").getString("cycleMode").equals("monthly"));
+   eq(s.getJSONObject("settings").getInt("cycleDay"),1);
+   Extras.apply(s,"setPayday",new JSONObject().put("name","Employer").put("amountMinor",450000L).put("account","cash").put("frequency","monthly").put("dayOfMonth",25).put("nextDate","2026-05-25"));
+   eq(s.getJSONObject("settings").getInt("cycleDay"),1);
+   eq(s.getJSONObject("settings").getJSONObject("payday").getInt("dayOfMonth"),25);
+   Ledger.apply(s,"settings",new JSONObject().put("cycleMode","custom").put("cycleDay",25));
+   yes(s.getJSONObject("settings").getString("cycleMode").equals("custom"));
+   eq(s.getJSONObject("settings").getInt("cycleDay"),25);
+   Ledger.validate(s);
+  });
+
+  test("Track B reload is 0 expense, 0 income, preserves balance when same-account, and captures 1-account reload",()->{
+   JSONObject s=Ledger.initial();
+   Ledger.apply(s,"account",new JSONObject().put("name","MAE").put("type","bank").put("opening","1000"));
+   Ledger.apply(s,"account",new JSONObject().put("name","TNG eWallet").put("type","wallet").put("opening","100"));
+   String mae=s.getJSONArray("accounts").getJSONObject(1).getString("id");
+   String tng=s.getJSONArray("accounts").getJSONObject(2).getString("id");
+
+   Ledger.apply(s,"transaction",new JSONObject().put("key",Ledger.id()).put("kind","reload").put("amount","100.00").put("account",mae).put("to",mae).put("category","Transfers & top-up").put("merchant","MAE Own Reload").put("date",LocalDate.now().toString()));
+   eq(balance(s,mae),100000L);
+   eq(spending(s),0L);
+   eq(Finance.cycleRecap(s,LocalDate.now()).getLong("totalIncome"),0L);
+   eq(Finance.cycleRecap(s,LocalDate.now()).getLong("totalSpent"),0L);
+
+   Ledger.apply(s,"transaction",new JSONObject().put("key",Ledger.id()).put("kind","reload").put("amount","50.00").put("account",mae).put("to",tng).put("category","Transfers & top-up").put("merchant","Topup TNG").put("date",LocalDate.now().toString()));
+   eq(balance(s,mae),95000L);
+   eq(balance(s,tng),15000L);
+   eq(spending(s),0L);
+
+   JSONObject s1=Ledger.initial();
+   Extras.apply(s1,"quickPost",new JSONObject().put("text","reload cash 50"));
+   eq(s1.getJSONArray("transactions").length(),1);
+   yes(s1.getJSONArray("transactions").getJSONObject(0).getString("kind").equals("reload"));
+   eq(balance(s1,"cash"),0L);
+   eq(spending(s1),0L);
+
+   JSONObject sSingle=new JSONObject(Ledger.initial().toString());
+   JSONObject cap1=Extras.captureState(sSingle,"my.com.tngdigital.ewallet","TNG eWallet","rl-1","Reload of RM50.00 is successful.",50_000_000L);
+   yes(cap1!=null&&cap1.optBoolean("autoRecorded"));
+   yes(Ledger.find(sSingle.getJSONArray("transactions"),cap1.getString("transactionId")).getString("kind").equals("reload"));
+   eq(spending(sSingle),0L);
+   Ledger.validate(s);
+   Ledger.validate(s1);
+   Ledger.validate(sSingle);
+  });
+
+  test("Track 1 ~60 regex edge-case probes (cancelled refunds, statement payments, passive 3DS/TAC/Secure2u, trade twins)",()->{
+   String[][] probes={
+    // Cancelled-order refunds -> MUST capture as refund
+    {"Refund for cancelled order RM 45.00 at ShopeePay credited","com.shopee.my","refund","4500"},
+    {"Bayaran balik untuk pesanan dibatalkan RM 32.00 ke MAE berjaya","com.maybank2u.life","refund","3200"},
+    {"已取消订单退款 RM 50.00 已退款到账","my.com.tngdigital.ewallet","refund","5000"},
+    {"GrabFood refund RM 18.90 credited for cancelled order","com.grabtaxi.passenger","refund","1890"},
+    {"Cancelled booking refund of RM 120.00 returned to card","com.cimb.octomy","refund","12000"},
+    // Cancelled UNPAID orders without refund/credit -> MUST reject
+    {"Your GrabFood order RM 35.00 has been cancelled","com.grabtaxi.passenger","","0"},
+    {"Order cancelled - RM 45.00 not charged","com.shopee.my","","0"},
+    {"Pesanan Shopee RM 28.00 telah dibatalkan","com.shopee.my","","0"},
+    {"已取消订单 RM 66.00，未扣款","my.com.tngdigital.ewallet","","0"},
+    {"Failed transaction RM 90.00 at MR DIY due to insufficient balance","com.maybank2u.life","","0"},
+    // Completed statement / card / bill payments -> MUST capture
+    {"Statement payment of RM 500.00 to Maybank Visa received","com.maybank2u.life","*","50000"},
+    {"Minimum payment of RM 150.00 paid to CIMB Mastercard","com.cimb.octomy","*","15000"},
+    {"Bayaran bil TNB RM 120.00 berjaya","com.maybank2u.life","expense","12000"},
+    {"Credit card payment RM 800.00 credited to card account","com.rhbgroup.rhbmobilebanking","*","80000"},
+    {"Bill payment RM 65.50 to Unifi is successful","my.com.tngdigital.ewallet","expense","6550"},
+    // Bill reminders / due notices -> MUST reject
+    {"Statement balance RM 500.00 due on 15 Nov","com.maybank2u.life","","0"},
+    {"Minimum payment RM 150.00 due soon for your card","com.cimb.octomy","","0"},
+    {"Bil TNB RM 120.00 akan tamat tempoh tidak lama lagi","com.maybank2u.life","","0"},
+    {"Payment reminder: RM 88.00 Maxis bill due tomorrow","my.com.tngdigital.ewallet","","0"},
+    {"Pay RM 120.00 before 25 Nov to avoid late fee","com.rhbgroup.rhbmobilebanking","","0"},
+    // Completed payments with passive 3DS / TAC / Secure2u note -> MUST capture
+    {"You have paid RM 88.00 at Uniqlo approved via 3DS","com.maybank2u.life","expense","8800"},
+    {"Paid RM 45.00 at TNG Digital - TAC verified","com.cimb.octomy","expense","4500"},
+    {"RM 250.00 deducted from MAE approved via Secure2u","com.maybank2u.life","expense","25000"},
+    {"Card purchase of RM 199.00 at Harvey Norman authorised via 3D Secure","com.pbebank.pbengage","expense","19900"},
+    {"DuitNow payment RM 14.50 at Gerai Nasi Lemak completed via Secure2u","com.maybank2u.life","expense","1450"},
+    // Active OTP / 3DS / TAC code prompts -> MUST reject
+    {"Your TAC is 482910 for RM 88.00 at Uniqlo","com.maybank2u.life","","0"},
+    {"Enter OTP 123456 to approve RM 45.00 3DS challenge","com.cimb.octomy","","0"},
+    {"Approve Secure2u request for RM 250.00 at Harvey Norman before expiry","com.maybank2u.life","","0"},
+    {"One-Time Password 654321 for payment RM 199.00","com.pbebank.pbengage","","0"},
+    {"Kod TAC anda ialah 998811 untuk RM 55.00","com.rhbgroup.rhbmobilebanking","","0"},
+    // Promo / cashback / balance-only traps -> MUST reject
+    {"Get RM 10.00 cashback voucher on your next ride!","com.grabtaxi.passenger","","0"},
+    {"Dapatkan baucar RM 15.00 apabila belanja RM 50.00","my.com.tngdigital.ewallet","","0"},
+    {"Available balance in MAE is RM 2,450.00","com.maybank2u.life","","0"},
+    {"Spend RM 100.00 to win RM 500.00 DuitNow bonus","com.cimb.octomy","","0"},
+    {"Credit limit increase up to RM 15,000.00 offered","com.hsbc.hsbcmalaysia","","0"},
+    // Real EN/BM/ZH/FX/Income/BNPL notifications -> MUST capture
+    {"Payment of RM 16.80 at MIXUE SUNWAY is successful","my.com.tngdigital.ewallet","expense","1680"},
+    {"Anda telah membayar RM 24.90 kepada WATSONS MALAYSIA","com.maybank2u.life","expense","2490"},
+    {"您已支付 RM 33.50 给 VILLAGE GROCER","my.com.tngdigital.ewallet","expense","3350"},
+    {"Salary of RM 5,200.00 credited into your Savings account","com.maybank2u.life","income","520000"},
+    {"Received DuitNow transfer RM 120.00 from ALI BIN ABU","com.cimb.octomy","income","12000"},
+    {"Pembayaran SPayLater RM 75.00 kepada SHOPEE MY berjaya","com.shopee.my","expense","7500"},
+    {"Atome instalment RM 99.00 paid for ZALORA MY","com.atome.app","expense","9900"},
+    {"Paid USD 10.00 (RM 44.50) at OPENAI CHATGPT","com.gxbank.my","expense","4450"},
+    {"RM 6.20 paid at FAMILYMART KL SENTRAL","my.com.tngdigital.ewallet","expense","620"},
+    {"DuitNow transfer of RM 50.00 from JOHN DOE received","com.maybank2u.life","income","5000"}
+   };
+   yes(probes.length>=45);
+   for(String[] p:probes){
+    JSONObject d=PaymentParser.parse(p[0],p[1]);
+    long wantAmt=Long.parseLong(p[3]);
+    if(wantAmt==0){
+     if(d!=null)throw new AssertionError("Expected rejection for: "+p[0]+" got="+d);
+    }else{
+     if(d==null)throw new AssertionError("Expected capture for: "+p[0]);
+     eq(d.getLong("amount"),wantAmt);
+     if(!"*".equals(p[2])&&!d.getString("kind").equals(p[2]))throw new AssertionError("Kind mismatch for "+p[0]+": want "+p[2]+" got "+d.getString("kind"));
+    }
+   }
+
+   // Trade-synonym merchant twins
+   JSONObject sTwin2=Ledger.initial();
+   JSONObject ta=Extras.captureState(sTwin2,"my.com.tngdigital.ewallet","TNG eWallet","tw-a","You have paid RM11.50 at Ah Seng Kopitiam",10_000_000L);
+   JSONObject tb=Extras.captureState(sTwin2,"com.maybank2u.life","MAE","tw-b","Card transaction RM11.50 at Kedai Kopi Ah Seng Sdn Bhd approved",10_060_000L);
+   yes(ta!=null&&ta.optBoolean("autoRecorded"));
+   yes(tb!=null&&tb.optString("duplicateOf").equals(ta.getString("transactionId")));
+
+   JSONObject tc=Extras.captureState(sTwin2,"my.com.tngdigital.ewallet","TNG eWallet","tw-c","You have paid RM22.00 at Kedai Buku Ceria",20_000_000L);
+   JSONObject td=Extras.captureState(sTwin2,"com.maybank2u.life","MAE","tw-d","You have paid RM22.00 at Kedai Buku Cahaya",20_060_000L);
+   yes(tc!=null&&tc.optBoolean("autoRecorded"));
+   yes(td!=null&&td.optBoolean("autoRecorded"));
+   yes(td.optString("duplicateOf").isEmpty());
+   Ledger.validate(sTwin2);
+  });
+
+  test("Track 2 precompiled PaymentParser sustains < 0.30 ms/alert over 10,000 notifications",()->{
+   String[] samples={
+    "You have paid RM12.50 at ZUS COFFEE SS15",
+    "DuitNow QR payment of RM18.90 to GERAI NASI LEMAK successful",
+    "Your TAC is 482910 for RM88.00 at Uniqlo",
+    "Get RM10.00 cashback voucher when you spend RM50.00!",
+    "Failed transaction RM95.00 at MR DIY",
+    "Paid USD 10.00 (RM44.50) at OPENAI",
+    "Refund for cancelled order RM45.00 at ShopeePay credited",
+    "You have paid RM88.00 at Uniqlo approved via 3DS",
+    "Anda telah membayar RM24.90 kepada WATSONS MALAYSIA",
+    "Statement balance RM500.00 due on 15 Nov"
+   };
+   String[] pkgs={
+    "my.com.tngdigital.ewallet","com.maybank2u.life","com.cimb.octomy",
+    "com.grabtaxi.passenger","com.rhbgroup.rhbmobilebanking"
+   };
+   for(int i=0;i<500;i++)PaymentParser.parse(samples[i%samples.length],pkgs[i%pkgs.length]);
+   long t0=System.nanoTime();
+   int parsed=0;
+   for(int i=0;i<10000;i++){
+    if(PaymentParser.parse(samples[i%samples.length],pkgs[i%pkgs.length])!=null)parsed++;
+   }
+   double totalMs=(System.nanoTime()-t0)/1_000_000.0;
+   double avgMs=totalMs/10000.0;
+   System.out.println(String.format(Locale.ROOT,"BENCH PaymentParser 10k: totalMs=%.2f avgMs=%.4f captured=%d",totalMs,avgMs,parsed));
+   yes(parsed==6000);
+   yes(avgMs<0.30);
+  });
+
+  test("Track 5 confirmBatch partial mode saves valid rows and keeps invalid rows with batchError",()->{
+   JSONObject sb=Ledger.initial();
+   Ledger.apply(sb,"account",new JSONObject().put("name","MAE").put("type","bank").put("opening","1000"));
+   String maeId=sb.getJSONArray("accounts").getJSONObject(1).getString("id");
+   sb.getJSONObject("settings").put("autoRecord",false);
+   JSONObject d1=Extras.captureState(sb,"com.maybank2u.life","MAE","pb-1","You have paid RM25.50 at ZUS COFFEE",70_000_000L);
+   JSONObject dBad=Extras.captureState(sb,"com.maybank2u.life","MAE","pb-2","You have transferred RM40.00 to Unknown Bank",70_010_000L);
+   JSONObject d2=Extras.captureState(sb,"com.maybank2u.life","MAE","pb-3","You have paid RM15.00 at MYNEWS",70_020_000L);
+   yes(d1!=null&&dBad!=null&&d2!=null);
+
+   JSONArray rows=new JSONArray()
+    .put(new JSONObject().put("draftId",d1.getString("id")).put("draftRevision",d1.getInt("revision")).put("kind","expense").put("amount","25.50").put("account",maeId).put("category","Food & drinks").put("merchant","ZUS COFFEE").put("key","draft:"+d1.getString("id")))
+    .put(new JSONObject().put("draftId",dBad.getString("id")).put("draftRevision",dBad.getInt("revision")).put("kind","transfer").put("amount","40.00").put("account",maeId).put("to","").put("merchant","Unknown Bank").put("key","draft:"+dBad.getString("id")))
+    .put(new JSONObject().put("draftId",d2.getString("id")).put("draftRevision",d2.getInt("revision")).put("kind","expense").put("amount","15.00").put("account",maeId).put("category","Food & drinks").put("merchant","MYNEWS").put("key","draft:"+d2.getString("id")));
+   yes(Extras.apply(sb,"confirmBatch",new JSONObject().put("partial",true).put("rows",rows)));
+
+   JSONObject res=sb.getJSONObject("lastBatchResult");
+   eq(res.getInt("saved"),2);
+   eq(res.getJSONArray("failed").length(),1);
+   eq(balance(sb,maeId),95950L);
+   yes(Ledger.find(sb.getJSONArray("drafts"),dBad.getString("id")).getString("state").equals("review"));
+   yes(!Ledger.find(sb.getJSONArray("drafts"),dBad.getString("id")).optString("batchError","").isEmpty());
+   Ledger.validate(sb);
+  });
+
   System.out.println("RESULT: "+passed+" extended tests passed");
  }
 }

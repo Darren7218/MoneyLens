@@ -64,7 +64,17 @@ public final class Ledger {
         if(a.has("theme"))settings.put("theme",a.getString("theme").equals("dark")?"dark":"light");
         if(a.has("lang")){String lg=str(a,"lang",8);if(!Arrays.asList("en","ms").contains(lg))throw new IllegalArgumentException("Unsupported language.");settings.put("lang",lg);}
         if(a.has("accent")){String ac=str(a,"accent",24);if(Arrays.asList("emerald","indigo","ocean","terracotta").contains(ac))settings.put("accent",ac);}
-        if(a.has("cycleDay")){int d=a.getInt("cycleDay");if(d<1||d>31)throw new IllegalArgumentException("Cycle day must be 1–31.");settings.put("cycleDay",d);}
+        if(a.has("cycleMode")){
+          String cm=str(a,"cycleMode",16).toLowerCase(Locale.ROOT);
+          if(!Arrays.asList("monthly","custom").contains(cm))throw new IllegalArgumentException("Unsupported cycle mode.");
+          settings.put("cycleMode",cm);
+          if("monthly".equals(cm))settings.put("cycleDay",1);
+        }
+        if(a.has("cycleDay")&&!"monthly".equals(a.optString("cycleMode",""))){
+          int d=a.getInt("cycleDay");if(d<1||d>31)throw new IllegalArgumentException("Cycle day must be 1–31.");
+          settings.put("cycleDay",d);
+          if(d>1&&!a.has("cycleMode"))settings.put("cycleMode","custom");
+        }
         if(a.has("appLock"))settings.put("appLock",a.getBoolean("appLock"));
         if(a.has("lockTimeoutSec")){int v=a.getInt("lockTimeoutSec");if(!Arrays.asList(0,60,300,900).contains(v))throw new IllegalArgumentException("Choose a supported lock timeout.");settings.put("lockTimeoutSec",v);}
         for(String k:new String[]{"quietEnabled","digest","reminders","budgetAlerts","categoryAlerts","weeklyBudgetNudge","widgetAmounts","captureWhileLocked","autoRecord","captureAllSources","autoOpenOnBoot","alwaysOnScheduler","ecoCapture","anomalyGuard","splitAutoMatch","privacyBlur","backupNudgeDismissed","backupNudgeNotify"})if(a.has(k))settings.put(k,a.getBoolean(k));
@@ -110,7 +120,8 @@ public final class Ledger {
     String account=a.getString("account"),kind=a.getString("kind"),category=str(a,"category",60),dt=a.getString("date");
     find(s.getJSONArray("accounts"),account);date(dt);long n=minor(a.getString("amount"));JSONArray p=new JSONArray();
     String tid=id();p=postings(s,a,tid,n);
-    JSONObject t=new JSONObject().put("id",tid).put("key",key).put("kind",kind).put("amount",n).put("account",account).put("to",a.optString("to","")).put("category",category).put("merchant",str(a,"merchant",120)).put("date",dt).put("note",str(a,"note",500)).put("postings",p).put("created",System.currentTimeMillis());
+    String resolvedTo="reload".equals(kind)?(a.optString("to","").trim().isEmpty()?account:a.optString("to","").trim()):a.optString("to","");
+    JSONObject t=new JSONObject().put("id",tid).put("key",key).put("kind",kind).put("amount",n).put("account",account).put("to",resolvedTo).put("category",category).put("merchant",str(a,"merchant",120)).put("date",dt).put("note",str(a,"note",500)).put("postings",p).put("created",System.currentTimeMillis());
     for(String k:new String[]{"subcategory","splits","ownAmount","person","receiptId","originalCurrency","originalAmount","exchangeRate","foreignFee","source","sourcePackage","tags","reimbursementFor","autoReconciledSplit","matchedPerson","importBatch","importRow","installmentId","autoRecorded","historyMatch","needsNote","anomaly","anomalyMedian","anomalyRatio","anomalyDismissed"})if(a.has(k))t.put(k,a.get(k));
     if(!a.optString("originalCurrency","").trim().isEmpty()&&!a.optString("originalAmount","").trim().isEmpty()){try{String currency=a.getString("originalCurrency").trim().toUpperCase(java.util.Locale.ROOT);java.util.Currency.getInstance(currency);if(new java.math.BigDecimal(a.getString("originalAmount").trim()).signum()<=0)throw new IllegalArgumentException("Original amount must be positive.");t.put("originalCurrency",currency);BigDecimal fee=new BigDecimal(a.optString("foreignFee","0").trim().isEmpty()?"0":a.optString("foreignFee","0").trim());if(fee.signum()<0||fee.movePointRight(2).longValueExact()>=n)throw new IllegalArgumentException("Included fees must be less than the MYR total.");t.put("exchangeRate",BigDecimal.valueOf(n,2).subtract(fee).divide(new BigDecimal(a.getString("originalAmount").trim()),8,java.math.RoundingMode.HALF_UP).toPlainString());}catch(IllegalArgumentException ex){throw ex;}catch(Exception ex){throw new IllegalArgumentException("Enter valid foreign currency details.");}}
     if(a.has("tags")&&a.getJSONArray("tags").length()>30)throw new IllegalArgumentException("At most 30 tags.");
@@ -138,6 +149,7 @@ public final class Ledger {
   static JSONArray postings(JSONObject s,JSONObject a,String tid,long n)throws Exception{
     String kind=a.getString("kind"),account=a.getString("account"),category=a.optString("category","Other");JSONArray p=new JSONArray();
     if(kind.equals("transfer")){String to=a.optString("to","").trim();if(to.isEmpty())throw new IllegalArgumentException("Choose a destination account for this transfer.");find(s.getJSONArray("accounts"),to);if(to.equals(account))throw new IllegalArgumentException("Choose two different accounts.");return p.put(entry(account,-n)).put(entry(to,n));}
+    if(kind.equals("reload")){String to=a.optString("to","").trim();if(!to.isEmpty())find(s.getJSONArray("accounts"),to);String dest=to.isEmpty()?account:to;return p.put(entry(account,-n)).put(entry(dest,n));}
     if(kind.equals("income"))return p.put(entry(account,n)).put(entry("income:"+(category.isEmpty()?"Other income":category),-n));
     if(kind.equals("reimbursement")){String original=a.optString("reimbursementFor","").trim();if(original.isEmpty())throw new IllegalArgumentException("Choose an active shared expense.");JSONObject t=find(s.getJSONArray("transactions"),original);if(!t.getString("kind").equals("shared")||t.optBoolean("voided"))throw new IllegalArgumentException("Choose an active shared expense.");long outstanding=Finance.balance(s,"receivable:"+original,"9999-12-31");if(!a.has("editId")&&n>outstanding)throw new IllegalArgumentException("Repayment exceeds the amount owed.");return p.put(entry(account,n)).put(entry("receivable:"+original,-n));}
     if(!Arrays.asList("expense","refund","shared").contains(kind))throw new IllegalArgumentException("Invalid transaction type.");long sign=kind.equals("refund")?-1:1;p.put(entry(account,-n*sign));
@@ -160,12 +172,13 @@ public final class Ledger {
         case "shared":if(!(destination.startsWith("expense:")||destination.equals("receivable:"+t.getString("id")))||v<=0)throw new IllegalArgumentException("Invalid shared allocation.");break;
         case "income":if(!destination.startsWith("income:")||v>=0)throw new IllegalArgumentException("Invalid income.");break;
         case "transfer":if(!ac.contains(destination)||!destination.equals(t.getString("to"))||destination.equals(first)||v<=0||p.length()!=2)throw new IllegalArgumentException("Invalid transfer.");break;
+        case "reload":if(!ac.contains(destination)||!destination.equals(t.optString("to",first))||v<=0||p.length()!=2)throw new IllegalArgumentException("Invalid reload.");break;
         case "reimbursement":if(!destination.equals("receivable:"+t.getString("reimbursementFor"))||v>=0||p.length()!=2)throw new IllegalArgumentException("Invalid repayment.");break;
         case "opening":case "adjustment":if(!destination.equals("equity")||p.length()!=2)throw new IllegalArgumentException("Invalid adjustment.");break;
         default:throw new IllegalArgumentException("Invalid transaction type.");
        }}
       }if(sum!=0)throw new IllegalArgumentException("Unbalanced transaction.");
-      if(Arrays.asList("expense","shared","transfer").contains(kind)&&firstAmount!=-n)throw new IllegalArgumentException("Invalid payment direction.");if(Arrays.asList("income","refund","reimbursement").contains(kind)&&firstAmount!=n)throw new IllegalArgumentException("Invalid receipt direction.");
+      if(Arrays.asList("expense","shared","transfer","reload").contains(kind)&&firstAmount!=-n)throw new IllegalArgumentException("Invalid payment direction.");if(Arrays.asList("income","refund","reimbursement").contains(kind)&&firstAmount!=n)throw new IllegalArgumentException("Invalid receipt direction.");
     }
     for(int i=0;i<tx.length();i++){JSONObject t=tx.getJSONObject(i);if(t.optBoolean("voided"))continue;if(t.getString("kind").equals("reimbursement")){JSONObject original=find(tx,t.getString("reimbursementFor"));if(original.optBoolean("voided")||!original.getString("kind").equals("shared"))throw new IllegalArgumentException("Missing shared expense.");}if(t.has("originalId")){JSONObject original=find(tx,t.getString("originalId"));if(!t.getString("kind").equals("refund")||!original.getString("kind").equals("expense"))throw new IllegalArgumentException("Invalid refund link.");}}
     for(long remaining:receivables.values())if(remaining<0)throw new IllegalArgumentException("A repayment would exceed its shared expense. Remove the repayment first.");
@@ -173,6 +186,7 @@ public final class Ledger {
     JSONArray debts=s.getJSONArray("debts");for(int i=0;i<debts.length();i++){JSONObject d=debts.getJSONObject(i);long bal=d.getLong("balance"),minP=d.getLong("minPayment");int bps=d.optInt("aprBps",0);if(d.optString("name","").trim().isEmpty()||bal<0||bal>MAX||minP<=0||minP>MAX||bps<0||bps>10000||!Arrays.asList("reducing","flat").contains(d.optString("rateType","reducing")))throw new IllegalArgumentException("Invalid debt entry.");}
     Set<String> cats=new HashSet<>();JSONArray budgets=s.getJSONArray("budgets");for(int i=0;i<budgets.length();i++){JSONObject b=budgets.getJSONObject(i);if(b.getLong("limit")<=0||b.getLong("limit")>MAX||!cats.add(b.getString("category")+"\u0000"+b.optString("subcategory","").trim()))throw new IllegalArgumentException("Invalid or duplicate category budget.");}
     JSONArray bills=s.getJSONArray("bills");for(int i=0;i<bills.length();i++){JSONObject b=bills.getJSONObject(i);date(b.getString("date"));if(!ac.contains(b.getString("account"))||b.getLong("amount")<=0)throw new IllegalArgumentException("Invalid bill.");}
-    int day=s.getJSONObject("settings").optInt("cycleDay",1);if(day<1||day>31)throw new IllegalArgumentException("Invalid cycle day.");
+    JSONObject stSet=s.getJSONObject("settings");int day=stSet.optInt("cycleDay",1);if(day<1||day>31)throw new IllegalArgumentException("Invalid cycle day.");
+    if(stSet.has("cycleMode")&&!Arrays.asList("monthly","custom").contains(stSet.optString("cycleMode","")))throw new IllegalArgumentException("Invalid cycle mode.");
   }
 }

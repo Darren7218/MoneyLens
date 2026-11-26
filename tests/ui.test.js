@@ -380,4 +380,41 @@ test('Track 5 localQuickParse traps and batch review modal rendering',()=>{
   ctx.modal=prevModal;
   run(`state.drafts=${JSON.stringify(prevDrafts)}`);
 });
+test('Track A cycleMode monthly sets period day 1 and updates monthly copy',()=>{
+  const prevMode=run(`state.settings.cycleMode`);
+  const prevDay=run(`state.settings.cycleDay`);
+  const prevPlanTab=run(`planTab`);
+  run(`state.settings.cycleMode='monthly';state.settings.cycleDay=25;planTab='review';`);
+  assert(run(`isMonthlyMode()`)===true);
+  assert(run(`period().start.endsWith('-01')`)===true);
+  const h=run(`home()`);
+  assert(h.includes('Income this month')&&h.includes('Spent this month')&&h.includes('This month'));
+  const p=run(`plan()`);
+  assert(p.includes('MONTHLY REVIEW')&&p.includes('Plan Next Month'));
+  run(`state.settings.cycleMode=${JSON.stringify(prevMode)};state.settings.cycleDay=${JSON.stringify(prevDay)};planTab=${JSON.stringify(prevPlanTab)};`);
+});
+test('Track B reload form, neutral tx row and Reloads filter chip render cleanly',()=>{
+  let capTitle='',capBody='';
+  const prevModal=ctx.modal;
+  ctx.modal=(t,b)=>{capTitle=t;capBody=b;};
+  run(`txForm({kind:'reload'})`);
+  assert(capBody.includes('Same account (no balance change)')&&capBody.includes('without counting as an expense'));
+  ctx.modal=prevModal;
+  const row=run(`renderTxRow({id:'tx-rl-1',kind:'reload',amount:5000,account:'cash',to:'cash',category:'Transfers & top-up',merchant:'MAE Reload',date:today()})`);
+  assert(row.includes('Reload · Not counted as spend')&&!row.includes('−RM')&&!row.includes('+RM'));
+  const txPage=run(`transactions()`);
+  assert(txPage.includes('Reloads'));
+});
+test('Track 5 upgraded batchForm renders per-row controls, Select all safe, Apply to all and batchError',()=>{
+  const prevDrafts=run(`state.drafts`);
+  run(`state.drafts=[{id:'d-u1',state:'review',revision:1,kind:'expense',amount:1250,account:'cash',merchant:'ZUS Coffee',category:'Food & drinks',date:today(),reason:'Recorded from notification'},{id:'d-u2',state:'review',revision:1,kind:'transfer',amount:4000,account:'cash',to:'',merchant:'Unknown Bank',category:'Transfers & top-up',date:today(),batchError:'Choose target account.'}]`);
+  let capBody='';
+  const prevModal=ctx.modal;
+  ctx.modal=(t,b)=>{capBody=b;};
+  run(`batchForm()`);
+  assert(capBody.includes('data-batch-field="account"')&&capBody.includes('data-batch-field="kind"')&&capBody.includes('data-batch-field="category"')&&capBody.includes('data-batch-field="to"'));
+  assert(capBody.includes('data-action="selectSafeBatch"')&&capBody.includes('data-action="applyBatchAcct"')&&capBody.includes('Choose target account.'));
+  ctx.modal=prevModal;
+  run(`state.drafts=${JSON.stringify(prevDrafts)}`);
+});
 console.log('RESULT: '+passed+' UI tests passed');

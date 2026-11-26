@@ -143,6 +143,16 @@ public final class MerchantCanonicalizer {
   private static final Pattern OCR_DIGIT_SWAP_RE = Pattern.compile("[A-Za-z][015][A-Za-z]");
   private static final Pattern TRUNC_SFX_RE = Pattern.compile("(?i)(?:\\bsd[nm]?\\s*bh?$|\\bs/b$|\\s+20[0-9]{6,}$)");
   private static final Pattern BRANCH_CODE_SFX_RE = Pattern.compile("(?i)-(?:trx|kj|pj|kl|jb|pg|sj|sbj|klcc|mv|usj|kk|kch|my)\\b");
+  private static final Pattern YEAR_TOKEN_RE = Pattern.compile("20[0-9]{2}");
+  private static final Pattern NON_ALPHA_SPLIT_RE = Pattern.compile("[^A-Za-z]+");
+  private static final Pattern KNOWN_ACRONYM_RE = Pattern.compile("(?i)lhdn|kwsp|hsbc|ocbc|mbsb|myeg|ptptn|ktmb");
+  private static final Result NO_MATCH_SENTINEL = new Result("", "", "", 0.0, 0.0, false);
+  private static final java.util.LinkedHashMap<String, Result> CANON_CACHE =
+      new java.util.LinkedHashMap<String, Result>(64, 0.75f, true) {
+        @Override protected boolean removeEldestEntry(Map.Entry<String, Result> eldest) {
+          return size() > 256;
+        }
+      };
   private static final Set<String> GENERIC_ENTITY_WORDS = new HashSet<>(Arrays.asList(
       "klinik", "clinic", "poliklinik", "pergigian", "dental", "keluarga", "restoran", "restaurant",
       "kedai", "kopi", "kopitiam", "kafe", "cafe", "farmasi", "pharmacy", "bengkel", "kereta",
@@ -169,8 +179,15 @@ public final class MerchantCanonicalizer {
     return activeModel != null;
   }
 
+  private static void clearCache() {
+    synchronized (CANON_CACHE) {
+      CANON_CACHE.clear();
+    }
+  }
+
   public static synchronized void setDisabled(boolean off) {
     disabled = off;
+    clearCache();
   }
 
   public static synchronized void setStreamSupplier(java.util.function.Supplier<InputStream> supplier) {
@@ -181,6 +198,7 @@ public final class MerchantCanonicalizer {
   public static synchronized void trim() {
     activeModel = null;
     autoLoadAttempted = false;
+    clearCache();
   }
 
   public static synchronized void clear() {
@@ -188,6 +206,7 @@ public final class MerchantCanonicalizer {
     autoLoadAttempted = false;
     disabled = false;
     streamSupplier = null;
+    clearCache();
   }
 
   public static synchronized boolean loadFromStream(InputStream in) {
@@ -204,6 +223,7 @@ public final class MerchantCanonicalizer {
       }
       autoLoadAttempted = true;
       disabled = false;
+      clearCache();
       return activeModel != null;
     } catch (Exception ignored) {
       return false;
@@ -602,7 +622,7 @@ public final class MerchantCanonicalizer {
     Matcher m = DIGIT_RUN_RE.matcher(norm);
     while (m.find()) {
       String tok = m.group();
-      if (!tok.matches("20[0-9]{2}")) out.add(tok);
+      if (!YEAR_TOKEN_RE.matcher(tok).matches()) out.add(tok);
     }
     return out;
   }
@@ -694,38 +714,50 @@ public final class MerchantCanonicalizer {
     if ("Detected payment".equalsIgnoreCase(query) && contextText != null && !contextText.trim().isEmpty()) {
       query = contextText.trim();
     }
+    String cacheKey = query.toLowerCase(Locale.ROOT);
+    synchronized (CANON_CACHE) {
+      Result cached = CANON_CACHE.get(cacheKey);
+      if (cached != null) return cached == NO_MATCH_SENTINEL ? null : cached;
+    }
+    Result res = null;
     float[] qEmb = encode(query);
-    if (qEmb == null) return null;
-    double qNormSq = 0.0;
-    for (float v : qEmb) qNormSq += v * v;
-    if (qNormSq < 0.1) return null;
-
-    int bestIdx = -1;
-    double bestSim = -2.0, secondSim = -2.0;
-    for (int i = 0; i < m.numCatalog; i++) {
-      int base = i * m.embDim;
-      double dot = 0.0;
-      for (int d = 0; d < m.embDim; d++) dot += (double) qEmb[d] * m.catalogUnitEmbs[base + d];
-      if (dot > bestSim) {
-        secondSim = bestSim;
-        bestSim = dot;
-        bestIdx = i;
-      } else if (dot > secondSim) {
-        secondSim = dot;
+    if (qEmb != null) {
+      double qNormSq = 0.0;
+      for (float v : qEmb) qNormSq += v * v;
+      if (qNormSq >= 0.1) {
+        int bestIdx = -1;
+        double bestSim = -2.0, secondSim = -2.0;
+        for (int i = 0; i < m.numCatalog; i++) {
+          int base = i * m.embDim;
+          double dot = 0.0;
+          for (int d = 0; d < m.embDim; d++) dot += (double) qEmb[d] * m.catalogUnitEmbs[base + d];
+          if (dot > bestSim) {
+            secondSim = bestSim;
+            bestSim = dot;
+            bestIdx = i;
+          } else if (dot > secondSim) {
+            secondSim = dot;
+          }
+        }
+        if (bestIdx >= 0) {
+          double margin = secondSim > -1.5 ? Math.max(0.0, bestSim - secondSim) : bestSim;
+          String candName = m.catalogNames[bestIdx];
+          boolean conflict = hasDistinctEntityConflict(query, candName);
+          boolean matched = !conflict && bestSim >= m.brandMatchThreshold && margin >= m.brandMatchMargin;
+          res = new Result(
+              candName,
+              m.catalogCats[bestIdx],
+              m.catalogSubs[bestIdx],
+              bestSim,
+              margin,
+              matched);
+        }
       }
     }
-    if (bestIdx < 0) return null;
-    double margin = secondSim > -1.5 ? Math.max(0.0, bestSim - secondSim) : bestSim;
-    String candName = m.catalogNames[bestIdx];
-    boolean conflict = hasDistinctEntityConflict(query, candName);
-    boolean matched = !conflict && bestSim >= m.brandMatchThreshold && margin >= m.brandMatchMargin;
-    return new Result(
-        candName,
-        m.catalogCats[bestIdx],
-        m.catalogSubs[bestIdx],
-        bestSim,
-        margin,
-        matched);
+    synchronized (CANON_CACHE) {
+      CANON_CACHE.put(cacheKey, res == null ? NO_MATCH_SENTINEL : res);
+    }
+    return res;
   }
 
   public static boolean isNoisyTruncatedSurface(String raw) {
@@ -733,14 +765,14 @@ public final class MerchantCanonicalizer {
     String s = raw.trim();
     if (s.length() < 3 || "Detected payment".equalsIgnoreCase(s)) return true;
     if (s.contains("*") || TRUNC_SFX_RE.matcher(s).find() || OCR_DIGIT_SWAP_RE.matcher(s).find() || BRANCH_CODE_SFX_RE.matcher(s).find()) return true;
-    for (String tok : s.split("[^A-Za-z]+")) {
+    for (String tok : NON_ALPHA_SPLIT_RE.split(s)) {
       if (tok.length() >= 4) {
         int vowels = 0;
         for (int i = 0; i < tok.length(); i++) {
           char c = Character.toLowerCase(tok.charAt(i));
           if (c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u') vowels++;
         }
-        if (vowels == 0 && !tok.matches("(?i)lhdn|kwsp|hsbc|ocbc|mbsb|myeg|ptptn|ktmb")) return true;
+        if (vowels == 0 && !KNOWN_ACRONYM_RE.matcher(tok).matches()) return true;
         if (tok.length() >= 5 && (vowels / (double) tok.length()) < 0.20) return true;
       }
     }

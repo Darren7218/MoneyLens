@@ -83,8 +83,9 @@ const formFooter=(text='Save')=>`<div class="error" role="alert"></div><button c
 function account(id){return state.accounts.find(a=>a.id===id)||{name:tr('Unknown account'),type:'bank'}}
 function validTx(){return state.transactions.filter(t=>!t.voided)}
 function balance(id){return validTx().reduce((sum,t)=>sum+(t.postings||[]).filter(p=>p.account===id).reduce((n,p)=>n+p.amount,0),0)}
+function isMonthlyMode(){return state?.settings?.cycleMode==='monthly';}
 function period(off=monthOffset){
-  let now=new Date(),day=state.settings.cycleDay||1;
+  let now=new Date(),day=isMonthlyMode()?1:(state.settings.cycleDay||1);
   const date=(y,m)=>new Date(y,m,Math.min(day,new Date(y,m+1,0).getDate()),0);
   let start=date(now.getFullYear(),now.getMonth());
   if(now<start)start=date(start.getFullYear(),start.getMonth()-1);
@@ -292,7 +293,9 @@ function localQuickParse(rawText){
   }else if(!(/(?:\b(?:non.?refundable|not\s+refundable|no\s+refund|tidak\s+boleh\s+dikembalikan)\b|不可退款|不能退款|不退不换|恕不退款)/i.test(rest))&&/(?:\b(?:refund|refunded|bayaran\s+balik)\b|退款|退钱)/i.test(rest)){
     kind='refund';
   }else if(!isIncomingSignal&&!hasTransferExpenseKw&&/\b(?:transfer|pindah|top.?up|reload|tambah\s+nilai)\b|转账|充值/i.test(rest)){
-    kind='transfer';
+    const isReloadCue=/\b(?:top.?up|reload|tambah\s+nilai)\b|充值/i.test(rest);
+    const hasDir=/\b(?:from|dari|daripada|to|ke|into)\b|从|到|去/i.test(rest);
+    kind=(isReloadCue&&((state?.accounts||[]).length<=1||!hasDir))?'reload':'transfer';
   }else if(isIncomingSignal||/\bfrom\s+[A-Za-z]/i.test(rest)){
     kind='income';
   }

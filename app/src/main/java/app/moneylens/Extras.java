@@ -129,7 +129,9 @@ public final class Extras {
    case "confirmBatch":{
     JSONArray rows=a.getJSONArray("rows");
     if(rows.length()>100)throw new IllegalArgumentException("Review at most 100 suggestions at once.");
+    boolean partial=a.optBoolean("partial",false);
     JSONArray drafts=s.getJSONArray("drafts"),accounts=s.getJSONArray("accounts"),receipts=s.optJSONArray("receipts");
+    int savedCnt=0;JSONArray failedRows=new JSONArray();
     for(int i=0;i<rows.length();i++){
      JSONObject row=new JSONObject(rows.getJSONObject(i).toString());
      String did=row.optString("draftId","").trim();
@@ -137,47 +139,65 @@ public final class Extras {
      if(!did.isEmpty()){
       try{draft=Ledger.find(drafts,did);}catch(IllegalArgumentException ignored){}
      }
-     String rKind=row.optString("kind","").trim();
-     if(rKind.isEmpty())rKind=draft!=null&&!draft.optString("kind","").isEmpty()?draft.optString("kind"):"expense";
-     row.put("kind",rKind);
-     if(row.optString("date","").trim().isEmpty())row.put("date",draft!=null&&!draft.optString("date","").isEmpty()?draft.optString("date"):LocalDate.now().toString());
-     if(row.optString("category","").trim().isEmpty())row.put("category","income".equals(rKind)?"Other income":"Miscellaneous");
-     String rAcct=row.optString("account","").trim();
-     if(rAcct.isEmpty()&&draft!=null)rAcct=draft.optString("account","");
-     if(rAcct.isEmpty()&&accounts.length()>0)rAcct=accounts.getJSONObject(0).getString("id");
-     row.put("account",rAcct);
-     String merch=row.optString("merchant","");if(merch.length()>120)row.put("merchant",merch.substring(0,120));
-     String catStr=row.optString("category","");if(catStr.length()>60)row.put("category",catStr.substring(0,60));
-     String noteStr=row.optString("note","");if(noteStr.length()>500)row.put("note",noteStr.substring(0,500));
-     if("".equals(row.optString("originalCurrency","").trim())||"".equals(row.optString("originalAmount","").trim())){
-      row.remove("originalCurrency");row.remove("originalAmount");row.remove("foreignFee");row.remove("exchangeRate");
-     }
-     String recId=row.optString("receiptId","").trim();
-     if(!recId.isEmpty()){
-      boolean recOk=false;
-      if(receipts!=null)for(int rj=0;rj<receipts.length();rj++)if(recId.equals(receipts.getJSONObject(rj).optString("id"))){recOk=true;break;}
-      if(!recOk)row.remove("receiptId");
-     }else row.remove("receiptId");
-     if("transfer".equals(rKind)){
-      String toId=row.optString("to","").trim();
-      if(toId.isEmpty()&&draft!=null)toId=draft.optString("to","").trim();
-      if(toId.isEmpty()||toId.equals(rAcct)){
-       String hint=row.optString("transferHint","").trim();
-       if(hint.isEmpty()&&draft!=null)hint=draft.optString("transferHint","").trim();
-       if(!hint.isEmpty())toId=Finance.matchAccountByName(accounts,hint,"",rAcct);
+     try{
+      String rKind=row.optString("kind","").trim();
+      if(rKind.isEmpty())rKind=draft!=null&&!draft.optString("kind","").isEmpty()?draft.optString("kind"):"expense";
+      boolean rowReload=row.optBoolean("reload",draft!=null&&draft.optBoolean("reload"));
+      String rAcct=row.optString("account","").trim();
+      if(rAcct.isEmpty()&&draft!=null)rAcct=draft.optString("account","");
+      if(rAcct.isEmpty()&&accounts.length()>0)rAcct=accounts.getJSONObject(0).getString("id");
+      row.put("account",rAcct);
+      if("transfer".equals(rKind)){
+       String toId=row.optString("to","").trim();
+       if(toId.isEmpty()&&draft!=null)toId=draft.optString("to","").trim();
+       if(toId.isEmpty()||toId.equals(rAcct)){
+        String hint=row.optString("transferHint","").trim();
+        if(hint.isEmpty()&&draft!=null)hint=draft.optString("transferHint","").trim();
+        if(!hint.isEmpty())toId=Finance.matchAccountByName(accounts,hint,"",rAcct);
+       }
+       if(toId.isEmpty()||toId.equals(rAcct)){
+        if(rowReload){rKind="reload";toId=rAcct;}
+        else throw new IllegalArgumentException("Transfer \""+row.optString("merchant","payment")+"\" needs both From and To accounts.");
+       }
+       row.put("to",toId);
+      }else if("reload".equals(rKind)){
+       String toId=row.optString("to","").trim();
+       if(toId.isEmpty()&&draft!=null)toId=draft.optString("to","").trim();
+       if(toId.isEmpty()&&!row.optString("transferHint","").trim().isEmpty())toId=Finance.matchAccountByName(accounts,row.optString("transferHint","").trim(),"",rAcct);
+       row.put("to",toId.isEmpty()?rAcct:toId);
+      }else if("reimbursement".equals(rKind)){
+       String rf=row.optString("reimbursementFor","").trim();
+       if(rf.isEmpty()&&draft!=null)rf=draft.optString("reimbursementFor","").trim();
+       if(rf.isEmpty())throw new IllegalArgumentException("Repayment \""+row.optString("merchant","payment")+"\" needs an open shared expense.");
+       row.put("reimbursementFor",rf);
       }
-      if(toId.isEmpty()||toId.equals(rAcct)){
-       throw new IllegalArgumentException("Transfer \""+row.optString("merchant","payment")+"\" needs both From and To accounts. Review it individually.");
+      row.put("kind",rKind);
+      if(row.optString("date","").trim().isEmpty())row.put("date",draft!=null&&!draft.optString("date","").isEmpty()?draft.optString("date"):LocalDate.now().toString());
+      if(row.optString("category","").trim().isEmpty())row.put("category","income".equals(rKind)?"Other income":"Miscellaneous");
+      String merch=row.optString("merchant","");if(merch.length()>120)row.put("merchant",merch.substring(0,120));
+      String catStr=row.optString("category","");if(catStr.length()>60)row.put("category",catStr.substring(0,60));
+      String noteStr=row.optString("note","");if(noteStr.length()>500)row.put("note",noteStr.substring(0,500));
+      if("".equals(row.optString("originalCurrency","").trim())||"".equals(row.optString("originalAmount","").trim())){
+       row.remove("originalCurrency");row.remove("originalAmount");row.remove("foreignFee");row.remove("exchangeRate");
       }
-      row.put("to",toId);
-     }else if("reimbursement".equals(rKind)){
-      String rf=row.optString("reimbursementFor","").trim();
-      if(rf.isEmpty()&&draft!=null)rf=draft.optString("reimbursementFor","").trim();
-      if(rf.isEmpty())throw new IllegalArgumentException("Repayment \""+row.optString("merchant","payment")+"\" needs an open shared expense. Review it individually.");
-      row.put("reimbursementFor",rf);
+      String recId=row.optString("receiptId","").trim();
+      if(!recId.isEmpty()){
+       boolean recOk=false;
+       if(receipts!=null)for(int rj=0;rj<receipts.length();rj++)if(recId.equals(receipts.getJSONObject(rj).optString("id"))){recOk=true;break;}
+       if(!recOk)row.remove("receiptId");
+      }else row.remove("receiptId");
+      Ledger.post(s,row);
+      if(draft!=null)draft.remove("batchError");
+      savedCnt++;
+     }catch(IllegalArgumentException ex){
+      if(!partial)throw ex;
+      String msg=ex.getMessage()==null?"Could not record this row.":ex.getMessage();
+      if(draft!=null)draft.put("batchError",msg);
+      failedRows.put(new JSONObject().put("draftId",did).put("merchant",row.optString("merchant","")).put("error",msg));
      }
-     Ledger.post(s,row);
     }
+    if(partial)s.put("lastBatchResult",new JSONObject().put("saved",savedCnt).put("failed",failedRows));
+    else s.remove("lastBatchResult");
     return true;
    }
    case "reconcile":{
@@ -261,10 +281,17 @@ public final class Extras {
     String nextDate=a.optString("nextDate","").trim();
     if(!nextDate.isEmpty())LocalDate.parse(nextDate);
     else{LocalDate now=LocalDate.now();LocalDate d=Finance.anchored(YearMonth.from(now),dom);if(d.isBefore(now))d=Finance.advance(d,freq,dom);nextDate=d.toString();}
-    s.getJSONObject("settings").put("cycleDay",dom).put("payday",new JSONObject().put("name",pName).put("amount",amt).put("account",acct).put("frequency",freq).put("dayOfMonth",dom).put("nextDate",nextDate));
+    JSONObject sets=s.getJSONObject("settings");
+    if(!"monthly".equals(sets.optString("cycleMode","")))sets.put("cycleDay",dom);
+    sets.put("payday",new JSONObject().put("name",pName).put("amount",amt).put("account",acct).put("frequency",freq).put("dayOfMonth",dom).put("nextDate",nextDate));
     return true;
    }
-   case "clearPayday":s.getJSONObject("settings").remove("payday");return true;
+   case "clearPayday":{
+    JSONObject sets=s.getJSONObject("settings");
+    sets.remove("payday");
+    if(!"custom".equals(sets.optString("cycleMode","")))sets.put("cycleDay",1);
+    return true;
+   }
    case "settlePerson":{
     String person=name(a,"person",80),account=a.getString("account"),dt=a.optString("date",LocalDate.now().toString()).trim();
     Ledger.find(s.getJSONArray("accounts"),account);LocalDate.parse(dt);
@@ -387,6 +414,7 @@ public final class Extras {
     String hint=d.optString("transferHint","")+" "+d.optString("merchant","");
     String other=Finance.matchAccountByName(accounts,hint,"",acct);
     if(!other.isEmpty()){to=other;}
+    else if(d.optBoolean("reload")&&accounts.length()<=1){kind="reload";to=acct;}
     else if(d.optBoolean("reload")&&"wallet".equals(srcType)){d.put("reason","Wallet reload detected. Choose the account the money came from; it won't be counted as spending.");return;}
     else{d.put("reason","Looks like a transfer between your own accounts. Choose both accounts; it won't be counted as spending.");return;}
    }
@@ -400,7 +428,7 @@ public final class Extras {
   JSONObject txArgs=new JSONObject().put("key","auto:"+d.getString("id")).put("draftId",d.getString("id")).put("draftRevision",d.optInt("revision",1)).put("kind",kind).put("amount",BigDecimal.valueOf(amt,2).toPlainString()).put("account",acct).put("category",cat).put("merchant",merchant).put("date",dt).put("note",d.optString("note","")).put("autoRecorded",true).put("historyMatch",d.optString("historyMatch","none")).put("needsNote",d.optBoolean("needsNote",true));
   if(!sub.isEmpty())txArgs.put("subcategory",sub);
   if(d.has("originalCurrency")&&d.has("originalAmount"))txArgs.put("originalCurrency",d.getString("originalCurrency")).put("originalAmount",d.getString("originalAmount"));
-  if(kind.equals("transfer"))txArgs.put("to",to);
+  if(kind.equals("transfer")||kind.equals("reload"))txArgs.put("to",to.isEmpty()?acct:to);
   JSONObject matchedBill=findMatchingBill(s,kind,amt,merchant,cat,sub,dt);
   if(matchedBill!=null){
    txArgs.put("billId",matchedBill.getString("id")).put("billDate",matchedBill.getString("date")).put("needsNote",false);
@@ -721,7 +749,7 @@ public final class Extras {
   if(n==null||n.isEmpty())return out;
   for(String tok:n.split(" ")){
    if(tok.length()<2||tok.matches("[0-9]+|[a-z]{1,2}[0-9]{1,3}|[0-9]{1,2}[a-z]{1,3}"))continue;
-   if(tok.matches("(?:at|to|di|ke|no|in|on|of|by|kl|klcc|pj|my|malaysia|trx|klia|bktjll|slngr|penang|johor|ipoh|melaka|subang|puchong|petaling|shah|alam|damansara|bangsar|cheras|klang|sunway|pyramid|mid|valley|pavilion|sdn|bhd|berhad|enterprise|enterprises|trading|services|service|official|personal|care|express|online|store|shop|mart|kedai|restoran|restaurant|klinik|farmasi|pasar|mini|station|stesen|clinic|pharmacy|plaza|outlet|branch|cawangan|company|co|corp|hub|ventures?|holdings)"))continue;
+   if(tok.matches("(?:at|to|di|ke|no|in|on|of|by|kl|klcc|pj|my|malaysia|trx|klia|bktjll|slngr|penang|johor|ipoh|melaka|subang|puchong|petaling|shah|alam|damansara|bangsar|cheras|klang|sunway|pyramid|mid|valley|pavilion|sdn|bhd|berhad|enterprise|enterprises|trading|services|service|official|personal|care|express|online|store|shop|mart|supermarket|hypermarket|kedai|restoran|restaurant|klinik|farmasi|pasar|mini|station|stesen|clinic|pharmacy|plaza|outlet|branch|cawangan|company|co|corp|hub|ventures?|holdings|kopitiam|kopi|cafe|coffee|buku|book|bookstore|bookshop|bistro|kitchen|dapur|warung|gerai|bakery|dental|pergigian|specialist|pakar|perubatan|kereta|bengkel|medan|selera)"))continue;
    out.add(tok);
   }
   return out;
@@ -791,10 +819,11 @@ public final class Extras {
  private static boolean areKindsTwinCompatible(JSONObject a,JSONObject b){
   String kA=a.optString("kind","expense"),kB=b.optString("kind","expense");
   if(kA.equals(kB))return true;
+  if(("reload".equals(kA)&&"transfer".equals(kB)&&b.optBoolean("reload"))||("transfer".equals(kA)&&a.optBoolean("reload")&&"reload".equals(kB)))return true;
   if(("shared".equals(kA)&&"expense".equals(kB))||("expense".equals(kA)&&"shared".equals(kB)))return true;
   boolean trMatch=(("expense".equals(kA)||"shared".equals(kA))&&"transfer".equals(kB))||("transfer".equals(kA)&&("expense".equals(kB)||"shared".equals(kB)));
   if(!trMatch)return false;
-  if(a.optBoolean("reload")||b.optBoolean("reload"))return false;
+  if(a.optBoolean("reload")||b.optBoolean("reload")||"reload".equals(kA)||"reload".equals(kB))return false;
   JSONObject tr="transfer".equals(kA)?a:b,ex="transfer".equals(kA)?b:a;
   // Never merge a real bank-to-wallet internal reload transfer with a subsequent wallet purchase.
   String trTo=tr.optString("to",""),exAcct=ex.optString("account","");
@@ -854,7 +883,7 @@ public final class Extras {
    JSONObject t=tx.getJSONObject(i);
    if(t.optBoolean("voided")||t.has("importBatch"))continue;
    String tk=t.optString("kind","");
-   if(!Arrays.asList("expense","transfer","income","refund","shared").contains(tk))continue;
+   if(!Arrays.asList("expense","transfer","reload","income","refund","shared").contains(tk))continue;
    if(!amountsMatchForTwin(t,d))continue;
    String sp=t.optString("sourcePackage","");
    if(!dPkg.isEmpty()&&dPkg.equals(sp))continue;
@@ -1299,6 +1328,7 @@ public final class Extras {
   }
 
   String woLow=withoutAmt.toLowerCase(Locale.ROOT);
+  boolean quickReloadCue=false;
   if("expense".equals(kind)){
    boolean isIncomingSignal=java.util.regex.Pattern.compile("(?i)(?:\\b(?:received|terima|dapat|daripada|gaji|salary|bonus|payday|income|dividend|dividen|commission|komisen|freelance)\\b|收到|工资|薪水|发薪|奖金|收入|入账|进账|报销)").matcher(withoutAmt).find();
    boolean hasTransferExpenseKw=java.util.regex.Pattern.compile("(?i)(?:\\b(?:prabayar|prepaid|postpaid|data|line|celcom|maxis|digi|umobile|hotlink|vitamin|vitamins|supplement|supplements|prs|asb|asnb|epf|kwsp|fee|fees|charge|charges|saving|savings|investment)\\b|流量|话费|维他命|保健|基金|费用|手续费|储蓄|投资)").matcher(withoutAmt).find();
@@ -1306,6 +1336,7 @@ public final class Extras {
    if(!isNonRefundable&&java.util.regex.Pattern.compile("(?i)(?:\\b(?:refund|refunded|reversal|chargeback|bayaran\\s+balik|pulangan(?:\\s+wang)?)\\b|退款|退回|退钱|赔付)").matcher(withoutAmt).find()){
     kind="refund";
    }else if(!isIncomingSignal&&!hasTransferExpenseKw&&java.util.regex.Pattern.compile("(?i)(?:\\b(?:transfer|transferred|pindah|top[\\s-]?up|reload|reloaded|tambah\\s+nilai)\\b|转账|充值|加额|转到|转去|转入)").matcher(withoutAmt).find()){
+    quickReloadCue=java.util.regex.Pattern.compile("(?i)(?:\\b(?:top[\\s-]?up|reload|reloaded|tambah\\s+nilai)\\b|充值|加额)").matcher(withoutAmt).find();
     kind="transfer";
    }else if(isIncomingSignal||java.util.regex.Pattern.compile("(?i)\\bfrom\\s+[\\p{L}]").matcher(withoutAmt).find()){
     kind="income";
@@ -1345,6 +1376,12 @@ public final class Extras {
     if(hit==null&&!rawWithoutAmt.equals(withoutAmt))hit=findQuickAccountMatch(accounts,rawWithoutAmt,"");
     if(hit!=null){matchedAcct=hit[0];matchedAcctToken=hit[1];sourceHint=hit[2];}
    }
+   if("transfer".equals(kind)&&quickReloadCue&&(accounts.length()==1||(toAcct.isEmpty()&&!withoutAmt.toLowerCase(Locale.ROOT).matches(".*\\b(?:from|dari|daripada|to|ke|into)\\b.*")&&!withoutAmt.contains("从")&&!withoutAmt.contains("到")))){
+    kind="reload";
+    toAcct=matchedAcct;
+   }
+  }else if("transfer".equals(kind)&&quickReloadCue){
+   kind="reload";
   }
   if(matchedAcct.isEmpty()&&s!=null&&accounts!=null){
    JSONObject prefs=s.optJSONObject("settings");
@@ -1392,7 +1429,7 @@ public final class Extras {
   if("income".equals(kind)){
    boolean isSalary=java.util.regex.Pattern.compile("(?i)(?:\\b(?:salary|gaji|payday|bonus)\\b|工资|薪水|发薪|奖金)").matcher(woLow+" "+raw.toLowerCase(Locale.ROOT)).find();
    cls=new String[]{isSalary?"Salary":"Other income",""};
-  }else if("transfer".equals(kind)){
+  }else if("transfer".equals(kind)||"reload".equals(kind)){
    cls=new String[]{"Miscellaneous",""};
   }else{
    MerchantCanonicalizer.Result canon=null;
@@ -1445,6 +1482,8 @@ public final class Extras {
     for(int i=0;i<accounts.length();i++){String id=accounts.getJSONObject(i).getString("id");if(!id.equals(matchedAcct)){toAcct=id;break;}}
    }
    if(!toAcct.isEmpty())res.put("to",toAcct);
+  }else if("reload".equals(kind)){
+   res.put("to",toAcct.isEmpty()?matchedAcct:toAcct);
   }
   return res;
  }
@@ -1479,6 +1518,9 @@ public final class Extras {
    }
    if(toAcct.isEmpty()||toAcct.equals(acct))throw new IllegalArgumentException("Add at least two accounts to record a transfer.");
    postArgs.put("to",toAcct);
+  }else if("reload".equals(kind)){
+   String toAcct=parsed.optString("to","");
+   postArgs.put("to",toAcct.isEmpty()?acct:toAcct);
   }
   Ledger.post(s,postArgs);
   JSONArray tx=s.getJSONArray("transactions");
