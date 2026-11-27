@@ -1677,6 +1677,81 @@ public final class ExtendedTests {
    yes(pJp!=null&&"expense".equals(pJp.optString("kind"))&&pJp.getLong("amount")==12000L);
   });
 
+  test("Track 5 PersonalAdapter opt-in learning & reload-aware O(N+M) CSV import",()->{
+   // 1. PersonalAdapter learns recency-weighted corrections only when correctionLogOptIn=true & yields to explicit rules
+   JSONObject st=Ledger.initial();
+   String acct=st.getJSONArray("accounts").getJSONObject(0).getString("id");
+   Ledger.apply(st,"settings",new JSONObject().put("correctionLogOptIn",true));
+   Ledger.apply(st,"transaction",tx("expense","10.00").put("category","Miscellaneous").put("merchant","Syarikat Maju Teraju 88"));
+   String txId=st.getJSONArray("transactions").getJSONObject(0).getString("id");
+   Ledger.apply(st,"quickNote",new JSONObject().put("id",txId).put("note","kursus").put("category","Education").put("subcategory","Upskilling & Certification"));
+   Ledger.apply(st,"void",new JSONObject().put("id",txId));
+
+   Ledger.apply(st,"settings",new JSONObject().put("correctionLogOptIn",false));
+   JSONObject dOff=new JSONObject().put("merchant","SYARIKAT MAJU TERAJU 88").put("amount",750L).put("account",acct);
+   Finance.suggest(st,dOff);
+   yes(!"Education".equals(dOff.optString("category")));
+   yes(!"personal".equals(dOff.optString("historyMatch")));
+
+   Ledger.apply(st,"settings",new JSONObject().put("correctionLogOptIn",true));
+   JSONObject dOn=new JSONObject().put("merchant","SYARIKAT MAJU TERAJU 88").put("amount",650L).put("account",acct);
+   Finance.suggest(st,dOn);
+   yes("Education".equals(dOn.getString("category")));
+   yes("Upskilling & Certification".equals(dOn.getString("subcategory")));
+   yes("personal".equals(dOn.getString("historyMatch")));
+
+   Ledger.apply(st,"rule",new JSONObject().put("id","r-pakmat").put("match","maju teraju").put("category","Groceries").put("subcategory","Fresh Produce & Market").put("priority",99));
+   JSONObject dRule=new JSONObject().put("merchant","Syarikat Maju Teraju 88").put("amount",650L).put("account",acct);
+   Finance.suggest(st,dRule);
+   yes("Groceries".equals(dRule.getString("category")));
+   yes("rule".equals(dRule.getString("historyMatch")));
+
+   Extras.apply(st,"clearCorrectionLog",new JSONObject());
+   yes(PersonalAdapter.predict(st,"Syarikat Maju Teraju 88","")==null);
+
+   // 2. Reload-aware CSV import & O(N+M) scaling
+   JSONObject csvState=Ledger.initial();
+   Ledger.apply(csvState,"account",new JSONObject().put("name","TNG Wallet").put("type","wallet").put("opening","500.00"));
+   String wAcct=csvState.getJSONArray("accounts").getJSONObject(1).getString("id");
+   long balBefore=Finance.balance(csvState,wAcct,"9999-12-31");
+   String csvText="Date,Merchant,Amount,Note\n"
+     +"2026-11-10,TNG eWallet Reload,100.00,Topup\n"
+     +"2026-11-11,GrabPay Top-Up,50.00,\n"
+     +"2026-11-12,ShopeePay Tambah Nilai,30.00,\n"
+     +"2026-11-13,Hotlink Prepaid Reload,30.00,Airtime\n";
+   JSONObject map=new JSONObject().put("account",wAcct).put("date",0).put("merchant",1).put("amount",2).put("note",3).put("dateFormat","iso");
+   JSONArray prev=CsvImport.preview(csvText,map,csvState);
+   eq(prev.length(),4);
+   yes("reload".equals(prev.getJSONObject(0).getString("kind")));
+   yes(prev.getJSONObject(0).optBoolean("reload"));
+   yes("reload".equals(prev.getJSONObject(1).getString("kind")));
+   yes("reload".equals(prev.getJSONObject(2).getString("kind")));
+   yes("expense".equals(prev.getJSONObject(3).getString("kind")));
+   Extras.apply(csvState,"importCommit",new JSONObject().put("batch","b-rel-1").put("name","Reload Test").put("rows",prev));
+   Ledger.validate(csvState);
+   eq(Finance.balance(csvState,wAcct,"9999-12-31"),balBefore-3000L);
+   JSONObject rep=Finance.cycleRecap(csvState,LocalDate.of(2026,11,20));
+   eq(rep.getLong("totalSpent"),3000L);
+   eq(rep.getLong("totalIncome"),0L);
+
+   // 500-row CSV preview vs 2,000-tx ledger completes well under 500 ms
+   JSONObject perfState=Ledger.initial();
+   String pAcct=perfState.getJSONArray("accounts").getJSONObject(0).getString("id");
+   JSONArray pTx=perfState.getJSONArray("transactions");
+   for(int i=0;i<2000;i++){
+    pTx.put(new JSONObject().put("id","ptx-"+i).put("kind","expense").put("amount",1200L+i).put("account",pAcct).put("date","2026-11-05").put("merchant","Merchant "+i).put("category","Shopping"));
+   }
+   StringBuilder bigCsv=new StringBuilder("Date,Merchant,Amount,Category,Note\n");
+   for(int i=0;i<500;i++){
+    bigCsv.append("2026-11-15,ZUS Coffee Outlet ").append(i).append(",12.50,Food & drinks,ok\n");
+   }
+   long pt0=System.nanoTime();
+   JSONArray bigPrev=CsvImport.preview(bigCsv.toString(),new JSONObject().put("account",pAcct).put("date",0).put("merchant",1).put("amount",2).put("category",3).put("note",4).put("dateFormat","iso"),perfState);
+   long csvMs=(System.nanoTime()-pt0)/1_000_000L;
+   eq(bigPrev.length(),500);
+   yes(csvMs<500L);
+  });
+
   System.out.println("RESULT: "+passed+" extended tests passed");
  }
 }

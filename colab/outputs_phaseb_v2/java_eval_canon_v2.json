@@ -1,0 +1,164 @@
+{
+  "trim_reload_ok": true,
+  "unseen_sme_pairs": {
+    "roc_auc": 0.9981,
+    "by_kind": {
+      "trunc_vs_trunc": {
+        "acc": 0.9806,
+        "neg": 0,
+        "pos": 103,
+        "tpr": 0.9806,
+        "fpr": null,
+        "fp": 0,
+        "tp": 101,
+        "n": 103
+      },
+      "clean_vs_trunc": {
+        "acc": 0.835,
+        "neg": 0,
+        "pos": 103,
+        "tpr": 0.835,
+        "fpr": null,
+        "fp": 0,
+        "tp": 86,
+        "n": 103
+      },
+      "hard_neg_same_cat": {
+        "acc": 1,
+        "neg": 99,
+        "pos": 0,
+        "tpr": null,
+        "fpr": 0,
+        "fp": 0,
+        "tp": 0,
+        "n": 99
+      },
+      "hard_neg_trunc": {
+        "acc": 1,
+        "neg": 99,
+        "pos": 0,
+        "tpr": null,
+        "fpr": 0,
+        "fp": 0,
+        "tp": 0,
+        "n": 99
+      }
+    },
+    "tpr": 0.9078,
+    "fn": 19,
+    "fpr": 0,
+    "accuracy": 0.953,
+    "fp": 0,
+    "tn": 198,
+    "tp": 187,
+    "n": 404
+  },
+  "avg_encode_ms": 0.2564,
+  "probe_surfaces": [
+    {
+      "margin": 0.2747,
+      "similarity": 0.809,
+      "raw": "PAY*CRNGPHARM-TRX",
+      "matched": true,
+      "canonical": "CARiNG Pharmacy",
+      "noisy_surface": true,
+      "category": "Health & medical",
+      "subcategory": "Pharmacy & Medicine"
+    },
+    {
+      "margin": 0.5064,
+      "similarity": 0.8979,
+      "raw": "DNQR*99SPDM-KJ",
+      "matched": true,
+      "canonical": "99 Speedmart",
+      "noisy_surface": true,
+      "category": "Groceries",
+      "subcategory": "Convenience Store (99 Speedmart / 7-Eleven / FamilyMart)"
+    },
+    {
+      "margin": 0.3932,
+      "similarity": 0.8589,
+      "raw": "TNGD*GRDNPHARM-TRX",
+      "matched": true,
+      "canonical": "Guardian Pharmacy",
+      "noisy_surface": true,
+      "category": "Health & medical",
+      "subcategory": "Pharmacy & Medicine"
+    },
+    {
+      "margin": 0.0586,
+      "similarity": 0.5783,
+      "raw": "MYDEBIT*WSNSPHARM-TRX",
+      "matched": true,
+      "canonical": "Watsons Pharmacy",
+      "noisy_surface": true,
+      "category": "Health & medical",
+      "subcategory": "Pharmacy & Medicine"
+    },
+    {
+      "margin": 0.285,
+      "similarity": 0.7588,
+      "raw": "IPAY88*TRPCOM FLT",
+      "matched": true,
+      "canonical": "Trip.com Flights",
+      "noisy_surface": true,
+      "category": "Entertainment & travel",
+      "subcategory": "Flights & Transport"
+    },
+    {
+      "margin": 0.0063,
+      "similarity": 0.4513,
+      "raw": "TNGD*EZBKXPRSS",
+      "matched": false,
+      "canonical": "Easybook Express",
+      "noisy_surface": true,
+      "category": "Entertainment & travel",
+      "subcategory": "Flights & Transport"
+    },
+    {
+      "margin": 0.0035,
+      "similarity": 0.4352,
+      "raw": "PAY*QNDM-TRX",
+      "matched": false,
+      "canonical": "Poliklinik Damai",
+      "noisy_surface": true,
+      "category": "Health & medical",
+      "subcategory": "Clinic & GP"
+    },
+    {
+      "margin": 0.1315,
+      "similarity": 0.6653,
+      "raw": "D0MIN0'SPIZZA",
+      "matched": true,
+      "canonical": "Domino's Pizza MY",
+      "noisy_surface": true,
+      "category": "Food & drinks",
+      "subcategory": "Fast Food"
+    },
+    {
+      "margin": 0.0065,
+      "similarity": 0.5327,
+      "raw": "FPX*PAY*ALORMT S/B",
+      "matched": false,
+      "canonical": "ALL IT Hypermarket",
+      "noisy_surface": true,
+      "category": "Shopping",
+      "subcategory": "Electronics & Gadgets"
+    },
+    {
+      "margin": 0.5587,
+      "similarity": 0.952,
+      "raw": "99 SPEEDMART SDN BHD (519537-X)",
+      "matched": true,
+      "canonical": "99 Speedmart",
+      "noisy_surface": false,
+      "category": "Groceries",
+      "subcategory": "Convenience Store (99 Speedmart / 7-Eleven / FamilyMart)"
+    }
+  ],
+  "cold_load_ms": 36,
+  "avg_canonicalize_ms": 0.0835,
+  "max_trim_emb_diff": 0,
+  "avg_pair_ms": 0.4486,
+  "asset_bytes": 449957
+}

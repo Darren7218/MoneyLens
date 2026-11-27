@@ -1,0 +1,69 @@
+{
+  "train_seconds": 78.3,
+  "gz_bytes": 432888,
+  "vocab_size": 5400,
+  "emb_dim": 64,
+  "hidden_dim": 160,
+  "num_protos": 77,
+  "train_pairs": 10350,
+  "llm_teacher": "Qwen/Qwen2.5-7B-Instruct",
+  "embed_teacher": "intfloat/multilingual-e5-large",
+  "calibrated_thresholds": {
+    "semanticThreshold": 0.18,
+    "classifyThreshold": 0.24,
+    "classifyMargin": 0.02
+  },
+  "val_retrieval": {
+    "n_queries": 197,
+    "recall_at_5": 0.8579,
+    "recall_at_10": 0.9036,
+    "mrr_at_10": 0.807,
+    "unthresholded_concept_r5": 0.8883,
+    "ood_fpr": 0.0,
+    "recall_at_5_by_lang": {
+      "bm": 0.8125,
+      "en": 0.8889,
+      "mg": 0.8939,
+      "zh": 0.8298
+    },
+    "recall_at_5_by_slice": {
+      "concept": 0.9554,
+      "zero_lexical_overlap": 0.7294
+    }
+  },
+  "blind_retrieval": {
+    "n_queries": 380,
+    "recall_at_5": 0.9053,
+    "recall_at_10": 0.9316,
+    "mrr_at_10": 0.8291,
+    "unthresholded_concept_r5": 0.9071,
+    "ood_fpr": 0.0167,
+    "recall_at_5_by_lang": {
+      "bm": 0.9208,
+      "en": 0.8947,
+      "mg": 0.92,
+      "zh": 0.8835
+    },
+    "recall_at_5_by_slice": {
+      "concept": 0.9524,
+      "kind_filter": 1.0,
+      "lhdn_tax": 1.0,
+      "structured_constraint": 1.0,
+      "zero_lexical_overlap": 0.8333
+    }
+  },
+  "blind_proto_cls": {
+    "n": 542,
+    "raw_cat_acc": 0.797,
+    "raw_sub_acc": 0.7251
+  },
+  "quick_entry_blind_count": 800,
+  "frozen_blind_match": {
+    "queries_jaccard": 0.7156,
+    "ood_jaccard": 1.0,
+    "quick_cases_frozen": 800,
+    "quick_cases_cand": 800,
+    "zero_train_leakage": true
+  },
+  "stage_seconds": 135.9
+}

@@ -1,0 +1,355 @@
+{
+  "total_seconds": 497.1,
+  "stage_a_search_v3": {
+    "train_seconds": 78.3,
+    "gz_bytes": 432888,
+    "vocab_size": 5400,
+    "emb_dim": 64,
+    "hidden_dim": 160,
+    "num_protos": 77,
+    "train_pairs": 10350,
+    "llm_teacher": "Qwen/Qwen2.5-7B-Instruct",
+    "embed_teacher": "intfloat/multilingual-e5-large",
+    "calibrated_thresholds": {
+      "semanticThreshold": 0.18,
+      "classifyThreshold": 0.24,
+      "classifyMargin": 0.02
+    },
+    "val_retrieval": {
+      "n_queries": 197,
+      "recall_at_5": 0.8579,
+      "recall_at_10": 0.9036,
+      "mrr_at_10": 0.807,
+      "unthresholded_concept_r5": 0.8883,
+      "ood_fpr": 0.0,
+      "recall_at_5_by_lang": {
+        "bm": 0.8125,
+        "en": 0.8889,
+        "mg": 0.8939,
+        "zh": 0.8298
+      },
+      "recall_at_5_by_slice": {
+        "concept": 0.9554,
+        "zero_lexical_overlap": 0.7294
+      }
+    },
+    "blind_retrieval": {
+      "n_queries": 380,
+      "recall_at_5": 0.9053,
+      "recall_at_10": 0.9316,
+      "mrr_at_10": 0.8291,
+      "unthresholded_concept_r5": 0.9071,
+      "ood_fpr": 0.0167,
+      "recall_at_5_by_lang": {
+        "bm": 0.9208,
+        "en": 0.8947,
+        "mg": 0.92,
+        "zh": 0.8835
+      },
+      "recall_at_5_by_slice": {
+        "concept": 0.9524,
+        "kind_filter": 1.0,
+        "lhdn_tax": 1.0,
+        "structured_constraint": 1.0,
+        "zero_lexical_overlap": 0.8333
+      }
+    },
+    "blind_proto_cls": {
+      "n": 542,
+      "raw_cat_acc": 0.797,
+      "raw_sub_acc": 0.7251
+    },
+    "quick_entry_blind_count": 800,
+    "frozen_blind_match": {
+      "queries_jaccard": 0.7156,
+      "ood_jaccard": 1.0,
+      "quick_cases_frozen": 800,
+      "quick_cases_cand": 800,
+      "zero_train_leakage": true
+    },
+    "stage_seconds": 135.9
+  },
+  "stage_b_merchant_canon_v2": {
+    "train_seconds": 84.7,
+    "gz_bytes": 449957,
+    "num_catalog": 800,
+    "num_train_pairs": 31928,
+    "calibrated_thresholds": {
+      "brandMatchThreshold": 0.54,
+      "brandMatchMargin": 0.02,
+      "pairSameThreshold": 0.68
+    },
+    "catalog_blind_eval": {
+      "n_queries": 1222,
+      "top1_unthresholded_acc": 0.8928,
+      "recall_at_threshold": 0.8691,
+      "precision_at_threshold": 0.9465,
+      "unseen_sme_false_canon_rate": 0.0194,
+      "n_unseen_sme": 103
+    },
+    "zero_shot_pairwise_eval": {
+      "n_pairs": 404,
+      "roc_auc": 0.9981,
+      "f1": 0.9517,
+      "tpr": 0.9078,
+      "hard_negative_fpr": 0.0
+    },
+    "v6_synth_merge": {
+      "v6_cat_pairs_added": 0,
+      "v6_sme_added": 600,
+      "v6_sme_pairs_added": 2392,
+      "v6_skipped_leak": 254,
+      "v6_skipped_short": 6,
+      "zero_v1_pair_leakage": true
+    },
+    "stage_seconds": 278.7
+  },
+  "stage_c_receipt_v2": {
+    "stage_seconds": 81.4,
+    "vocab_config": {
+      "max_lex_feats": 8500,
+      "min_df": 3,
+      "vocab_size": 6298
+    },
+    "dataset_counts": {
+      "train": 12000,
+      "val": 1000,
+      "test_ocr": 1000,
+      "test_txt": 1000
+    },
+    "model_stats": {
+      "raw_json_bytes": 692036,
+      "gz_bytes": 156681,
+      "active_features": 6177,
+      "nonzero_weights": 55112
+    },
+    "eval_val": {
+      "n_receipts": 1000,
+      "n_lines": 13692,
+      "line_acc": 0.9972,
+      "exact_grand_total_amt": 0.926,
+      "merchant_tag_match": 0.885,
+      "date_line_hit": 0.903,
+      "per_label": {
+        "MERCHANT": {
+          "precision": 0.9945,
+          "recall": 0.987,
+          "f1": 0.9908,
+          "support": 923
+        },
+        "HEADER_META": {
+          "precision": 0.9954,
+          "recall": 0.9982,
+          "f1": 0.9968,
+          "support": 3268
+        },
+        "DATE": {
+          "precision": 0.9989,
+          "recall": 1.0,
+          "f1": 0.9994,
+          "support": 903
+        },
+        "ITEM": {
+          "precision": 0.9993,
+          "recall": 0.997,
+          "f1": 0.9982,
+          "support": 3013
+        },
+        "SUBTOTAL": {
+          "precision": 0.992,
+          "recall": 0.996,
+          "f1": 0.994,
+          "support": 499
+        },
+        "TAX_SST": {
+          "precision": 0.9953,
+          "recall": 0.9953,
+          "f1": 0.9953,
+          "support": 215
+        },
+        "ROUNDING": {
+          "precision": 0.9986,
+          "recall": 1.0,
+          "f1": 0.9993,
+          "support": 734
+        },
+        "GRAND_TOTAL": {
+          "precision": 0.9973,
+          "recall": 0.9982,
+          "f1": 0.9977,
+          "support": 1106
+        },
+        "PAYMENT_TENDER": {
+          "precision": 0.9984,
+          "recall": 0.9967,
+          "f1": 0.9975,
+          "support": 1217
+        },
+        "LHDN_META": {
+          "precision": 0.9984,
+          "recall": 0.9992,
+          "f1": 0.9988,
+          "support": 1279
+        },
+        "OTHER": {
+          "precision": 0.9963,
+          "recall": 0.9981,
+          "f1": 0.9972,
+          "support": 535
+        }
+      }
+    },
+    "eval_blind_real_ocr": {
+      "n_receipts": 1000,
+      "n_lines": 13913,
+      "line_acc": 0.9942,
+      "exact_grand_total_amt": 0.952,
+      "merchant_tag_match": 0.919,
+      "date_line_hit": 0.945,
+      "per_label": {
+        "MERCHANT": {
+          "precision": 0.9989,
+          "recall": 0.9553,
+          "f1": 0.9766,
+          "support": 984
+        },
+        "HEADER_META": {
+          "precision": 0.9873,
+          "recall": 0.9991,
+          "f1": 0.9932,
+          "support": 3417
+        },
+        "DATE": {
+          "precision": 0.9958,
+          "recall": 0.9989,
+          "f1": 0.9974,
+          "support": 946
+        },
+        "ITEM": {
+          "precision": 0.9981,
+          "recall": 0.9969,
+          "f1": 0.9975,
+          "support": 3178
+        },
+        "SUBTOTAL": {
+          "precision": 0.9868,
+          "recall": 0.9943,
+          "f1": 0.9905,
+          "support": 527
+        },
+        "TAX_SST": {
+          "precision": 1.0,
+          "recall": 0.9961,
+          "f1": 0.9981,
+          "support": 258
+        },
+        "ROUNDING": {
+          "precision": 0.9969,
+          "recall": 0.9953,
+          "f1": 0.9961,
+          "support": 636
+        },
+        "GRAND_TOTAL": {
+          "precision": 0.9956,
+          "recall": 0.9912,
+          "f1": 0.9934,
+          "support": 1132
+        },
+        "PAYMENT_TENDER": {
+          "precision": 0.9942,
+          "recall": 0.9959,
+          "f1": 0.9951,
+          "support": 1212
+        },
+        "LHDN_META": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 1080
+        },
+        "OTHER": {
+          "precision": 0.9927,
+          "recall": 1.0,
+          "f1": 0.9963,
+          "support": 543
+        }
+      }
+    },
+    "eval_blind_text_augmented": {
+      "n_receipts": 1000,
+      "n_lines": 13358,
+      "line_acc": 0.9959,
+      "exact_grand_total_amt": 0.883,
+      "merchant_tag_match": 0.846,
+      "date_line_hit": 0.865,
+      "per_label": {
+        "MERCHANT": {
+          "precision": 0.9988,
+          "recall": 0.958,
+          "f1": 0.978,
+          "support": 882
+        },
+        "HEADER_META": {
+          "precision": 0.9884,
+          "recall": 0.9991,
+          "f1": 0.9937,
+          "support": 3168
+        },
+        "DATE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 865
+        },
+        "ITEM": {
+          "precision": 0.9983,
+          "recall": 0.9993,
+          "f1": 0.9988,
+          "support": 2879
+        },
+        "SUBTOTAL": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 559
+        },
+        "TAX_SST": {
+          "precision": 0.9957,
+          "recall": 1.0,
+          "f1": 0.9979,
+          "support": 234
+        },
+        "ROUNDING": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 758
+        },
+        "GRAND_TOTAL": {
+          "precision": 0.9972,
+          "recall": 0.9963,
+          "f1": 0.9967,
+          "support": 1073
+        },
+        "PAYMENT_TENDER": {
+          "precision": 0.9943,
+          "recall": 0.9976,
+          "f1": 0.9959,
+          "support": 1228
+        },
+        "LHDN_META": {
+          "precision": 1.0,
+          "recall": 0.9983,
+          "f1": 0.9992,
+          "support": 1211
+        },
+        "OTHER": {
+          "precision": 0.998,
+          "recall": 0.992,
+          "f1": 0.995,
+          "support": 501
+        }
+      }
+    }
+  }
+}

@@ -2275,6 +2275,7 @@ def load_e5_teacher():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     tok = AutoTokenizer.from_pretrained(E5_TEACHER_ID)
     model = AutoModel.from_pretrained(E5_TEACHER_ID)
+    teacher_dim = int(model.config.hidden_size)
     if torch.cuda.is_available():
         model = model.to(device=device, dtype=torch.float16)
     model.eval()
@@ -2290,7 +2291,7 @@ def load_e5_teacher():
                 pooled = (res * mask).sum(dim=1) / mask.sum(dim=1).clamp(min=1e-9)
                 pooled = torch.nn.functional.normalize(pooled.float(), p=2, dim=1)
                 out.append(pooled.cpu().numpy().astype(np.float16))
-        return np.vstack(out) if out else np.zeros((0, 768), dtype=np.float16)
+        return np.vstack(out) if out else np.zeros((0, teacher_dim), dtype=np.float16)
 
     def cleanup():
         nonlocal model, tok
@@ -2598,9 +2599,11 @@ def train_and_export():
             svd_texts.append(surf)
 
     update_status("ENCODING_E5_TRAIN_PAIRS", queries=len(unique_qs), docs=len(unique_ds), vocab_svd=len(svd_texts))
-    t_q_embs = encode_e5(["query: " + q for q in unique_qs], batch_size=96)
-    t_d_embs = encode_e5(["passage: " + d for d in unique_ds], batch_size=96)
-    t_v_embs = encode_e5(["query: " + s for s in svd_texts], batch_size=128) if svd_texts else np.zeros((0, 768), dtype=np.float16)
+    _e5_bs = 32 if (torch.cuda.is_available() and torch.cuda.get_device_properties(0).total_memory < 20 * (1024**3)) else 96
+    t_q_embs = encode_e5(["query: " + q for q in unique_qs], batch_size=_e5_bs)
+    t_d_embs = encode_e5(["passage: " + d for d in unique_ds], batch_size=_e5_bs)
+    teacher_dim = int(t_q_embs.shape[1])
+    t_v_embs = encode_e5(["query: " + s for s in svd_texts], batch_size=_e5_bs) if svd_texts else np.zeros((0, teacher_dim), dtype=np.float16)
     cleanup_e5()
 
     # Isotropize E5 embeddings via All-but-the-Top centering
@@ -2679,7 +2682,7 @@ def train_and_export():
             self.ln1 = nn.LayerNorm(HIDDEN_DIM, eps=1e-5)
             self.fc2 = nn.Linear(HIDDEN_DIM, EMB_DIM)
             self.P_res = nn.Parameter(torch.zeros(num_protos, EMB_DIM))
-            self.e5_proj = nn.Linear(EMB_DIM, 768, bias=False)
+            self.e5_proj = nn.Linear(EMB_DIM, teacher_dim, bias=False)
 
         def fq(self, w, qat: bool):
             if not qat:

@@ -209,7 +209,16 @@ public final class Extras {
    case "cancelBill":{JSONObject b=Ledger.find(s.getJSONArray("bills"),a.getString("id"));b.put("cancelled",a.optBoolean("cancelled",true));return true;}
    case "importCommit":{
     String batch=a.getString("batch");JSONArray rows=a.getJSONArray("rows");if(rows.length()>1000)throw new IllegalArgumentException("Import at most 1,000 rows per batch.");int count=0;JSONArray ids=new JSONArray();
-    for(int i=0;i<rows.length();i++){JSONObject row=rows.getJSONObject(i);String sourceKey=row.getString("importRow");boolean exists=false;JSONArray tx=s.getJSONArray("transactions");for(int j=0;j<tx.length();j++)if(sourceKey.equals(tx.getJSONObject(j).optString("importRow")))exists=true;if(exists)continue;int before=tx.length();row.put("key","import:"+sourceKey).put("importBatch",batch);Ledger.post(s,row);if(tx.length()>before){count++;ids.put(tx.getJSONObject(tx.length()-1).getString("id"));}}
+    JSONArray tx=s.getJSONArray("transactions");
+    Set<String> seenImportRows=new HashSet<>(tx.length()*2+8);
+    for(int j=0;j<tx.length();j++){String ir=tx.getJSONObject(j).optString("importRow","");if(!ir.isEmpty())seenImportRows.add(ir);}
+    for(int i=0;i<rows.length();i++){
+     JSONObject row=rows.getJSONObject(i);String sourceKey=row.getString("importRow");
+     if(seenImportRows.contains(sourceKey))continue;
+     if("reload".equals(row.optString("kind"))&&row.optString("to","").trim().isEmpty())row.put("to",row.getString("account"));
+     int before=tx.length();row.put("key","import:"+sourceKey).put("importBatch",batch);Ledger.post(s,row);
+     if(tx.length()>before){seenImportRows.add(sourceKey);count++;ids.put(tx.getJSONObject(tx.length()-1).getString("id"));}
+    }
     Ledger.upsert(s,"imports",new JSONObject().put("id",batch).put("count",count).put("name",a.optString("name","CSV import")).put("date",LocalDate.now().toString()).put("transactionIds",ids));return true;
    }
    case "undoImport":{JSONObject batch=Ledger.find(s.getJSONArray("imports"),a.getString("id"));JSONArray tx=s.getJSONArray("transactions");for(int i=0;i<tx.length();i++){JSONObject t=tx.getJSONObject(i);if(t.optString("importBatch").equals(batch.getString("id"))&&!t.has("replacedBy"))t.put("voided",true);}batch.put("undone",true);return true;}

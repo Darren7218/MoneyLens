@@ -6,8 +6,11 @@ import java.time.format.*;
 import java.math.*;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.regex.*;
 
 public final class CsvImport {
+ private static final Pattern P_CSV_RELOAD=Pattern.compile("(?i)(?:\\b(?:e-?wallet\\s+(?:reload|top[\\s-]?up)|tng\\s+ewallet\\s+(?:reload|top[\\s-]?up)|touch\\s*'?n\\s*go\\s+ewallet\\s+(?:reload|top[\\s-]?up)|grabpay\\s+(?:top[\\s-]?up|reload)|shopeepay\\s+(?:top[\\s-]?up|reload)|boost\\s+(?:wallet\\s+)?(?:top[\\s-]?up|reload)|bigpay\\s+(?:top[\\s-]?up|reload)|duitnow\\s+reload|tambah\\s+nilai|wallet\\s+(?:top[\\s-]?up|reload)|(?:top[\\s-]?up|reload)\\s+(?:e-?wallet|wallet|tng\\s+ewallet|grabpay|shopeepay|boost|bigpay))\\b|充值|加额)");
+ private static final Pattern P_CSV_TELCO_GUARD=Pattern.compile("(?i)\\b(?:prepaid|hotlink|xpax|umobile|u\\s+mobile|celcom|digi|maxis|tunetalk|yoodo|yes\\s*[45]g|redone|onexox|mobile\\s+reload|airtime|data\\s+pack)\\b");
  public static List<List<String>> parse(String input){
   if(input.length()>2_000_000)throw new IllegalArgumentException("Choose a CSV smaller than 2 MB.");if(input.startsWith("\uFEFF"))input=input.substring(1);List<List<String>> rows=new ArrayList<>();List<String> row=new ArrayList<>();StringBuilder cell=new StringBuilder();boolean quoted=false;
   for(int i=0;i<input.length();i++){char c=input.charAt(i);if(c=='"'){if(quoted&&i+1<input.length()&&input.charAt(i+1)=='"'){cell.append('"');i++;}else if(quoted||cell.length()==0)quoted=!quoted;else throw new IllegalArgumentException("Malformed CSV quote.");}else if(!quoted&&(c==','||c=='\n'||c=='\r')){row.add(cell.toString());cell.setLength(0);if(c!=','){if(c=='\r'&&i+1<input.length()&&input.charAt(i+1)=='\n')i++;if(row.stream().anyMatch(x->!x.trim().isEmpty()))rows.add(row);row=new ArrayList<>();}}else cell.append(c);if(cell.length()>2000||row.size()>50||rows.size()>1001)throw new IllegalArgumentException("CSV exceeds 1,000 rows, 50 columns or 2,000 characters per cell.");}
@@ -92,6 +95,17 @@ public final class CsvImport {
  }
  public static JSONArray preview(String text,JSONObject map,JSONObject state)throws Exception{
   List<List<String>> rows=parse(text);JSONArray out=new JSONArray();String digest=hash(text),account=map.getString("account");Ledger.find(state.getJSONArray("accounts"),account);
+  JSONArray existingTx=state.getJSONArray("transactions");
+  Set<String> existingImportRows=new HashSet<>(existingTx.length()*2+8);
+  Set<String> existingSigs=new HashSet<>(existingTx.length()*2+8);
+  for(int j=0;j<existingTx.length();j++){
+   JSONObject t=existingTx.getJSONObject(j);
+   String ir=t.optString("importRow","");
+   if(!ir.isEmpty())existingImportRows.add(ir);
+   if(!t.optBoolean("voided")){
+    existingSigs.add(t.optString("date","")+"|"+t.optString("account","")+"|"+t.optLong("amount",0L)+"|"+t.optString("merchant","").toLowerCase(Locale.ROOT));
+   }
+  }
   for(int i=1;i<rows.size();i++){List<String> row=rows.get(i);JSONObject result=new JSONObject().put("row",i).put("importRow",digest+":"+i);try{
    String raw=get(row,map,"amount"),rawDr=get(row,map,"debit"),rawCr=get(row,map,"credit"),inferredKind="";
    BigDecimal n;
@@ -113,10 +127,17 @@ public final class CsvImport {
    String kind=get(row,map,"kind").toLowerCase(Locale.ROOT).trim();
    if(kind.equals("dr")||kind.equals("debit"))kind="expense";
    else if(kind.equals("cr")||kind.equals("credit"))kind="income";
+   else if(kind.equals("topup")||kind.equals("top-up"))kind="reload";
    if(kind.isEmpty())kind=!inferredKind.isEmpty()?inferredKind:(map.optBoolean("signed")?(n.signum()<0?"expense":"income"):map.optString("defaultKind","expense"));
-   if(!Arrays.asList("expense","income","refund").contains(kind))throw new IllegalArgumentException("Use expense, income or refund; review transfers manually");
+   if(!Arrays.asList("expense","income","refund","reload").contains(kind))throw new IllegalArgumentException("Use expense, income, reload or refund; review transfers manually");
    String merchant=get(row,map,"merchant"),category=get(row,map,"category"),note=get(row,map,"note");
-   if(category.isEmpty()){
+   String combinedCue=(merchant+" "+note).trim();
+   boolean isReloadCue=!"refund".equals(kind)&&("reload".equals(kind)||(P_CSV_RELOAD.matcher(combinedCue).find()&&!P_CSV_TELCO_GUARD.matcher(combinedCue).find()));
+   if(isReloadCue){
+    kind="reload";
+    category="Transfer";
+    result.put("reload",true).put("to",account);
+   }else if(category.isEmpty()){
     JSONObject probe=new JSONObject().put("merchant",merchant).put("amount",value).put("account",account).put("source","CSV import").put("note",note);
     Finance.suggest(state,probe);
     if(kind.equals("income")){
@@ -132,7 +153,8 @@ public final class CsvImport {
    }
    if(merchant.length()>120||category.length()>60)throw new IllegalArgumentException("Description too long");
    result.put("kind",kind).put("amount",BigDecimal.valueOf(value,2).toPlainString()).put("merchant",merchant).put("category",category).put("date",date.toString()).put("account",account).put("note",note).put("key","import:"+digest+":"+i);
-   JSONArray tx=state.getJSONArray("transactions");for(int j=0;j<tx.length();j++){JSONObject t=tx.getJSONObject(j);if(result.getString("importRow").equals(t.optString("importRow")))result.put("duplicate",true);if(!t.optBoolean("voided")&&t.getLong("amount")==value&&t.getString("date").equals(date.toString())&&t.getString("account").equals(account)&&t.optString("merchant").equalsIgnoreCase(merchant))result.put("possibleDuplicate",true);}
+   if(existingImportRows.contains(result.getString("importRow")))result.put("duplicate",true);
+   if(existingSigs.contains(date+"|"+account+"|"+value+"|"+merchant.toLowerCase(Locale.ROOT)))result.put("possibleDuplicate",true);
   }catch(Exception e){result.put("error","Row "+i+": check the date, amount and column mapping.");}out.put(result);}
   return out;
  }

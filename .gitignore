@@ -76,5 +76,10 @@ colab/outputs_notif_gate_v2/*.bin*
 colab/outputs_notif_gate_v2/*.log
 !colab/outputs_notif_gate_v2/notif_gate_v2_report.json
 !colab/outputs_notif_gate_v2/java_eval_track34_v2.json
+colab/outputs_phaseb_v2/*.json*
+colab/outputs_phaseb_v2/*.bin*
+colab/outputs_phaseb_v2/*.log
+!colab/outputs_phaseb_v2/*_report.json
+!colab/outputs_phaseb_v2/java_eval_*.json
 __pycache__/
 *.pyc

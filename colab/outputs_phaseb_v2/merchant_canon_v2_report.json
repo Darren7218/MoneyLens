@@ -1,0 +1,35 @@
+{
+  "train_seconds": 84.7,
+  "gz_bytes": 449957,
+  "num_catalog": 800,
+  "num_train_pairs": 31928,
+  "calibrated_thresholds": {
+    "brandMatchThreshold": 0.54,
+    "brandMatchMargin": 0.02,
+    "pairSameThreshold": 0.68
+  },
+  "catalog_blind_eval": {
+    "n_queries": 1222,
+    "top1_unthresholded_acc": 0.8928,
+    "recall_at_threshold": 0.8691,
+    "precision_at_threshold": 0.9465,
+    "unseen_sme_false_canon_rate": 0.0194,
+    "n_unseen_sme": 103
+  },
+  "zero_shot_pairwise_eval": {
+    "n_pairs": 404,
+    "roc_auc": 0.9981,
+    "f1": 0.9517,
+    "tpr": 0.9078,
+    "hard_negative_fpr": 0.0
+  },
+  "v6_synth_merge": {
+    "v6_cat_pairs_added": 0,
+    "v6_sme_added": 600,
+    "v6_sme_pairs_added": 2392,
+    "v6_skipped_leak": 254,
+    "v6_skipped_short": 6,
+    "zero_v1_pair_leakage": true
+  },
+  "stage_seconds": 278.7
+}

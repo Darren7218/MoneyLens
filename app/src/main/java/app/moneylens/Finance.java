@@ -804,6 +804,15 @@ public final class Finance {
    if(draft.optString("category").isEmpty()||draft.optString("category").equals("Other"))draft.put("category","Miscellaneous");
    draft.put("historyMatch","none").put("needsNote",true);
   }
+  String postHistCat=draft.optString("category","");
+  if("none".equals(draft.optString("historyMatch"))||"Miscellaneous".equals(postHistCat)||"Other".equals(postHistCat)){
+   String[] adapted=PersonalAdapter.predict(s,merchant,draft.optString("canonicalMerchant",""));
+   if(adapted!=null&&!adapted[0].isEmpty()){
+    draft.put("category",adapted[0]);
+    if(!adapted[1].isEmpty())draft.put("subcategory",adapted[1]);
+    draft.put("historyMatch","personal");
+   }
+  }
   JSONArray rules=s.getJSONArray("rules");List<JSONObject> sorted=new ArrayList<>();for(int i=0;i<rules.length();i++)sorted.add(rules.getJSONObject(i));sorted.sort((a,b)->Integer.compare(b.optInt("priority"),a.optInt("priority")));
   for(JSONObject rule:sorted){if(!rule.optBoolean("enabled",true))continue;String needle=rule.optString("match").toLowerCase(Locale.ROOT),source=rule.optString("source");if(!needle.isEmpty()&&merchantLow.contains(needle)&&(source.isEmpty()||source.equals(pkg))){draft.put("category",rule.getString("category"));if(!rule.optString("subcategory").isEmpty())draft.put("subcategory",rule.getString("subcategory"));if(!rule.optString("account").isEmpty())draft.put("account",rule.getString("account"));draft.put("ruleId",rule.getString("id"));if(!draft.optString("historyMatch").equals("exact"))draft.put("historyMatch","rule");break;}}
   if(draft.optString("account").isEmpty()&&!sourceHistAccount.isEmpty())draft.put("account",sourceHistAccount);
