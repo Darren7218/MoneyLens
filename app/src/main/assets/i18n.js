@@ -730,7 +730,14 @@ const I18N_MS={
   'Saved {s} payment(s) on your device.':'{s} bayaran disimpan pada peranti anda.',
   '{n} safe payment(s) selected.':'{n} bayaran selamat dipilih.',
   'No complete payments ready for batch save.':'Tiada bayaran lengkap sedia untuk disimpan berkumpulan.',
-  'Account applied to all rows.':'Akaun digunakan untuk semua baris.'
+  'Account applied to all rows.':'Akaun digunakan untuk semua baris.',
+  'On-device correction log (opt-in)':'Log pembetulan pada peranti (pilihan)',
+  'Record category/type fixes locally (max 500, no notes) for offline model tuning inside encrypted backups only':'Rekod pembetulan kategori/jenis secara tempatan (maks 500, tiada nota) dalam sandaran disulitkan sahaja',
+  '{n} logged':'{n} direkod',
+  'Clear log':'Kosongkan log',
+  'Correction log cleared.':'Log pembetulan dikosongkan.',
+  'On-device correction log enabled.':'Log pembetulan pada peranti diaktifkan.',
+  'On-device correction log paused.':'Log pembetulan pada peranti dijeda.'
 };
 function currentLang(){return (typeof state!=='undefined'&&state?.settings?.lang==='ms')?'ms':'en'}
 function appLocale(){return currentLang()==='ms'?'ms-MY':'en-MY'}

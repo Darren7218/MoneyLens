@@ -1,0 +1,297 @@
+{
+  "real_reload": [
+    {
+      "expAmt": 1500,
+      "src": "my.com.myboost",
+      "expKind": "reload",
+      "text": "充值成功：已为 Boost 充值 RM 15.00。",
+      "got": "null"
+    },
+    {
+      "expAmt": 1500,
+      "src": "my.com.publicbank.mypb",
+      "expKind": "reload",
+      "text": "充值成功：已为 MyPB by Public Bank 充值 RM 15.00。",
+      "got": "null"
+    },
+    {
+      "expAmt": 56795,
+      "src": "my.com.gxbank.mobile",
+      "expKind": "reload",
+      "text": "充值成功：已为 GXBank 充值 RM567.95。",
+      "got": "expense:56795"
+    },
+    {
+      "expAmt": 3557,
+      "src": "com.hongleong.connect",
+      "expKind": "reload",
+      "text": "充值成功：已为 HLB Connect 充值 MYR 35.57。",
+      "got": "null"
+    },
+    {
+      "expAmt": 81494,
+      "src": "com.shopee.pay.my",
+      "expKind": "reload",
+      "text": "Tambah nilai RM814.94 ke ShopeePay MY berjaya.",
+      "got": "expense:81494"
+    },
+    {
+      "expAmt": 82137,
+      "src": "com.shopee.pay.my",
+      "expKind": "reload",
+      "text": "Tambah nilai RM 821.37 ke ShopeePay MY berjaya.",
+      "got": "expense:82137"
+    },
+    {
+      "expAmt": 17145,
+      "src": "com.ambank.ambankmobile",
+      "expKind": "reload",
+      "text": "Tambah nilai RM171.45 ke AmOnline berjaya.",
+      "got": "null"
+    },
+    {
+      "expAmt": 10102,
+      "src": "com.bigpay.mobile",
+      "expKind": "reload",
+      "text": "充值成功：已为 BigPay 充值 MYR 101.02。",
+      "got": "null"
+    }
+  ],
+  "trap_bill": [{
+    "src": "com.grabtaxi.passenger",
+    "text": "您的PETRONAS Setia Alam加油费用即将扣款，金额为RM 138.22。请确保账户余额充足。",
+    "got": "{\"date\":\"2026-11-27\",\"reason\":\"Recorded from a notification. Check the account, amount and type.\",\"amount\":13822,\"adapter\":\"generic-5\",\"kind\":\"expense\",\"created\":1795775564924,\"merchant\":\"Detected payment\",\"source\":\"com.grabtaxi.passenger\",\"amountCandidates\":[13822],\"revision\":1,\"id\":\"796a2ae7-3741-4e36-b367-31dd82cd208d\",\"state\":\"review\",\"primaryAmount\":13822,\"category\":\"Bills & utilities\",\"subcategory\":\"Condo Maintenance & Sinking Fund\"}"
+  }],
+  "real_expense": [
+    {
+      "expAmt": 8363,
+      "src": "com.grabtaxi.passenger",
+      "expKind": "expense",
+      "text": "您的 GrabPay 支付已成功，金额 RM83.63，Bistro Harmoni Subang。已 3DS 验证。",
+      "got": "null"
+    },
+    {
+      "expAmt": 2500,
+      "src": "com.ambank.ambankmobile",
+      "expKind": "expense",
+      "text": "付款成功：Uniqlo Fahrenheit88 RM 25，已完成扣款。",
+      "got": "expense:8800"
+    },
+    {
+      "expAmt": 57803,
+      "src": "com.ambank.ambankmobile",
+      "expKind": "expense",
+      "text": "Tarikan wang RM 578.03 ke PETRONAS Setia Alam berjaya. (3DS terverifikasi)",
+      "got": "null"
+    },
+    {
+      "expAmt": 707,
+      "src": "com.cimb2u.octo",
+      "expKind": "expense",
+      "text": "您的 CIMB OCTO MY 在 99 Speedmart PJ 已支付 RM7.07，3DS 验证成功。",
+      "got": "null"
+    },
+    {
+      "expAmt": 5000,
+      "src": "com.ambank.ambankmobile",
+      "expKind": "expense",
+      "text": "您的支付已成功，金额：RM 50.00 (3DS验证)。来自：Kedai Kopi Ah Seng",
+      "got": "null"
+    },
+    {
+      "expAmt": 1000,
+      "src": "com.shopee.pay.my",
+      "expKind": "expense",
+      "text": "Bayaran kepada FamilyMart Sunway telah disahkan. Jumlah: RM10.00 (3DS terverifikasi).",
+      "got": "null"
+    },
+    {
+      "expAmt": 7647,
+      "src": "com.ambank.ambankmobile",
+      "expKind": "expense",
+      "text": "Your payment of RM 76.47 at ZUS Coffee KLCC has been successfully processed via 3DS verification.",
+      "got": "null"
+    },
+    {
+      "expAmt": 1965,
+      "src": "my.com.rhb.mobilebank",
+      "expKind": "expense",
+      "text": "付款成功：Uniqlo Fahrenheit88 MYR 19.65，已完成扣款。",
+      "got": "expense:8800"
+    }
+  ],
+  "real_transfer": [
+    {
+      "expAmt": 56280,
+      "src": "com.cimb2u.octo",
+      "expKind": "transfer",
+      "text": "Moved RM 562.80 from CIMB OCTO MY into CIMB OCTO settled.",
+      "got": "expense:56280"
+    },
+    {
+      "expAmt": 8000,
+      "src": "my.com.publicbank.mypb",
+      "expKind": "transfer",
+      "text": "转账成功：已从 MyPB by Public Bank 转出 RM 80 至您的 CIMB OCTO。",
+      "got": "expense:8000"
+    },
+    {
+      "expAmt": 27800,
+      "src": "com.grabtaxi.passenger",
+      "expKind": "transfer",
+      "text": "Pindahan wang RM 278.00 ke akaun CIMB OCTO anda berjaya.",
+      "got": "null"
+    },
+    {
+      "expAmt": 4238,
+      "src": "my.com.publicbank.mypb",
+      "expKind": "transfer",
+      "text": "Pindahan wang MYR 42.38 ke akaun CIMB OCTO anda berjaya.",
+      "got": "null"
+    },
+    {
+      "expAmt": 3218,
+      "src": "com.cimb2u.octo",
+      "expKind": "transfer",
+      "text": "Moved RM32.18 from CIMB OCTO MY into CIMB OCTO settled.",
+      "got": "expense:3218"
+    },
+    {
+      "expAmt": 81539,
+      "src": "com.shopee.pay.my",
+      "expKind": "transfer",
+      "text": "Moved MYR 815.39 from ShopeePay MY into CIMB OCTO settled.",
+      "got": "expense:81539"
+    },
+    {
+      "expAmt": 4900,
+      "src": "com.shopee.my",
+      "expKind": "transfer",
+      "text": "转账成功：已从 Shopee MY 转出 RM49.00 至您的 CIMB OCTO。",
+      "got": "expense:4900"
+    },
+    {
+      "expAmt": 2000,
+      "src": "my.com.myboost",
+      "expKind": "transfer",
+      "text": "转账成功：已从 Boost 转出 RM 20.00 至您的 CIMB OCTO。",
+      "got": "expense:2000"
+    }
+  ],
+  "real_income": [
+    {
+      "expAmt": 11442,
+      "src": "com.shopee.pay.my",
+      "expKind": "income",
+      "text": "Syok! Ali DuitNow MYR 114.42 masuk your ShopeePay MY.",
+      "got": "expense:11442"
+    },
+    {
+      "expAmt": 36832,
+      "src": "my.com.myboost",
+      "expKind": "income",
+      "text": "Syok! Farah DuitNow RM 368.32 masuk your Boost.",
+      "got": "expense:36832"
+    },
+    {
+      "expAmt": 364,
+      "src": "com.ambank.ambankmobile",
+      "expKind": "income",
+      "text": "到账成功：收到来自 Zul 的转账 RM 3.64。",
+      "got": "expense:364"
+    },
+    {
+      "expAmt": 8365,
+      "src": "my.com.rhb.mobilebank",
+      "expKind": "income",
+      "text": "到账成功：收到来自 Jason 的转账 RM83.65。",
+      "got": "expense:8365"
+    },
+    {
+      "expAmt": 1500,
+      "src": "com.ambank.ambankmobile",
+      "expKind": "income",
+      "text": "Syok! Jason DuitNow RM 15 masuk your AmOnline.",
+      "got": "expense:1500"
+    },
+    {
+      "expAmt": 7482,
+      "src": "my.com.rhb.mobilebank",
+      "expKind": "income",
+      "text": "到账成功：收到来自 Farah 的转账 RM74.82。",
+      "got": "expense:7482"
+    },
+    {
+      "expAmt": 15000,
+      "src": "com.shopee.pay.my",
+      "expKind": "income",
+      "text": "到账成功：收到来自 Kumar 的转账 RM 150。",
+      "got": "expense:15000"
+    },
+    {
+      "expAmt": 6275,
+      "src": "com.ambank.ambankmobile",
+      "expKind": "income",
+      "text": "Syok! Jason DuitNow RM 62.75 masuk your AmOnline.",
+      "got": "expense:6275"
+    }
+  ],
+  "real_refund": [
+    {
+      "expAmt": 10000,
+      "src": "my.com.rhb.mobilebank",
+      "expKind": "refund",
+      "text": "Order cancelled at PTPTN Pinjaman, refund MYR 100.00 credited back to RHB Mobile Banking!",
+      "got": "income:10000"
+    },
+    {
+      "expAmt": 60784,
+      "src": "com.atome.my",
+      "expKind": "refund",
+      "text": "Bayaran balik untuk pesanan dibatalkan RM607.84 dari PTPTN Pinjaman dikembalikan ke akaun anda.",
+      "got": "expense:60784"
+    },
+    {
+      "expAmt": 500,
+      "src": "com.maybank2u.life",
+      "expKind": "refund",
+      "text": "Bayaran balik untuk pesanan dibatalkan RM 5.00 dari PTPTN Pinjaman dikembalikan ke akaun anda.",
+      "got": "expense:500"
+    },
+    {
+      "expAmt": 1500,
+      "src": "com.shopee.my",
+      "expKind": "refund",
+      "text": "您的订单已取消，退款RM15.00已credited回您的Shopee账户。",
+      "got": "income:1500"
+    },
+    {
+      "expAmt": 11263,
+      "src": "my.com.publicbank.mypb",
+      "expKind": "refund",
+      "text": "已取消订单退款 RM112.63（商户：PTPTN Pinjaman）已退款到账。",
+      "got": "expense:11263"
+    },
+    {
+      "expAmt": 65766,
+      "src": "com.maybank2u.life",
+      "expKind": "refund",
+      "text": "Bayaran balik untuk pesanan dibatalkan MYR 657.66 dari PTPTN Pinjaman dikembalikan ke akaun anda.",
+      "got": "expense:65766"
+    },
+    {
+      "expAmt": 10000,
+      "src": "com.shopee.my",
+      "expKind": "refund",
+      "text": "Village Grocer Mont Kiara: 您的退款已到账，金额为 RM 100.00。",
+      "got": "null"
+    },
+    {
+      "expAmt": 6832,
+      "src": "com.maybank2u.life",
+      "expKind": "refund",
+      "text": "Chargeback refund of RM 68.32 at PTPTN Pinjaman completed.",
+      "got": "expense:6832"
+    }
+  ]
+}

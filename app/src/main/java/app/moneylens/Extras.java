@@ -215,6 +215,7 @@ public final class Extras {
    case "undoImport":{JSONObject batch=Ledger.find(s.getJSONArray("imports"),a.getString("id"));JSONArray tx=s.getJSONArray("transactions");for(int i=0;i<tx.length();i++){JSONObject t=tx.getJSONObject(i);if(t.optString("importBatch").equals(batch.getString("id"))&&!t.has("replacedBy"))t.put("voided",true);}batch.put("undone",true);return true;}
    case "quickNote":{
     JSONObject t=Ledger.find(s.getJSONArray("transactions"),a.getString("id"));if(t.optBoolean("voided"))throw new IllegalArgumentException("This transaction was removed.");
+    String prevCat=t.optString("category",""),prevSub=t.optString("subcategory","");
     t.put("note",Ledger.str(a,"note",500)).put("needsNote",false);
     if(a.has("subcategory"))t.put("subcategory",Ledger.str(a,"subcategory",80));
     if(a.has("category")){
@@ -224,8 +225,17 @@ public final class Extras {
       JSONArray p=t.getJSONArray("postings");for(int i=0;i<p.length();i++){JSONObject e=p.getJSONObject(i);if(e.getString("account").equals("expense:"+oldCat)){e.put("account","expense:"+newCat);break;}}
      }
     }
+    if(!prevCat.equals(t.optString("category",""))||!prevSub.equals(t.optString("subcategory",""))){
+     JSONObject bef=new JSONObject().put("kind",t.optString("kind","")).put("category",prevCat).put("subcategory",prevSub).put("merchant",t.optString("merchant","")).put("amount",t.optLong("amount",0L));
+     JSONObject aft=new JSONObject().put("kind",t.optString("kind","")).put("category",t.optString("category","")).put("subcategory",t.optString("subcategory","")).put("merchant",t.optString("merchant","")).put("amount",t.optLong("amount",0L));
+     Ledger.recordCorrection(s,"quickNote",t.optString("source",""),t.optString("sourcePackage",""),bef,aft);
+    }
     if(a.optBoolean("dismissAnomaly"))t.put("anomaly",false).put("anomalyDismissed",true);
     if(a.optBoolean("applyHistory")&&!t.optString("merchant").isEmpty())updateMerchantHistory(s,t.getString("merchant"),t.optString("category"),t.optString("subcategory",""),t.optString("account"));
+    return true;
+   }
+   case "clearCorrectionLog":{
+    s.put("correctionLog",new JSONArray());
     return true;
    }
    case "dismissAnomaly":{

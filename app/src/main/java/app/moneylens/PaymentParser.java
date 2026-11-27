@@ -59,7 +59,7 @@ public final class PaymentParser {
   }
 
   private static final String NUM="([0-9]{1,3}(?:,[0-9]{3})+(?:\\.[0-9]{1,2})?|[0-9]{1,9}(?:\\.[0-9]{1,2})?)(?![0-9]|\\.[0-9])";
-  private static final Pattern AMOUNT=Pattern.compile("(?i)(?:(?:RM|MYR)[\\s\\u00A0]*"+NUM+"|(?<![0-9:/-])"+NUM+"[\\s\\u00A0]*(?:RM|MYR)(?![A-Za-z]))");
+  private static final Pattern AMOUNT=Pattern.compile("(?i)(?:(?:RM|MYR)[\\s\\u00A0]*"+NUM+"|(?<![A-Za-z0-9:/-])"+NUM+"[\\s\\u00A0]*(?:RM|MYR)(?![A-Za-z]))");
   private static final Pattern FOREIGN_AMT=Pattern.compile("(?i)\\b(SGD|USD|THB|JPY|IDR|EUR|GBP|AUD|CNY|HKD|TWD|KRW|VND)[\\s\\u00A0]*([0-9]{1,3}(?:,[0-9]{3})+(?:\\.[0-9]{1,2})?|[0-9]{1,9}(?:\\.[0-9]{1,2})?)(?![0-9]|\\.[0-9])");
   private static final Pattern TNG_PAID=Pattern.compile("(?i)\\byou\\s+have\\s+paid\\s+(?:RM|MYR)\\s*[0-9,]+(?:\\.[0-9]{1,2})?\\s+(?:at|to)\\s+([^\\r\\n]+)");
   private static final Pattern PURCHASE_AT=Pattern.compile("(?i)\\bfor\\s+(?:your\\s+)?(?:recent\\s+)?(?:purchase|order|transaction|payment)\\s+(?:at|to|from)\\s+([\\p{L}0-9][\\p{L}0-9 &'._/()#,+*-]{1,79})");
@@ -129,20 +129,30 @@ public final class PaymentParser {
       &&!(P_REFUND_DONE_EN.matcher(low).find()||P_REFUND_DONE_CJK.matcher(core).find()))return null;
     boolean strongCompleted=P_STRONG_COMPLETED.matcher(low).find()||CJK_COMPLETED.matcher(core).find();
     if(P_OTP_CODE_PROMPT.matcher(low).find()||P_OTP_CODE_CJK.matcher(core).find())return null;
-    if(P_OTP_ANY.matcher(low).find()&&!(strongCompleted&&P_OTP_PASSIVE_DONE.matcher(low).find()))return null;
+    boolean otpBlock=P_OTP_ANY.matcher(low).find()&&!(strongCompleted&&P_OTP_PASSIVE_DONE.matcher(low).find());
     boolean promoWord=P_PROMO_EN.matcher(low).find()||P_PROMO_CJK.matcher(core).find();
     boolean spendPromoTrap=P_SPEND_PROMO_TRAP.matcher(low).find();
-    if((!strongCompleted&&promoWord)||spendPromoTrap)return null;
+    boolean promoBlock=(!strongCompleted&&promoWord)||spendPromoTrap;
     boolean completed=strongCompleted||P_PAYMENT_PREP_HINT.matcher(low).find();
-    if(P_OTP_WORD.matcher(low).find()&&!strongCompleted)return null;
-    if(P_PENDING_EN.matcher(low).find()||P_PENDING_CJK.matcher(core).find()
-      ||(!strongCompleted&&P_PENDING_REQ.matcher(low).find()))return null;
-    if(!strongCompleted&&(P_BILL_REMINDER_EN.matcher(low).find()||P_BILL_REMINDER_CJK.matcher(core).find()))return null;
-    if(P_REFUND_GUARD_WORD.matcher(low).find()&&P_REFUND_GUARD_REQ.matcher(low).find()&&!P_REFUND_GUARD_OK.matcher(low).find())return null;
+    boolean otpWordBlock=P_OTP_WORD.matcher(low).find()&&!strongCompleted;
+    boolean pendingHard=P_PENDING_EN.matcher(low).find()||P_PENDING_CJK.matcher(core).find();
+    boolean pendingSoft=!strongCompleted&&P_PENDING_REQ.matcher(low).find();
+    if(pendingHard)return null;
+    boolean billBlock=!strongCompleted&&(P_BILL_REMINDER_EN.matcher(low).find()||P_BILL_REMINDER_CJK.matcher(core).find());
+    boolean refundReqBlock=P_REFUND_GUARD_WORD.matcher(low).find()&&P_REFUND_GUARD_REQ.matcher(low).find()&&!P_REFUND_GUARD_OK.matcher(low).find();
+    if(promoBlock||pendingSoft||billBlock||refundReqBlock)return null;
     boolean trigger=P_TRIGGER.matcher(low).find()||CJK_TRIGGER.matcher(core).find();
     Matcher vp=VERBLESS_PREP.matcher(core),vc=VERBLESS_CAPS.matcher(core);
     boolean prep=vp.find(),caps=!prep&&vc.find(),gwTrigger=GATEWAY_PREFIX.matcher(core).find();
-    if(!trigger&&!prep&&!caps&&!gwTrigger)return null;
+    boolean softRescueEligible=otpBlock||otpWordBlock||(!trigger&&!prep&&!caps&&!gwTrigger);
+    NotificationGate.Prediction gate=null;
+    if(softRescueEligible){
+      gate=NotificationGate.score(core,source);
+      if(gate==null||gate.captureProb<gate.overrideCaptureThreshold)return null;
+    }else if(!completed&&!prep&&!caps&&!gwTrigger){
+      gate=NotificationGate.score(core,source);
+      if(gate!=null&&gate.rejectProb>=gate.overrideRejectThreshold)return null;
+    }
 
     Matcher m=AMOUNT.matcher(core);JSONArray candidates=new JSONArray();long primary=0,firstIncluded=0,totalMatch=0;int count=0;boolean primaryFound=false,totalFound=false;
     while(m.find()){
@@ -181,6 +191,25 @@ public final class PaymentParser {
     String reason=count==1?"Recorded from a notification. Check the account, amount and type.":"Several amounts were found; MoneyLens used RM "+java.math.BigDecimal.valueOf(amount,2).toPlainString()+" as the payment. Edit it if that is wrong.";
     if(!kind.equals("income")&&P_TRANSFER_CUE.matcher(low).find()&&!P_NON_TRANSFER_CUE.matcher(low).find()){
       kind="transfer";reason="This may be a transfer between your own accounts. Choose both accounts.";
+    }
+    boolean mlReloadHint=false;
+    if("expense".equals(kind)){
+      if(gate==null)gate=NotificationGate.score(core,source);
+      if(gate!=null){
+        if(!completed&&!prep&&!caps&&!gwTrigger&&gate.rejectProb>=gate.overrideRejectThreshold)return null;
+        if(!"reject".equals(gate.bestNonRejectKind)&&!"expense".equals(gate.bestNonRejectKind)&&gate.bestNonRejectProb>=0.85f){
+          boolean allowMove=!P_NON_TRANSFER_CUE.matcher(low).find()&&!outgoingCue&&!low.contains(" at ");
+          if("reload".equals(gate.bestNonRejectKind)&&allowMove){
+            kind="transfer";mlReloadHint=true;reason="This may be a transfer between your own accounts. Choose both accounts.";
+          }else if("transfer".equals(gate.bestNonRejectKind)&&allowMove){
+            kind="transfer";reason="This may be a transfer between your own accounts. Choose both accounts.";
+          }else if("income".equals(gate.bestNonRejectKind)&&!outgoingCue){
+            kind="income";
+          }else if("refund".equals(gate.bestNonRejectKind)&&!nonRefGuard){
+            kind="refund";
+          }
+        }
+      }
     }
 
     String merchant="";
@@ -277,7 +306,7 @@ public final class PaymentParser {
       d.put("originalCurrency",origCur).put("originalAmount",origAmt).put("exchangeRate",java.math.BigDecimal.valueOf(amount,2).divide(new java.math.BigDecimal(origAmt),8,java.math.RoundingMode.HALF_UP).toPlainString());
     }
     if(kind.equals("transfer")){
-      boolean isReload=P_RELOAD_CUE.matcher(low).find();
+      boolean isReload=P_RELOAD_CUE.matcher(low).find()||mlReloadHint;
       if(isReload){
         d.put("reload",true);
         Matcher fb=P_FROM_BANK.matcher(core);

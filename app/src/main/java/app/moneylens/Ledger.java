@@ -17,7 +17,7 @@ public final class Ledger {
   }
   public static JSONObject initial() throws JSONException {
     JSONObject s=new JSONObject();s.put("schema",2);s.put("revision",0);
-    for(String name: new String[]{"accounts","transactions","drafts","budgets","bills","goals","debts","sources","seen","rules","favorites","receipts","imports","reconciliations","installments","customCategories","alerts","ruleHistory"})s.put(name,new JSONArray());
+    for(String name: new String[]{"accounts","transactions","drafts","budgets","bills","goals","debts","sources","seen","rules","favorites","receipts","imports","reconciliations","installments","customCategories","alerts","ruleHistory","correctionLog"})s.put(name,new JSONArray());
     s.getJSONArray("accounts").put(new JSONObject().put("id","cash").put("name","Cash").put("type","cash").put("color","sage"));
     s.put("settings",new JSONObject().put("name","Darren").put("theme","light").put("lang","en").put("cycleDay",1).put("appLock",false).put("lockTimeoutSec",0).put("autoRecord",true).put("captureAllSources",true).put("autoOpenOnBoot",true).put("alwaysOnScheduler",true).put("ecoCapture",true).put("categoryAlerts",true).put("anomalyGuard",true).put("splitAutoMatch",true));
     return s;
@@ -58,7 +58,17 @@ public final class Ledger {
       case "deletePlan": {
         String table=a.getString("table");if(!Arrays.asList("budgets","bills","goals","debts").contains(table))throw new IllegalArgumentException("Invalid plan.");JSONArray rows=s.getJSONArray(table);for(int i=rows.length()-1;i>=0;i--)if(rows.getJSONObject(i).getString("id").equals(a.getString("id")))rows.remove(i);break;
       }
-      case "ignore": {JSONObject draft=find(s.getJSONArray("drafts"),a.getString("id"));if(draft.optString("state").equals("review"))draft.put("state","ignored");break;}
+      case "ignore": {
+        JSONObject draft=find(s.getJSONArray("drafts"),a.getString("id"));
+        if(draft.optString("state").equals("review")){
+          draft.put("state","ignored");
+          if(!draft.optBoolean("sample")){
+            JSONObject before=new JSONObject().put("kind",draft.optString("kind","")).put("category",draft.optString("category","")).put("subcategory",draft.optString("subcategory","")).put("merchant",draft.optString("merchant","")).put("amount",draft.optLong("amount",0));
+            recordCorrection(s,"draftIgnore",draft.optString("source",""),draft.optString("package",""),before,new JSONObject().put("ignored",true));
+          }
+        }
+        break;
+      }
       case "settings":{
         JSONObject settings=s.getJSONObject("settings");if(a.has("name"))settings.put("name",str(a,"name",50));
         if(a.has("theme"))settings.put("theme",a.getString("theme").equals("dark")?"dark":"light");
@@ -77,7 +87,7 @@ public final class Ledger {
         }
         if(a.has("appLock"))settings.put("appLock",a.getBoolean("appLock"));
         if(a.has("lockTimeoutSec")){int v=a.getInt("lockTimeoutSec");if(!Arrays.asList(0,60,300,900).contains(v))throw new IllegalArgumentException("Choose a supported lock timeout.");settings.put("lockTimeoutSec",v);}
-        for(String k:new String[]{"quietEnabled","digest","reminders","budgetAlerts","categoryAlerts","weeklyBudgetNudge","widgetAmounts","captureWhileLocked","autoRecord","captureAllSources","autoOpenOnBoot","alwaysOnScheduler","ecoCapture","anomalyGuard","splitAutoMatch","privacyBlur","backupNudgeDismissed","backupNudgeNotify"})if(a.has(k))settings.put(k,a.getBoolean(k));
+        for(String k:new String[]{"quietEnabled","digest","reminders","budgetAlerts","categoryAlerts","weeklyBudgetNudge","widgetAmounts","captureWhileLocked","autoRecord","captureAllSources","autoOpenOnBoot","alwaysOnScheduler","ecoCapture","anomalyGuard","splitAutoMatch","privacyBlur","backupNudgeDismissed","backupNudgeNotify","correctionLogOptIn"})if(a.has(k))settings.put(k,a.getBoolean(k));
         if(a.has("backupNudgeSnoozeUntil"))settings.put("backupNudgeSnoozeUntil",Math.max(0L,a.getLong("backupNudgeSnoozeUntil")));
         for(String k:new String[]{"quietStart","quietEnd","digestHour"})if(a.has(k)){int v=a.getInt(k);if(v<0||v>23)throw new IllegalArgumentException("Choose an hour from 0 to 23.");settings.put(k,v);}
         if(a.has("threshold")){int v=a.getInt("threshold");if(v<1||v>100)throw new IllegalArgumentException("Threshold must be 1–100%.");settings.put("threshold",v);}break;
@@ -127,9 +137,36 @@ public final class Ledger {
     if(a.has("tags")&&a.getJSONArray("tags").length()>30)throw new IllegalArgumentException("At most 30 tags.");
     if(a.has("foreignFee")&&new BigDecimal(a.getString("foreignFee")).signum()<0)throw new IllegalArgumentException("Fee cannot be negative.");
     if(a.has("receiptId"))find(s.getJSONArray("receipts"),a.getString("receiptId"));
-    String edit=a.optString("editId","");if(!edit.isEmpty()){JSONObject old=find(rows,edit);if(old.optBoolean("voided"))throw new IllegalArgumentException("This transaction was already removed.");old.put("voided",true).put("replacedBy",tid);t.put("replaces",edit);for(String k:new String[]{"billId","billDate","installmentId","source","sourcePackage","autoRecorded","subcategory"})if(old.has(k)&&!t.has(k))t.put(k,old.get(k));t.put("needsNote",false);Extras.adjustDebtBalance(s,"",old,true);if(t.has("billId"))Extras.adjustDebtBalance(s,t.optString("billId",""),t,false);}
+    String edit=a.optString("editId","");JSONObject editedFrom=null;if(!edit.isEmpty()){JSONObject old=find(rows,edit);if(old.optBoolean("voided"))throw new IllegalArgumentException("This transaction was already removed.");editedFrom=old;old.put("voided",true).put("replacedBy",tid);t.put("replaces",edit);for(String k:new String[]{"billId","billDate","installmentId","source","sourcePackage","autoRecorded","subcategory"})if(old.has(k)&&!t.has(k))t.put(k,old.get(k));t.put("needsNote",false);Extras.adjustDebtBalance(s,"",old,true);if(t.has("billId"))Extras.adjustDebtBalance(s,t.optString("billId",""),t,false);}
     String original=a.optString("originalId","");if(!original.isEmpty()){JSONObject orig=find(rows,original);if(!kind.equals("refund")||!orig.getString("kind").equals("expense")||orig.optBoolean("voided"))throw new IllegalArgumentException("Choose a recorded expense for this refund.");t.put("originalId",original);}
-    rows.put(t);if(draft!=null){t.put("source",draft.optString("source")).put("sourcePackage",draft.optString("package"));if(draft.has("subcategory")&&!t.has("subcategory"))t.put("subcategory",draft.getString("subcategory"));if(draft.has("alsoSeenFrom")&&!t.has("alsoSeenFrom"))t.put("alsoSeenFrom",draft.getString("alsoSeenFrom"));if(draft.has("originalCurrency")&&draft.has("originalAmount")&&!t.has("originalCurrency"))t.put("originalCurrency",draft.getString("originalCurrency")).put("originalAmount",draft.getString("originalAmount")).put("exchangeRate",draft.optString("exchangeRate","1"));draft.put("state","confirmed").put("transactionId",tid);if(draft.has("receiptId"))t.put("receiptId",draft.getString("receiptId"));JSONArray allDrafts=s.optJSONArray("drafts");if(allDrafts!=null){String dId=draft.getString("id");for(int i=0;i<allDrafts.length();i++){JSONObject od=allDrafts.getJSONObject(i);if(dId.equals(od.optString("duplicateOf"))){od.put("duplicateOf",tid).put("transactionId",tid);}}}}
+    rows.put(t);
+    if(editedFrom!=null){
+      boolean changed=!editedFrom.optString("kind","").equals(t.optString("kind",""))
+        ||!editedFrom.optString("category","").equals(t.optString("category",""))
+        ||!editedFrom.optString("subcategory","").equals(t.optString("subcategory",""))
+        ||!editedFrom.optString("merchant","").equals(t.optString("merchant",""))
+        ||editedFrom.optLong("amount",0L)!=t.optLong("amount",0L);
+      if(changed){
+        JSONObject bef=new JSONObject().put("kind",editedFrom.optString("kind","")).put("category",editedFrom.optString("category","")).put("subcategory",editedFrom.optString("subcategory","")).put("merchant",editedFrom.optString("merchant","")).put("amount",editedFrom.optLong("amount",0L));
+        JSONObject aft=new JSONObject().put("kind",t.optString("kind","")).put("category",t.optString("category","")).put("subcategory",t.optString("subcategory","")).put("merchant",t.optString("merchant","")).put("amount",t.optLong("amount",0L));
+        recordCorrection(s,"edit",t.optString("source",""),t.optString("sourcePackage",""),bef,aft);
+      }
+    }
+    if(draft!=null){
+      t.put("source",draft.optString("source")).put("sourcePackage",draft.optString("package"));if(draft.has("subcategory")&&!t.has("subcategory"))t.put("subcategory",draft.getString("subcategory"));if(draft.has("alsoSeenFrom")&&!t.has("alsoSeenFrom"))t.put("alsoSeenFrom",draft.getString("alsoSeenFrom"));if(draft.has("originalCurrency")&&draft.has("originalAmount")&&!t.has("originalCurrency"))t.put("originalCurrency",draft.getString("originalCurrency")).put("originalAmount",draft.getString("originalAmount")).put("exchangeRate",draft.optString("exchangeRate","1"));draft.put("state","confirmed").put("transactionId",tid);if(draft.has("receiptId"))t.put("receiptId",draft.getString("receiptId"));JSONArray allDrafts=s.optJSONArray("drafts");if(allDrafts!=null){String dId=draft.getString("id");for(int i=0;i<allDrafts.length();i++){JSONObject od=allDrafts.getJSONObject(i);if(dId.equals(od.optString("duplicateOf"))){od.put("duplicateOf",tid).put("transactionId",tid);}}}
+      if(!draft.optBoolean("sample")){
+        boolean dChanged=!draft.optString("kind","").equals(t.optString("kind",""))
+          ||!draft.optString("category","").equals(t.optString("category",""))
+          ||!draft.optString("subcategory","").equals(t.optString("subcategory",""))
+          ||!draft.optString("merchant","").equals(t.optString("merchant",""))
+          ||draft.optLong("amount",0L)!=t.optLong("amount",0L);
+        if(dChanged){
+          JSONObject bef=new JSONObject().put("kind",draft.optString("kind","")).put("category",draft.optString("category","")).put("subcategory",draft.optString("subcategory","")).put("merchant",draft.optString("merchant","")).put("amount",draft.optLong("amount",0L));
+          JSONObject aft=new JSONObject().put("kind",t.optString("kind","")).put("category",t.optString("category","")).put("subcategory",t.optString("subcategory","")).put("merchant",t.optString("merchant","")).put("amount",t.optLong("amount",0L));
+          recordCorrection(s,"draftConfirm",draft.optString("source",""),draft.optString("package",""),bef,aft);
+        }
+      }
+    }
     s.getJSONObject("settings").put("lastAccount",account).put("lastCategory",category);
     if(a.optBoolean("applyHistory")&&!t.optString("merchant").isEmpty())Extras.updateMerchantHistory(s,t.getString("merchant"),category,t.optString("subcategory",""),account);
     else if(a.optBoolean("rememberRule")&&!t.optString("merchant").isEmpty())Extras.rule(s,new JSONObject().put("match",t.getString("merchant")).put("category",category).put("subcategory",t.optString("subcategory","")).put("account",account).put("priority",10).put("enabled",true));
@@ -142,9 +179,17 @@ public final class Ledger {
       Extras.adjustDebtBalance(s,billId,t,false);
     }
   }
+  static void recordCorrection(JSONObject s,String action,String source,String pkg,JSONObject before,JSONObject after)throws JSONException{
+    JSONObject sets=s.optJSONObject("settings");
+    if(sets==null||!sets.optBoolean("correctionLogOptIn",false))return;
+    JSONArray log=s.optJSONArray("correctionLog");
+    if(log==null){log=new JSONArray();s.put("correctionLog",log);}
+    log.put(new JSONObject().put("id",id()).put("ts",System.currentTimeMillis()).put("action",action).put("source",source==null?"":source).put("sourcePackage",pkg==null?"":pkg).put("before",before).put("after",after));
+    while(log.length()>500)log.remove(0);
+  }
   public static void migrate(JSONObject s)throws Exception{
     int version=s.getInt("schema");if(version<1||version>2)throw new IllegalArgumentException("Unsupported backup version.");
-    for(String k:new String[]{"rules","favorites","receipts","imports","reconciliations","installments","customCategories","alerts","ruleHistory","debts"})if(!s.has(k))s.put(k,new JSONArray());s.put("schema",2);
+    for(String k:new String[]{"rules","favorites","receipts","imports","reconciliations","installments","customCategories","alerts","ruleHistory","debts","correctionLog"})if(!s.has(k))s.put(k,new JSONArray());s.put("schema",2);
   }
   static JSONArray postings(JSONObject s,JSONObject a,String tid,long n)throws Exception{
     String kind=a.getString("kind"),account=a.getString("account"),category=a.optString("category","Other");JSONArray p=new JSONArray();
@@ -183,6 +228,7 @@ public final class Ledger {
     for(int i=0;i<tx.length();i++){JSONObject t=tx.getJSONObject(i);if(t.optBoolean("voided"))continue;if(t.getString("kind").equals("reimbursement")){JSONObject original=find(tx,t.getString("reimbursementFor"));if(original.optBoolean("voided")||!original.getString("kind").equals("shared"))throw new IllegalArgumentException("Missing shared expense.");}if(t.has("originalId")){JSONObject original=find(tx,t.getString("originalId"));if(!t.getString("kind").equals("refund")||!original.getString("kind").equals("expense"))throw new IllegalArgumentException("Invalid refund link.");}}
     for(long remaining:receivables.values())if(remaining<0)throw new IllegalArgumentException("A repayment would exceed its shared expense. Remove the repayment first.");
     for(String k:new String[]{"drafts","budgets","bills","goals","debts","sources","seen","rules","favorites","receipts","imports","reconciliations","installments","customCategories","alerts","ruleHistory"})if(s.getJSONArray(k).length()>100000)throw new IllegalArgumentException("Too many records.");
+    if(s.getJSONArray("correctionLog").length()>500)throw new IllegalArgumentException("Too many correction log entries.");
     JSONArray debts=s.getJSONArray("debts");for(int i=0;i<debts.length();i++){JSONObject d=debts.getJSONObject(i);long bal=d.getLong("balance"),minP=d.getLong("minPayment");int bps=d.optInt("aprBps",0);if(d.optString("name","").trim().isEmpty()||bal<0||bal>MAX||minP<=0||minP>MAX||bps<0||bps>10000||!Arrays.asList("reducing","flat").contains(d.optString("rateType","reducing")))throw new IllegalArgumentException("Invalid debt entry.");}
     Set<String> cats=new HashSet<>();JSONArray budgets=s.getJSONArray("budgets");for(int i=0;i<budgets.length();i++){JSONObject b=budgets.getJSONObject(i);if(b.getLong("limit")<=0||b.getLong("limit")>MAX||!cats.add(b.getString("category")+"\u0000"+b.optString("subcategory","").trim()))throw new IllegalArgumentException("Invalid or duplicate category budget.");}
     JSONArray bills=s.getJSONArray("bills");for(int i=0;i<bills.length();i++){JSONObject b=bills.getJSONObject(i);date(b.getString("date"));if(!ac.contains(b.getString("account"))||b.getLong("amount")<=0)throw new IllegalArgumentException("Invalid bill.");}

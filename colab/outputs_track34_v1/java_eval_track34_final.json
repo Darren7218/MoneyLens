@@ -1,0 +1,252 @@
+{
+  "blind": {
+    "trapRejection": 0.9645,
+    "realAmountExact": 0.9136,
+    "trapCount": 1100,
+    "capturePrecision": 0.9704,
+    "realCaptureRecall": 0.9136,
+    "bySubtype": {
+      "trap_otp": {
+        "strictRate": 1,
+        "capOrRejRate": 1,
+        "n": 342
+      },
+      "real_reload": {
+        "strictRate": 0.9441,
+        "capOrRejRate": 0.9832,
+        "n": 179
+      },
+      "trap_bill": {
+        "strictRate": 0.9318,
+        "capOrRejRate": 0.9318,
+        "n": 44
+      },
+      "trap_promo": {
+        "strictRate": 1,
+        "capOrRejRate": 1,
+        "n": 50
+      },
+      "trap_bill_promo_pending": {
+        "strictRate": 1,
+        "capOrRejRate": 1,
+        "n": 387
+      },
+      "real_expense": {
+        "strictRate": 0.7923,
+        "capOrRejRate": 0.8713,
+        "n": 544
+      },
+      "real_transfer": {
+        "strictRate": 0.8341,
+        "capOrRejRate": 0.9677,
+        "n": 217
+      },
+      "real_income": {
+        "strictRate": 0.9728,
+        "capOrRejRate": 0.9844,
+        "n": 257
+      },
+      "trap_fail": {
+        "strictRate": 0.87,
+        "capOrRejRate": 0.87,
+        "n": 277
+      },
+      "real_refund": {
+        "strictRate": 0.7931,
+        "capOrRejRate": 0.8177,
+        "n": 203
+      }
+    },
+    "bySourceMode": {
+      "template:real": {
+        "strictRate": 0.8624,
+        "capOrRejRate": 0.8979,
+        "n": 872
+      },
+      "template:trap": {
+        "strictRate": 0.9588,
+        "capOrRejRate": 0.9588,
+        "n": 850
+      },
+      "llm:real": {
+        "strictRate": 0.8333,
+        "capOrRejRate": 0.9394,
+        "n": 528
+      },
+      "llm:trap": {
+        "strictRate": 0.984,
+        "capOrRejRate": 0.984,
+        "n": 250
+      }
+    },
+    "realCount": 1400,
+    "realKindExact": 0.8514,
+    "byLang": {
+      "zh:trap": {
+        "strictRate": 1,
+        "capOrRejRate": 1,
+        "n": 215
+      },
+      "bm:real": {
+        "strictRate": 0.7087,
+        "capOrRejRate": 0.8319,
+        "n": 357
+      },
+      "bm:trap": {
+        "strictRate": 0.855,
+        "capOrRejRate": 0.855,
+        "n": 262
+      },
+      "manglish:real": {
+        "strictRate": 0.8548,
+        "capOrRejRate": 0.8795,
+        "n": 365
+      },
+      "manglish:trap": {
+        "strictRate": 0.9967,
+        "capOrRejRate": 0.9967,
+        "n": 300
+      },
+      "zh:real": {
+        "strictRate": 0.8771,
+        "capOrRejRate": 0.9609,
+        "n": 358
+      },
+      "en:trap": {
+        "strictRate": 1,
+        "capOrRejRate": 1,
+        "n": 323
+      },
+      "en:real": {
+        "strictRate": 0.9781,
+        "capOrRejRate": 0.9906,
+        "n": 320
+      }
+    }
+  },
+  "dev": {
+    "trapRejection": 0.9993,
+    "realAmountExact": 0.9993,
+    "trapCount": 1484,
+    "capturePrecision": 0.9993,
+    "realCaptureRecall": 0.9993,
+    "bySubtype": {
+      "real_reload": {
+        "strictRate": 0.9941,
+        "capOrRejRate": 1,
+        "n": 169
+      },
+      "trap_otp": {
+        "strictRate": 1,
+        "capOrRejRate": 1,
+        "n": 422
+      },
+      "trap_bill": {
+        "strictRate": 0.9286,
+        "capOrRejRate": 0.9286,
+        "n": 14
+      },
+      "trap_promo": {
+        "strictRate": 1,
+        "capOrRejRate": 1,
+        "n": 19
+      },
+      "trap_bill_promo_pending": {
+        "strictRate": 1,
+        "capOrRejRate": 1,
+        "n": 636
+      },
+      "real_expense": {
+        "strictRate": 0.9986,
+        "capOrRejRate": 0.9986,
+        "n": 711
+      },
+      "real_transfer": {
+        "strictRate": 0.9818,
+        "capOrRejRate": 1,
+        "n": 165
+      },
+      "real_income": {
+        "strictRate": 0.9894,
+        "capOrRejRate": 1,
+        "n": 282
+      },
+      "trap_fail": {
+        "strictRate": 1,
+        "capOrRejRate": 1,
+        "n": 393
+      },
+      "real_refund": {
+        "strictRate": 0.963,
+        "capOrRejRate": 1,
+        "n": 189
+      }
+    },
+    "bySourceMode": {
+      "template:real": {
+        "strictRate": 0.9956,
+        "capOrRejRate": 1,
+        "n": 1366
+      },
+      "template:trap": {
+        "strictRate": 1,
+        "capOrRejRate": 1,
+        "n": 1391
+      },
+      "llm:trap": {
+        "strictRate": 0.9892,
+        "capOrRejRate": 0.9892,
+        "n": 93
+      },
+      "llm:real": {
+        "strictRate": 0.94,
+        "capOrRejRate": 0.9933,
+        "n": 150
+      }
+    },
+    "realCount": 1516,
+    "realKindExact": 0.9901,
+    "byLang": {
+      "zh:trap": {
+        "strictRate": 0.9972,
+        "capOrRejRate": 0.9972,
+        "n": 358
+      },
+      "bm:real": {
+        "strictRate": 0.9843,
+        "capOrRejRate": 1,
+        "n": 383
+      },
+      "bm:trap": {
+        "strictRate": 1,
+        "capOrRejRate": 1,
+        "n": 376
+      },
+      "manglish:real": {
+        "strictRate": 0.992,
+        "capOrRejRate": 1,
+        "n": 376
+      },
+      "manglish:trap": {
+        "strictRate": 1,
+        "capOrRejRate": 1,
+        "n": 383
+      },
+      "en:trap": {
+        "strictRate": 1,
+        "capOrRejRate": 1,
+        "n": 367
+      },
+      "zh:real": {
+        "strictRate": 0.9918,
+        "capOrRejRate": 0.9973,
+        "n": 365
+      },
+      "en:real": {
+        "strictRate": 0.9923,
+        "capOrRejRate": 1,
+        "n": 392
+      }
+    }
+  }
+}

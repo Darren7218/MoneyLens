@@ -27,6 +27,7 @@ public final class Vault {
     MerchantCanonicalizer.trim();
     ReceiptFieldTagger.trim();
     SemanticSearch.trim();
+    NotificationGate.trim();
   }
   private static void syncMeta(Context c,JSONObject s){
     try{
@@ -309,6 +310,12 @@ public final class Vault {
     });
     SemanticSearch.setStreamSupplier(()->{
       for(String asset:new String[]{"moneylens_search.bin.gz","moneylens_search.bin"}){
+        try{return app.getAssets().open(asset);}catch(Exception ignored){}
+      }
+      return null;
+    });
+    NotificationGate.setStreamSupplier(()->{
+      for(String asset:new String[]{"moneylens_notif_gate.bin.gz","moneylens_notif_gate.bin"}){
         try{return app.getAssets().open(asset);}catch(Exception ignored){}
       }
       return null;

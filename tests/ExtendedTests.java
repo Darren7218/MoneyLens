@@ -1588,6 +1588,63 @@ public final class ExtendedTests {
    Ledger.validate(sb);
   });
 
+  test("Track 4 NotificationGate INT8 loads, classifies EN/BM/Manglish/ZH alerts, and respects trim/disabled",()->{
+   NotificationGate.Prediction gReal=NotificationGate.score("Done bayar RM 18.50 kat Kedai Kopi Ah Seng, balance left RM 100.00","my.com.tngdigital.ewallet");
+   yes(NotificationGate.isLoaded());
+   yes(gReal!=null&&gReal.captureProb>=0.80f&&!"reject".equals(gReal.bestKind));
+   NotificationGate.Prediction gTrap=NotificationGate.score("Kod TAC anda ialah 482910 untuk bayaran RM 88.00 di Uniqlo.","com.maybank2u.life");
+   yes(gTrap!=null&&gTrap.rejectProb>=0.85f&&"reject".equals(gTrap.bestKind));
+   NotificationGate.Prediction gZh=NotificationGate.score("充值成功：已为 GXBank 充值 RM 50.00。","my.com.gxbank.mobile");
+   yes(gZh!=null&&"reload".equals(gZh.bestNonRejectKind)&&gZh.captureProb>=0.85f);
+
+   JSONObject rescued=PaymentParser.parse("Tambah nilai RM 75.00 ke ShopeePay MY berjaya.","com.shopee.pay.my");
+   yes(rescued!=null&&rescued.getLong("amount")==7500&&rescued.optBoolean("reload"));
+
+   NotificationGate.setDisabled(true);
+   yes(NotificationGate.score("You have paid RM 10.00 at Shop","com.maybank2u.life")==null);
+   NotificationGate.setDisabled(false);
+   yes(NotificationGate.score("You have paid RM 10.00 at Shop","com.maybank2u.life")!=null);
+  });
+
+  test("Track 6 opt-in correctionLog stays off by default, omits notes, caps at 500 FIFO, survives encrypted backup, and clears",()->{
+   JSONObject sOff=Ledger.initial();
+   yes(!sOff.getJSONObject("settings").optBoolean("correctionLogOptIn",false));
+   eq(sOff.getJSONArray("correctionLog").length(),0);
+   Ledger.apply(sOff,"transaction",tx("expense","12.50").put("category","Miscellaneous").put("merchant","ZUS Coffee").put("note","Private sensitive note"));
+   String offId=sOff.getJSONArray("transactions").getJSONObject(0).getString("id");
+   Extras.apply(sOff,"quickNote",new JSONObject().put("id",offId).put("note","Private sensitive note").put("category","Food & drinks"));
+   eq(sOff.getJSONArray("correctionLog").length(),0);
+
+   JSONObject sOn=Ledger.initial();
+   Ledger.apply(sOn,"settings",new JSONObject().put("correctionLogOptIn",true));
+   Ledger.apply(sOn,"transaction",tx("expense","15.00").put("category","Miscellaneous").put("merchant","Watsons").put("note","Private sensitive note"));
+   String id1=sOn.getJSONArray("transactions").getJSONObject(0).getString("id");
+   Ledger.apply(sOn,"quickNote",new JSONObject().put("id",id1).put("note","Private sensitive note").put("category","Health & medical").put("subcategory","Pharmacy & Medicine"));
+   Ledger.apply(sOn,"transaction",tx("expense","18.00").put("editId",id1).put("category","Shopping").put("merchant","Watsons").put("note","Private sensitive note"));
+   Ledger.apply(sOn,"draft",new JSONObject().put("id","d-trk6-1").put("merchant","Promo Trap").put("amount",1000).put("source","PromoApp"));
+   Ledger.apply(sOn,"ignore",new JSONObject().put("id","d-trk6-1"));
+   Ledger.apply(sOn,"draft",new JSONObject().put("id","d-trk6-2").put("kind","expense").put("category","Miscellaneous").put("merchant","Unknown Kedai XYZ").put("amount",950).put("source","TNG"));
+   Ledger.apply(sOn,"transaction",new JSONObject().put("key","k-trk6-2").put("draftId","d-trk6-2").put("kind","expense").put("amount","9.50").put("account","cash").put("category","Shopping").put("merchant","Unknown Kedai XYZ").put("date",LocalDate.now().toString()).put("note","Private sensitive note"));
+   eq(sOn.getJSONArray("correctionLog").length(),4);
+   String dumpedLog=sOn.getJSONArray("correctionLog").toString();
+   yes(!dumpedLog.contains("Private sensitive note"));
+
+   byte[] enc=Crypto.backup(BackupArchive.pack(sOn,new HashMap<>()),"track6-backup-pw".toCharArray());
+   BackupArchive.Contents dec=BackupArchive.unpack(Crypto.restore(enc,"track6-backup-pw".toCharArray()));
+   eq(dec.state.getJSONArray("correctionLog").length(),4);
+
+   for(int i=0;i<510;i++){
+    Ledger.recordCorrection(sOn,"quickNote","MAE","com.maybank2u.life",
+      new JSONObject().put("category","Miscellaneous"),new JSONObject().put("category","Food & drinks"));
+   }
+   eq(sOn.getJSONArray("correctionLog").length(),500);
+   Ledger.validate(sOn);
+
+   Extras.apply(sOn,"clearCorrectionLog",new JSONObject());
+   eq(sOn.getJSONArray("correctionLog").length(),0);
+   Ledger.validate(sOn);
+  });
+
   System.out.println("RESULT: "+passed+" extended tests passed");
  }
 }

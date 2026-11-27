@@ -417,4 +417,15 @@ test('Track 5 upgraded batchForm renders per-row controls, Select all safe, Appl
   ctx.modal=prevModal;
   run(`state.drafts=${JSON.stringify(prevDrafts)}`);
 });
+test('Track 6 Settings renders opt-in correctionLogToggle and Clear log action',()=>{
+  const prevOpt=run(`state.settings.correctionLogOptIn`);
+  const prevLog=run(`state.correctionLog`);
+  run(`state.settings.correctionLogOptIn=false;state.correctionLog=[];`);
+  const s1=run(`settings()`);
+  assert(s1.includes('id="correctionLogToggle"')&&!s1.includes('id="correctionLogToggle" aria-label="On-device correction log" checked'));
+  run(`state.settings.correctionLogOptIn=true;state.correctionLog=[{id:'c1'},{id:'c2'}];`);
+  const s2=run(`settings()`);
+  assert(s2.includes('2 logged')&&s2.includes('data-action="clearCorrectionLog"'));
+  run(`state.settings.correctionLogOptIn=${JSON.stringify(prevOpt)};state.correctionLog=${JSON.stringify(prevLog)};`);
+});
 console.log('RESULT: '+passed+' UI tests passed');
