@@ -294,8 +294,8 @@ public final class PaymentParser {
     if(canonStrong&&MerchantCanonicalizer.isNoisyTruncatedSurface(origMerchant)){
       merchant=canon.canonicalName;
     }
-    String[] cs=kind.equals("income")?new String[]{"Other income",""}:classify(origMerchant,source,low);
-    if(!kind.equals("income")&&canonStrong&&"Miscellaneous".equals(cs[0])){
+    String[] cs=kind.equals("income")?new String[]{"Other income",""}:classify(merchant,source,low);
+    if(!kind.equals("income")&&canonStrong&&"Miscellaneous".equals(cs[0])&&!merchant.equals(canon.canonicalName)){
       String[] ccs=classify(canon.canonicalName,source,low);
       if(!"Miscellaneous".equals(ccs[0]))cs=ccs;
     }

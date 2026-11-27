@@ -285,7 +285,7 @@ public final class Vault {
     if(c==null)return;
     final Context app=c.getApplicationContext();
     MlClassifier.setStreamSupplier(()->{
-      for(String asset:new String[]{"moneylens_classifier.json.gz","moneylens_classifier.json"}){
+      for(String asset:new String[]{"moneylens_classifier.bin.gz","moneylens_classifier.bin","moneylens_classifier.json.gz","moneylens_classifier.json"}){
         try{return app.getAssets().open(asset);}catch(Exception ignored){}
       }
       return null;
@@ -325,7 +325,7 @@ public final class Vault {
     if(c==null)return;
     configureClassifierLazy(c);
     if(!MlClassifier.isLoaded()){
-      for(String asset:new String[]{"moneylens_classifier.json.gz","moneylens_classifier.json"}){
+      for(String asset:new String[]{"moneylens_classifier.bin.gz","moneylens_classifier.bin","moneylens_classifier.json.gz","moneylens_classifier.json"}){
         try(InputStream in=c.getAssets().open(asset)){if(MlClassifier.loadFromStream(in))break;}catch(Exception ignored){}
       }
     }

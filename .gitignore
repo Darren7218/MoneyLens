@@ -65,5 +65,16 @@ colab/outputs_track34_v1/track34.log
 colab/outputs_track34_v1/track34_status.json
 colab/outputs_track34_v1/moneylens_notif_gate.bin*
 colab/outputs_track34_v1/*cache*.json
+colab/outputs_v6/*.jsonl*
+colab/outputs_v6/*.npz
+colab/outputs_v6/*.bin*
+colab/outputs_v6/*.log
+colab/outputs_v6/*_status.json
+colab/outputs_v6/*parity*.json
+colab/outputs_notif_gate_v2/*.json*
+colab/outputs_notif_gate_v2/*.bin*
+colab/outputs_notif_gate_v2/*.log
+!colab/outputs_notif_gate_v2/notif_gate_v2_report.json
+!colab/outputs_notif_gate_v2/java_eval_track34_v2.json
 __pycache__/
 *.pyc

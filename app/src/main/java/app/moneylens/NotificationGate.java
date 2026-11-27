@@ -462,7 +462,7 @@ public final class NotificationGate {
     sf[12] = (RE_MOVE.matcher(low).find() || containsAny(low, CJK_MOVE_WORDS)) ? 1.0f : 0.0f;
     sf[13] = (RE_INCOME.matcher(low).find() || containsAny(low, CJK_INCOME_WORDS)) ? 1.0f : 0.0f;
     sf[14] = !cjk.isEmpty() ? 1.0f : 0.0f;
-    sf[15] = Math.min(1.0f, low.length() / 200.0f);
+    sf[15] = Math.min(1.0f, low.codePointCount(0, low.length()) / 200.0f);
 
     Map<Integer, Double> bucketWeights = new HashMap<>(feats.size() * 2);
     for (String fk : feats) {

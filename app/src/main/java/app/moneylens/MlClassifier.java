@@ -3,7 +3,9 @@ package app.moneylens;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
 import java.nio.charset.StandardCharsets;
@@ -143,15 +145,21 @@ public final class MlClassifier {
       int hdrRead = pb.read(hdr);
       if (hdrRead > 0) pb.unread(hdr, 0, hdrRead);
       boolean isGzip = hdrRead == 2 && (hdr[0] & 0xFF) == 0x1F && (hdr[1] & 0xFF) == 0x8B;
-      String json;
-      try (InputStream src = isGzip ? new GZIPInputStream(pb) : pb) {
-        ByteArrayOutputStream buf = new ByteArrayOutputStream(65536);
-        byte[] chunk = new byte[8192];
-        int n;
-        while ((n = src.read(chunk)) >= 0) buf.write(chunk, 0, n);
-        json = buf.toString(StandardCharsets.UTF_8.name());
+      try (InputStream src = isGzip ? new GZIPInputStream(pb, 16384) : pb;
+           PushbackInputStream pbMagic = new PushbackInputStream(new BufferedInputStream(src, 32768), 4)) {
+        byte[] magic = new byte[4];
+        int mRead = pbMagic.read(magic);
+        if (mRead > 0) pbMagic.unread(magic, 0, mRead);
+        if (mRead == 4 && magic[0] == 'M' && magic[1] == 'L' && magic[2] == 'C' && magic[3] == 'L') {
+          activeModel = parseBinaryModel(new DataInputStream(pbMagic));
+        } else {
+          ByteArrayOutputStream buf = new ByteArrayOutputStream(65536);
+          byte[] chunk = new byte[8192];
+          int n;
+          while ((n = pbMagic.read(chunk)) >= 0) buf.write(chunk, 0, n);
+          activeModel = parseModel(buf.toString(StandardCharsets.UTF_8.name()));
+        }
       }
-      activeModel = parseModel(json);
       autoLoadAttempted = true;
       disabled = false;
       return activeModel != null;
@@ -178,21 +186,79 @@ public final class MlClassifier {
         if (supplied != null && loadFromStream(supplied)) return;
       } catch (Exception ignored) {}
     }
-    for (String res : new String[]{"/moneylens_classifier.json.gz", "/moneylens_classifier.json"}) {
+    for (String res : new String[]{"/moneylens_classifier.bin.gz", "/moneylens_classifier.bin", "/moneylens_classifier.json.gz", "/moneylens_classifier.json"}) {
       try (InputStream cp = MlClassifier.class.getResourceAsStream(res)) {
         if (cp != null && loadFromStream(cp)) return;
       } catch (Exception ignored) {}
     }
     for (String candidate : new String[]{
+        "app/src/main/assets/moneylens_classifier.bin.gz",
+        "app/src/main/assets/moneylens_classifier.bin",
         "app/src/main/assets/moneylens_classifier.json.gz",
         "app/src/main/assets/moneylens_classifier.json",
+        "src/main/assets/moneylens_classifier.bin.gz",
         "src/main/assets/moneylens_classifier.json.gz",
-        "src/main/assets/moneylens_classifier.json",
-        "../app/src/main/assets/moneylens_classifier.json.gz",
-        "../app/src/main/assets/moneylens_classifier.json"
+        "../app/src/main/assets/moneylens_classifier.bin.gz",
+        "../app/src/main/assets/moneylens_classifier.json.gz"
     }) {
       if (loadFromPath(Paths.get(candidate))) return;
     }
+  }
+
+  private static String readUtf8(DataInputStream dis) throws Exception {
+    int len = dis.readUnsignedShort();
+    byte[] b = new byte[len];
+    dis.readFully(b);
+    return new String(b, StandardCharsets.UTF_8);
+  }
+
+  private static Model parseBinaryModel(DataInputStream dis) throws Exception {
+    byte[] magic = new byte[4];
+    dis.readFully(magic);
+    if (magic[0] != 'M' || magic[1] != 'L' || magic[2] != 'C' || magic[3] != 'L') {
+      throw new IllegalArgumentException("Bad MLCL magic");
+    }
+    int version = dis.readInt();
+    if (version != 1) throw new IllegalArgumentException("Unsupported MLCL version: " + version);
+    int numClasses = dis.readInt();
+    String[] classPairs = new String[numClasses];
+    String[] cats = new String[numClasses];
+    String[] subs = new String[numClasses];
+    for (int i = 0; i < numClasses; i++) {
+      String pair = readUtf8(dis);
+      classPairs[i] = pair;
+      int split = pair.indexOf("||");
+      if (split >= 0) {
+        cats[i] = pair.substring(0, split);
+        subs[i] = pair.substring(split + 2);
+      } else {
+        cats[i] = pair;
+        subs[i] = "";
+      }
+    }
+    double[] intercepts = new double[numClasses];
+    for (int i = 0; i < numClasses; i++) intercepts[i] = dis.readFloat();
+
+    int numFeatures = dis.readInt();
+    Map<String, Feature> wordMap = new HashMap<>(numFeatures);
+    Map<String, Feature> charMap = new HashMap<>(numFeatures);
+    for (int f = 0; f < numFeatures; f++) {
+      int block = dis.readUnsignedByte();
+      String key = readUtf8(dis);
+      float idf = dis.readFloat();
+      float wScale = dis.readFloat();
+      int nnz = dis.readUnsignedShort();
+      int[] cIdx = new int[nnz];
+      float[] w = new float[nnz];
+      for (int j = 0; j < nnz; j++) {
+        cIdx[j] = dis.readUnsignedByte();
+        w[j] = dis.readByte() * wScale;
+      }
+      Feature feat = new Feature(idf, cIdx, w);
+      if (block == 0) wordMap.put(key, feat);
+      else charMap.put(key, feat);
+    }
+    return new Model(classPairs, cats, subs, intercepts, wordMap, charMap);
   }
 
   private static Model parseModel(String rawJson) throws Exception {

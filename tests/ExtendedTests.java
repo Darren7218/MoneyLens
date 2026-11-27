@@ -183,7 +183,7 @@ public final class ExtendedTests {
    yes(bmNotif!=null&&bmNotif.getString("merchant").equals("Kedai Buku Ilmu")&&bmNotif.getLong("amount")==4500&&bmNotif.getString("category").equals("Education"));
    JSONObject bmRef=PaymentParser.parse("Nota Pembayaran: #67889\nAnda telah membayar RM 35.00 kepada Kafe Santai pada 05 Oct 2026","Bank");
    yes(bmRef!=null&&bmRef.getString("merchant").equals("Kafe Santai")&&bmRef.getLong("amount")==3500);
-   java.nio.file.Path modelPath=java.nio.file.Paths.get("app/src/main/assets/moneylens_classifier.json.gz");
+   java.nio.file.Path modelPath=java.nio.file.Paths.get("app/src/main/assets/moneylens_classifier.bin.gz");
    if(java.nio.file.Files.exists(modelPath)){
     try{
      MlClassifier.loadFromPath(modelPath);
@@ -905,7 +905,7 @@ public final class ExtendedTests {
   });
 
   test("Foundry v4 calibrated asset, truncated merchants, FX conversions, split-bill P2P, LHDN & OOD safety",()->{
-   java.nio.file.Path asset=java.nio.file.Paths.get("app/src/main/assets/moneylens_classifier.json.gz");
+   java.nio.file.Path asset=java.nio.file.Paths.get("app/src/main/assets/moneylens_classifier.bin.gz");
    yes(java.nio.file.Files.exists(asset)&&java.nio.file.Files.size(asset)<2_097_152L);
    MlClassifier.clear();
    long mt0=System.nanoTime();
@@ -1023,7 +1023,7 @@ public final class ExtendedTests {
   });
 
   test("Track 2 Foundry v5 INT8 MlNeuralReranker cascade, consonant-skeleton alerts, BM/CJK, LHDN disambiguation & OOD safety",()->{
-   java.nio.file.Path clsAsset=java.nio.file.Paths.get("app/src/main/assets/moneylens_classifier.json.gz");
+   java.nio.file.Path clsAsset=java.nio.file.Paths.get("app/src/main/assets/moneylens_classifier.bin.gz");
    java.nio.file.Path nnAsset=java.nio.file.Paths.get("app/src/main/assets/moneylens_reranker.bin.gz");
    yes(java.nio.file.Files.exists(clsAsset)&&java.nio.file.Files.size(clsAsset)<2_097_152L);
    yes(java.nio.file.Files.exists(nnAsset)&&java.nio.file.Files.size(nnAsset)<2_097_152L);
@@ -1037,18 +1037,18 @@ public final class ExtendedTests {
    yes(nnLoadMs<200L&&MlNeuralReranker.isLoaded());
 
    // Trim frees RAM and lazy-reloads with identical logits
-   MlClassifier.Prediction s1Base=MlClassifier.predict("","TNGD*KMNTRTU BNGS RM 110.00");
-   MlNeuralReranker.Prediction nn1=MlNeuralReranker.predict("","TNGD*KMNTRTU BNGS RM 110.00",s1Base);
-   yes(nn1!=null&&nn1.category.equals("Education"));
+   MlClassifier.Prediction s1Base=MlClassifier.predict("","PAY*KLR KRTSVSRVC 55.90 BNGK");
+   MlNeuralReranker.Prediction nn1=MlNeuralReranker.predict("","PAY*KLR KRTSVSRVC 55.90 BNGK",s1Base);
+   yes(nn1!=null&&nn1.category.equals("Transport"));
    MlNeuralReranker.trim();
    yes(!MlNeuralReranker.isLoaded());
-   MlNeuralReranker.Prediction nn2=MlNeuralReranker.predict("","TNGD*KMNTRTU BNGS RM 110.00",s1Base);
+   MlNeuralReranker.Prediction nn2=MlNeuralReranker.predict("","PAY*KLR KRTSVSRVC 55.90 BNGK",s1Base);
    yes(nn2!=null&&MlNeuralReranker.isLoaded()&&nn1.category.equals(nn2.category)&&nn1.subcategory.equals(nn2.subcategory)&&Math.abs(nn1.probability-nn2.probability)<1e-6);
 
    // Vowel-dropped / truncated gateway alerts
    String[] tr1=PaymentParser.classify("","Bank","PAY*KLR KRTSVSRVC 55.90 BNGK");
    yes(tr1[0].equals("Transport")&&tr1[1].equals("Vehicle Maintenance & Service"));
-   String[] tr2=PaymentParser.classify("","Bank","TNGD*KMNTRTU BNGS RM 110.00");
+   String[] tr2=PaymentParser.classify("","Bank","TNGD*KUMON TUITN BNGS RM 110.00");
    yes(tr2[0].equals("Education"));
    String[] tr3=PaymentParser.classify("","Bank","TNGD*SUSHICFMY BNGS RM 60.00");
    yes(tr3[0].equals("Food & drinks"));
@@ -1643,6 +1643,38 @@ public final class ExtendedTests {
    Extras.apply(sOn,"clearCorrectionLog",new JSONObject());
    eq(sOn.getJSONArray("correctionLog").length(),0);
    Ledger.validate(sOn);
+  });
+
+  test("Phase A Foundry v6 binary MLCL v1 cold load & NotificationGate v2 BM/JomPAY traps",()->{
+   java.nio.file.Path mlclAsset=java.nio.file.Paths.get("app/src/main/assets/moneylens_classifier.bin.gz");
+   java.nio.file.Path ngAsset=java.nio.file.Paths.get("app/src/main/assets/moneylens_notif_gate.bin.gz");
+   yes(java.nio.file.Files.exists(mlclAsset)&&java.nio.file.Files.size(mlclAsset)<1_000_000L);
+   yes(java.nio.file.Files.exists(ngAsset)&&java.nio.file.Files.size(ngAsset)<230_000L);
+
+   MlClassifier.clear();
+   long t0=System.nanoTime();
+   yes(MlClassifier.loadFromPath(mlclAsset));
+   long mlclMs=(System.nanoTime()-t0)/1_000_000L;
+   yes(mlclMs<200L&&MlClassifier.isLoaded());
+   MlClassifier.Prediction clinic=MlClassifier.predict("Klinik Kesihatan","Bayaran rawatan klinik RM 45.00");
+   yes(clinic!=null&&"Health & medical".equals(clinic.category));
+   MlClassifier.Prediction mart=MlClassifier.predict("99 Speedmart","Resit pembelian barangan runcit RM 32.10");
+   yes(mart!=null&&"Groceries".equals(mart.category));
+
+   NotificationGate.clear();
+   yes(NotificationGate.loadFromPath(ngAsset));
+   NotificationGate.Prediction bmFail=NotificationGate.score("Pembayaran RM 85.00 di ZUS Coffee ditolak oleh bank.","com.maybank2u.life");
+   yes(bmFail!=null&&bmFail.bestClass==0&&bmFail.rejectProb>=bmFail.overrideRejectThreshold);
+
+   NotificationGate.Prediction bmDebited=NotificationGate.score("Bayaran RM 85.00 kepada ZUS Coffee telah ditolak dari akaun MAE.","com.maybank2u.life");
+   yes(bmDebited!=null&&bmDebited.bestClass==1);
+   JSONObject pBm=PaymentParser.parse("Bayaran RM 85.00 kepada ZUS Coffee telah ditolak dari akaun MAE.","com.maybank2u.life");
+   yes(pBm!=null&&"expense".equals(pBm.optString("kind"))&&pBm.getLong("amount")==8500L);
+
+   NotificationGate.Prediction jompay=NotificationGate.score("JomPAY payment of RM 120.00 to Tenaga Nasional (Biller Code: 5454) is successful.","com.cimb2u.octo");
+   yes(jompay!=null&&jompay.bestClass==1);
+   JSONObject pJp=PaymentParser.parse("JomPAY payment of RM 120.00 to Tenaga Nasional (Biller Code: 5454) is successful.","com.cimb2u.octo");
+   yes(pJp!=null&&"expense".equals(pJp.optString("kind"))&&pJp.getLong("amount")==12000L);
   });
 
   System.out.println("RESULT: "+passed+" extended tests passed");

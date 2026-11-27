@@ -11,7 +11,7 @@
     "parser_receipt": {
       "oodCount": 228,
       "multiCount": 230,
-      "oodMiscSafety": 0.9561,
+      "oodMiscSafety": 0.8333,
       "multiAmountExact": 1,
       "receiptCount": 342,
       "receiptTotalExact": 1
@@ -49,7 +49,7 @@
     "parser_receipt": {
       "oodCount": 1000,
       "multiCount": 1000,
-      "oodMiscSafety": 1,
+      "oodMiscSafety": 0.972,
       "multiAmountExact": 1,
       "receiptCount": 1500,
       "receiptTotalExact": 1
