@@ -744,7 +744,16 @@ const I18N_MS={
   'Forget':'Lupakan',
   'Learned merchant forgotten.':'Peniaga dipelajari dilupakan.',
   'No learned merchants yet.':'Tiada peniaga dipelajari lagi.',
-  'Learned':'Dipelajari'
+  'Learned':'Dipelajari',
+  'Receipt details & LHDN e-Invoice':'Butiran resit & e-Invois LHDN',
+  '{n} items':'{n} item',
+  'Subtotal':'Subjumlah',
+  'SST':'Cukai SST',
+  'LHDN TIN':'TIN LHDN',
+  'e-Invoice ref':'Rujukan e-Invois',
+  'On-Device ML Engines':'Enjin ML Pada Peranti',
+  'Ready':'Sedia',
+  'Standby':'Tunggu sedia'
 };
 function currentLang(){return (typeof state!=='undefined'&&state?.settings?.lang==='ms')?'ms':'en'}
 function appLocale(){return currentLang()==='ms'?'ms-MY':'en-MY'}

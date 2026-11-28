@@ -124,7 +124,7 @@ public final class Extras {
    }
    case "deleteExtra":{String table=a.getString("table");if(!Arrays.asList("rules","favorites","customCategories").contains(table))throw new IllegalArgumentException("Invalid item.");if(table.equals("rules"))rememberRules(s);JSONArray rows=s.getJSONArray(table);for(int i=rows.length()-1;i>=0;i--)if(rows.getJSONObject(i).getString("id").equals(a.getString("id")))rows.remove(i);return true;}
    case "draft":{JSONObject d=new JSONObject(a.toString()).put("id",a.optString("id",Ledger.id())).put("state","review").put("revision",1).put("created",System.currentTimeMillis());boolean auto=d.optBoolean("autoCapture");d.remove("autoCapture");d.remove("text");Finance.suggest(s,d);s.getJSONArray("drafts").put(d);if(auto)autoPost(s,d);return true;}
-   case "linkDraft":{JSONObject d=Ledger.find(s.getJSONArray("drafts"),a.getString("id"));JSONObject t=Ledger.find(s.getJSONArray("transactions"),a.getString("transactionId"));if(t.optBoolean("voided"))throw new IllegalArgumentException("Choose a current transaction.");if(!d.optString("state").equals("review"))return true;d.put("state","linked").put("transactionId",t.getString("id"));if(d.has("receiptId")&&!t.has("receiptId"))t.put("receiptId",d.getString("receiptId"));return true;}
+   case "linkDraft":{JSONObject d=Ledger.find(s.getJSONArray("drafts"),a.getString("id"));JSONObject t=Ledger.find(s.getJSONArray("transactions"),a.getString("transactionId"));if(t.optBoolean("voided"))throw new IllegalArgumentException("Choose a current transaction.");if(!d.optString("state").equals("review"))return true;d.put("state","linked").put("transactionId",t.getString("id"));if(d.has("receiptId")&&!t.has("receiptId"))t.put("receiptId",d.getString("receiptId"));for(String rk:new String[]{"items","subtotalMinor","sstMinor","lhdnTin","lhdnInvoiceRef"})if(d.has(rk)&&!t.has(rk))t.put(rk,d.get(rk));return true;}
    case "ignoreBatch":{JSONArray ids=a.getJSONArray("ids");for(int i=0;i<ids.length();i++){JSONObject d=Ledger.find(s.getJSONArray("drafts"),ids.getString(i));if(d.optString("state").equals("review"))d.put("state","ignored");}return true;}
    case "confirmBatch":{
     JSONArray rows=a.getJSONArray("rows");
@@ -1455,6 +1455,7 @@ public final class Extras {
   if(merchantClean.isEmpty())merchantClean="shared".equals(kind)?"Shared expense":"income".equals(kind)?"Incoming transfer":"refund".equals(kind)?"Refund":"Quick expense";
   else if(Character.isLowerCase(merchantClean.charAt(0)))merchantClean=Character.toUpperCase(merchantClean.charAt(0))+merchantClean.substring(1);
 
+  String canonMerchantName="";
   // 6. Classification cascade: Income/Transfer rules -> PaymentParser -> SemanticSearch -> MerchantCanonicalizer -> Finance.suggest
   String[] cls;
   if("income".equals(kind)){
@@ -1466,8 +1467,11 @@ public final class Extras {
    MerchantCanonicalizer.Result canon=null;
    if(merchantClean.length()>=3){
     canon=MerchantCanonicalizer.canonicalize(merchantClean,"");
-    if(canon!=null&&canon.matchedCatalog&&canon.similarity>=0.72&&MerchantCanonicalizer.isNoisyTruncatedSurface(merchantClean)){
-     merchantClean=canon.canonicalName;
+    if(canon!=null&&canon.matchedCatalog){
+     canonMerchantName=canon.canonicalName;
+     if(canon.similarity>=0.72&&MerchantCanonicalizer.isNoisyTruncatedSurface(merchantClean)){
+      merchantClean=canon.canonicalName;
+     }
     }
    }
    String[] ruleCls=PaymentParser.classifyRulesOnly(merchantClean,sourceHint,raw);
@@ -1494,10 +1498,12 @@ public final class Extras {
    .put("subcategory",cls[1])
    .put("account",matchedAcct)
    .put("date",parsedDate.toString());
+  if(!canonMerchantName.isEmpty())res.put("canonicalMerchant",canonMerchantName);
   if(!ownAmount.isEmpty())res.put("ownAmount",ownAmount);
   if(!person.isEmpty())res.put("person",person);
-  if(s!=null&&"expense".equals(kind)){
+  if(s!=null&&("expense".equals(kind)||"refund".equals(kind))){
    JSONObject draft=new JSONObject().put("merchant",merchantClean).put("amount",amountMinor).put("source",sourceHint).put("category",cls[0]).put("subcategory",cls[1]).put("account",matchedAcct);
+   if(!canonMerchantName.isEmpty())draft.put("canonicalMerchant",canonMerchantName);
    Finance.suggest(s,draft);
    String sugCat=draft.optString("category","");
    if(!sugCat.isEmpty()&&!"Miscellaneous".equals(sugCat)&&!"Other".equals(sugCat)){

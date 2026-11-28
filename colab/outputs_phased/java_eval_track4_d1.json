@@ -1,0 +1,425 @@
+{
+  "assetBytes": 433067,
+  "searchLexicalBaseline": {
+    "oodFpr": 0.0333,
+    "recallAt5ByLang": {
+      "en": 0.25,
+      "mg": 0.14,
+      "bm": 0.1584,
+      "zh": 0.0291
+    },
+    "recallAt5": 0.1368,
+    "recallAt10": 0.1368,
+    "sampleMisses": [
+      {
+        "gotN": 0,
+        "slice": "concept",
+        "query": "building maintenance fee",
+        "lang": "en"
+      },
+      {
+        "gotN": 0,
+        "slice": "concept",
+        "query": "cell phone bill",
+        "lang": "en"
+      },
+      {
+        "gotN": 0,
+        "slice": "concept",
+        "query": "subscription payment",
+        "lang": "en"
+      },
+      {
+        "gotN": 0,
+        "slice": "zero_lexical_overlap",
+        "query": "plane tickets",
+        "lang": "en"
+      },
+      {
+        "gotN": 0,
+        "slice": "zero_lexical_overlap",
+        "query": "gaming equipment",
+        "lang": "en"
+      },
+      {
+        "gotN": 0,
+        "slice": "concept",
+        "query": "quick service food",
+        "lang": "en"
+      },
+      {
+        "gotN": 0,
+        "slice": "concept",
+        "query": "GrabFood order",
+        "lang": "en"
+      },
+      {
+        "gotN": 0,
+        "slice": "concept",
+        "query": "Snack pack",
+        "lang": "en"
+      },
+      {
+        "gotN": 0,
+        "slice": "concept",
+        "query": "hawker centre meal",
+        "lang": "en"
+      },
+      {
+        "gotN": 0,
+        "slice": "concept",
+        "query": "dinner outing",
+        "lang": "en"
+      },
+      {
+        "gotN": 0,
+        "slice": "concept",
+        "query": "Mini mart shop",
+        "lang": "en"
+      },
+      {
+        "gotN": 56,
+        "slice": "concept",
+        "query": "medical exam LHDN",
+        "lang": "en"
+      },
+      {
+        "gotN": 0,
+        "slice": "zero_lexical_overlap",
+        "query": "personal trainer",
+        "lang": "en"
+      },
+      {
+        "gotN": 0,
+        "slice": "zero_lexical_overlap",
+        "query": "lab test fee",
+        "lang": "en"
+      },
+      {
+        "gotN": 0,
+        "slice": "zero_lexical_overlap",
+        "query": "medication cost",
+        "lang": "en"
+      },
+      {
+        "gotN": 0,
+        "slice": "concept",
+        "query": "house tax",
+        "lang": "en"
+      },
+      {
+        "gotN": 0,
+        "slice": "zero_lexical_overlap",
+        "query": "buy new sofa",
+        "lang": "en"
+      },
+      {
+        "gotN": 0,
+        "slice": "concept",
+        "query": "home loan eligibility check",
+        "lang": "en"
+      },
+      {
+        "gotN": 0,
+        "slice": "zero_lexical_overlap",
+        "query": "replace kitchen sink",
+        "lang": "en"
+      },
+      {
+        "gotN": 0,
+        "slice": "concept",
+        "query": "monthly rent amount",
+        "lang": "en"
+      }
+    ],
+    "recallAt5BySlice": {
+      "lhdn_tax": 1,
+      "concept": 0.1962,
+      "zero_lexical_overlap": 0,
+      "structured_constraint": 0.5,
+      "kind_filter": 1
+    },
+    "mrrAt10": 0.1298,
+    "n": 380
+  },
+  "searchTrack4Hybrid": {
+    "oodFpr": 0.0333,
+    "recallAt5ByLang": {
+      "en": 0.9211,
+      "mg": 0.87,
+      "bm": 0.8911,
+      "zh": 0.8641
+    },
+    "recallAt5": 0.8842,
+    "recallAt10": 0.9132,
+    "sampleMisses": [
+      {
+        "gotN": 4,
+        "slice": "zero_lexical_overlap",
+        "query": "gaming equipment",
+        "lang": "en"
+      },
+      {
+        "gotN": 6,
+        "slice": "zero_lexical_overlap",
+        "query": "personal trainer",
+        "lang": "en"
+      },
+      {
+        "gotN": 135,
+        "slice": "zero_lexical_overlap",
+        "query": "medication cost",
+        "lang": "en"
+      },
+      {
+        "gotN": 215,
+        "slice": "concept",
+        "query": "CC payment",
+        "lang": "en"
+      },
+      {
+        "gotN": 10,
+        "slice": "zero_lexical_overlap",
+        "query": "Lunch outing",
+        "lang": "en"
+      },
+      {
+        "gotN": 10,
+        "slice": "concept",
+        "query": "health cover cost",
+        "lang": "en"
+      },
+      {
+        "gotN": 20,
+        "slice": "zero_lexical_overlap",
+        "query": "belajar tambahan kos",
+        "lang": "bm"
+      },
+      {
+        "gotN": 79,
+        "slice": "concept",
+        "query": "fee tahun kredit",
+        "lang": "bm"
+      },
+      {
+        "gotN": 6,
+        "slice": "zero_lexical_overlap",
+        "query": "Latihan fizikal",
+        "lang": "bm"
+      },
+      {
+        "gotN": 70,
+        "slice": "concept",
+        "query": "furniture mahal",
+        "lang": "bm"
+      },
+      {
+        "gotN": 18,
+        "slice": "zero_lexical_overlap",
+        "query": "gaji bulanan rumah",
+        "lang": "bm"
+      },
+      {
+        "gotN": 15,
+        "slice": "zero_lexical_overlap",
+        "query": "pembayaran bulanan",
+        "lang": "bm"
+      },
+      {
+        "gotN": 0,
+        "slice": "zero_lexical_overlap",
+        "query": "RAMRT",
+        "lang": "bm"
+      },
+      {
+        "gotN": 22,
+        "slice": "zero_lexical_overlap",
+        "query": "peralatan sekolah",
+        "lang": "bm"
+      },
+      {
+        "gotN": 12,
+        "slice": "zero_lexical_overlap",
+        "query": "bahan rumah tangga",
+        "lang": "bm"
+      },
+      {
+        "gotN": 0,
+        "slice": "zero_lexical_overlap",
+        "query": "ganti kerami kamar mandi",
+        "lang": "bm"
+      },
+      {
+        "gotN": 121,
+        "slice": "concept",
+        "query": "Credit card installment",
+        "lang": "bm"
+      },
+      {
+        "gotN": 2,
+        "slice": "concept",
+        "query": "mobile bill today",
+        "lang": "mg"
+      },
+      {
+        "gotN": 173,
+        "slice": "zero_lexical_overlap",
+        "query": "textbook cost",
+        "lang": "mg"
+      },
+      {
+        "gotN": 0,
+        "slice": "concept",
+        "query": "event entry",
+        "lang": "mg"
+      }
+    ],
+    "recallAt5BySlice": {
+      "lhdn_tax": 1,
+      "concept": 0.9282,
+      "zero_lexical_overlap": 0.8153,
+      "structured_constraint": 1,
+      "kind_filter": 1
+    },
+    "mrrAt10": 0.815,
+    "n": 380
+  },
+  "bench1kWarmMs": 5.5,
+  "quickEntryTrack4": {
+    "amountExact": 1,
+    "categoryByLang": {
+      "en": 0.9698,
+      "mg": 0.9749,
+      "bm": 0.9677,
+      "zh": 0.9731
+    },
+    "accountExact": 0.99,
+    "kindExact": 0.9975,
+    "splitExact": 0.9886,
+    "categoryAcc": 0.9714,
+    "sampleErrors": [
+      {
+        "expCat": "Loans, BNPL & Credit",
+        "gotMerch": "Courts FlexiCredit",
+        "text": "Bayar Courts FlexiCredit RM 103.20 maybank semalam",
+        "gotCat": "Shopping"
+      },
+      {
+        "expCat": "Transport",
+        "gotMerch": "Train ticket",
+        "text": "train ticket RM 59.80 cimb today",
+        "gotCat": "Entertainment & travel"
+      },
+      {
+        "expCat": "Bills & utilities",
+        "gotMerch": "Software renewal",
+        "text": "software renewal RM 94.90 gxbank 2 days ago",
+        "gotCat": "Taxes & government"
+      },
+      {
+        "expCat": "Entertainment & travel",
+        "gotMerch": "PixelQuest Digital Store",
+        "text": "前天在PixelQuest Digital Store花了158块 GXBank",
+        "gotCat": "Investments & savings"
+      },
+      {
+        "expCat": "Shopping",
+        "gotMerch": "CozyHome Living Mid Valley",
+        "text": "Bayar CozyHome Living Mid Valley RM 19 cimb kelmarin",
+        "gotCat": "Transport"
+      },
+      {
+        "expCat": "Transport",
+        "gotMerch": "Perbaharui roadtax",
+        "text": "perbaharui roadtax 42 ringgit tng semalam",
+        "gotCat": "Taxes & government"
+      },
+      {
+        "expCat": "Food & drinks",
+        "gotMerch": "Roast & Ground PJ",
+        "text": "前天在Roast & Ground PJ花了112.90块 GXBank",
+        "gotCat": "Miscellaneous"
+      },
+      {
+        "expCat": "Groceries",
+        "gotMerch": "Topup tisu rumah",
+        "text": "topup tisu rumah 123.40 tng 2 days ago",
+        "gotCat": "Investments & savings"
+      },
+      {
+        "expCat": "Transport",
+        "gotMerch": "Installment kereta",
+        "text": "installment kereta 158.80 tng harini",
+        "gotCat": "Loans, BNPL & Credit"
+      },
+      {
+        "expCat": "Housing & property",
+        "gotMerch": "Hardware tools",
+        "text": "hardware tools RM 148.80 gxbank yesterday",
+        "gotCat": "Shopping"
+      },
+      {
+        "expCat": "Groceries",
+        "gotMerch": "Topup tisu rumah",
+        "text": "topup tisu rumah 179.50 cimb harini",
+        "gotCat": "Investments & savings"
+      },
+      {
+        "expCat": "Loans, BNPL & Credit",
+        "gotMerch": "Courts FlexiCredit",
+        "text": "前天在Courts FlexiCredit花了7.40块 TNG",
+        "gotCat": "Shopping"
+      },
+      {
+        "expCat": "Family & gifts",
+        "gotMerch": "Relief fund",
+        "text": "relief fund RM 38.20 cimb 3 days ago",
+        "gotCat": "Entertainment & travel"
+      },
+      {
+        "expCat": "Family & gifts",
+        "gotMerch": "Income zakat contribution",
+        "text": "income zakat contribution RM 66.40 tng today",
+        "gotCat": "Other income"
+      },
+      {
+        "expKind": "expense",
+        "text": "income zakat contribution RM 66.40 tng today",
+        "got": "{\"date\":\"2026-11-24\",\"amount\":\"66.40\",\"kind\":\"income\",\"merchant\":\"Income zakat contribution\",\"category\":\"Other income\",\"subcategory\":\"\",\"amountMinor\":6640,\"account\":\"tng\"}"
+      },
+      {
+        "expCat": "Food & drinks",
+        "gotMerch": "Kedai Mi Udang Bukit Mertajam",
+        "text": "前天在Kedai Mi Udang Bukit Mertajam花了21.90块 GXBank",
+        "gotCat": "Miscellaneous"
+      },
+      {
+        "expCat": "Groceries",
+        "gotMerch": "生鲜食品",
+        "text": "3天前 生鲜食品 RM179.50 TNG",
+        "gotCat": "Loans, BNPL & Credit"
+      },
+      {
+        "expCat": "Insurance & Takaful",
+        "gotMerch": "Caruman bulanan",
+        "text": "caruman bulanan 50.20 ringgit cimb semalam",
+        "gotCat": "Family & gifts"
+      },
+      {
+        "expCat": "Transport",
+        "gotMerch": "Installment kereta",
+        "text": "installment kereta 62.90 mae harini",
+        "gotCat": "Loans, BNPL & Credit"
+      },
+      {
+        "expCat": "Fees & charges",
+        "gotMerch": "Yuran atm",
+        "text": "yuran atm 68.90 ringgit cimb kelmarin",
+        "gotCat": "Loans, BNPL & Credit"
+      }
+    ],
+    "n": 800,
+    "dateExact": 1
+  },
+  "bench1kColdMs": 23.12
+}

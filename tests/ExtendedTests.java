@@ -1790,6 +1790,42 @@ public final class ExtendedTests {
    yes(ptRef!=null&&"refund".equals(ptRef.getString("kind"))&&ptRef.getLong("amount")==10000L);
   });
 
+  test("Phase D Track D1-D5 Receipt SSM/outlier recovery, metadata persistence, QuickEntry taxonomy & universal PersonalAdapter",()->{
+   // 1. ReceiptParser glued SSM prefix strip + arithmetic outlier recovery
+   String gluedSsm="SSM Reg No: (368058-H)  Kedai Buku Bestari Sdn Bhd\nNo. 15, Lorong Selamat, Kuching\n93100 Sarawak\nTIN: C7157315481 Invoice: INV-202611636\nDate: 2026-11-04\nSUBTOTAL RM 185.45\nTOTAL PAYABLE RM 18545.00\nTUNAI RM 200.00\nBAKI RM 14.55";
+   JSONObject gs=ReceiptParser.parse(gluedSsm);
+   yes("Kedai Buku Bestari".equals(gs.getString("merchant")));
+   eq(gs.getLong("amount"),18545L);
+   yes("C7157315481".equals(gs.optString("lhdnTin")));
+
+   // 2. End-to-end receipt metadata persistence (draft confirm + edit + linkDraft)
+   JSONObject st=Ledger.initial();
+   String accId=st.getJSONArray("accounts").getJSONObject(0).getString("id");
+   JSONObject rDraft=ReceiptParser.parse("Watsons Pharmacy\nTIN: C1234567890\nInvoice: INV-998877\n1. Panadol Actifast RM 15.90\nSubtotal RM 15.90\nSST RM 0.95\nTotal RM 16.85\nDate: 2026-11-28");
+   rDraft.put("id","d-rec-1");
+   st.getJSONArray("drafts").put(rDraft);
+   Ledger.post(st,new JSONObject().put("key","k-rec-1").put("draftId","d-rec-1").put("kind","expense").put("amount","16.85").put("account",accId).put("category","Health & medical").put("merchant","Watsons Pharmacy").put("date","2026-11-28").put("note",""));
+   JSONObject savedTx=st.getJSONArray("transactions").getJSONObject(0);
+   yes("C1234567890".equals(savedTx.optString("lhdnTin")));
+   yes("INV-998877".equals(savedTx.optString("lhdnInvoiceRef")));
+   eq(savedTx.optLong("sstMinor"),95L);
+   eq(savedTx.getJSONArray("items").length(),1);
+   Ledger.post(st,new JSONObject().put("key","k-rec-2").put("editId",savedTx.getString("id")).put("kind","expense").put("amount","16.85").put("account",accId).put("category","Health & medical").put("merchant","Watsons Pharmacy").put("date","2026-11-28").put("note","edited"));
+   JSONObject editedTx=st.getJSONArray("transactions").getJSONObject(1);
+   yes("C1234567890".equals(editedTx.optString("lhdnTin")));
+
+   // 3. QuickEntry BM/ZH taxonomy + PersonalAdapter in QuickEntry & CsvImport
+   JSONObject qeState=Ledger.initial();
+   qeState.getJSONObject("settings").put("correctionLogOptIn",true);
+   qeState.put("correctionLog",new JSONArray().put(new JSONObject().put("ts",100L).put("action","quickNote").put("after",new JSONObject().put("merchant","Warung Pak Mat").put("category","Food & drinks").put("subcategory","Hawker & Mamak"))));
+   yes("Bills & utilities".equals(Extras.parseQuickEntry(qeState,"今天 排污费 48.90令吉 cash",LocalDate.of(2026,11,28)).getString("category")));
+   yes("Taxes & government".equals(Extras.parseQuickEntry(qeState,"potongan cukai bulanan 134.80 cash",LocalDate.of(2026,11,28)).getString("category")));
+   yes("Education".equals(Extras.parseQuickEntry(qeState,"bengkel latihan 87.40 cash",LocalDate.of(2026,11,28)).getString("category")));
+   yes("Food & drinks".equals(Extras.parseQuickEntry(qeState,"Warung Pak Mat refund 15 cash",LocalDate.of(2026,11,28)).getString("category")));
+   JSONArray csvPrev=CsvImport.preview("Date,Description,Amount\n2026-11-28,Warung Pak Mat,18.00",new JSONObject().put("account",accId).put("date",0).put("merchant",1).put("amount",2).put("dateFormat","iso"),qeState);
+   yes("Food & drinks".equals(csvPrev.getJSONObject(0).getString("category")));
+  });
+
   System.out.println("RESULT: "+passed+" extended tests passed");
  }
 }

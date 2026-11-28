@@ -1,0 +1,150 @@
+﻿{
+  "merchant_match": 0.897,
+  "date_exact": 0.975,
+  "lhdn_tin_exact": 0.9691,
+  "cat_acc": 0.832,
+  "items_extracted_rate": 0.997,
+  "use_tagger": true,
+  "n": 1000,
+  "amount_exact": 0.983,
+  "subcat_acc": 0.761,
+  "sst_exact": 0.992,
+  "sample_misses": [
+    {
+      "expected_merchant": "Gerai Selera Timur",
+      "expected_amt": 206250,
+      "raw": "GERAI SELERA TIMUR\nLot 6,Jalan Tun Fuad Stephens,Kota Kinabali\n8800eSabah\n2026-08-25  TIN:C3403204327  Invoice:INV-20260\n3X DISCHARGE MEDICATION  311.67\nDISCHARGE MEDICATION  RM 107.54\nRounding Adj  WARD ADMISSION DEPOSI",
+      "got_merchant": "GERAI SELERA TIMUR",
+      "id": "ocr_test_5433",
+      "got_amt": 54130
+    },
+    {
+      "expected_merchant": "myTNB Tenaga Nasional",
+      "expected_amt": 27080,
+      "raw": "SIMPLIFIEDTAXINVOICE\nMYTNB TENAGA NASIONAL SDN BHD\nNo.18,Jalan Telawi 3,Bangsar Baru\n59100 KualaLumpur\nTel:08-86932065\nReceiptNo:INV-2026084042\nDate: Aug 05, 2026\nICPTKWTBBADJUSTMENTX3  RM13.11\nELECTRICITYUSAGE412KWHX2  ",
+      "got_merchant": "MYTNB TENAGA NASIONAL",
+      "id": "ocr_test_5508",
+      "got_amt": 25545
+    },
+    {
+      "expected_merchant": "Taylor's University Finance",
+      "expected_amt": 1509250,
+      "raw": "Taylor's University Financ\n1o1,Jalan Austin Heights 3,Johor Bahru\n81188 Johor\nTIN:C7622969669Invoice:INV-202606\nTarikh:09 Jun 2026  509:16\nLaboratory Resource Fee148.39\n3x Semester Tuition Instaliment  Semester Tuition I",
+      "got_merchant": "Taylor's University Financ",
+      "id": "ocr_test_5598",
+      "got_amt": 1509200
+    },
+    {
+      "expected_merchant": "Kedai Buku Bestari",
+      "expected_amt": 18545,
+      "raw": "SSM Reg No: (368058-H)  Kedai Buku Bestari Sdn Bhd\nNo. I5, Lorong Selamat, Kuching\n93100 Sarawak\nTIN:C7157315481 Invoice:INV-202611636\nTarikh:2026-11-04  19:58\n3x Vitamin C 1000mg 60s  121.68\nVitamin C i000mg 60s  sRM 46",
+      "got_merchant": "Kedai Buku Bestari",
+      "id": "ocr_test_5668",
+      "got_amt": 0
+    },
+    {
+      "expected_merchant": "Bengkel Servis ProAuto",
+      "expected_amt": 415850,
+      "raw": "SSM Reg No:(277058-X)  Bengkel Servis ProAuto Sdn Bh\nLot G-12, Jalan Ss15/4, Subang Jaya\n4750oSelangor\nTIN:C8987698284Inv0ice:INV-2026057765\nTarikh:10/05/2026  15:53\ncloud Practitioner Exam  cloud Practitioner Exam  3x C",
+      "got_merchant": "Bengkel Servis ProAuto",
+      "id": "ocr_test_5681",
+      "got_amt": 5850
+    },
+    {
+      "expected_merchant": "Gerai Selera Timur",
+      "expected_amt": 171910,
+      "raw": "GERAI SELERA TIMURSDNBHD\nLotG-12,Jalan SS15/4,SubangJaya\n4750o Selangor\nTIN:C1438535075Invoice:INV-202602110:\nMyInV0isUUID:463589MY2026LHDN81\n2026-02-05\nCHILD EDUCATION PLAN  RM 280.06\nCHILD EDUCATION PLAN X3  RM1057.08\n",
+      "got_merchant": "GERAI SELERA TIMUR",
+      "id": "ocr_test_5683",
+      "got_amt": 171916
+    },
+    {
+      "expected_merchant": "Kedai Hardware Permai",
+      "expected_amt": 163790,
+      "raw": "OFFICIAL RECEIPT\nKEDAI HARDWARE PERMAI 20240108!\nLot 6,Jalan Tun Fuad Stephens,Kota Kinabalu\n88000 Sabah\nTel:05-35455601\nTIN:C2011925844  Invoice:INV-202606499\nMyInV0is UUID:893289MY2026LHDN11\nDate:09-06-2026  11:56\nPRS ",
+      "got_merchant": "KEDAI HARDWARE PERMAI",
+      "id": "ocr_test_5715",
+      "got_amt": 16379000
+    },
+    {
+      "expected_merchant": "Zara Malaysia",
+      "expected_amt": 24340,
+      "raw": "Zara Malaysia Sdn Bhd 2023010\nLevel 2, Lot 45, Jalan Bukit Bintang, TRX KL\n55100 Kuala Lumpur\nTel:08-24524451\nReceipt No:INV-2026081717\nTarikh: Aug 05, 2026  11:05\n0xford Shirt L/s  140.82\nCanvas Tote Bag  84.57\nJumlah K",
+      "got_merchant": "Zara Malaysia",
+      "id": "ocr_test_5733",
+      "got_amt": 24342
+    },
+    {
+      "expected_merchant": "Tsutaya Books Pavilion",
+      "expected_amt": 29660,
+      "raw": "OFFICIAL RECEIPT\nTSUTAYA BOOKS PAVILION\nLot G-12, Jalan ss15/4, Subang Jaya\n4750o Selangor\nTIN: C9662404407Inv0ice: INV-2026062084\nMyInV0isUUID:666813MY2026LHDN95\nTarikh: 06 Jun 2026  08:30\nATOMIC HABITS PAPERBACK RM 6I.",
+      "got_merchant": "TSUTAYA BOOKS PAVILION",
+      "id": "ocr_test_5755",
+      "got_amt": 0
+    },
+    {
+      "expected_merchant": "BeWell Physiotherapy",
+      "expected_amt": 15495,
+      "raw": "BEWELL PHYSIOTHERAPY\nSSM Reg No: (517944-H)\n88, Jalan Theatre, Ipoh\n30300 Perak\nTel: 05-7066 9783\nTIN:IG33091687057  Invoice: INV-2Q26\nMyInV0is UUID: 740075MY2026LHDN11\nTarikh: 2026-06-11  ANTIHISTAMINE + NASAL SPRAY  32",
+      "got_merchant": "BEWELL PHYSIOTHERAPY",
+      "id": "ocr_test_5772",
+      "got_amt": 15490
+    },
+    {
+      "expected_merchant": "KFC Malaysia",
+      "expected_amt": 11135,
+      "raw": "KFC Malaysia\n88, Jalan Theatre, Ipoh\n30300Perak\nTIN: C7700439067 Inv0ice: INV-202609\nMyInVois UUID: 982492MY2026LHDN44\nTarikh: 22 Sep 2026  13:02\n3pc Tenders Box RM 15.94\nMozza Burger Regular  17.70\n2pc Snack Plate Combo",
+      "got_merchant": "KFC Malaysia",
+      "id": "ocr_test_5846",
+      "got_amt": 11130
+    },
+    {
+      "expected_merchant": "BilaBila Mart",
+      "expected_amt": 6600,
+      "raw": "OFFICIAL RECEIPT\nBilaBila Mart\n24, Jalan Tun Razak, Kuala Lumpur\n50400 WP Kuala Lumpur\nTel: 03-2625 8625\nTIN:C4768382414  Invoice: INV-202603222:\nDate: 2026-03-24  13:22\nMilo UHT 6x200ml  11.22\nGardenia Original 4oog x3 ",
+      "got_merchant": "BilaBila Mart",
+      "id": "ocr_test_5863",
+      "got_amt": 0
+    },
+    {
+      "expected_merchant": "Bengkel Servis ProAuto",
+      "expected_amt": 85610,
+      "raw": "SSM Reg No: 202101099981  Bengkel Servis ProAuto\nNo,22,Jalan Merdeka,Melaka Raya\n75000 Melaka\nTIN:C5010480778  Date:2026-05-17  Invoice:INV-202605\nMonthly Takaful Medical Plan RM 208.\nPenggenapan-0.02  Monthly Takaful Me",
+      "got_merchant": "Bengkel Servis ProAuto",
+      "id": "ocr_test_5880",
+      "got_amt": 0
+    },
+    {
+      "expected_merchant": "Tsutaya Books Pavilion",
+      "expected_amt": 3460,
+      "raw": "TSUTAYA BOOKS PAVILION SDN BHD 2\n1ol, Jalan Austin Heights 3, Johor Bahru\n811ooJohor\nTIN:C8775904981  Invoice:INV-202609\nMyInV0is UUID: 463027MY2026LHDN81\nTarikh:20/09/2026  17:50\nSPM REFERENCE MATHEMATICS  5-Sen Roundin",
+      "got_merchant": "TSUTAYA BOOKS PAVILION",
+      "id": "ocr_test_5912",
+      "got_amt": 0
+    },
+    {
+      "expected_merchant": "Restoran Rasa Kampung",
+      "expected_amt": 79110,
+      "raw": "RESIT RASMI\nRestoran Rasa Kampung\nLevel 2, Lot 45, Jalan Bukit Bintang, TRX KL\n55100 Kuala Lumpur\nTIN:C6439515063  Invoice:INV-2026103194\nMyInV0is UUID:931944MY2026LHDN60\nDate: 25-10-2026 13:33\nZakat Pendapatan Bulanan  ",
+      "got_merchant": "Restoran Rasa Kampung",
+      "id": "ocr_test_5963",
+      "got_amt": 79100
+    },
+    {
+      "expected_merchant": "Kedai Hardware Permai",
+      "expected_amt": 40735,
+      "raw": "KEDAI HARDWARE PERMAI\nSSM Reg No: (875515-F)\n24, Jalan Tun Razak, Kuala Lumpur\n50400 Wp Kuala Lumpur\nTel: 06-9025 1999\nTIN:C6662357876  Invoice:INy-202605\nMyInV0is UUID:583646MY2026LHDN49\nDate:06-05-2026  08:29\n2x COMPOS",
+      "got_merchant": "KEDAI HARDWARE PERMAI",
+      "id": "ocr_test_5967",
+      "got_amt": 40700
+    },
+    {
+      "expected_merchant": "Bengkel Servis ProAuto",
+      "expected_amt": 277065,
+      "raw": "TAX INVOICE\nBengkel Servis ProAuto Sdn Bh\nNo. 22, Jalan Merdeka, Melaka Raya\n75000 Melaka\nTIN:1G65604225100  Invoice:INV-2026021s\nMyInVois UUID:784367MY2026LHDN24\n04/02/202608:06\nPython Professional Cert x2  Cloud Practi",
+      "got_merchant": "Bengkel Servis ProAuto",
+      "id": "ocr_test_5997",
+      "got_amt": 0
+    }
+  ]
+}

@@ -139,6 +139,10 @@ public final class CsvImport {
     result.put("reload",true).put("to",account);
    }else if(category.isEmpty()){
     JSONObject probe=new JSONObject().put("merchant",merchant).put("amount",value).put("account",account).put("source","CSV import").put("note",note);
+    MerchantCanonicalizer.Result cMatch=MerchantCanonicalizer.canonicalize(merchant,"");
+    if(cMatch!=null&&cMatch.matchedCatalog&&cMatch.canonicalName!=null&&!cMatch.canonicalName.isEmpty()){
+     probe.put("canonicalMerchant",cMatch.canonicalName);
+    }
     Finance.suggest(state,probe);
     if(kind.equals("income")){
      category="Other income";

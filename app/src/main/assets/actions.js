@@ -16,6 +16,25 @@ function modal(title,body){
 }
 function close(){if(busy)return;if(modalContext.isRestorePreview&&window.MoneyLensNative)call('cancelRestore').catch(()=>{});$('#modal-root').innerHTML='';modalContext={}}
 
+function receiptMetaBlock(row){
+  if(!row)return '';
+  const items=Array.isArray(row.items)?row.items:[];
+  const hasAny=items.length||row.subtotalMinor||row.sstMinor||row.lhdnTin||row.lhdnInvoiceRef;
+  if(!hasAny)return '';
+  const badges=[
+    items.length?`<span class="tx-pill">${esc(tr('{n} items',{n:items.length}))}</span>`:'',
+    row.lhdnTin?`<span class="tx-pill tax">${esc(tr('LHDN TIN'))}: ${esc(row.lhdnTin)}</span>`:''
+  ].filter(Boolean).join(' ');
+  const itemRows=items.map(it=>`<div class="detail-line"><span>${esc(it.name||'Item')}</span><span class="money">${money(it.amount||0)}</span></div>`).join('');
+  const metaRows=[
+    row.subtotalMinor?`<div class="detail-line"><span>${esc(tr('Subtotal'))}</span><span>${money(row.subtotalMinor)}</span></div>`:'',
+    row.sstMinor?`<div class="detail-line"><span>${esc(tr('SST'))}</span><span>${money(row.sstMinor)}</span></div>`:'',
+    row.lhdnTin?`<div class="detail-line"><span>${esc(tr('LHDN TIN'))}</span><span>${esc(row.lhdnTin)}</span></div>`:'',
+    row.lhdnInvoiceRef?`<div class="detail-line"><span>${esc(tr('e-Invoice ref'))}</span><span>${esc(row.lhdnInvoiceRef)}</span></div>`:''
+  ].join('');
+  return `<details class="receipt-meta"><summary>${esc(tr('Receipt details & LHDN e-Invoice'))} ${badges}</summary>${itemRows}${metaRows}</details>`;
+}
+
 function txForm(data={}){
   const merged={account:data.draftId?'':state.settings.lastAccount,category:state.settings.lastCategory||'Miscellaneous',...data};
   const kind=merged.kind||'expense';
@@ -44,7 +63,7 @@ function txForm(data={}){
   const destSelected=kind==='reload'?(merged.to||''):(merged.to||state.accounts[1]?.id||'');
   const kindHint=kind==='reload'?'A reload records top-up history without counting as an expense or reducing your balance.':kind==='transfer'?'A transfer moves money without adding an expense.':kind==='refund'?'A refund reduces spending in the selected category.':'Only confirmed records affect your balance.';
   const learnedBanner=merged.historyMatch==='personal'?`<div class="tx-meta-row" style="margin-top:6px"><span class="tx-pill auto">✦ ${esc(tr('Learned'))}</span></div>`:'';
-  modal(title,`<form id="transaction-form">${quickBar}<div class="chips">${chips}</div><div class="amount-input"><span>RM</span><input name="amount" id="f-amount" inputmode="decimal" aria-label="Amount in MYR" placeholder="0.00" value="${merged.amount?esc(typeof merged.amount==='number'?amount(merged.amount):merged.amount):''}" required pattern="[0-9]+([.][0-9]{1,2})?" autocomplete="off"></div>${merged.reason?`<div class="hint" style="margin:0">${esc(merged.reason)}</div>`:''}${learnedBanner}<div class="form-grid">${select(tr(kind==='transfer'?'From account':'Account'),'account',merged.draftId?[['',tr('Choose account')],...acctRows]:acctRows,merged.account||(merged.draftId?'':state.accounts[0].id))}${isNeutralMove?select(tr('To account'),'to',destRows,destSelected):select(tr('Category'),'category',catRows,selCat)}</div>${field(tr(isNeutralMove?'Description':'Merchant / description'),'merchant',merged.merchant||'','text','maxlength="120"')}${field(tr('Date'),'date',merged.date||today(),'date','required')}<div><label for="f-note">${esc(tr('Note'))} <span class="muted">· ${esc(tr('optional'))}</span></label><textarea id="f-note" name="note" maxlength="500" placeholder="${esc(tr('Anything worth remembering?'))}">${esc(merged.note||'')}</textarea></div>${evidence}${thumb}${subRow}${sharedRows}${tagsField}${splitsBox}${fxBox}${historyCheck}${ruleCheck}<div class="error" role="alert"></div><div class="form-footer"><button class="btn" type="submit">${icon('check')}${esc(tr(merged.editId?'Save changes':'Record transaction'))}</button></div><p class="note">${esc(tr(kindHint))}</p></form>`);
+  modal(title,`<form id="transaction-form">${quickBar}<div class="chips">${chips}</div><div class="amount-input"><span>RM</span><input name="amount" id="f-amount" inputmode="decimal" aria-label="Amount in MYR" placeholder="0.00" value="${merged.amount?esc(typeof merged.amount==='number'?amount(merged.amount):merged.amount):''}" required pattern="[0-9]+([.][0-9]{1,2})?" autocomplete="off"></div>${merged.reason?`<div class="hint" style="margin:0">${esc(merged.reason)}</div>`:''}${learnedBanner}<div class="form-grid">${select(tr(kind==='transfer'?'From account':'Account'),'account',merged.draftId?[['',tr('Choose account')],...acctRows]:acctRows,merged.account||(merged.draftId?'':state.accounts[0].id))}${isNeutralMove?select(tr('To account'),'to',destRows,destSelected):select(tr('Category'),'category',catRows,selCat)}</div>${field(tr(isNeutralMove?'Description':'Merchant / description'),'merchant',merged.merchant||'','text','maxlength="120"')}${field(tr('Date'),'date',merged.date||today(),'date','required')}<div><label for="f-note">${esc(tr('Note'))} <span class="muted">· ${esc(tr('optional'))}</span></label><textarea id="f-note" name="note" maxlength="500" placeholder="${esc(tr('Anything worth remembering?'))}">${esc(merged.note||'')}</textarea></div>${evidence}${thumb}${receiptMetaBlock(merged)}${subRow}${sharedRows}${tagsField}${splitsBox}${fxBox}${historyCheck}${ruleCheck}<div class="error" role="alert"></div><div class="form-footer"><button class="btn" type="submit">${icon('check')}${esc(tr(merged.editId?'Save changes':'Record transaction'))}</button></div><p class="note">${esc(tr(kindHint))}</p></form>`);
   if(data.focusQuick)setTimeout(()=>{const q=$('#quick-parse-input');if(q){try{q.focus({preventScroll:true});}catch(_){}}},60);
   else if(data.focusSubmit)setTimeout(()=>{const btn=$('#transaction-form button[type="submit"]');if(btn){try{btn.focus({preventScroll:true});}catch(_){}}},60);
 }
@@ -130,7 +149,7 @@ function detail(id){
   const footer=['opening','adjustment'].includes(txRow.kind)
     ? actionButton('Remove adjustment','quickRemove',id,'danger')
     : `<button class="btn" data-action="editTx" data-id="${esc(txRow.id)}">${icon('edit')}Edit</button><button class="btn secondary" data-action="quickNote" data-id="${esc(txRow.id)}">Edit purpose / category</button><button class="btn danger" data-action="quickRemove" data-id="${esc(txRow.id)}">${icon('trash')}Remove</button>`;
-  modal('Transaction details',`<div class="detail-total money">${txRow.kind==='expense'?'−':''}${money(txRow.amount)}</div>${anomalyAlert}${[['Description',txRow.merchant||txRow.category],['Type',txRow.kind],['Account',account(txRow.account).name],...(txRow.kind==='transfer'?[['To',account(txRow.to).name]]:[['Category',tr(txRow.category)+(txRow.subcategory?' › '+txRow.subcategory:'')]]),...refundNote,['Date',dateLabel(txRow.date)],['Note',txRow.note||'—']].map(([l,v])=>`<div class="detail-line"><span>${esc(l)}</span><span>${esc(v)}</span></div>`).join('')}<div class="form-footer">${footer}</div>${txRow.kind==='expense'?`<button class="btn ghost full" style="margin-top:12px" data-action="refundTx" data-id="${esc(txRow.id)}">Record a refund</button>`:''}<div class="tools-grid section-space">${actionButton('Repeat','repeat',id)}${actionButton('Make favorite','favoriteFrom',id)}${actionButton('Correction history','history',id)}</div>${txRow.receiptId?`<img class="receipt-full" src="/receipt/${esc(txRow.receiptId)}" alt="Saved receipt">`:''}${txRow.splits?`<details open><summary>Category split</summary>${txRow.splits.map(s=>`<p>${esc(s.category)} · RM ${esc(s.amount)}</p>`).join('')}</details>`:''}${txRow.originalCurrency?`<p class="note">${esc(txRow.originalCurrency)} ${esc(txRow.originalAmount)} · settled ${money(txRow.amount)} · included fee RM ${esc(txRow.foreignFee||'0')} · implied MYR rate ${esc(txRow.exchangeRate||'—')}</p>`:''}${txRow.person?`<p class="note">Shared with ${esc(txRow.person)} · your share RM ${esc(txRow.ownAmount)}</p>`:''}${txRow.tags?.length?`<p class="note">${esc(Array.isArray(txRow.tags)?txRow.tags.join(' · '):txRow.tags)}</p>`:''}`);
+  modal('Transaction details',`<div class="detail-total money">${txRow.kind==='expense'?'−':''}${money(txRow.amount)}</div>${anomalyAlert}${[['Description',txRow.merchant||txRow.category],['Type',txRow.kind],['Account',account(txRow.account).name],...(txRow.kind==='transfer'?[['To',account(txRow.to).name]]:[['Category',tr(txRow.category)+(txRow.subcategory?' › '+txRow.subcategory:'')]]),...refundNote,['Date',dateLabel(txRow.date)],['Note',txRow.note||'—']].map(([l,v])=>`<div class="detail-line"><span>${esc(l)}</span><span>${esc(v)}</span></div>`).join('')}<div class="form-footer">${footer}</div>${txRow.kind==='expense'?`<button class="btn ghost full" style="margin-top:12px" data-action="refundTx" data-id="${esc(txRow.id)}">Record a refund</button>`:''}<div class="tools-grid section-space">${actionButton('Repeat','repeat',id)}${actionButton('Make favorite','favoriteFrom',id)}${actionButton('Correction history','history',id)}</div>${txRow.receiptId?`<img class="receipt-full" src="/receipt/${esc(txRow.receiptId)}" alt="Saved receipt">`:''}${receiptMetaBlock(txRow)}${txRow.splits?`<details open><summary>Category split</summary>${txRow.splits.map(s=>`<p>${esc(s.category)} · RM ${esc(s.amount)}</p>`).join('')}</details>`:''}${txRow.originalCurrency?`<p class="note">${esc(txRow.originalCurrency)} ${esc(txRow.originalAmount)} · settled ${money(txRow.amount)} · included fee RM ${esc(txRow.foreignFee||'0')} · implied MYR rate ${esc(txRow.exchangeRate||'—')}</p>`:''}${txRow.person?`<p class="note">Shared with ${esc(txRow.person)} · your share RM ${esc(txRow.ownAmount)}</p>`:''}${txRow.tags?.length?`<p class="note">${esc(Array.isArray(txRow.tags)?txRow.tags.join(' · '):txRow.tags)}</p>`:''}`);
 }
 
 async function sources(){
@@ -524,7 +543,22 @@ document.addEventListener('click',async e=>{
       case 'undoImport':await mutate('undoImport',{id},'Import reversed. Edited records were kept.');close();break;
       case 'recoverConfirm':modal('Restore previous local copy?',`<p class="note">This replaces your current ledger with the copy retained before your last restore. Export a backup first if you want to keep current changes.</p>${actionButton('Restore local copy','recover','','danger')}`);break;
       case 'recover':await mutate('recover',{},'Previous local copy restored.');close();break;
-      case 'diagnostics':{const d=await call('diagnostics');modalContext={diagnostics:JSON.stringify(d,null,2)};modal('Capture diagnostics',`<p class="note">This preview contains no merchants, amounts, account numbers or raw notifications.</p><pre class="csv-sample">${esc(JSON.stringify(d,null,2))}</pre>${actionButton('Export these diagnostics','diagnosticExport')}`);break;}
+      case 'diagnostics':{
+        const d=await call('diagnostics');
+        modalContext={diagnostics:JSON.stringify(d,null,2)};
+        const mlEngines=[
+          ['Classifier',d.mlClassifierLoaded],
+          ['Neural Reranker',d.mlRerankerLoaded],
+          ['Merchant Canon',d.merchantCanonLoaded],
+          ['Semantic Search',d.semanticSearchLoaded],
+          ['Receipt Tagger',d.receiptTaggerLoaded],
+          ['Notif Gate',d.notifGateLoaded]
+        ];
+        const loadedCnt=mlEngines.filter(([,ok])=>!!ok).length;
+        const mlGrid=`<div class="soft-card" style="margin-bottom:10px"><h3>${esc(tr('On-Device ML Engines'))} (${loadedCnt}/6)${d.personalLearnedCount?` · ${esc(tr('{n} learned',{n:d.personalLearnedCount}))}`:''}</h3><div class="chips" style="margin-top:8px">${mlEngines.map(([nm,ok])=>`<span class="tx-pill ${ok?'auto':''}">${esc(nm)}: ${esc(tr(ok?'Ready':'Standby'))}</span>`).join('')}</div></div>`;
+        modal('Capture diagnostics',`<p class="note">This preview contains no merchants, amounts, account numbers or raw notifications.</p>${mlGrid}<pre class="csv-sample">${esc(JSON.stringify(d,null,2))}</pre>${actionButton('Export these diagnostics','diagnosticExport')}`);
+        break;
+      }
       case 'diagnosticExport':await call('diagnosticExport',{text:modalContext.diagnostics});break;
       case 'batch':batchForm();break;
       case 'selectSafeBatch':{
@@ -644,6 +678,7 @@ document.addEventListener('submit',async e=>{
             if(rowTo)row.to=rowTo;
             if(d.transferHint)row.transferHint=d.transferHint;
             if(d.receiptId)row.receiptId=d.receiptId;
+            for(const rk of ['items','subtotalMinor','sstMinor','lhdnTin','lhdnInvoiceRef','canonicalMerchant'])if(d[rk]!==undefined&&d[rk]!==null)row[rk]=d[rk];
             if(d.person)row.person=d.person;
             if(d.ownAmount!==undefined&&d.ownAmount!=='')row.ownAmount=String(d.ownAmount);
             if(d.reimbursementFor)row.reimbursementFor=d.reimbursementFor;
@@ -686,7 +721,7 @@ document.addEventListener('submit',async e=>{
       switch(form.id){
         case 'transaction-form':
           method='transaction';Object.assign(args,{kind:modalContext.kind||'expense',key:modalContext.key});
-          for(const k of ['draftId','editId','billId','billDate','originalId','receiptId','reimbursementFor','draftRevision'])if(modalContext[k])args[k]=modalContext[k];
+          for(const k of ['draftId','editId','billId','billDate','originalId','receiptId','reimbursementFor','draftRevision','items','subtotalMinor','sstMinor','lhdnTin','lhdnInvoiceRef','canonicalMerchant'])if(modalContext[k])args[k]=modalContext[k];
           if(args.account==='')throw new Error('Choose the account used for this payment.');
           enrichTransaction(args,form);break;
         case 'account-form':method='account';break;

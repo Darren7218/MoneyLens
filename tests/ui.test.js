@@ -435,4 +435,16 @@ test('Track 6 Settings renders opt-in correctionLogToggle and Clear log action',
   assert(rowPers.includes('Learned'));
   run(`state.settings.correctionLogOptIn=${JSON.stringify(prevOpt)};state.correctionLog=${JSON.stringify(prevLog)};`);
 });
+test('Phase D receiptMetaBlock renders items and LHDN metadata in txForm & detail and 6-model diagnostics renders',()=>{
+  let capBody='';
+  const prevModal=ctx.modal;
+  ctx.modal=(t,b)=>{capBody=b;};
+  const sampleRow={id:'tx-rec-1',kind:'expense',amount:1685,account:'cash',category:'Health & medical',merchant:'Watsons',date:run('today()'),subtotalMinor:1590,sstMinor:95,lhdnTin:'C1234567890',lhdnInvoiceRef:'INV-998877',items:[{name:'Panadol',amount:1590}]};
+  run(`txForm(${JSON.stringify(sampleRow)})`);
+  assert(capBody.includes('receipt-meta')&&capBody.includes('C1234567890')&&capBody.includes('INV-998877')&&capBody.includes('Panadol'));
+  run(`state.transactions.push(${JSON.stringify(sampleRow)});detail('tx-rec-1');state.transactions.pop();`);
+  assert(capBody.includes('Receipt details &amp; LHDN e-Invoice')||capBody.includes('Receipt details & LHDN e-Invoice'));
+  assert(capBody.includes('C1234567890')&&capBody.includes('Panadol'));
+  ctx.modal=prevModal;
+});
 console.log('RESULT: '+passed+' UI tests passed');

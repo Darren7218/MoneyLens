@@ -11,12 +11,14 @@ public final class ReceiptParser {
  private static final Pattern STANDALONE_AMOUNT=Pattern.compile("(?i)^\\s*(?:(?:RM|MYR|RN1)\\s*([0-9]{1,3}(?:,[0-9]{3})+(?:\\.[0-9]{1,2})?|[0-9]{1,9}(?:\\.[0-9]{1,2})?)|([0-9]{1,3}(?:,[0-9]{3})+\\.[0-9]{2}|[0-9]{1,9}\\.[0-9]{2}))\\s*$");
  private static final Pattern GENERIC_HEADER=Pattern.compile("(?i)^(?:(?:simplified\\s+)?tax\\s+invoice|lhdn\\s+e-?invoice(?:\\s+receipt)?|80mm\\s+thermal\\s+receipt|invoice|official\\s+receipt|cash\\s+bill|sales\\s+receipt|customer\\s+copy|merchant\\s+copy|duplicate|reprint|resit\\s+rasmi|invois\\s+cukai|credit\\s+card\\s+(?:statement|payment\\s+receipt)|toll\\s+payment|road\\s+tax|cukai\\s+jalan|resit\\s+bayaran|tarikan\\s+kasir|slip\\s+transaksi|slip\\s+bayaran|tanda\\s+bayar|items?(?:\\s+paid)?|itemized(?:\\s+charges)?|bill\\s+details|late\\s+payment\\s+fee|thank\\s+you.*|terima\\s+kasih.*|welcome(?:\\s+to)?)$");
  private static final Pattern WELCOME_PREFIX=Pattern.compile("(?i)^welcome\\s+to\\s+(.{2,})$");
+ private static final Pattern SSM_LEAD_PREFIX=Pattern.compile("(?i)^(?:ssm(?:\\s+reg(?:\\.|\\s*no)?)?|co\\.?\\s*reg(?:\\s*no)?)\\s*[:#-]?\\s*(?:\\([0-9]{5,8}-[A-Za-z0-9]\\)|[0-9]{10,12})[:\\s-]+(.+)$");
+ private static final Pattern TRAILING_TRUNC_REG=Pattern.compile("(?i)(?:\\s*\\([0-9]{4,8}(?:-[A-Za-z0-9]?)?|\\s+20[0-9]{4,10}[!?.]*|\\s+sdn\\.?\\s*bh|\\s+sdn\\.?\\s*bhd\\s*[0-9]|sdnbhd)\\s*$");
  private static final Pattern NOISE_META=Pattern.compile("(?i)^(?:sst|gst|ssm|reg(?:\\.|istration)?\\s*(?:no|id)|roc|rob|co\\.?\\s*reg|company\\s*(?:no|reg)|tin|myinvois|einvoice|e-invoice|lhdn\\s+(?:bucket|tax\\s+relief)|msic|brn|tel|hp|phone|fax|hotline|call|email|web|www|http|date|tarikh|time|masa|cashier|staff|server|waiter|table|meja|pax|order|bill|receipt|rcv|rdc|ref|terminal|pos|shift|batch|trace|approval|items?(?:\\s+paid)?|itemized|customer\\s*(?:name|id)?|client|subscriber|service|description|desc|qty|quantity|amount|payment\\s+(?:of|for)|due\\s+date|invoice\\s+no|job|produk|barang|harga|perkhidmatan|penyertaan|payee|bill\\s+details|late\\s+payment\\s+fee)\\b[:.#\\s-]*.*");
  private static final Pattern ADDRESS_LINE=Pattern.compile("(?i)^(?:[0-9]{1,4}[a-z]?(?:-[0-9]{1,4})?[,\\s]+)?(?:no\\.?|lot|plot|level|lvl|floor|flr|unit|suite|block|blk|ground\\s+floor|g-|lg-|ug-|b1-|jalan|jln|lorong|lrg|persiaran|lebuh|taman|tmn|bandar|seksyen|section|kampung|kg\\.?|kompleks|pusat\\s+(?:bandar|komersial|membeli))\\b.*");
  private static final Pattern STREET_TOKEN=Pattern.compile("(?i)\\b(?:jalan|jln|lorong|lrg|persiaran|lebuhraya|lebuh)\\b");
  private static final Pattern BIZ_SUFFIX=Pattern.compile("(?i).*\\b(?:sdn\\.?\\s*bhd|bhd|berhad|enterprise|trading|services|solutions|holdings|kindergarten|tadika|taska|school|sekolah|klinik|clinic|farmasi|pharmacy|restoran|restaurant|cafe|café|mart|store|grocer|supermarket|motors?|workshop|bengkel|resources|ventures)\\b\\.?$");
  private static final Pattern ITEM_LINE=Pattern.compile("(?i)^(?:[-*•]\\s+.*|(?:[0-9]{1,2}[.)]\\s+|1\\s+(?!Malaysia)[A-Za-z]).*|.*\\b[xX×]\\s*[0-9]{1,3}\\s*$|(?:ptptn\\s+repayment|spaylater|grabpaylater|atome\\s+bnpl|shopee\\s+order|lazada\\s+order|i-saraan).*)$");
- private static final Pattern POSTCODE_STATE=Pattern.compile("(?i)\\b[0-9]{5},?\\s+(?:kuala\\s+lumpur|selangor|petaling|subang|shah\\s+alam|klang|kajang|puchong|ampang|cheras|penang|pulau\\s+pinang|johor|melaka|perak|ipoh|kedah|alor\\s+setar|pahang|kuantan|kelantan|terengganu|negeri\\s+sembilan|seremban|sabah|sarawak|kuching|kota\\s+kinabalu|putrajaya|cyberjaya|malaysia)\\b");
+ private static final Pattern POSTCODE_STATE=Pattern.compile("(?i)\\b[0-9oOlIeE]{5},?\\s*(?:kuala\\s*lumpur|selangor|petaling|subang|shah\\s*alam|klang|kajang|puchong|ampang|cheras|penang|pulau\\s*pinang|johor|melaka|perak|ipoh|kedah|alor\\s*setar|pahang|kuantan|kelantan|terengganu|negeri\\s*sembilan|seremban|sabah|sarawak|kuching|kota\\s*kinabalu|putrajaya|cyberjaya|malaysia)\\b");
  private static final Pattern PHONE_OR_EMAIL=Pattern.compile("(?i)(?:@|\\b(?:0[1-9]-?[0-9]{6,8}|\\+?60[0-9-]{7,11})\\b|https?://|www\\.)");
  private static final Pattern STORE_HINT=Pattern.compile("(?i)\\b(?:sdn\\.?\\s*bhd\\.?|bhd|berhad|plt|llp|enterprise|trading|holdings|resources|services|solutions|restoran|restaurant|kedai|warung|warong|gerai|medan\\s+selera|hawker|mamak|kandar|penyet|lemak|kopitiam|bistro|cafe|café|kafe|coffee|kopi|pelita|q\\s*bistro|oriental\\s+kopi|oldtown|tealive|zus|chagee|mixue|gigi|starbucks|mcdonald|kfc|burger\\s+king|marrybrown|subway|bakery|farmasi|pharmacy|obat|ubat|klinik|clinic|hospital|dental|optometrist|optical|speedmart|kk\\s*(?:super\\s*)?mart|mynews|familymart|cu\\s*mart|emart24|bilabila|econsave|mydin|lotus|aeon|giant|jaya\\s+grocer|village\\s+grocer|segi\\s+fresh|hero\\s*market|tf\\s+value|watsons|guardian|mr\\.?\\s*diy|ecoshop|daiso|popular|uniqlo|padini|mart|supermarket|hypermarket|pasaraya|pasar|grocer|mini\\s*market|petrol|petronas|shell|caltex|bhpetrol|setel|gentari|jomcharge|chargev|ev\\s+charging|station|hardware|carpentry|maintenance|electronics|marketplace|store|bookshop|bookstore|kindergarten|tadika|plaza\\s+tol|toll\\s+plaza|condominium|condo)\\b");
  private static final Pattern BODY_SECTION=Pattern.compile("(?i)^(?:items?(?:\\s+paid)?|itemized(?:\\s+charges)?|bill\\s+details|subtotal|qty|quantity|description)\\b.*");
@@ -108,6 +110,8 @@ public final class ReceiptParser {
     best=cashNet;
    }else if((best%10L==0L)&&(best/10L==cashNet/10L||best/100L==cashNet/100L)&&cashNet!=best){
     best=cashNet;
+   }else if((best==cashNet*100L||best==cashNet*10L||best*10L==cashNet||best*100L==cashNet)&&(subtotalMinor<=0L||Math.abs((subtotalMinor+sstMinor)-cashNet)<=5L)){
+    best=cashNet;score=Math.max(score,4);ambiguous=false;
    }
   }
 
@@ -194,11 +198,28 @@ public final class ReceiptParser {
      }
     }
    }
-   // Arithmetic recovery from CRF subtotal + SST (+ 5-sen rounding) when OCR truncates cents or drops grand total
+   // Arithmetic outlier guard, missing-total item-sum recovery, & CRF subtotal + SST recovery
+   long itemSumMinor=0L;int itemLineCount=0;
+   if(tagged!=null){
+    for(int i=0;i<lines.length;i++){
+     if(tagged.labelIds[i]==ReceiptFieldTagger.LABEL_ITEM){
+      List<Long> ia=extractPreferredAmounts(lines[i]);
+      if(!ia.isEmpty()){
+       long iv=ia.get(ia.size()-1);
+       if(iv>0L&&iv<Ledger.MAX){itemSumMinor+=iv;itemLineCount++;}
+      }
+     }
+    }
+   }
+   long arithRef=0L;
    if(subtotalMinor>0L){
     long expectedSum=subtotalMinor+sstMinor;
     long roundedSum=hasRoundingLine?((expectedSum+2L)/5L)*5L:expectedSum;
-    if(best>0L&&((best%100L==0L&&roundedSum/100L==best/100L)||(best%10L==0L&&best/10L==roundedSum/10L))&&roundedSum!=best){
+    arithRef=roundedSum;
+    if(best>0L&&arithRef>0L&&(best>=arithRef*5L||best*5L<=arithRef)
+      &&(itemLineCount==0||Math.abs(itemSumMinor-subtotalMinor)<=Math.max(50L,subtotalMinor/10L))){
+     best=arithRef;score=Math.max(score,4);ambiguous=false;
+    }else if(best>0L&&((best%100L==0L&&roundedSum/100L==best/100L)||(best%10L==0L&&best/10L==roundedSum/10L))&&roundedSum!=best){
      best=roundedSum;
     }else if(best>0L&&hasRoundingLine&&Math.abs(best-expectedSum)<=4L&&best!=roundedSum&&best%5L!=0L){
      best=roundedSum;
@@ -207,10 +228,17 @@ public final class ReceiptParser {
      score=Math.max(score,3);
     }
    }
+   if(!ambiguous&&(best<=0L||score<3)&&arithRef==0L&&itemLineCount>=2&&itemSumMinor>0L&&score<3){
+    long itemTotal=itemSumMinor+sstMinor;
+    best=hasRoundingLine?((itemTotal+2L)/5L)*5L:itemTotal;
+    score=3;
+   }
   }
 
   String date=extractDate(text,lines,tagged);
   String[] cs=classifyReceipt(merchant,text,lines,tagged);
+  MerchantCanonicalizer.Result canon=MerchantCanonicalizer.canonicalize(merchant,"");
+  boolean hasCanon=canon!=null&&canon.matchedCatalog&&canon.similarity>=0.62;
   JSONObject out=new JSONObject()
    .put("id",Ledger.id())
    .put("merchant",merchant)
@@ -223,6 +251,7 @@ public final class ReceiptParser {
    .put("revision",1)
    .put("reason",ambiguous||score<3?"OCR found no unambiguous total. Enter the receipt total and check all details.":"Suggested from receipt text. Verify the total, date, merchant and account.");
   if(!cs[1].isEmpty())out.put("subcategory",cs[1]);
+  if(hasCanon)out.put("canonicalMerchant",canon.canonicalName);
   attachStructuredMetadata(out,lines,tagged,subtotalMinor,sstMinor);
   return out;
  }
@@ -276,7 +305,13 @@ public final class ReceiptParser {
    }
    return merchRules;
   }
-  String[] fullCls=PaymentParser.classify(merchant,"Receipt scan",text.trim().isEmpty()?"":text);
+  String mlCtx=text.trim().isEmpty()?"":text
+    .replaceAll("(?i)\\bT[1I]N\\s*[:#?]?\\s*[A-Z0-9-]{6,20}","")
+    .replaceAll("(?i)\\bMyInV[0o]is\\s*UUID\\s*[:#]?\\s*[A-Za-z0-9-]+","")
+    .replaceAll("(?i)\\bInv[0o]ice(?:\\s*(?:No|Ref))?\\s*[:#]\\s*[A-Za-z0-9-]+","")
+    .replaceAll("(?i)\\bTel\\s*[:#]?\\s*[0-9+-][0-9\\s-]{6,15}","")
+    .trim();
+  String[] fullCls=PaymentParser.classify(merchant,"Receipt scan",mlCtx);
   if(!fullCls[0].equals("Miscellaneous")||itemsStr.length()<4)return fullCls;
   String[] itemRules=PaymentParser.classifyRulesOnly(itemsStr,"Receipt scan",itemsStr);
   return !itemRules[0].equals("Miscellaneous")?itemRules:PaymentParser.classify(itemsStr,"Receipt scan",itemsStr);
@@ -335,6 +370,10 @@ public final class ReceiptParser {
    if(inspected>1&&BODY_SECTION.matcher(raw).matches())afterBody=true;
    Matcher wm=WELCOME_PREFIX.matcher(raw);
    String candidate=(wm.matches()?wm.group(1):raw).replaceFirst("(?i)^(?:nota|merchant|store|shop)\\s*:\\s*","").replaceAll("\\s*\\|\\s*[0-9]{5}.*$","").trim();
+   Matcher ssmLead=SSM_LEAD_PREFIX.matcher(candidate);
+   if(ssmLead.matches()&&ssmLead.group(1).replaceAll("[^\\p{L}]","").length()>=3){
+    candidate=ssmLead.group(1).trim();
+   }
    if(candidate.length()<2||candidate.matches("[0-9\\W_]+"))continue;
    if(GENERIC_HEADER.matcher(candidate).matches())continue;
    boolean isAddr=ADDRESS_LINE.matcher(candidate).matches()&&!(inspected<=2&&BIZ_SUFFIX.matcher(candidate).matches());
@@ -365,8 +404,15 @@ public final class ReceiptParser {
    }
    if(s>bestScore){
     bestScore=s;
-    String cleaned=candidate.replaceFirst("(?i)(?:\\s*20[0-9]{7,10})+$","").trim();
-    bestMerchant=PaymentParser.stripSsmSuffix(cleaned.length()>=2?cleaned:candidate);
+    String cleaned=candidate.trim();
+    for(int pass=0;pass<2;pass++){
+     String next=TRAILING_TRUNC_REG.matcher(cleaned).replaceAll("").trim();
+     if(next.equals(cleaned)||next.length()<2)break;
+     cleaned=next;
+    }
+    String stripped=PaymentParser.stripSsmSuffix(cleaned.length()>=2?cleaned:candidate);
+    String afterSsm=TRAILING_TRUNC_REG.matcher(stripped).replaceAll("").trim();
+    bestMerchant=afterSsm.length()>=2?afterSsm:stripped;
    }
   }
   if(bestMerchant.isEmpty())bestMerchant="Receipt";
