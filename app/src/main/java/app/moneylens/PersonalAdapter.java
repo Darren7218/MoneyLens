@@ -1,6 +1,7 @@
 package app.moneylens;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.HashMap;
@@ -149,13 +150,15 @@ public final class PersonalAdapter {
     }
     order.sort((a, b) -> Long.compare(latestTs.getOrDefault(b, 0L), latestTs.getOrDefault(a, 0L)));
     for (String key : order) {
-      JSONObject row = new JSONObject();
-      row.put("key", key);
-      row.put("merchant", latestMerch.get(key));
-      row.put("category", latestCat.get(key));
-      row.put("subcategory", latestSub.get(key));
-      row.put("count", counts.get(key));
-      out.put(row);
+      try {
+        JSONObject row = new JSONObject();
+        row.put("key", key);
+        row.put("merchant", latestMerch.get(key));
+        row.put("category", latestCat.get(key));
+        row.put("subcategory", latestSub.get(key));
+        row.put("count", counts.get(key));
+        out.put(row);
+      } catch (JSONException ignored) {}
     }
     return out;
   }
@@ -182,7 +185,9 @@ public final class PersonalAdapter {
         kept.put(entry);
       }
     }
-    state.put("correctionLog", kept);
+    try {
+      state.put("correctionLog", kept);
+    } catch (JSONException ignored) {}
     return removed;
   }
 }

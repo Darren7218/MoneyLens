@@ -1,0 +1,164 @@
+{
+  "trim_reload_ok": true,
+  "unseen_sme_pairs": {
+    "roc_auc": 0.9961,
+    "by_kind": {
+      "trunc_vs_trunc": {
+        "acc": 0.9903,
+        "neg": 0,
+        "pos": 103,
+        "tpr": 0.9903,
+        "fpr": null,
+        "fp": 0,
+        "tp": 102,
+        "n": 103
+      },
+      "clean_vs_trunc": {
+        "acc": 0.7573,
+        "neg": 0,
+        "pos": 103,
+        "tpr": 0.7573,
+        "fpr": null,
+        "fp": 0,
+        "tp": 78,
+        "n": 103
+      },
+      "hard_neg_same_cat": {
+        "acc": 0.9899,
+        "neg": 99,
+        "pos": 0,
+        "tpr": null,
+        "fpr": 0.0101,
+        "fp": 1,
+        "tp": 0,
+        "n": 99
+      },
+      "hard_neg_trunc": {
+        "acc": 0.9899,
+        "neg": 99,
+        "pos": 0,
+        "tpr": null,
+        "fpr": 0.0101,
+        "fp": 1,
+        "tp": 0,
+        "n": 99
+      }
+    },
+    "tpr": 0.8738,
+    "fn": 26,
+    "fpr": 0.0101,
+    "accuracy": 0.9307,
+    "fp": 2,
+    "tn": 196,
+    "tp": 180,
+    "n": 404
+  },
+  "avg_encode_ms": 0.3275,
+  "probe_surfaces": [
+    {
+      "margin": 0.4338,
+      "similarity": 0.8821,
+      "raw": "PAY*CRNGPHARM-TRX",
+      "matched": true,
+      "canonical": "CARiNG Pharmacy",
+      "noisy_surface": true,
+      "category": "Health & medical",
+      "subcategory": "Pharmacy & Medicine"
+    },
+    {
+      "margin": 0.5299,
+      "similarity": 0.9548,
+      "raw": "DNQR*99SPDM-KJ",
+      "matched": true,
+      "canonical": "99 Speedmart",
+      "noisy_surface": true,
+      "category": "Groceries",
+      "subcategory": "Convenience Store (99 Speedmart / 7-Eleven / FamilyMart)"
+    },
+    {
+      "margin": 0.4847,
+      "similarity": 0.8979,
+      "raw": "TNGD*GRDNPHARM-TRX",
+      "matched": true,
+      "canonical": "Guardian Pharmacy",
+      "noisy_surface": true,
+      "category": "Health & medical",
+      "subcategory": "Pharmacy & Medicine"
+    },
+    {
+      "margin": 0.2677,
+      "similarity": 0.7567,
+      "raw": "MYDEBIT*WSNSPHARM-TRX",
+      "matched": true,
+      "canonical": "Watsons Pharmacy",
+      "noisy_surface": true,
+      "category": "Health & medical",
+      "subcategory": "Pharmacy & Medicine"
+    },
+    {
+      "margin": 0.2433,
+      "similarity": 0.7921,
+      "raw": "IPAY88*TRPCOM FLT",
+      "matched": true,
+      "canonical": "Trip.com Flights",
+      "noisy_surface": true,
+      "category": "Entertainment & travel",
+      "subcategory": "Flights & Transport"
+    },
+    {
+      "margin": 0.1175,
+      "similarity": 0.6471,
+      "raw": "TNGD*EZBKXPRSS",
+      "matched": true,
+      "canonical": "Easybook Express",
+      "noisy_surface": true,
+      "category": "Entertainment & travel",
+      "subcategory": "Flights & Transport"
+    },
+    {
+      "margin": 0.0223,
+      "similarity": 0.4938,
+      "raw": "PAY*QNDM-TRX",
+      "matched": false,
+      "canonical": "Suki-Ya",
+      "noisy_surface": true,
+      "category": "Food & drinks",
+      "subcategory": "Restaurant & Cafe"
+    },
+    {
+      "margin": 0.2071,
+      "similarity": 0.798,
+      "raw": "D0MIN0'SPIZZA",
+      "matched": true,
+      "canonical": "Domino's Pizza MY",
+      "noisy_surface": true,
+      "category": "Food & drinks",
+      "subcategory": "Fast Food"
+    },
+    {
+      "margin": 0.0947,
+      "similarity": 0.5706,
+      "raw": "FPX*PAY*ALORMT S/B",
+      "matched": true,
+      "canonical": "A-Look Eyewear",
+      "noisy_surface": true,
+      "category": "Health & medical",
+      "subcategory": "Dental & Optical"
+    },
+    {
+      "margin": 0.5616,
+      "similarity": 0.9838,
+      "raw": "99 SPEEDMART SDN BHD (519537-X)",
+      "matched": true,
+      "canonical": "99 Speedmart",
+      "noisy_surface": false,
+      "category": "Groceries",
+      "subcategory": "Convenience Store (99 Speedmart / 7-Eleven / FamilyMart)"
+    }
+  ],
+  "cold_load_ms": 37,
+  "avg_canonicalize_ms": 0.0916,
+  "max_trim_emb_diff": 0,
+  "avg_pair_ms": 0.6199,
+  "asset_bytes": 450023
+}

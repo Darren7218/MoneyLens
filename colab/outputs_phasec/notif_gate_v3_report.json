@@ -1,0 +1,19 @@
+{
+  "total_seconds": 933.5,
+  "qwen_model": "Qwen/Qwen2.5-14B-Instruct",
+  "llm_synth_kept": 5076,
+  "teacher_backbone": "BAAI/bge-m3",
+  "teacher_dev_acc": 0.9993,
+  "train_count": 42000,
+  "dev_count": 4200,
+  "num_buckets": 5632,
+  "gz_bytes": 199485,
+  "temperature": 0.65,
+  "dev_metrics_int8": {
+    "accuracy": 0.9981,
+    "trapRejection": 0.999,
+    "realCaptureRecall": 0.9991,
+    "realKindExact": 0.9972
+  },
+  "blind_exclusion_verified": true
+}

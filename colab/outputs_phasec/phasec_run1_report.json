@@ -1,0 +1,109 @@
+{
+  "total_seconds": 5916.7,
+  "stage_1a_foundry_v7": {
+    "total_seconds": 4982.4,
+    "qwen_model": "Qwen/Qwen2.5-14B-Instruct",
+    "v6_synth_used": 7538,
+    "v7_synth_kept": 2091,
+    "ensemble": {
+      "weights": [
+        0.244,
+        0.2729,
+        0.4831
+      ],
+      "individual_temps": [
+        0.9675,
+        0.9922,
+        0.6414
+      ],
+      "v3_holdout": {
+        "raw_only": {
+          "cat_acc": 0.9427,
+          "subcat_acc": 0.9115,
+          "subcat_macro_f1": 0.8962,
+          "nll": 0.3646,
+          "ece": 0.0592,
+          "brier": 0.1392
+        },
+        "with_merchant": {
+          "cat_acc": 0.9453,
+          "subcat_acc": 0.9167,
+          "subcat_macro_f1": 0.9006,
+          "nll": 0.3579,
+          "ece": 0.0365,
+          "brier": 0.1319
+        }
+      },
+      "v4_test": {
+        "raw_only": {
+          "cat_acc": 0.9374,
+          "subcat_acc": 0.9097,
+          "subcat_macro_f1": 0.8897,
+          "nll": 0.389,
+          "ece": 0.0552,
+          "brier": 0.1367
+        },
+        "with_merchant": {
+          "cat_acc": 0.9795,
+          "subcat_acc": 0.9596,
+          "subcat_macro_f1": 0.9538,
+          "nll": 0.1646,
+          "ece": 0.0337,
+          "brier": 0.0645
+        }
+      },
+      "v5_hard_test": {
+        "raw_only": {
+          "cat_acc": 0.8685,
+          "subcat_acc": 0.8451,
+          "subcat_macro_f1": 0.8351,
+          "nll": 0.6906,
+          "ece": 0.0221,
+          "brier": 0.1954
+        },
+        "with_merchant": {
+          "cat_acc": 0.9413,
+          "subcat_acc": 0.9219,
+          "subcat_macro_f1": 0.9181,
+          "nll": 0.3465,
+          "ece": 0.0293,
+          "brier": 0.118
+        }
+      }
+    },
+    "stage1_prod_gz": 979488,
+    "stage1_prod_features": 29056,
+    "stage1_cal_metrics": {
+      "cat_acc": 0.9904,
+      "subcat_acc": 0.9886,
+      "subcat_macro_f1": 0.9756,
+      "nll": 0.0696,
+      "ece": 0.017,
+      "brier": 0.025
+    },
+    "stage2_prod_gz": 1344028,
+    "stage2_temp": 0.8246,
+    "stage2_ood_thresh": 0.18,
+    "stage2_best_cal_macro_f1": 0.8239,
+    "zero_holdout_leakage": true
+  },
+  "stage_1b_notif_gate_v3": {
+    "total_seconds": 933.5,
+    "qwen_model": "Qwen/Qwen2.5-14B-Instruct",
+    "llm_synth_kept": 5076,
+    "teacher_backbone": "BAAI/bge-m3",
+    "teacher_dev_acc": 0.9993,
+    "train_count": 42000,
+    "dev_count": 4200,
+    "num_buckets": 5632,
+    "gz_bytes": 199485,
+    "temperature": 0.65,
+    "dev_metrics_int8": {
+      "accuracy": 0.9981,
+      "trapRejection": 0.999,
+      "realCaptureRecall": 0.9991,
+      "realKindExact": 0.9972
+    },
+    "blind_exclusion_verified": true
+  }
+}

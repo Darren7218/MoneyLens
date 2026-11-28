@@ -1,0 +1,113 @@
+{
+  "total_seconds": 407.9,
+  "stage_2a_search_v4": {
+    "train_seconds": 85.9,
+    "gz_bytes": 433123,
+    "vocab_size": 5400,
+    "emb_dim": 64,
+    "hidden_dim": 160,
+    "num_protos": 77,
+    "train_pairs": 10278,
+    "llm_teacher": "Qwen/Qwen2.5-7B-Instruct",
+    "embed_teacher": "intfloat/multilingual-e5-large+BAAI/bge-m3",
+    "calibrated_thresholds": {
+      "semanticThreshold": 0.22,
+      "classifyThreshold": 0.24,
+      "classifyMargin": 0.02
+    },
+    "val_retrieval": {
+      "n_queries": 200,
+      "recall_at_5": 0.835,
+      "recall_at_10": 0.87,
+      "mrr_at_10": 0.7937,
+      "unthresholded_concept_r5": 0.85,
+      "ood_fpr": 0.025,
+      "recall_at_5_by_lang": {
+        "bm": 0.86,
+        "en": 0.8378,
+        "mg": 0.8209,
+        "zh": 0.8261
+      },
+      "recall_at_5_by_slice": {
+        "concept": 0.9286,
+        "zero_lexical_overlap": 0.7159
+      }
+    },
+    "blind_retrieval": {
+      "n_queries": 382,
+      "recall_at_5": 0.8796,
+      "recall_at_10": 0.9136,
+      "mrr_at_10": 0.8124,
+      "unthresholded_concept_r5": 0.8859,
+      "ood_fpr": 0.0167,
+      "recall_at_5_by_lang": {
+        "bm": 0.8614,
+        "en": 0.9103,
+        "mg": 0.87,
+        "zh": 0.8835
+      },
+      "recall_at_5_by_slice": {
+        "concept": 0.9223,
+        "kind_filter": 1.0,
+        "lhdn_tax": 1.0,
+        "structured_constraint": 1.0,
+        "zero_lexical_overlap": 0.8148
+      }
+    },
+    "blind_proto_cls": {
+      "n": 544,
+      "raw_cat_acc": 0.7868,
+      "raw_sub_acc": 0.7188
+    },
+    "quick_entry_blind_count": 800,
+    "blind_retrieval_at_floor": {
+      "n_queries": 382,
+      "recall_at_5": 0.877,
+      "recall_at_10": 0.911,
+      "mrr_at_10": 0.8098,
+      "unthresholded_concept_r5": 0.8859,
+      "ood_fpr": 0.0167,
+      "recall_at_5_by_lang": {
+        "bm": 0.8515,
+        "en": 0.9103,
+        "mg": 0.87,
+        "zh": 0.8835
+      },
+      "recall_at_5_by_slice": {
+        "concept": 0.9223,
+        "kind_filter": 1.0,
+        "lhdn_tax": 1.0,
+        "structured_constraint": 1.0,
+        "zero_lexical_overlap": 0.8086
+      }
+    },
+    "stage_seconds": 161.4,
+    "zero_train_leakage": true
+  },
+  "stage_2b_merchant_canon_v3": {
+    "train_seconds": 245.9,
+    "gz_bytes": 450023,
+    "teacher": "BAAI/bge-m3",
+    "num_catalog": 800,
+    "num_train_pairs": 29536,
+    "calibrated_thresholds": {
+      "brandMatchThreshold": 0.55,
+      "brandMatchMargin": 0.02,
+      "pairSameThreshold": 0.69
+    },
+    "catalog_blind_eval": {
+      "n_queries": 1222,
+      "top1_unthresholded_acc": 0.8912,
+      "recall_at_threshold": 0.8699,
+      "precision_at_threshold": 0.9508,
+      "unseen_sme_false_canon_rate": 0.0194
+    },
+    "zero_shot_pairwise_eval": {
+      "n_pairs": 404,
+      "roc_auc": 0.9961,
+      "f1": 0.9278,
+      "tpr": 0.8738,
+      "hard_negative_fpr": 0.0101
+    }
+  }
+}

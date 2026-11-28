@@ -1,0 +1,26 @@
+{
+  "train_seconds": 245.9,
+  "gz_bytes": 450023,
+  "teacher": "BAAI/bge-m3",
+  "num_catalog": 800,
+  "num_train_pairs": 29536,
+  "calibrated_thresholds": {
+    "brandMatchThreshold": 0.55,
+    "brandMatchMargin": 0.02,
+    "pairSameThreshold": 0.69
+  },
+  "catalog_blind_eval": {
+    "n_queries": 1222,
+    "top1_unthresholded_acc": 0.8912,
+    "recall_at_threshold": 0.8699,
+    "precision_at_threshold": 0.9508,
+    "unseen_sme_false_canon_rate": 0.0194
+  },
+  "zero_shot_pairwise_eval": {
+    "n_pairs": 404,
+    "roc_auc": 0.9961,
+    "f1": 0.9278,
+    "tpr": 0.8738,
+    "hard_negative_fpr": 0.0101
+  }
+}

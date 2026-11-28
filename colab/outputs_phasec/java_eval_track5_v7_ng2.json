@@ -1,0 +1,78 @@
+{
+  "blind": {
+    "notif_gate": {
+      "trapRejection": 1,
+      "realAmountExact": 1,
+      "trapCount": 1143,
+      "realCaptureRecall": 1,
+      "realCount": 457,
+      "realKindExact": 1
+    },
+    "parser_receipt": {
+      "oodCount": 228,
+      "multiCount": 230,
+      "oodMiscSafety": 0.8596,
+      "multiAmountExact": 1,
+      "receiptCount": 342,
+      "receiptTotalExact": 1
+    },
+    "lhdn_tax": {
+      "claimableCount": 400,
+      "claimableRecall": 1,
+      "nonClaimableRejection": 1,
+      "nonClaimableCount": 400
+    },
+    "quick_search": {
+      "searchOodCount": 120,
+      "qeCount": 480,
+      "quickAccountExact": 1,
+      "quickAmountExact": 1,
+      "searchOodFpr": 0,
+      "quickKindExact": 1
+    },
+    "twin_dedup": {
+      "trueTwinRecall": 1,
+      "trueTwinCount": 300,
+      "nonDupCount": 300,
+      "nonDupPrecision": 1
+    }
+  },
+  "dev": {
+    "notif_gate": {
+      "trapRejection": 1,
+      "realAmountExact": 1,
+      "trapCount": 5000,
+      "realCaptureRecall": 1,
+      "realCount": 2000,
+      "realKindExact": 1
+    },
+    "parser_receipt": {
+      "oodCount": 1000,
+      "multiCount": 1000,
+      "oodMiscSafety": 0.999,
+      "multiAmountExact": 1,
+      "receiptCount": 1500,
+      "receiptTotalExact": 1
+    },
+    "lhdn_tax": {
+      "claimableCount": 2000,
+      "claimableRecall": 1,
+      "nonClaimableRejection": 1,
+      "nonClaimableCount": 2000
+    },
+    "quick_search": {
+      "searchOodCount": 500,
+      "qeCount": 2000,
+      "quickAccountExact": 1,
+      "quickAmountExact": 1,
+      "searchOodFpr": 0,
+      "quickKindExact": 1
+    },
+    "twin_dedup": {
+      "trueTwinRecall": 1,
+      "trueTwinCount": 1500,
+      "nonDupCount": 1500,
+      "nonDupPrecision": 1
+    }
+  }
+}
