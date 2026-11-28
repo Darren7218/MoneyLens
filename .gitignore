@@ -81,5 +81,11 @@ colab/outputs_phaseb_v2/*.bin*
 colab/outputs_phaseb_v2/*.log
 !colab/outputs_phaseb_v2/*_report.json
 !colab/outputs_phaseb_v2/java_eval_*.json
+colab/outputs_phasec/*.bin*
+colab/outputs_phasec/*.json*
+colab/outputs_phasec/*.npz
+colab/outputs_phasec/*.log
+!colab/outputs_phasec/*_report.json
+!colab/outputs_phasec/java_eval_*.json
 __pycache__/
 *.pyc

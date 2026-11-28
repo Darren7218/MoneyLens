@@ -82,24 +82,44 @@ public final class ReceiptParser {
     }
    }
   }
+  long tendered=-1,change=-1;
+  Pattern cashTenderRe=Pattern.compile("(?i)\\b(?:tunai|cash|tendered)\\b[^0-9\\r\\n]{0,20}(?:RM|MYR|RN1)?\\s*([0-9,]+(?:\\.[0-9]{1,2})?)");
+  for(int i=0;i<lines.length;i++){
+   String low=normTotalText(lines[i]);
+   Matcher ctm=cashTenderRe.matcher(lines[i]);
+   if(ctm.find()){
+    long tVal=parseMinor(ctm.group(1));
+    if(tVal>0L&&tendered<0L)tendered=tVal;
+   }
+   if(low.contains("baki")||low.contains("change")){
+    Matcher am=AMOUNT.matcher(lines[i]);
+    while(am.find()){
+     String raw=amountGroup(am);
+     long c=raw.replace(",","").matches("0+(?:\\.0+)?")?0:parseMinor(raw);
+     if(c>=0)change=c;
+    }
+   }
+  }
+  long cashNet=(tendered>0L&&change>=0L&&tendered>change)?(tendered-change):0L;
+  if(cashNet>0L){
+   if(ambiguous||score<3||best<=0L){
+    best=cashNet;score=Math.max(score,4);ambiguous=false;
+   }else if(hasRoundingLine&&Math.abs(best-cashNet)<=4L&&best%5L!=0L&&cashNet%5L==0L){
+    best=cashNet;
+   }else if((best%10L==0L)&&(best/10L==cashNet/10L||best/100L==cashNet/100L)&&cashNet!=best){
+    best=cashNet;
+   }
+  }
+
   if(score<3&&!ambiguous){
    long resolved=resolveSingleOrCashDiff(lines);
    if(resolved>0){best=resolved;score=3;}
   }else if(score>=3&&!ambiguous&&best>0&&bestLineIdx>=0){
-   long postTax=0,tendered=-1,change=-1;
+   long postTax=0;
    for(int i=0;i<lines.length;i++){
     String low=normTotalText(lines[i]);
     List<Long> vals=extractPreferredAmounts(lines[i]);
-    if(low.contains("tunai")||low.contains("tendered")||low.contains("cash")){
-     if(!vals.isEmpty()&&tendered<0)tendered=vals.get(vals.size()-1);
-    }else if(low.contains("baki")||low.contains("change")){
-     Matcher am=AMOUNT.matcher(lines[i]);
-     while(am.find()){
-      String raw=amountGroup(am);
-      long c=raw.replace(",","").matches("0+(?:\\.0+)?")?0:parseMinor(raw);
-      if(c>=0)change=c;
-     }
-    }else if(i>bestLineIdx&&(low.contains("cukai")||low.contains("sst")||low.contains("service tax")||low.contains("service charge"))&&!vals.isEmpty()){
+    if(i>bestLineIdx&&(low.contains("cukai")||low.contains("sst")||low.contains("service tax")||low.contains("service charge"))&&!vals.isEmpty()){
      postTax+=vals.get(vals.size()-1);
     }
    }
@@ -109,6 +129,13 @@ public final class ReceiptParser {
   }
 
   // Fusion with Linear-Chain CRF GRAND_TOTAL predictions (preserving strict ambiguity rejection)
+  if(tagged!=null&&subtotalMinor>0L){
+   long expectedSum=subtotalMinor+sstMinor;
+   long roundedSum=hasRoundingLine?((expectedSum+2L)/5L)*5L:expectedSum;
+   if(ambiguous&&roundedSum>0L&&(sstMinor>0L||hasRoundingLine||cashNet==roundedSum)){
+    best=roundedSum;score=Math.max(score,4);ambiguous=false;
+   }
+  }
   if(!ambiguous&&tagged!=null){
    List<Long> crfAmts=new ArrayList<>();
    List<Integer> crfIdxs=new ArrayList<>();
@@ -154,9 +181,9 @@ public final class ReceiptParser {
      }
     }
    }
-   // Recover truncated decimal grand total (e.g. "MYR 1747.") from non-cash payment tender ("Paid via TNG eWallet RM1747.95")
-   if(best>0&&best%100L==0L&&bestLineIdx>=0&&lines[bestLineIdx].trim().endsWith(".")){
-    for(int i=bestLineIdx+1;i<lines.length;i++){
+   // Recover truncated decimal grand total (e.g. "MYR 1747." or "Rm 1230,45") from non-cash payment tender
+   if(best>0&&best%100L==0L){
+    for(int i=Math.max(0,bestLineIdx+1);i<lines.length;i++){
      String pl=normTotalText(lines[i]);
      if(pl.contains("duitnow")||pl.contains("ewallet")||pl.contains("tng")||pl.contains("mae")||pl.contains("visa")||pl.contains("master")||pl.contains("mydebit")||pl.contains("paid via")){
       List<Long> pa=extractPreferredAmounts(lines[i]);
@@ -167,16 +194,23 @@ public final class ReceiptParser {
      }
     }
    }
+   // Arithmetic recovery from CRF subtotal + SST (+ 5-sen rounding) when OCR truncates cents or drops grand total
+   if(subtotalMinor>0L){
+    long expectedSum=subtotalMinor+sstMinor;
+    long roundedSum=hasRoundingLine?((expectedSum+2L)/5L)*5L:expectedSum;
+    if(best>0L&&((best%100L==0L&&roundedSum/100L==best/100L)||(best%10L==0L&&best/10L==roundedSum/10L))&&roundedSum!=best){
+     best=roundedSum;
+    }else if(best>0L&&hasRoundingLine&&Math.abs(best-expectedSum)<=4L&&best!=roundedSum&&best%5L!=0L){
+     best=roundedSum;
+    }else if((best<=0L||score<3)&&expectedSum>0L&&(sstMinor>0L||hasRoundingLine||crfAmts.isEmpty())){
+     best=roundedSum;
+     score=Math.max(score,3);
+    }
+   }
   }
 
   String date=extractDate(text,lines,tagged);
-  String overrideText=Pattern.compile("(?i)\\b(?:late\\s+payment\\s+fee|caj\\s+lewat\\s+bayar|hire\\s+purchase\\s+installment|road\\s+tax|cukai\\s+jalan)\\b").matcher(text).find()?text:"";
-  String[] cs=PaymentParser.classifyRulesOnly(merchant,"Receipt scan",overrideText);
-  if(cs[0].equals("Miscellaneous")&&!text.trim().isEmpty()){
-   cs=PaymentParser.classify(merchant,"Receipt scan",text);
-  }else if(cs[0].equals("Miscellaneous")){
-   cs=PaymentParser.classify(merchant,"Receipt scan","");
-  }
+  String[] cs=classifyReceipt(merchant,text,lines,tagged);
   JSONObject out=new JSONObject()
    .put("id",Ledger.id())
    .put("merchant",merchant)
@@ -193,6 +227,61 @@ public final class ReceiptParser {
   return out;
  }
 
+ private static final Pattern RECEIPT_OVERRIDE_RE=Pattern.compile("(?i)\\b(?:late\\s+payment\\s+fee|caj\\s+lewat\\s+bayar|hire\\s+purchase\\s+installment|road\\s+tax|cukai\\s+jalan)\\b");
+ private static final Pattern GENERIC_SME_HEADER_RE=Pattern.compile("(?i)(?:^(?:gerai|kedai|warung|restoran|bengkel|pasar\\s+mini|klinik|farmasi|pusat|syarikat|perniagaan)\\b|\\b(?:sdn\\.?\\s*bhd|enterprise|trading|services)\\b)");
+ private static final Pattern KNOWN_CHAIN_RE=Pattern.compile("(?i)\\b(?:petronas|shell|caltex|bhpetrol|setel|gentari|tnb|tenaga\\s+nasional|unifi|maxis|celcom|digi|astro|ikea|watsons|guardian|caring|99\\s*speedmart|7-?eleven|familymart|aeon|lotus|mydin|jaya\\s+grocer|village\\s+grocer|mcdonald|kfc|starbucks|zus|tealive|popular|uniqlo|decathlon|taylor'?s|sunway|kpj|gleneagles|pantai|grab|shopee|lazada|mynews)\\b");
+
+ private static String cleanItemText(String rawLine){
+  return rawLine
+   .replaceAll("(?i)(?:RM|MYR|RN1)\\s*[0-9,]+(?:\\.[0-9]{1,2})?"," ")
+   .replaceAll("[0-9,]+\\.[0-9]{2}"," ")
+   .replaceFirst("(?i)^(?:[0-9]{1,2}[.)]\\s+|[-*•]\\s+|[0-9]+\\s*[xX×]\\s+)","")
+   .replaceAll("(?i)\\s*[xX×]\\s*[0-9]+\\b","")
+   .replaceAll("\\s+"," ").trim();
+ }
+
+ private static String[] classifyReceipt(String merchant,String text,String[] lines,ReceiptFieldTagger.TaggedLines tagged){
+  String overrideText=RECEIPT_OVERRIDE_RE.matcher(text).find()?text:"";
+  String[] merchRules=PaymentParser.classifyRulesOnly(merchant,"Receipt scan",overrideText);
+  StringBuilder itemBuf=new StringBuilder();
+  int itemCount=0;
+  if(tagged!=null){
+   for(int i=0;i<lines.length;i++){
+    if(tagged.labelIds[i]==ReceiptFieldTagger.LABEL_ITEM){
+     String cleaned=cleanItemText(lines[i]);
+     if(cleaned.length()>=2){
+      if(itemBuf.length()>0)itemBuf.append(' ');
+      itemBuf.append(cleaned);
+      itemCount++;
+     }
+    }
+   }
+  }
+  String itemsStr=itemBuf.toString().trim();
+  if(!merchRules[0].equals("Miscellaneous")){
+   boolean genericSme=GENERIC_SME_HEADER_RE.matcher(merchant).find()&&!KNOWN_CHAIN_RE.matcher(merchant).find();
+   if(genericSme&&itemsStr.length()>=4&&itemCount>=2){
+    String[] itemRules=PaymentParser.classifyRulesOnly(itemsStr,"Receipt scan",itemsStr);
+    String[] itemCls=!itemRules[0].equals("Miscellaneous")?itemRules:PaymentParser.classify(itemsStr,"Receipt scan",itemsStr);
+    if(!itemCls[0].equals("Miscellaneous")&&!itemCls[0].equals(merchRules[0])){
+     boolean strongConf=!itemRules[0].equals("Miscellaneous");
+     if(!strongConf){
+      MlClassifier.Prediction ml=MlClassifier.predict(itemsStr,itemsStr);
+      MlNeuralReranker.Prediction nn=MlNeuralReranker.predict(itemsStr,itemsStr,ml);
+      strongConf=(ml!=null&&!"Miscellaneous".equals(ml.category)&&ml.probability>=0.55)
+        ||(nn!=null&&!"Miscellaneous".equals(nn.category)&&nn.probability>=0.55);
+     }
+     if(strongConf)return itemCls;
+    }
+   }
+   return merchRules;
+  }
+  String[] fullCls=PaymentParser.classify(merchant,"Receipt scan",text.trim().isEmpty()?"":text);
+  if(!fullCls[0].equals("Miscellaneous")||itemsStr.length()<4)return fullCls;
+  String[] itemRules=PaymentParser.classifyRulesOnly(itemsStr,"Receipt scan",itemsStr);
+  return !itemRules[0].equals("Miscellaneous")?itemRules:PaymentParser.classify(itemsStr,"Receipt scan",itemsStr);
+ }
+
  private static void attachStructuredMetadata(JSONObject out,String[] lines,ReceiptFieldTagger.TaggedLines tagged,long subtotalMinor,long sstMinor)throws Exception{
   if(subtotalMinor>0L)out.put("subtotalMinor",subtotalMinor);
   if(sstMinor>0L)out.put("sstMinor",sstMinor);
@@ -205,12 +294,7 @@ public final class ReceiptParser {
      List<Long> ia=extractPreferredAmounts(lines[i]);
      if(!ia.isEmpty()){
       long itemAmt=ia.get(ia.size()-1);
-      String itemName=lines[i]
-       .replaceAll("(?i)(?:RM|MYR|RN1)\\s*[0-9,]+(?:\\.[0-9]{1,2})?"," ")
-       .replaceAll("[0-9,]+\\.[0-9]{2}"," ")
-       .replaceFirst("(?i)^(?:[0-9]{1,2}[.)]\\s+|[-*•]\\s+|[0-9]+\\s*[xX×]\\s+)","")
-       .replaceAll("(?i)\\s*[xX×]\\s*[0-9]+\\b","")
-       .replaceAll("\\s+"," ").trim();
+      String itemName=cleanItemText(lines[i]);
       if(itemName.length()>=2&&itemAmt>0L){
        items.put(new JSONObject().put("name",itemName).put("amount",itemAmt));
       }

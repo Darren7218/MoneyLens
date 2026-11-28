@@ -115,4 +115,74 @@ public final class PersonalAdapter {
     }
     return null;
   }
+
+  /** Summarizes learned merchant -> category preferences from {@code correctionLog}, newest first. */
+  public static JSONArray summarize(JSONObject state) {
+    JSONArray out = new JSONArray();
+    if (state == null) return out;
+    JSONArray log = state.optJSONArray("correctionLog");
+    if (log == null || log.length() == 0) return out;
+
+    java.util.List<String> order = new java.util.ArrayList<>();
+    Map<String, String> latestMerch = new HashMap<>();
+    Map<String, String> latestCat = new HashMap<>();
+    Map<String, String> latestSub = new HashMap<>();
+    Map<String, Integer> counts = new HashMap<>();
+    Map<String, Long> latestTs = new HashMap<>();
+
+    for (int i = 0; i < log.length(); i++) {
+      JSONObject entry = log.optJSONObject(i);
+      if (entry == null) continue;
+      JSONObject after = entry.optJSONObject("after");
+      if (after == null) continue;
+      String cat = after.optString("category", "").trim();
+      if (cat.isEmpty() || "Miscellaneous".equals(cat) || "Other".equals(cat)) continue;
+      String merch = after.optString("merchant", "").trim();
+      String key = normalizeKey(merch);
+      if (key.isEmpty()) continue;
+      if (!counts.containsKey(key)) order.add(key);
+      counts.put(key, counts.getOrDefault(key, 0) + 1);
+      latestMerch.put(key, merch);
+      latestCat.put(key, cat);
+      latestSub.put(key, after.optString("subcategory", "").trim());
+      latestTs.put(key, Math.max(latestTs.getOrDefault(key, 0L), entry.optLong("ts", i + 1L)));
+    }
+    order.sort((a, b) -> Long.compare(latestTs.getOrDefault(b, 0L), latestTs.getOrDefault(a, 0L)));
+    for (String key : order) {
+      JSONObject row = new JSONObject();
+      row.put("key", key);
+      row.put("merchant", latestMerch.get(key));
+      row.put("category", latestCat.get(key));
+      row.put("subcategory", latestSub.get(key));
+      row.put("count", counts.get(key));
+      out.put(row);
+    }
+    return out;
+  }
+
+  /** Removes all {@code correctionLog} entries matching {@code normKey} and returns the removed count. */
+  public static int forgetKey(JSONObject state, String normKey) {
+    if (state == null) return 0;
+    String target = normalizeKey(normKey);
+    if (target.isEmpty()) return 0;
+    JSONArray log = state.optJSONArray("correctionLog");
+    if (log == null || log.length() == 0) return 0;
+    JSONArray kept = new JSONArray();
+    int removed = 0;
+    for (int i = 0; i < log.length(); i++) {
+      JSONObject entry = log.optJSONObject(i);
+      if (entry == null) continue;
+      JSONObject after = entry.optJSONObject("after");
+      JSONObject before = entry.optJSONObject("before");
+      String ak = after != null ? normalizeKey(after.optString("merchant", "")) : "";
+      String bk = before != null ? normalizeKey(before.optString("merchant", "")) : "";
+      if (target.equals(ak) || target.equals(bk)) {
+        removed++;
+      } else {
+        kept.put(entry);
+      }
+    }
+    state.put("correctionLog", kept);
+    return removed;
+  }
 }

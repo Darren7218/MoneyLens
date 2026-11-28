@@ -73,9 +73,9 @@ public final class PaymentParser {
   private static final Pattern LEADING_SUBJECT=Pattern.compile("(?im)^\\s*([\\p{L}0-9][\\p{L}0-9 &'._/()#,+*-]{1,60})\\s+has\\s+(?:deducted|charged|debited|received)\\b");
   private static final Pattern VERBLESS_PREP=Pattern.compile("(?i)(?:RM|MYR)\\s*"+NUM+"\\)?(?:\\s+(?:at|to|di|kepada)\\s+|[ \\t]*[@\\-\\u2013\\u2014][ \\t]*)([\\p{L}0-9][\\p{L}0-9 &'._/()#,+*-]{1,79})");
   private static final Pattern VERBLESS_CAPS=Pattern.compile("(?:RM|MYR)\\s*"+NUM+"\\s+([A-Z0-9][A-Z0-9&'._/()#+*-]*(?:[ ]+[A-Z0-9&'._/()#+*-]+){0,6})");
-  private static final Pattern GATEWAY_PREFIX=Pattern.compile("(?im)(?:^|\\b)(?:pay|dnqr|fpx|shopeepay|shopeep|spaylater|spay|ipay88|razerms|tngd?|mydebit|cimbl|visa|mc|pos|qr|grab)\\*\\s*([\\p{L}0-9][^\\r\\n]{1,70})");
-  private static final Pattern CJK_COMPLETED=Pattern.compile("(?:已支付|付款成功|支付成功|到账成功|转账成功|已完成|完成支付|成功完成|收到|扣款|已消费|已退款|退款成功|退款到账|已退回)");
-  private static final Pattern CJK_TRIGGER=Pattern.compile("(?:已支付|付款成功|支付成功|到账成功|转账成功|已完成|完成支付|成功完成|收到|扣款|已消费|令吉|已退款|退款成功|退款到账|已退回)");
+  private static final Pattern GATEWAY_PREFIX=Pattern.compile("(?im)(?:^|\\b)(?:pay|dnqr|fpx|shopeepay|shopeep|spaylater|spay|ipay88|razerms|tngd?|mydebit|cimbl|visa|mc|pos|qr|grab|billplz|curlec|molpay|senangpay|revpay|stripe|adyen|duitnow|boost|gxbank|aeon|ryt|toyyibpay|fiuu)\\*\\s*([\\p{L}0-9][^\\r\\n]{1,70})");
+  private static final Pattern CJK_COMPLETED=Pattern.compile("(?:已支付|付款成功|支付成功|到账成功|转账成功|充值成功|已完成|完成支付|完成充值|成功完成|收到|(?<!即将)扣款|已消费|已退款|退款成功|退款到账|已退回|已为[^\\r\\n]{1,32}充值)");
+  private static final Pattern CJK_TRIGGER=Pattern.compile("(?:已支付|付款成功|支付成功|到账成功|转账成功|充值成功|已完成|完成支付|完成充值|成功完成|收到|(?<!即将)扣款|已消费|令吉|已退款|退款成功|退款到账|已退回|已为[^\\r\\n]{1,32}充值)");
   /** Security advice footers ("Never share your TAC/OTP") are removed before any filtering. */
   private static final Pattern FOOTER=Pattern.compile("(?i)\\b(?:never|do\\s+not|don'?t|jangan)\\s+(?:share|disclose|reveal|give|kongsi|dedahkan|berikan)\\b[^.!\\n]*");
   private static final Pattern EXCLUDE_BEFORE=Pattern.compile("(?i)\\b(?:balance|bal|baki|limit|cashback|cash\\s+back|reward|rewards|points|pts|rebate|earned|earn|available|avail|remaining|outstanding|saved|worth|up\\s+to|min(?:imum)?\\s+spend)\\b[^0-9]*$");
@@ -100,21 +100,23 @@ public final class PaymentParser {
   private static final Pattern P_PAYMENT_PREP_HINT=Pattern.compile("\\bpayment\\s+(?:of|to|confirmation)\\b");
   private static final Pattern P_OTP_WORD=Pattern.compile("\\b(secure2u|authorise|authorize|approve|approval)\\b");
   private static final Pattern P_PENDING_EN=Pattern.compile("\\b(pending|processing|pre.?authori[sz]ation|awaiting|pegangan\\s+sementara|sedang\\s+diproses|pra.?kebenaran|tertunda)\\b");
-  private static final Pattern P_PENDING_CJK=Pattern.compile("(?:待处理|预授权|处理中|冻结中)");
+  private static final Pattern P_PENDING_CJK=Pattern.compile("(?:待处理|预授权|处理中|冻结中|即将扣款)");
   private static final Pattern P_PENDING_REQ=Pattern.compile("\\b(requested|scheduled|menunggu)\\b");
   private static final Pattern P_BILL_REMINDER_EN=Pattern.compile("\\b(peringatan\\s+bil|tarikh\\s+akhir|akan\\s+tamat\\s+tempoh|bayaran\\s+minimum|penyata\\s+(?:bulanan|anda)|monthly\\s+statement|statement\\s+balance|statement\\b[^\\r\\n]*?\\bis\\s+ready|payment\\s+reminder|bill\\s+reminder|minimum\\s+payment|pay\\s+before\\s+due|avoid\\s+late\\s+fee|elak(?:kan)?\\s+caj\\s+lewat|(?:will\\s+be|is)\\s+due\\s+on|due\\s+(?:tomorrow|today|soon|in\\s+[0-9]+\\s+days?))\\b");
-  private static final Pattern P_BILL_REMINDER_CJK=Pattern.compile("(?:账单提醒|最低还款|到期还款|可用余额|账户余额)");
+  private static final Pattern P_BILL_REMINDER_CJK=Pattern.compile("(?:账单提醒|最低还款|到期还款|可用余额|账户余额|即将扣款|即将扣费|即将到期|请确保账户余额充足)");
   private static final Pattern P_REFUND_GUARD_WORD=Pattern.compile("\\b(?:refund|pulangan|bayaran\\s+balik)\\b");
   private static final Pattern P_REFUND_GUARD_REQ=Pattern.compile("\\b(?:request(?:ed)?|permohonan|dimohon|policy|polisi)\\b");
   private static final Pattern P_REFUND_GUARD_OK=Pattern.compile("\\b(?:approved|completed|processed|credited|dikembalikan|dipulangkan|lulus|selesai)\\b");
-  private static final Pattern P_TRIGGER=Pattern.compile("\\b(paid|pay|payment|repayment|repaid|instal?ment|ansuran|purchase|pembelian|dibeli|spent|debited|debit|deducted|deduct|deduction|charged|charge|sale|credited|dikreditkan|received|refund|refunded|reversal|reversed|chargeback|bayaran\\s+balik|pulangan|dikembalikan|dipulangkan|pembatalan\\s+transaksi|transfer|transferred|withdrawal|top.?up|reload|reloaded|toll|paydirect|rfid|duitnow|fpx|jompay|giro|ibft|auto.?debit|paywave|contactless|qrpay|qr\\s*pay|bayar|bayaran|pembayaran|dibayar|membayar|diterima|menerima|transaksi|potongan|selesai|transaction|processed|completed|settled|donated|fx\\s*rate|exchange\\s+rate|currency\\s+conversion|gxbank|aeon\\s*bank|ryt\\s*bank|boost\\s*bank|shopeepay|spaylater|lazpaylater|paylater|payflex|atome|grabpay|grabpaylater|bnpl|setel|ptptn|lhdn|tax\\s+relief)\\b");
-  private static final Pattern P_NON_REFUND_EN=Pattern.compile("\\b(?:non.?refundable|not\\s+refundable|no\\s+refund|tidak\\s+boleh\\s+dikembalikan|ptptn|pinjaman|hutang|loan\\s+repayment)\\b");
+  private static final Pattern P_TRIGGER=Pattern.compile("\\b(paid|pay|payment|repayment|repaid|instal?ment|ansuran|purchase|pembelian|dibeli|spent|debited|debit|deducted|deduct|deduction|charged|charge|sale|credited|dikreditkan|received|refund|refunded|reversal|reversed|chargeback|bayaran\\s+balik|pulangan|dikembalikan|dipulangkan|pembatalan\\s+transaksi|transfer|transferred|pindahan|withdrawal|top.?up|reload|reloaded|tambah\\s+nilai|toll|paydirect|rfid|duitnow|fpx|jompay|giro|ibft|auto.?debit|paywave|contactless|qrpay|qr\\s*pay|bayar|bayaran|pembayaran|dibayar|membayar|diterima|menerima|transaksi|potongan|selesai|transaction|processed|completed|settled|donated|fx\\s*rate|exchange\\s+rate|currency\\s+conversion|gxbank|aeon\\s*bank|ryt\\s*bank|boost\\s*bank|shopeepay|spaylater|lazpaylater|paylater|payflex|atome|grabpay|grabpaylater|bnpl|setel|ptptn|lhdn|tax\\s+relief)\\b");
+  private static final Pattern P_NON_REFUND_EN=Pattern.compile("\\b(?:non.?refundable|not\\s+refundable|no\\s+refund|tidak\\s+boleh\\s+dikembalikan|loan\\s+repayment)\\b");
+  private static final Pattern P_NON_REFUND_LOAN_EN=Pattern.compile("\\b(?:ptptn|pinjaman|hutang)\\b");
+  private static final Pattern P_EXPLICIT_ORDER_REVERSAL=Pattern.compile("(?i)(?:\\b(?:pesanan\\s+dibatalkan|order\\s+cancel(?:led|ed)|chargeback|credited\\s+back|dikembalikan\\s+ke|dipulangkan\\s+ke)\\b|已取消订单退款|退款到账)");
   private static final Pattern P_NON_REFUND_CJK=Pattern.compile("(?:不可退款|不能退款|不退不换|恕不退款)");
   private static final Pattern P_RF_STRIP_TAIL=Pattern.compile("(?i)\\s+(?:to|ke)\\s+(?:touch\\s*'?n\\s*go|tng|mae|maybank2u?|cimb|rhb|hlb|gxbank|shopeepay|boost|bigpay|aeon\\s*bank|ryt\\s*bank|wallet|e.?wallet|account|akaun|dompet|bank|card|kad).*");
   private static final Pattern P_GW_STRIP_TAIL=Pattern.compile("(?i)(?:,|\\s*(?:rmyr|myr|rm)(?=\\s*[0-9])|\\b(?:rmyr|myr|rm)\\b|[0-9]+\\.[0-9]{2}|\\b[0-9]{2}[/-][0-9]{2}(?:[/-][0-9]{2,4})?\\b|\\s+(?:charge|paid|completed|approved|confirmed)\\b).*");
   private static final Pattern P_BAD_MF=Pattern.compile("(?i)^(?:ref|reference|order|payment|your|my|this|that|a)\\b.*");
   private static final Pattern P_BAD_LS=Pattern.compile("(?i)^(?:maybank(?:2u)?|mae|cimb|rhb|public\\s*bank|hong\\s*leong|ambank|bank\\s+islam|gxbank|aeon\\s*bank|ryt\\s*bank|tng|touch\\s*'?n\\s*go|boost|grab|shopee|shopeepay|atome|your\\s+bank|system)$");
-  private static final Pattern P_CJK_MERCH_PAID=Pattern.compile("(?:已支付|付款成功|支付成功|已消费|扣款)\\s*(?:RM|MYR)\\s*[0-9,]+(?:\\.[0-9]{1,2})?\\s+([\\p{L}0-9][\\p{L}0-9 .,'&_-]{1,50})");
+  private static final Pattern P_CJK_MERCH_PAID=Pattern.compile("(?:(?:已支付|付款成功|支付成功|已消费|扣款)\\s*(?:RM|MYR)\\s*[0-9,]+(?:\\.[0-9]{1,2})?\\s+([\\p{L}0-9][\\p{L}0-9 .,'&_-]{1,50})|(?:付款成功|支付成功)[：:]\\s*([\\p{L}0-9][\\p{L}0-9 .,'&_-]{1,50})\\s+(?:RM|MYR)\\s*[0-9,])");
   private static final Pattern P_LINE_SPLIT=Pattern.compile("\\r?\\n");
   public static final String LOANS="Loans, BNPL & Credit";
 
@@ -185,11 +187,13 @@ public final class PaymentParser {
     if(amount<=0)return null;
 
     boolean outgoingCue=P_OUTGOING_CUE.matcher(low).find();
-    boolean nonRefGuard=P_NON_REFUND_EN.matcher(low).find()||P_NON_REFUND_CJK.matcher(core).find();
+    boolean explicitReversal=P_EXPLICIT_ORDER_REVERSAL.matcher(core).find();
+    boolean nonRefGuard=P_NON_REFUND_EN.matcher(low).find()||P_NON_REFUND_CJK.matcher(core).find()||(P_NON_REFUND_LOAN_EN.matcher(low).find()&&!explicitReversal);
     boolean refundCue=!nonRefGuard&&(P_REFUND_CUE.matcher(low).find()||P_REFUND_DONE_CJK.matcher(core).find());
     String kind=refundCue?"refund":(!outgoingCue&&P_INCOME_CUE.matcher(low).find())?"income":"expense";
     String reason=count==1?"Recorded from a notification. Check the account, amount and type.":"Several amounts were found; MoneyLens used RM "+java.math.BigDecimal.valueOf(amount,2).toPlainString()+" as the payment. Edit it if that is wrong.";
-    if(!kind.equals("income")&&P_TRANSFER_CUE.matcher(low).find()&&!P_NON_TRANSFER_CUE.matcher(low).find()){
+    boolean telcoPrepaid=P_TELCO_PREPAID_GUARD.matcher(low).find();
+    if(!kind.equals("income")&&!kind.equals("refund")&&P_TRANSFER_CUE.matcher(low).find()&&!telcoPrepaid&&!P_NON_TRANSFER_CUE.matcher(low).find()){
       kind="transfer";reason="This may be a transfer between your own accounts. Choose both accounts.";
     }
     boolean mlReloadHint=false;
@@ -260,7 +264,11 @@ public final class PaymentParser {
     if(!validMerchant(merchant)&&caps){String c=cleanMerchant(vc.group(2));if(validMerchant(c))merchant=c;}
     if(!validMerchant(merchant)){
       Matcher cjkM=P_CJK_MERCH_PAID.matcher(core);
-      if(cjkM.find()){String c=cleanMerchant(cjkM.group(1));if(validMerchant(c))merchant=c;}
+      if(cjkM.find()){
+        String rawCjk=cjkM.group(1)!=null?cjkM.group(1):cjkM.group(2);
+        String c=cleanMerchant(rawCjk);
+        if(validMerchant(c))merchant=c;
+      }
     }
     if(!validMerchant(merchant)&&core.contains("\n")){
       String[] lines=P_LINE_SPLIT.split(core);
@@ -306,7 +314,7 @@ public final class PaymentParser {
       d.put("originalCurrency",origCur).put("originalAmount",origAmt).put("exchangeRate",java.math.BigDecimal.valueOf(amount,2).divide(new java.math.BigDecimal(origAmt),8,java.math.RoundingMode.HALF_UP).toPlainString());
     }
     if(kind.equals("transfer")){
-      boolean isReload=P_RELOAD_CUE.matcher(low).find()||mlReloadHint;
+      boolean isReload=P_RELOAD_CUE.matcher(low).find()||P_RELOAD_CJK.matcher(core).find()||mlReloadHint;
       if(isReload){
         d.put("reload",true);
         Matcher fb=P_FROM_BANK.matcher(core);
@@ -410,13 +418,15 @@ public final class PaymentParser {
   private static final Pattern P_OUTGOING_CUE=Pattern.compile("(?:rm|myr)\\s*[0-9,]+(?:\\.[0-9]{1,2})?\\s+(?:to|at|for)\\s+|\\b(?:for\\s+your\\s+(?:[a-z0-9\\s]{0,30}?\\b)?(?:purchase|investment|sspn|prs|loan|repayment)|your\\s+(?:recent\\s+)?(?:purchase|order)|purchase\\s+at|from\\s+fpx\\s+to|from\\s+your\\s+account|for\\s+(?:your\\s+)?(?:routine\\s+|annual\\s+)?(?:medical|university|education|tuition|school|childcare|insurance|takaful|sspn|prs|epf|lhdn|tax\\s+relief|self\\s+education)|paid\\s+amount|payment\\s+for|payment\\s+method|payment\\s+to|paid\\s+to|order\\s+(?:id|no)|item|qty|invoice)\\b");
   private static final Pattern P_INCOME_CUE=Pattern.compile("\\b(credited|dikreditkan|received|diterima|menerima)\\b");
   private static final Pattern P_REFUND_CUE=Pattern.compile("\\b(refund(?:ed|s)?|reversal|reversed|chargeback|credited\\s+back|pulangan\\s+(?:bayaran|wang|tunai|dana)|bayaran\\s+balik(?!\\s+(?:pinjaman|loan|ptptn|hutang|pembiayaan|ansuran|kredit))|dikembalikan|dipulangkan|pembatalan\\s+transaksi)\\b");
-  private static final Pattern P_TRANSFER_CUE=Pattern.compile("\\b(transfer(?:red|ring)?|top.?up|reload|reloaded|withdrawal)\\b");
+  private static final Pattern P_TRANSFER_CUE=Pattern.compile("\\b(transfer(?:red|ring)?|pindahan\\s+(?:wang|dana)|top.?up|reload|reloaded|tambah\\s+nilai|withdrawal)\\b");
+  private static final Pattern P_TELCO_PREPAID_GUARD=Pattern.compile("\\b(?:prepaid|prabayar|hotlink|maxis|celcom|digi|umobile|tune\\s*talk|onexox|redone|yes\\s*[45]g|yoodo|airtime)\\b");
   private static final Pattern P_NON_TRANSFER_CUE=Pattern.compile("\\b(duitnow\\s+qr|fpx|jompay|paid|purchase|spent|sale)\\b");
   private static final Pattern P_LINE_SKIP1=Pattern.compile("^(?:notifikasi|notis|nota(?:\\s+pembayaran)?|makluman|berita(?:\\s+bayaran)?|pengesahan|amaran|alert|notice|notification|bayar(?:\\s+dengan|\\s+menggunakan)?|bayaran|pembayaran|transaksi|payment|transaction|kad\\s+kredit|carta\\s+kredit|credit\\s+card|no\\.?\\s*kad|item|barang|produk|harga|perkhidmatan|penyertaan|angsuran|terima\\s+kasih|thank\\s+you|sila\\s+semak).*");
   private static final Pattern P_LINE_SKIP2=Pattern.compile("^(?:rm|myr)?\\s*[0-9,]+(?:\\.[0-9]{1,2})?\\s*$");
   private static final Pattern P_LINE_SKIP3=Pattern.compile("^(?:tarikh|date|time|masa|kod\\b|code|ref\\b|reference|rujukan|txn|transaction|order|invoice|barang|item|baki|tunai|cash|balance|cukai|sst|gst|service|subtotal|jumlah|total|contact|hotline|tel|hp|phone|no\\.|lot\\b|jalan\\b|jln\\b|lorong\\b|unit\\b|level\\b|[0-9]+,\\s*(?:jalan|jln|lorong)|[0-9]{1,2}(?:st|nd|rd|th)?[\\s/-]+(?:[0-9]{1,2}|[a-z]{3,10})[\\s/-]+20[0-9]{2}|20[0-9]{2}-[0-9]{2}-[0-9]{2}).*");
   private static final Pattern P_TOLL_CUE=Pattern.compile("\\b(toll|paydirect|rfid)\\b");
-  private static final Pattern P_RELOAD_CUE=Pattern.compile("\\b(top.?up|reload|reloaded)\\b");
+  private static final Pattern P_RELOAD_CUE=Pattern.compile("\\b(top.?up|reload|reloaded|tambah\\s+nilai)\\b");
+  private static final Pattern P_RELOAD_CJK=Pattern.compile("(?:充值|加额)");
   private static final Pattern P_FROM_BANK=Pattern.compile("(?i)\\b(?:from|via)\\s+(?:your\\s+)?(maybank(?:2u)?|mae|cimb(?:\\s*clicks|\\s*octo)?|public\\s*bank|mypb|rhb|hong\\s*leong|hlb|ambank|bank\\s+islam|bimb|gxbank|aeon\\s*bank|ryt\\s*bank|uob|ocbc|hsbc|scb|bsn|bigpay|tng|grabpay|boost(?:\\s*bank)?|shopeepay)\\b");
   private static final Pattern P_WALLET_HINT=Pattern.compile("(?i)\\b(tng|touch\\s*'?n\\s*go|grabpay(?:later)?|boost(?:\\s*bank)?|payflex|shopeepay|spaylater|atome|bigpay|mae|gxbank|aeon\\s*bank|ryt\\s*bank|setel|lazpaylater|fave)\\b");
   private static final Pattern FAST_LIKELY_CURRENCY=Pattern.compile("(?i)(?:\\b(?:rm|myr|sgd|usd|eur|gbp|aud|cny|hkd|thb|twd|jpy|krw|idr|vnd)[.:\\s]*[0-9]|[0-9.,]+\\s*(?:rm|myr|sgd|usd|eur|gbp|aud|cny|hkd|thb|twd|jpy|krw|idr|vnd)\\b|\\$[0-9])");

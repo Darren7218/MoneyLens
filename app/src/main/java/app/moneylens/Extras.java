@@ -247,6 +247,10 @@ public final class Extras {
     s.put("correctionLog",new JSONArray());
     return true;
    }
+   case "forgetPersonalMerchant":{
+    PersonalAdapter.forgetKey(s,name(a,"key",120));
+    return true;
+   }
    case "dismissAnomaly":{
     JSONObject t=Ledger.find(s.getJSONArray("transactions"),a.getString("id"));
     if(t.optBoolean("voided"))return true;
@@ -1350,11 +1354,19 @@ public final class Extras {
   boolean quickReloadCue=false;
   if("expense".equals(kind)){
    boolean isIncomingSignal=java.util.regex.Pattern.compile("(?i)(?:\\b(?:received|terima|dapat|daripada|gaji|salary|bonus|payday|income|dividend|dividen|commission|komisen|freelance)\\b|收到|工资|薪水|发薪|奖金|收入|入账|进账|报销)").matcher(withoutAmt).find();
-   boolean hasTransferExpenseKw=java.util.regex.Pattern.compile("(?i)(?:\\b(?:prabayar|prepaid|postpaid|data|line|celcom|maxis|digi|umobile|hotlink|vitamin|vitamins|supplement|supplements|prs|asb|asnb|epf|kwsp|fee|fees|charge|charges|saving|savings|investment)\\b|流量|话费|维他命|保健|基金|费用|手续费|储蓄|投资)").matcher(withoutAmt).find();
+   boolean hasTransferExpenseKw=java.util.regex.Pattern.compile("(?i)(?:\\b(?:prabayar|prepaid|postpaid|data|line|celcom|maxis|digi|umobile|hotlink|vitamin|vitamins|supplement|supplements|tisu|tissue|sabun|detergent|beras|telur|minyak|groceries|grocer|pantry|supplies|petrol|fuel|diesel|airtime|sim|diapers|pampers|susu|milk|coffee|kopi|roti|bread|ubat|medicine|mask|pelitup|prs|asb|asnb|epf|kwsp|fee|fees|charge|charges|saving|savings|investment)\\b|流量|话费|维他命|保健|基金|费用|手续费|储蓄|投资)").matcher(withoutAmt).find();
    boolean isNonRefundable=java.util.regex.Pattern.compile("(?i)(?:\\b(?:non.?refundable|not\\s+refundable|no\\s+refund|tidak\\s+boleh\\s+dikembalikan)\\b|不可退款|不能退款|不退不换|恕不退款)").matcher(withoutAmt).find();
+   boolean looksLikeItemTopup=false;
+   java.util.regex.Matcher itemTopupM=java.util.regex.Pattern.compile("(?i)^(?:top[\\s-]?up|reload|tambah\\s+nilai)\\s+([\\p{L}0-9_-]+)").matcher(withoutAmt.trim());
+   if(itemTopupM.find()){
+    String nextTok=itemTopupM.group(1).toLowerCase(Locale.ROOT);
+    boolean isAcctTok=nextTok.matches("(?:tng|touch|wallet|e-?wallet|ewallet|dompet|mae|maybank|maybank2u|cimb|rhb|hlb|gx|gxbank|aeon|ryt|boost|bigpay|spay|spaylater|shopeepay|grab|grabpay|cash|tunai|akaun|account|bank|card|kad|to|ke|into|from|dari|daripada)");
+    boolean hasDir=woLow.matches(".*\\b(?:from|dari|daripada|to|ke|into)\\b.*")||withoutAmt.contains("从")||withoutAmt.contains("到");
+    if(!isAcctTok&&!hasDir)looksLikeItemTopup=true;
+   }
    if(!isNonRefundable&&java.util.regex.Pattern.compile("(?i)(?:\\b(?:refund|refunded|reversal|chargeback|bayaran\\s+balik|pulangan(?:\\s+wang)?)\\b|退款|退回|退钱|赔付)").matcher(withoutAmt).find()){
     kind="refund";
-   }else if(!isIncomingSignal&&!hasTransferExpenseKw&&java.util.regex.Pattern.compile("(?i)(?:\\b(?:transfer|transferred|pindah|top[\\s-]?up|reload|reloaded|tambah\\s+nilai)\\b|转账|充值|加额|转到|转去|转入)").matcher(withoutAmt).find()){
+   }else if(!isIncomingSignal&&!hasTransferExpenseKw&&!looksLikeItemTopup&&java.util.regex.Pattern.compile("(?i)(?:\\b(?:transfer|transferred|pindah|top[\\s-]?up|reload|reloaded|tambah\\s+nilai)\\b|转账|充值|加额|转到|转去|转入)").matcher(withoutAmt).find()){
     quickReloadCue=java.util.regex.Pattern.compile("(?i)(?:\\b(?:top[\\s-]?up|reload|reloaded|tambah\\s+nilai)\\b|充值|加额)").matcher(withoutAmt).find();
     kind="transfer";
    }else if(isIncomingSignal||java.util.regex.Pattern.compile("(?i)\\bfrom\\s+[\\p{L}]").matcher(withoutAmt).find()){

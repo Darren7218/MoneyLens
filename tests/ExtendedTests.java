@@ -1752,6 +1752,44 @@ public final class ExtendedTests {
    yes(csvMs<500L);
   });
 
+  test("Phase C Track C2/C4/C5 Receipt arithmetic & item-first, QuickEntry item-topup, PaymentParser CJK/PTPTN guards & PersonalAdapter forgetKey",()->{
+   // 1. PersonalAdapter summarize + forgetKey
+   JSONObject ps=Ledger.initial();
+   ps.getJSONObject("settings").put("correctionLogOptIn",true);
+   ps.put("correctionLog",new JSONArray()
+     .put(new JSONObject().put("ts",10L).put("action","quickNote").put("after",new JSONObject().put("merchant","Kedai Kopi Maju").put("category","Food & drinks").put("subcategory","Coffee, Tea & Drinks")))
+     .put(new JSONObject().put("ts",20L).put("action","edit").put("after",new JSONObject().put("merchant","Kedai Kopi Maju").put("category","Food & drinks").put("subcategory","Coffee, Tea & Drinks")))
+     .put(new JSONObject().put("ts",30L).put("action","quickNote").put("after",new JSONObject().put("merchant","Klinik Mesra").put("category","Health & medical").put("subcategory","Clinic & GP"))));
+   JSONArray sum=PersonalAdapter.summarize(ps);
+   eq(sum.length(),2);
+   yes("klinik mesra".equals(sum.getJSONObject(0).getString("key")));
+   eq(sum.getJSONObject(1).getInt("count"),2);
+   eq(PersonalAdapter.forgetKey(ps,"kedai kopi maju"),2);
+   eq(PersonalAdapter.summarize(ps).length(),1);
+
+   // 2. ReceiptParser cash/subtotal arithmetic recovery & SME item-first classification
+   String cashRec="RESIT RASMI\nYAKINIKU LIKE\nJumlah Kecil  RM99.04\nSST 8% MYR 7.92\nTunai  JUMLAH BERSIH  MYR 110.00  RM 106.96\nBaki Kembali  RM3.04\nDate: 11/11/2026";
+   JSONObject cr=ReceiptParser.parse(cashRec);
+   eq(cr.getLong("amount"),10696L);
+   String smeItemRec="SIMPLIFIED TAX INVOICE\nGERAI SELERA TIMUR 202201060\nReceipt No:INV-2026055230\nDate:03/05/2026\nOW-20 FULLY SYNTH ENGINE OIL  RM 187.10\nMF BATTERY 46B24L  RM 246.66\n5-Sen Rounding  +0.01\nFINAL AMOUNT  Tunai  MYR 440.00  (ROUNDED)  RM433.77\nChange  MYR 6.23";
+   JSONObject sr=ReceiptParser.parse(smeItemRec);
+   yes("Transport".equals(sr.getString("category")));
+   eq(sr.getLong("amount"),43377L);
+
+   // 3. QuickEntry physical-item topup stays expense while wallet/cash reload stays reload
+   JSONObject qeState=Ledger.initial();
+   Ledger.apply(qeState,"account",new JSONObject().put("name","TNG eWallet").put("type","wallet").put("opening","200.00"));
+   JSONObject qeItem=Extras.parseQuickEntry(qeState,"topup tisu rumah 123.40 tng 2 days ago",LocalDate.of(2026,11,24));
+   yes("expense".equals(qeItem.getString("kind")));
+   JSONObject qeReload=Extras.parseQuickEntry(qeState,"reload cash 50",LocalDate.of(2026,11,24));
+   yes("reload".equals(qeReload.getString("kind")));
+
+   // 4. PaymentParser upcoming-debit CJK trap rejected & PTPTN explicit order-reversal refund captured
+   yes(PaymentParser.parse("您的PETRONAS Setia Alam加油费用即将扣款，金额为RM 138.22。请确保账户余额充足。","com.grabtaxi.passenger")==null);
+   JSONObject ptRef=PaymentParser.parse("Order cancelled at PTPTN Pinjaman, refund MYR 100.00 credited back to RHB Mobile Banking!","my.com.rhb.mobilebank");
+   yes(ptRef!=null&&"refund".equals(ptRef.getString("kind"))&&ptRef.getLong("amount")==10000L);
+  });
+
   System.out.println("RESULT: "+passed+" extended tests passed");
  }
 }

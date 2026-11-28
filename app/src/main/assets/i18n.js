@@ -737,7 +737,14 @@ const I18N_MS={
   'Clear log':'Kosongkan log',
   'Correction log cleared.':'Log pembetulan dikosongkan.',
   'On-device correction log enabled.':'Log pembetulan pada peranti diaktifkan.',
-  'On-device correction log paused.':'Log pembetulan pada peranti dijeda.'
+  'On-device correction log paused.':'Log pembetulan pada peranti dijeda.',
+  '{n} learned':'{n} dipelajari',
+  'Inspect learned':'Lihat dipelajari',
+  'Learned merchants':'Peniaga dipelajari',
+  'Forget':'Lupakan',
+  'Learned merchant forgotten.':'Peniaga dipelajari dilupakan.',
+  'No learned merchants yet.':'Tiada peniaga dipelajari lagi.',
+  'Learned':'Dipelajari'
 };
 function currentLang(){return (typeof state!=='undefined'&&state?.settings?.lang==='ms')?'ms':'en'}
 function appLocale(){return currentLang()==='ms'?'ms-MY':'en-MY'}

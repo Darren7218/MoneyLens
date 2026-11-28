@@ -426,6 +426,13 @@ test('Track 6 Settings renders opt-in correctionLogToggle and Clear log action',
   run(`state.settings.correctionLogOptIn=true;state.correctionLog=[{id:'c1'},{id:'c2'}];`);
   const s2=run(`settings()`);
   assert(s2.includes('2 logged')&&s2.includes('data-action="clearCorrectionLog"'));
+  run(`state.correctionLog=[{id:'c1',ts:10,after:{merchant:'Kopi Jaya',category:'Food & drinks',subcategory:'Coffee, Tea & Drinks'}}];`);
+  const s3=run(`settings()`);
+  assert(s3.includes('1 learned')&&s3.includes('data-action="inspectPersonalLearned"'));
+  const lr=run(`personalLearnedList()`);
+  assert(lr.length===1&&lr[0].key==='kopi jaya');
+  const rowPers=run(`renderTxRow({id:'tx-p-1',kind:'expense',amount:1200,account:'cash',merchant:'Kopi Jaya',category:'Food & drinks',historyMatch:'personal',autoRecorded:true,date:today()})`);
+  assert(rowPers.includes('Learned'));
   run(`state.settings.correctionLogOptIn=${JSON.stringify(prevOpt)};state.correctionLog=${JSON.stringify(prevLog)};`);
 });
 console.log('RESULT: '+passed+' UI tests passed');
