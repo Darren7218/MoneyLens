@@ -1,0 +1,184 @@
+{
+  "total_seconds": 4276.1,
+  "stage_a_crf_v2": {
+    "stage_seconds": 239.3,
+    "winner": {
+      "name": "c2_mid_8e-4",
+      "wd": 0.0008,
+      "l1": 6e-05,
+      "epochs": 16,
+      "seed": 1337
+    },
+    "gz_bytes": 128225,
+    "prune_threshold": 0.0051,
+    "feat_stats": {
+      "active_features": 4821,
+      "nonzero_weights": 45413
+    },
+    "val_macro_f1": 0.9967,
+    "val_metrics": {
+      "n_receipts": 987,
+      "n_lines": 13544,
+      "line_acc": 0.9971,
+      "exact_grand_total_amt": 0.9291,
+      "merchant_tag_match": 0.8956,
+      "date_line_hit": 0.9048,
+      "per_label": {
+        "MERCHANT": {
+          "precision": 0.9945,
+          "recall": 0.9902,
+          "f1": 0.9924,
+          "support": 921
+        },
+        "HEADER_META": {
+          "precision": 0.9963,
+          "recall": 0.9981,
+          "f1": 0.9972,
+          "support": 3228
+        },
+        "DATE": {
+          "precision": 0.9989,
+          "recall": 1.0,
+          "f1": 0.9994,
+          "support": 893
+        },
+        "ITEM": {
+          "precision": 0.9993,
+          "recall": 0.9956,
+          "f1": 0.9975,
+          "support": 2980
+        },
+        "SUBTOTAL": {
+          "precision": 0.9861,
+          "recall": 0.996,
+          "f1": 0.991,
+          "support": 498
+        },
+        "TAX_SST": {
+          "precision": 1.0,
+          "recall": 0.9953,
+          "f1": 0.9976,
+          "support": 213
+        },
+        "ROUNDING": {
+          "precision": 0.9973,
+          "recall": 0.9986,
+          "f1": 0.9979,
+          "support": 727
+        },
+        "GRAND_TOTAL": {
+          "precision": 0.9954,
+          "recall": 1.0,
+          "f1": 0.9977,
+          "support": 1093
+        },
+        "PAYMENT_TENDER": {
+          "precision": 1.0,
+          "recall": 0.995,
+          "f1": 0.9975,
+          "support": 1204
+        },
+        "LHDN_META": {
+          "precision": 0.9984,
+          "recall": 1.0,
+          "f1": 0.9992,
+          "support": 1262
+        },
+        "OTHER": {
+          "precision": 0.9943,
+          "recall": 0.9981,
+          "f1": 0.9962,
+          "support": 525
+        }
+      }
+    },
+    "train_rows": 15412,
+    "val_rows": 987,
+    "zero_holdout_leakage": true
+  },
+  "stage_b_search_v5": {
+    "train_seconds": 76.9,
+    "gz_bytes": 432963,
+    "vocab_size": 5400,
+    "emb_dim": 64,
+    "hidden_dim": 160,
+    "num_protos": 77,
+    "train_pairs": 10385,
+    "llm_teacher": "Qwen/Qwen2.5-7B-Instruct",
+    "embed_teacher": "intfloat/multilingual-e5-large",
+    "calibrated_thresholds": {
+      "semanticThreshold": 0.206,
+      "classifyThreshold": 0.24,
+      "classifyMargin": 0.02
+    },
+    "val_retrieval": {
+      "n_queries": 197,
+      "recall_at_5": 0.868,
+      "recall_at_10": 0.9036,
+      "mrr_at_10": 0.8184,
+      "unthresholded_concept_r5": 0.8985,
+      "ood_fpr": 0.0,
+      "recall_at_5_by_lang": {
+        "bm": 0.8542,
+        "en": 0.8889,
+        "mg": 0.8939,
+        "zh": 0.8298
+      },
+      "recall_at_5_by_slice": {
+        "concept": 0.9643,
+        "zero_lexical_overlap": 0.7412
+      }
+    },
+    "blind_retrieval": {
+      "n_queries": 380,
+      "recall_at_5": 0.9053,
+      "recall_at_10": 0.9211,
+      "mrr_at_10": 0.8188,
+      "unthresholded_concept_r5": 0.9071,
+      "ood_fpr": 0.0,
+      "recall_at_5_by_lang": {
+        "bm": 0.9208,
+        "en": 0.9342,
+        "mg": 0.89,
+        "zh": 0.8835
+      },
+      "recall_at_5_by_slice": {
+        "concept": 0.9381,
+        "kind_filter": 1.0,
+        "lhdn_tax": 1.0,
+        "structured_constraint": 1.0,
+        "zero_lexical_overlap": 0.8526
+      }
+    },
+    "blind_proto_cls": {
+      "n": 542,
+      "raw_cat_acc": 0.8026,
+      "raw_sub_acc": 0.7232
+    },
+    "quick_entry_blind_count": 800,
+    "winner_seed": 2026,
+    "stage_seconds": 282.9,
+    "zero_train_leakage": true
+  },
+  "stage_c_notif_gate_v4": {
+    "stage_seconds": 3752.7,
+    "teachers": {
+      "bge_m3_dev_acc": 0.6451,
+      "e5_large_dev_acc": 0.6524,
+      "ensemble_dev_acc": 0.6512
+    },
+    "train_count": 40000,
+    "dev_count": 4100,
+    "hard_mined_count": 0,
+    "num_buckets": 5632,
+    "gz_bytes": 199011,
+    "temperature": 1.85,
+    "dev_metrics_int8": {
+      "accuracy": 0.6868,
+      "trapRejection": 0.548,
+      "realCaptureRecall": 0.9257,
+      "realKindExact": 0.916
+    },
+    "blind_exclusion_verified": true
+  }
+}

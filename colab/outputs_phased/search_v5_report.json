@@ -1,0 +1,64 @@
+{
+  "train_seconds": 76.9,
+  "gz_bytes": 432963,
+  "vocab_size": 5400,
+  "emb_dim": 64,
+  "hidden_dim": 160,
+  "num_protos": 77,
+  "train_pairs": 10385,
+  "llm_teacher": "Qwen/Qwen2.5-7B-Instruct",
+  "embed_teacher": "intfloat/multilingual-e5-large",
+  "calibrated_thresholds": {
+    "semanticThreshold": 0.206,
+    "classifyThreshold": 0.24,
+    "classifyMargin": 0.02
+  },
+  "val_retrieval": {
+    "n_queries": 197,
+    "recall_at_5": 0.868,
+    "recall_at_10": 0.9036,
+    "mrr_at_10": 0.8184,
+    "unthresholded_concept_r5": 0.8985,
+    "ood_fpr": 0.0,
+    "recall_at_5_by_lang": {
+      "bm": 0.8542,
+      "en": 0.8889,
+      "mg": 0.8939,
+      "zh": 0.8298
+    },
+    "recall_at_5_by_slice": {
+      "concept": 0.9643,
+      "zero_lexical_overlap": 0.7412
+    }
+  },
+  "blind_retrieval": {
+    "n_queries": 380,
+    "recall_at_5": 0.9053,
+    "recall_at_10": 0.9211,
+    "mrr_at_10": 0.8188,
+    "unthresholded_concept_r5": 0.9071,
+    "ood_fpr": 0.0,
+    "recall_at_5_by_lang": {
+      "bm": 0.9208,
+      "en": 0.9342,
+      "mg": 0.89,
+      "zh": 0.8835
+    },
+    "recall_at_5_by_slice": {
+      "concept": 0.9381,
+      "kind_filter": 1.0,
+      "lhdn_tax": 1.0,
+      "structured_constraint": 1.0,
+      "zero_lexical_overlap": 0.8526
+    }
+  },
+  "blind_proto_cls": {
+    "n": 542,
+    "raw_cat_acc": 0.8026,
+    "raw_sub_acc": 0.7232
+  },
+  "quick_entry_blind_count": 800,
+  "winner_seed": 2026,
+  "stage_seconds": 282.9,
+  "zero_train_leakage": true
+}

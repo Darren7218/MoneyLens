@@ -1,0 +1,21 @@
+{
+  "stage_seconds": 3752.7,
+  "teachers": {
+    "bge_m3_dev_acc": 0.6451,
+    "e5_large_dev_acc": 0.6524,
+    "ensemble_dev_acc": 0.6512
+  },
+  "train_count": 40000,
+  "dev_count": 4100,
+  "hard_mined_count": 0,
+  "num_buckets": 5632,
+  "gz_bytes": 199011,
+  "temperature": 1.85,
+  "dev_metrics_int8": {
+    "accuracy": 0.6868,
+    "trapRejection": 0.548,
+    "realCaptureRecall": 0.9257,
+    "realKindExact": 0.916
+  },
+  "blind_exclusion_verified": true
+}
